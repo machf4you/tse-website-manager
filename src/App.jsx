@@ -1,4 +1,5 @@
 import './App.css'
+import WebsitesDashboard from './pages/WebsitesDashboard'
 
 const ArrowLeftIcon = () => (
   <svg
@@ -118,7 +119,9 @@ function App() {
         id="main-content"
         role="main"
         aria-label="Main content"
-      />
+      >
+        <WebsitesDashboard />
+      </main>
     </div>
   )
 }

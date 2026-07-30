@@ -1,0 +1,94 @@
+/* ── Summary Cards Grid ── */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+
+/* ── Individual Card ── */
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: var(--surface-color);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.summary-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+/* ── Icon ── */
+.card-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-green  { background-color: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: #34d399; }
+.icon-blue   { background-color: rgba(59, 130, 246, 0.1);  border: 1px solid rgba(59, 130, 246, 0.2);  color: #60a5fa; }
+.icon-purple { background-color: rgba(139, 92, 246, 0.1);  border: 1px solid rgba(139, 92, 246, 0.2);  color: #a78bfa; }
+.icon-orange { background-color: rgba(245, 158, 11, 0.1);  border: 1px solid rgba(245, 158, 11, 0.2);  color: #fbbf24; }
+.icon-teal   { background-color: rgba(20, 184, 166, 0.1);  border: 1px solid rgba(20, 184, 166, 0.2);  color: #2dd4bf; }
+
+/* ── Body ── */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.card-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.card-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+  font-family: var(--font-display);
+}
+
+.card-sub {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1200px) {
+  .summary-cards {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .summary-cards {
+    grid-template-columns: 1fr;
+  }
+}

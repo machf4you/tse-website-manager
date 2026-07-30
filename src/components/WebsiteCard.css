@@ -1,0 +1,255 @@
+/* ── Website Card ── */
+.website-card {
+  background-color: var(--surface-color);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.website-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ── Card Header ── */
+.wc-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.wc-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* ── Avatar ── */
+.wc-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--accent-light);
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+
+.wc-info {
+  min-width: 0;
+}
+
+.wc-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.wc-domain {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.wc-domain:hover {
+  color: var(--accent-light);
+}
+
+/* ── Status Badge ── */
+.wc-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-active {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--accent-light);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-inactive {
+  background-color: rgba(148, 163, 184, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-active .status-dot {
+  background-color: var(--accent-light);
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.6);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.status-inactive .status-dot {
+  background-color: var(--text-secondary);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Stats Row ── */
+.wc-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.wc-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.wc-stat-icon {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.wc-stat-value {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.wc-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.wc-stat-divider {
+  width: 1px;
+  height: 16px;
+  background-color: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+/* ── Meta Row ── */
+.wc-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wc-category {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background-color: rgba(255, 255, 255, 0.06);
+  padding: 3px 9px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Action Buttons ── */
+.wc-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.wc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+
+.wc-btn:hover {
+  transform: translateY(-1px);
+}
+
+.wc-btn-manage {
+  background-color: var(--accent-bg);
+  color: var(--accent-light);
+  flex: 1;
+  justify-content: center;
+}
+
+.wc-btn-manage:hover {
+  background-color: rgba(16, 185, 129, 0.15);
+}
+
+.wc-btn-scan {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  flex: 1;
+  justify-content: center;
+}
+
+.wc-btn-scan:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.wc-btn-settings {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  padding: 7px 9px;
+}
+
+.wc-btn-settings:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}

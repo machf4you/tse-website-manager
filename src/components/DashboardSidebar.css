@@ -1,0 +1,125 @@
+/* ── Dashboard Sidebar ── */
+.dashboard-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background-color: var(--surface-color);
+  border-right: 1px solid var(--border-color);
+  padding: 2rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  height: calc(100vh - 64px);
+  position: sticky;
+  top: 64px;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 10px;
+  margin-bottom: 4px;
+}
+
+/* ── Sidebar Nav ── */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 9px 12px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.sidebar-nav-item.active {
+  background-color: var(--accent-bg);
+  color: var(--accent-light);
+}
+
+/* ── Sidebar Filters ── */
+.sidebar-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.sidebar-filter-item:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+}
+
+.sidebar-filter-item.active {
+  background-color: var(--accent-bg);
+  color: var(--accent-light);
+}
+
+.filter-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  padding: 2px 7px;
+  border-radius: 20px;
+  min-width: 22px;
+  text-align: center;
+}
+
+.sidebar-filter-item.active .filter-badge {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--accent-light);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .dashboard-sidebar {
+    display: none;
+  }
+}
