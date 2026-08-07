@@ -10,6 +10,7 @@ export default function PageManagementPage({
   onTabChange,
   onSyncFromWordPress,
   isSyncing,
+  onViewAudit,
 }) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
   const [sortColumn, setSortColumn] = useState('page') // 'page' | 'type' | 'priority'
@@ -309,6 +310,7 @@ export default function PageManagementPage({
                       type="button"
                       className={`btn-table-audit-muted ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
                       disabled={!page.isConfigured}
+                      onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
                       id={`btn-last-audit-${page.id || idx}`}
                     >
                       {page.isConfigured ? (page.lastAuditDate || 'Never') : 'Never'}
@@ -319,6 +321,7 @@ export default function PageManagementPage({
                       type="button"
                       className={`btn-table-audit-action ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
                       disabled={!page.isConfigured}
+                      onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
                       id={`btn-audit-page-${page.id || idx}`}
                     >
                       Audit Page

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { fetchTseWordPressExportPackage } from '../services/exporterApi'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import PageManagementPage from './PageManagementPage'
+import PageAuditResultsPage from './PageAuditResultsPage'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -116,6 +117,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [stageIndex, setStageIndex] = useState(0)
   const [syncError, setSyncError] = useState(null)
   const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
+  const [selectedPageForAudit, setSelectedPageForAudit] = useState(null)
 
   // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
@@ -210,6 +212,17 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     }, 500)
   }
 
+  if (activeTab === 'w3_audit_results' || activeTab === 'w4') {
+    return (
+      <PageAuditResultsPage
+        site={site}
+        page={selectedPageForAudit || exportedPages[0]}
+        pagesList={exportedPages}
+        onBack={() => setActiveTab('w3')}
+      />
+    )
+  }
+
   if (activeTab === 'w3') {
     return (
       <PageManagementPage
@@ -219,6 +232,10 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         onTabChange={(tab) => setActiveTab(tab)}
         onSyncFromWordPress={handleSynchroniseClick}
         isSyncing={isSyncing}
+        onViewAudit={(page) => {
+          setSelectedPageForAudit(page)
+          setActiveTab('w3_audit_results')
+        }}
       />
     )
   }
@@ -299,7 +316,12 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           <button type="button" className="w2-btn-secondary" id="btn-sync-from-other">
             Sync from Other
           </button>
-          <button type="button" className="w2-btn-amber" id="btn-latest-audit-results">
+          <button
+            type="button"
+            className="w2-btn-amber"
+            id="btn-latest-audit-results"
+            onClick={() => setActiveTab('w3_audit_results')}
+          >
             Latest Audit Results
           </button>
           <button type="button" className="w2-btn-emerald" id="btn-run-audit">
