@@ -52,6 +52,45 @@ export default function PageManagementPage({
     }
   }
 
+  const handleExcludePage = (pageUrl) => {
+    setConfigurations(prev => {
+      const updated = {
+        ...prev,
+        [pageUrl]: {
+          ...(prev[pageUrl] || {}),
+          url: pageUrl,
+          isExcluded: true,
+          type: 'Excluded',
+          seoPageType: 'Excluded',
+          priority: 0,
+          isConfigured: true,
+          status: 'configured',
+        }
+      }
+      try {
+        const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+        localStorage.setItem(siteIdKey, JSON.stringify(updated))
+      } catch (e) {
+        console.error('Failed to save page configuration:', e)
+      }
+      return updated
+    })
+  }
+
+  const handleIncludePage = (pageUrl) => {
+    setConfigurations(prev => {
+      const updated = { ...prev }
+      delete updated[pageUrl]
+      try {
+        const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+        localStorage.setItem(siteIdKey, JSON.stringify(updated))
+      } catch (e) {
+        console.error('Failed to save page configuration:', e)
+      }
+      return updated
+    })
+  }
+
   // Extract exported pages and merge user custom configurations
   const pkg = storedPackageData || site?.storedPackageData
   const rawPagesList = extractPagesFromPackage(pkg, site?.url)
@@ -336,6 +375,27 @@ export default function PageManagementPage({
                     >
                       {page.isConfigured ? 'Configured' : 'Configure'}
                     </button>
+                    {page.isExcluded || page.type === 'Excluded' ? (
+                      <button
+                        type="button"
+                        className="btn-row-include"
+                        onClick={() => handleIncludePage(page.url)}
+                        title="Include page back in active list"
+                        id={`btn-include-page-${page.id || idx}`}
+                      >
+                        Include
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn-row-exclude"
+                        onClick={() => handleExcludePage(page.url)}
+                        title="Exclude page with 1-click"
+                        id={`btn-exclude-page-${page.id || idx}`}
+                      >
+                        Exclude
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
