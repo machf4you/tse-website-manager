@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.3-classifications',
+    version: 'v1.3-classifications',
+    gitTag: 'v1.3-page-type-classifications',
+    commit: '81d26ab',
+    date: '07-08-2026 14:04',
+    title: 'Page Type Classifications Section',
+    description: 'Page Type Classifications menu item created in Global Settings containing editable classification rules document, commercial vs informational definitions, and comment history log.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.3-page-type-classifications.md',
+  },
+  {
     id: 'v1.2-rules',
     version: 'v1.2-rules',
     gitTag: 'v1.2-global-import-rules',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 13:01',
     title: 'WordPress Import Rules Section',
     description: 'WordPress Import Rules section created in Global Settings with Auto-Exclusion rules, Default Include rule, WP Object Types reference, and Future Import Rules placeholders.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.2-global-import-rules.md',
   },
   {
