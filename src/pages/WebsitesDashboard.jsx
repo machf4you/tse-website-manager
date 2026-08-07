@@ -49,8 +49,14 @@ export default function WebsitesDashboard() {
   return (
     <div className="tile-preview-page">
 
-      {/* Add Website button */}
-      <div className="tile-preview-actions">
+      {/* ── W1 Header ── */}
+      <div className="w1-header">
+        <div className="w1-header-content">
+          <h1 className="w1-title">Connected Websites</h1>
+          <span className="w1-pill-badge">W1 | CONNECTED WEBSITES</span>
+          <p className="w1-subtitle">Manage your connected websites.</p>
+        </div>
+
         <button
           type="button"
           className="btn-add-website"
