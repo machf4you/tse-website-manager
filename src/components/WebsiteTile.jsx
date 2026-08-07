@@ -30,17 +30,25 @@ function StatusBadge({ value, variant, icon }) {
 }
 
 /* ── Main tile ─────────────────────────────────────────────────────────────── */
+const INDICATOR = {
+  connected:    { label: 'CONNECTED',    cls: 'status-connected'    },
+  partial:      { label: 'PARTIAL',      cls: 'status-partial'      },
+  disconnected: { label: 'DISCONNECTED', cls: 'status-disconnected' },
+  pending:      { label: 'PENDING',      cls: 'status-pending'      },
+  connecting:   { label: 'CONNECTING…',  cls: 'status-connecting'   },
+}
+
 export default function WebsiteTile({ site }) {
-  const isConnected = site.connectionStatus === 'connected'
+  const ind = INDICATOR[site.topIndicator] || INDICATOR.pending
 
   return (
     <div className="website-tile" role="article" aria-label={`${site.name} website tile`}>
 
       {/* ── Top row: connection status + task count ── */}
       <div className="tile-top-row">
-        <span className={`connection-status ${isConnected ? 'status-connected' : 'status-disconnected'}`}>
+        <span className={`connection-status ${ind.cls}`}>
           <span className="connection-dot" aria-hidden="true" />
-          {isConnected ? 'CONNECTED' : 'DISCONNECTED'}
+          {ind.label}
         </span>
         <span className="task-count-badge">
           {site.taskCount} TASKS

@@ -1,11 +1,39 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import WebsiteTile from '../components/WebsiteTile'
 import AddWebsiteDialog from '../components/AddWebsiteDialog'
 import { mockSiteTile } from '../data/mockData'
 import './WebsitesDashboard.css'
 
+const STORAGE_KEY = 'tse_connected_websites_v1'
+
 export default function WebsitesDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [sites, setSites] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load websites from localStorage:', e)
+    }
+    return [mockSiteTile]
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sites))
+    } catch (e) {
+      console.error('Failed to save websites to localStorage:', e)
+    }
+  }, [sites])
+
+  const handleAddWebsite = (newSite) => {
+    setSites(prev => [newSite, ...prev])
+  }
 
   return (
     <div className="tile-preview-page">
@@ -27,13 +55,18 @@ export default function WebsitesDashboard() {
         </button>
       </div>
 
-      {/* Master tile */}
-      <WebsiteTile site={mockSiteTile} />
+      {/* Website Tiles Grid */}
+      <div className="website-tiles-grid">
+        {sites.map(site => (
+          <WebsiteTile key={site.id} site={site} />
+        ))}
+      </div>
 
       {/* Dialog */}
       <AddWebsiteDialog
         isOpen={dialogOpen}
         onClose={() => setDialogOpen(false)}
+        onAddWebsite={handleAddWebsite}
       />
 
     </div>

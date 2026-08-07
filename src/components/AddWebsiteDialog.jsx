@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { connectWordPress, WP_STEPS } from '../services/wordpressApi'
+import { buildWordPressSite } from '../data/mockData'
 import './AddWebsiteDialog.css'
 
 const PLATFORMS = [
@@ -8,7 +10,7 @@ const PLATFORMS = [
 ]
 
 /* ── Field helpers ── */
-function Field({ label, id, type = 'text', placeholder = '' }) {
+function Field({ label, id, type = 'text', placeholder = '', value, onChange, disabled }) {
   return (
     <div className="aw-field">
       <label className="aw-label" htmlFor={id}>{label}</label>
@@ -17,14 +19,16 @@ function Field({ label, id, type = 'text', placeholder = '' }) {
         id={id}
         type={type}
         placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
         autoComplete="off"
       />
     </div>
   )
 }
 
-function Toggle({ label, id }) {
-  const [on, setOn] = useState(false)
+function Toggle({ label, id, checked, onChange, disabled }) {
   return (
     <div className="aw-field aw-toggle-row">
       <label className="aw-label" htmlFor={id}>{label}</label>
@@ -32,9 +36,10 @@ function Toggle({ label, id }) {
         id={id}
         type="button"
         role="switch"
-        aria-checked={on}
-        className={`aw-toggle ${on ? 'aw-toggle-on' : ''}`}
-        onClick={() => setOn(v => !v)}
+        aria-checked={checked}
+        disabled={disabled}
+        className={`aw-toggle ${checked ? 'aw-toggle-on' : ''}`}
+        onClick={() => onChange(!checked)}
       >
         <span className="aw-toggle-thumb" />
       </button>
@@ -46,18 +51,24 @@ function SelectPlaceholder({ label, id }) {
   return (
     <div className="aw-field">
       <label className="aw-label" htmlFor={id}>{label}</label>
-      <select className="aw-input aw-select" id={id} defaultValue="">
+      <select className="aw-input aw-select" id={id} defaultValue="" disabled>
         <option value="" disabled>Select store view…</option>
       </select>
     </div>
   )
 }
 
-function PortfolioSelect({ id }) {
+function PortfolioSelect({ id, value, onChange, disabled }) {
   return (
     <div className="aw-field">
       <label className="aw-label" htmlFor={id}>Portfolio</label>
-      <select className="aw-input aw-select" id={id} defaultValue="">
+      <select
+        className="aw-input aw-select"
+        id={id}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+      >
         <option value="" disabled>Select portfolio…</option>
         <option value="tse">TSE</option>
         <option value="scm">SCM</option>
@@ -69,32 +80,18 @@ function PortfolioSelect({ id }) {
   )
 }
 
-/* ── WordPress field set ── */
-function WordPressFields() {
-  return (
-    <>
-      <Field label="Website Name"                   id="wp-name"  placeholder="e.g. Bathroom Upgrades" />
-      <Field label="Website URL"                    id="wp-url"   placeholder="https://www.example.co.uk" />
-      <Field label="WordPress Username"             id="wp-user"  placeholder="admin" />
-      <Field label="WordPress Application Password" id="wp-pass"  type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" />
-      <PortfolioSelect id="wp-portfolio" />
-      <Toggle label="Elementor Enabled"             id="wp-elementor" />
-    </>
-  )
-}
-
-/* ── Magento field set ── */
+/* ── Magento field set (UI preserved, no logic) ── */
 function MagentoFields() {
   return (
     <>
-      <Field label="Website Name"           id="mg-name"     placeholder="e.g. My Magento Store" />
-      <Field label="Website URL (Frontend)" id="mg-url"      placeholder="https://www.example.co.uk" />
-      <Field label="Magento Backend URL"    id="mg-backend"  placeholder="https://www.example.co.uk/admin" />
-      <Field label="API Base URL"           id="mg-api"      placeholder="https://www.example.co.uk/rest/V1" />
-      <Field label="API Username"           id="mg-api-user" placeholder="api_user" />
-      <Field label="API Password / Token"   id="mg-api-pass" type="password" placeholder="••••••••••••••••" />
+      <Field label="Website Name"           id="mg-name"     placeholder="e.g. My Magento Store" disabled />
+      <Field label="Website URL (Frontend)" id="mg-url"      placeholder="https://www.example.co.uk" disabled />
+      <Field label="Magento Backend URL"    id="mg-backend"  placeholder="https://www.example.co.uk/admin" disabled />
+      <Field label="API Base URL"           id="mg-api"      placeholder="https://www.example.co.uk/rest/V1" disabled />
+      <Field label="API Username"           id="mg-api-user" placeholder="api_user" disabled />
+      <Field label="API Password / Token"   id="mg-api-pass" type="password" placeholder="••••••••••••••••" disabled />
       <SelectPlaceholder label="Store View" id="mg-store" />
-      <PortfolioSelect id="mg-portfolio" />
+      <PortfolioSelect id="mg-portfolio" value="" onChange={() => {}} disabled />
     </>
   )
 }
@@ -109,13 +106,107 @@ function OtherFields() {
 }
 
 /* ── Main dialog ── */
-export default function AddWebsiteDialog({ isOpen, onClose }) {
+export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
   const [platform, setPlatform] = useState('wordpress')
+  
+  // WordPress form state
+  const [wpName, setWpName] = useState('')
+  const [wpUrl, setWpUrl] = useState('')
+  const [wpUser, setWpUser] = useState('')
+  const [wpPass, setWpPass] = useState('')
+  const [portfolio, setPortfolio] = useState('tse')
+  const [elementorEnabled, setElementorEnabled] = useState(false)
+
+  // Status & error state
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState(null)
+  const [stepStates, setStepStates] = useState({
+    api: 'pending',
+    auth: 'pending',
+    perms: 'pending',
+  })
 
   if (!isOpen) return null
 
+  function resetForm() {
+    setWpName('')
+    setWpUrl('')
+    setWpUser('')
+    setWpPass('')
+    setPortfolio('tse')
+    setElementorEnabled(false)
+    setIsConnecting(false)
+    setErrorMsg(null)
+    setStepStates({ api: 'pending', auth: 'pending', perms: 'pending' })
+  }
+
+  function handleClose() {
+    resetForm()
+    onClose()
+  }
+
   function handleBackdrop(e) {
-    if (e.target === e.currentTarget) onClose()
+    if (e.target === e.currentTarget && !isConnecting) {
+      handleClose()
+    }
+  }
+
+  async function handleConnect(e) {
+    e?.preventDefault()
+    if (isConnecting) return
+    setErrorMsg(null)
+
+    // 1. Validation
+    if (!wpName.trim()) {
+      setErrorMsg('Please enter a Website Name.')
+      return
+    }
+    if (!wpUrl.trim()) {
+      setErrorMsg('Please enter a Website URL.')
+      return
+    }
+    if (!wpUser.trim()) {
+      setErrorMsg('Please enter a WordPress Username.')
+      return
+    }
+    if (!wpPass.trim()) {
+      setErrorMsg('Please enter a WordPress Application Password.')
+      return
+    }
+
+    setIsConnecting(true)
+    setStepStates({ api: 'pending', auth: 'pending', perms: 'pending' })
+
+    const updateStep = (stepId, status) => {
+      setStepStates(prev => ({ ...prev, [stepId]: status }))
+    }
+
+    // 2. REST API Connection & Verification
+    const res = await connectWordPress(
+      { url: wpUrl, username: wpUser, password: wpPass },
+      updateStep
+    )
+
+    if (res.success) {
+      // 3. Save website record & create tile
+      const newTile = buildWordPressSite({
+        name: wpName.trim(),
+        url: wpUrl.trim(),
+        portfolio,
+        elementorEnabled,
+        user: res.user,
+      })
+
+      if (onAddWebsite) {
+        onAddWebsite(newTile)
+      }
+
+      resetForm()
+      onClose()
+    } else {
+      setErrorMsg(res.error || 'Connection failed.')
+      setIsConnecting(false)
+    }
   }
 
   return (
@@ -135,7 +226,8 @@ export default function AddWebsiteDialog({ isOpen, onClose }) {
             type="button"
             className="aw-close"
             aria-label="Close dialog"
-            onClick={onClose}
+            onClick={handleClose}
+            disabled={isConnecting}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -151,9 +243,12 @@ export default function AddWebsiteDialog({ isOpen, onClose }) {
               key={p.id}
               type="button"
               className={`aw-platform-btn ${platform === p.id ? 'aw-platform-active' : ''}`}
-              onClick={() => setPlatform(p.id)}
+              onClick={() => {
+                if (!isConnecting) setPlatform(p.id)
+              }}
               aria-pressed={platform === p.id}
               id={`platform-${p.id}`}
+              disabled={isConnecting}
             >
               {p.label}
             </button>
@@ -161,19 +256,103 @@ export default function AddWebsiteDialog({ isOpen, onClose }) {
         </div>
 
         {/* Form fields */}
-        <form className="aw-form" onSubmit={e => e.preventDefault()}>
-          {platform === 'wordpress' && <WordPressFields />}
+        <form className="aw-form" onSubmit={handleConnect}>
+          {errorMsg && (
+            <div className="aw-error-banner" role="alert">
+              {errorMsg}
+            </div>
+          )}
+
+          {platform === 'wordpress' && (
+            <>
+              <Field
+                label="Website Name"
+                id="wp-name"
+                placeholder="e.g. Bathroom Upgrades"
+                value={wpName}
+                onChange={setWpName}
+                disabled={isConnecting}
+              />
+              <Field
+                label="Website URL"
+                id="wp-url"
+                placeholder="https://www.example.co.uk"
+                value={wpUrl}
+                onChange={setWpUrl}
+                disabled={isConnecting}
+              />
+              <Field
+                label="WordPress Username"
+                id="wp-user"
+                placeholder="admin"
+                value={wpUser}
+                onChange={setWpUser}
+                disabled={isConnecting}
+              />
+              <Field
+                label="WordPress Application Password"
+                id="wp-pass"
+                type="password"
+                placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                value={wpPass}
+                onChange={setWpPass}
+                disabled={isConnecting}
+              />
+              <PortfolioSelect
+                id="wp-portfolio"
+                value={portfolio}
+                onChange={setPortfolio}
+                disabled={isConnecting}
+              />
+              <Toggle
+                label="Elementor Enabled"
+                id="wp-elementor"
+                checked={elementorEnabled}
+                onChange={setElementorEnabled}
+                disabled={isConnecting}
+              />
+
+              {isConnecting && (
+                <div className="aw-steps-container">
+                  {WP_STEPS.map(step => {
+                    const st = stepStates[step.id] || 'pending'
+                    return (
+                      <div key={step.id} className={`aw-step-item aw-step-status-${st}`}>
+                        {st === 'loading' && <span className="aw-spinner" />}
+                        {st === 'done' && <span>✓</span>}
+                        {st === 'error' && <span>✗</span>}
+                        {st === 'pending' && <span>○</span>}
+                        <span>{step.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
           {platform === 'magento'   && <MagentoFields />}
           {platform === 'other'     && <OtherFields />}
         </form>
 
         {/* Footer */}
         <div className="aw-footer">
-          <button type="button" className="aw-btn-cancel" onClick={onClose}>
+          <button
+            type="button"
+            className="aw-btn-cancel"
+            onClick={handleClose}
+            disabled={isConnecting}
+          >
             Cancel
           </button>
-          <button type="button" className="aw-btn-connect" id="btn-connect-website">
-            Connect Website
+          <button
+            type="button"
+            className="aw-btn-connect"
+            id="btn-connect-website"
+            onClick={handleConnect}
+            disabled={isConnecting || platform !== 'wordpress'}
+          >
+            {isConnecting ? 'Connecting…' : 'Connect Website'}
           </button>
         </div>
 

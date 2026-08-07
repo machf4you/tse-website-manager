@@ -47,8 +47,11 @@
   letter-spacing: 0.05em;
 }
 
-.status-connected  { color: rgb(16, 185, 129); }
-.status-disconnected { color: rgb(239, 68, 68); }
+.status-connected    { color: rgb(16, 185, 129); }
+.status-disconnected { color: rgb(239, 68, 68);  }
+.status-partial      { color: rgb(251, 191, 36);  }
+.status-pending      { color: rgb(100, 116, 139); }
+.status-connecting   { color: rgb(251, 191, 36);  }
 
 .connection-dot {
   width: 6px;
@@ -58,8 +61,19 @@
   flex-shrink: 0;
 }
 
-.status-connected  .connection-dot { background-color: rgb(16, 185, 129); }
-.status-disconnected .connection-dot { background-color: rgb(239, 68, 68); }
+.status-connected    .connection-dot { background-color: rgb(16, 185, 129); }
+.status-disconnected .connection-dot { background-color: rgb(239, 68, 68);  }
+.status-partial      .connection-dot { background-color: rgb(251, 191, 36);  }
+.status-pending      .connection-dot { background-color: rgb(100, 116, 139); }
+.status-connecting   .connection-dot {
+  background-color: rgb(251, 191, 36);
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
 
 /* ── Task count badge ── */
 .task-count-badge {
@@ -166,6 +180,12 @@
   background-color: rgba(239, 68, 68, 0.08);
   color: rgb(252, 165, 165);
   border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.badge-grey {
+  background-color: rgba(100, 116, 139, 0.08);
+  color: rgb(100, 116, 139);
+  border: 1px solid rgba(100, 116, 139, 0.12);
 }
 
 /* Lock icon inside WordPress API badge (amber/yellow) */
