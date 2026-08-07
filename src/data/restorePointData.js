@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.6-page-width',
+    version: 'v1.6-page-width',
+    gitTag: 'v1.6-increased-page-width',
+    commit: 'dc4c4ee',
+    date: '07-08-2026 16:45',
+    title: 'Increased Page Width (10%)',
+    description: 'Expanded main page container max-width by 10% across Page Management (1400px -> 1540px) and Dashboard views (1320px -> 1452px) for roomier multi-column layouts.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.6-increased-page-width.md',
+  },
+  {
     id: 'v1.5-audit-cols',
     version: 'v1.5-audit-cols',
     gitTag: 'v1.5-last-audit-and-audit-page-columns',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 16:42',
     title: 'Last Audit & Audit Page Columns',
     description: 'Added Last Audit and Audit Page columns between Status and Actions in W3 Page Management. Unconfigured URLs render semi-invisible faded gray buttons that illuminate into active buttons upon URL configuration.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.5-last-audit-and-audit-page-columns.md',
   },
   {
