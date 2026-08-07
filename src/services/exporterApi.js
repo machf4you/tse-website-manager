@@ -19,27 +19,14 @@ export async function fetchTseWordPressExportPackage({
   const cleanUrl = websiteUrl.trim().replace(/\/+$/, '')
   const endpoint = `${cleanUrl}/wp-json/tse-site-exporter/v1/export`
 
-  // 2. Prepare Headers & Handle CGI/FastCGI Authorization Header Stripping
+  // 2. Prepare Standard Request Headers
   const headers = {
     'Accept': 'application/json',
   }
 
   if (username && applicationPassword) {
-    const cleanUser = username.trim()
-    const cleanPass = applicationPassword.trim()
-    // Strip spaces for Application Passwords if formatted with spaces
-    const noSpacePass = cleanPass.replace(/\s+/g, '')
-
-    const rawAuth = btoa(`${cleanUser}:${cleanPass}`)
-    const altAuth = btoa(`${cleanUser}:${noSpacePass}`)
-
-    // Standard Authorization header
-    headers['Authorization'] = `Basic ${rawAuth}`
-
-    // Fallback headers for CGI/FastCGI web servers (Apache/PHP-FPM) that strip Authorization
-    headers['X-Authorization'] = `Basic ${rawAuth}`
-    headers['X-HTTP-Authorization'] = `Basic ${rawAuth}`
-    headers['X-WP-Authorization'] = `Basic ${altAuth}`
+    const authString = btoa(`${username.trim()}:${applicationPassword.trim()}`)
+    headers['Authorization'] = `Basic ${authString}`
   }
 
   // 3. Issue GET Request
