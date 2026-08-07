@@ -1,0 +1,168 @@
+/* ── Create Restore Point Dialog ── */
+.crp-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  backdrop-filter: blur(4px);
+}
+
+.crp-dialog {
+  background-color: rgb(17, 24, 39);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  color: rgb(248, 250, 252);
+}
+
+.crp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.crp-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+  color: rgb(248, 250, 252);
+}
+
+.crp-close {
+  background: none;
+  border: none;
+  color: rgb(148, 163, 184);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.crp-close:hover {
+  color: rgb(248, 250, 252);
+}
+
+.crp-form {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.crp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.crp-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgb(148, 163, 184);
+}
+
+.crp-input {
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: rgb(248, 250, 252);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.crp-input:focus {
+  border-color: rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08);
+}
+
+.crp-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.4;
+}
+
+.crp-error-banner {
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: rgb(248, 113, 113);
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.crp-success-banner {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: rgb(52, 211, 153);
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.crp-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.crp-btn-cancel {
+  flex: 1;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.04);
+  color: rgb(148, 163, 184);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.crp-btn-cancel:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: rgb(248, 250, 252);
+}
+
+.crp-btn-submit {
+  flex: 2;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: rgb(16, 185, 129);
+  color: rgb(255, 255, 255);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.crp-btn-submit:hover {
+  background-color: rgb(5, 150, 105);
+}
+
+.crp-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

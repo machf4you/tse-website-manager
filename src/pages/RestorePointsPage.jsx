@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { restorePointIndexData } from '../data/restorePointData'
+import { getRestorePointIndex } from '../services/restorePointService'
+import CreateRestorePointDialog from '../components/CreateRestorePointDialog'
 import './RestorePointsPage.css'
 
 export default function RestorePointsPage() {
   const [selectedPoint, setSelectedPoint] = useState(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [restorePoints, setRestorePoints] = useState(() => getRestorePointIndex())
 
   return (
     <div className="restore-points-container">
@@ -20,7 +23,7 @@ export default function RestorePointsPage() {
           type="button"
           className="btn-create-restore-point"
           id="btn-create-restore-point"
-          onClick={() => {}}
+          onClick={() => setDialogOpen(true)}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
@@ -44,7 +47,7 @@ export default function RestorePointsPage() {
             </tr>
           </thead>
           <tbody>
-            {restorePointIndexData.map((item) => {
+            {restorePoints.map((item) => {
               const isSelected = selectedPoint?.id === item.id
               return (
                 <tr
@@ -76,6 +79,13 @@ export default function RestorePointsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Create Restore Point Dialog */}
+      <CreateRestorePointDialog
+        isOpen={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSuccess={(updatedList) => setRestorePoints(updatedList)}
+      />
 
       {/* Document View Drawer / Modal Placeholder */}
       {selectedPoint && (
