@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.5-exclude-actions',
+    version: 'v2.5-exclude-actions',
+    gitTag: 'v2.5-one-click-exclude-row-actions',
+    commit: '989d9eb',
+    date: '07-08-2026 17:38',
+    title: '1-Click Exclude Row Action Buttons',
+    description: 'Added 1-click Exclude / Include row action buttons on W3 Page Management table. Clicking Exclude sets Priority 0 and hides remnant URLs from active views instantly.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.5-one-click-exclude-row-actions.md',
+  },
+  {
     id: 'v2.4-dropdown-filtering',
     version: 'v2.4-dropdown-filtering',
     gitTag: 'v2.4-filtered-audit-dropdown-excluded-pages',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:29',
     title: 'Filtered Excluded Pages from Audit Dropdown',
     description: 'Filtered out excluded pages (Priority 0 / Excluded pages like Privacy Policy and About Us) from the W4 Audit Results page selector dropdown so only active SEO pages appear.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.4-filtered-audit-dropdown-excluded-pages.md',
   },
   {
