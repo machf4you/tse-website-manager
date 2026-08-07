@@ -13,7 +13,7 @@ export default function PageManagementPage({
   onViewAudit,
 }) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
-  const [sortColumn, setSortColumn] = useState('page') // 'page' | 'type' | 'priority'
+  const [sortColumn, setSortColumn] = useState('priority') // 'priority' | 'page' | 'type'
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' | 'desc'
   const [editingPage, setEditingPage] = useState(null)
 
