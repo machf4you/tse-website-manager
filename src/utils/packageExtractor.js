@@ -6,32 +6,37 @@
 export function normalizeImportedPage(p, siteUrl = '') {
   if (!p || typeof p !== 'object') return p
 
-  // 1. Meta Title / Page Title (prioritizes Meta Title from SEO plugins, exporter payload, and WP Core title)
+  // 1. Meta Title / Page Title resolution
   let title = ''
-  if (typeof p.metaTitle === 'string' && p.metaTitle.trim()) {
-    title = p.metaTitle.trim()
-  } else if (typeof p.meta_title === 'string' && p.meta_title.trim()) {
-    title = p.meta_title.trim()
-  } else if (typeof p.seo_title === 'string' && p.seo_title.trim()) {
-    title = p.seo_title.trim()
-  } else if (typeof p.seoTitle === 'string' && p.seoTitle.trim()) {
-    title = p.seoTitle.trim()
-  } else if (typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) {
-    title = p.yoast_head_json.title.trim()
-  } else if (typeof p.rank_math_title === 'string' && p.rank_math_title.trim()) {
-    title = p.rank_math_title.trim()
-  } else if (typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) {
-    title = p._yoast_wpseo_title.trim()
-  } else if (typeof p.title === 'object' && p.title !== null) {
-    title = p.title.rendered || p.title.raw || ''
-  } else if (typeof p.title === 'string') {
-    title = p.title
-  } else if (p.post_title) {
-    title = p.post_title
-  } else if (p.name) {
-    title = p.name
+  if (typeof p.metaTitle === 'string' && p.metaTitle.trim()) title = p.metaTitle.trim()
+  else if (typeof p.meta_title === 'string' && p.meta_title.trim()) title = p.meta_title.trim()
+  else if (typeof p.seo_title === 'string' && p.seo_title.trim()) title = p.seo_title.trim()
+  else if (typeof p.seoTitle === 'string' && p.seoTitle.trim()) title = p.seoTitle.trim()
+  else if (typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) title = p.yoast_head_json.title.trim()
+  else if (typeof p.rank_math_title === 'string' && p.rank_math_title.trim()) title = p.rank_math_title.trim()
+  else if (typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) title = p._yoast_wpseo_title.trim()
+
+  // Primary WordPress post object title field (post_title)
+  if (!title && typeof p.post_title === 'string' && p.post_title.trim()) {
+    title = p.post_title.trim()
   }
-  title = title.trim() || 'Untitled Page'
+  // WP REST API title field (title.rendered or string title)
+  if (!title && p.title) {
+    if (typeof p.title === 'string' && p.title.trim()) {
+      title = p.title.trim()
+    } else if (typeof p.title === 'object' && p.title !== null) {
+      title = (p.title.rendered || p.title.raw || '').trim()
+    }
+  }
+  // Fallbacks for slug/name
+  if (!title && typeof p.name === 'string' && p.name.trim()) {
+    title = p.name.trim()
+  }
+  if (!title && typeof p.post_name === 'string' && p.post_name.trim()) {
+    title = p.post_name.trim()
+  }
+
+  title = title || 'Untitled Page'
 
   // 2. URL
   const url = (p.link || p.url || p.guid?.rendered || p.guid || '').trim()
