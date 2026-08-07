@@ -336,7 +336,7 @@ export default function AddWebsiteDialog({
               <Field
                 label="WordPress Application Password"
                 id="wp-pass"
-                type="password"
+                type={editingSite ? 'text' : 'password'}
                 placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
                 value={wpPass}
                 onChange={setWpPass}
