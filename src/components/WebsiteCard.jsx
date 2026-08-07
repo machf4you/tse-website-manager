@@ -56,7 +56,11 @@ function formatRelativeTime(isoString) {
   if (hours < 1) return `${mins}m ago`
   if (days < 1) return `${hours}h ago`
   if (days < 30) return `${days}d ago`
-  return new Date(isoString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const d = new Date(isoString)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${day}-${month}-${year}`
 }
 
 function getDomainInitials(name) {

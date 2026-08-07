@@ -1,6 +1,6 @@
 # Restore Point: v1.2-wordpress-synchronisation-architecture
 
-- **Date & Time:** 2026-08-07T07:12:00+01:00
+- **Date:** 07-08-2026
 
 ## Status
 
