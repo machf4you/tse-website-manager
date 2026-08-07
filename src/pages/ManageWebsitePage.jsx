@@ -97,11 +97,10 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [syncError, setSyncError] = useState(null)
   const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
 
-  // Extract exported page inventory directly from storedPackageData.data.pages
+  // Extract exported pages and posts directly from pkg.pages and pkg.posts
   const pkg = storedPackageData || site?.storedPackageData
-  const exportedPages = pkg?.data?.pages || pkg?.pages || []
-  const _exportedPosts = pkg?.data?.posts || pkg?.posts || []
-  console.log('[RENDER W2]', { pkg, exportedPagesLength: exportedPages.length })
+  const exportedPages = pkg?.pages || []
+  const _exportedPosts = pkg?.posts || []
 
   const timerRef = useRef(null)
 
