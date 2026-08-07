@@ -250,6 +250,26 @@
   font-size: 0.75rem;
 }
 
+.type-landing {
+  color: rgb(96, 165, 250);
+  font-weight: 700;
+  background-color: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.type-topical {
+  color: rgb(251, 191, 36);
+  font-weight: 700;
+  background-color: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
 .type-unclassified {
   color: rgb(148, 163, 184);
   font-weight: 600;

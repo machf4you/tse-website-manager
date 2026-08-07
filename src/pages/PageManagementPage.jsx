@@ -147,23 +147,25 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
               filteredPages.map((page, idx) => (
                 <tr key={page.id || idx}>
                   <td className="col-page">
-                    <div className="w3-page-title">{page.title}</div>
-                    <div className="w3-page-slug">{page.url}</div>
+                    <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
+                    <div className="w3-page-slug">{page.url || ''}</div>
                   </td>
                   <td className="col-type">
                     <span className={
                       page.type === 'Hub' ? 'type-hub' :
+                      page.type === 'Landing' ? 'type-landing' :
+                      page.type === 'Topical' ? 'type-topical' :
                       page.type === 'Excluded' ? 'type-excluded' :
                       'type-unclassified'
                     }>
-                      {page.type}
+                      {page.type || 'Unclassified'}
                     </span>
                   </td>
-                  <td className="col-priority">{page.priority || '-'}</td>
-                  <td className="col-target">{page.target || '-'}</td>
+                  <td className="col-priority">{''}</td>
+                  <td className="col-target">{''}</td>
                   <td className="col-status">
-                    <span className={page.isExcluded ? 'status-excluded' : (page.isConfigured ? 'status-configured' : 'status-included')}>
-                      {page.isExcluded ? 'Excluded' : (page.isConfigured ? 'Configured' : 'Included')}
+                    <span className={page.isExcluded ? 'status-excluded' : 'status-included'}>
+                      {page.isExcluded ? 'Excluded' : 'Included'}
                     </span>
                   </td>
                   <td className="col-actions">
