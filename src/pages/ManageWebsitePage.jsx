@@ -102,6 +102,12 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const exportedPages = pkg?.pages || []
   const _exportedPosts = pkg?.posts || []
 
+  // Dynamic calculated metrics from stored package pages
+  const configuredPagesCount = exportedPages.filter(p => p.isConfigured === true).length
+  const excludedPagesCount = exportedPages.filter(p => p.isExcluded === true).length
+  const unconfiguredPagesCount = exportedPages.filter(p => !p.isConfigured && !p.isExcluded).length
+  const actionRequiredCount = unconfiguredPagesCount
+
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -283,7 +289,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       <div className="w2-stats-grid">
         <div className="w2-stat-card">
           <span className="w2-stat-label">WEBSITE STATUS</span>
-          <span className="w2-stat-val val-connected">Connected</span>
+          <span className="w2-stat-val val-connected">
+            {site.topIndicator ? site.topIndicator.charAt(0).toUpperCase() + site.topIndicator.slice(1) : 'Connected'}
+          </span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">TOTAL PAGES FOUND</span>
@@ -291,19 +299,19 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">CONFIGURED PAGES</span>
-          <span className="w2-stat-val val-emerald">{isSynced ? '2' : '0'}</span>
+          <span className="w2-stat-val val-emerald">{isSynced ? configuredPagesCount : 0}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">UNCONFIGURED PAGES</span>
-          <span className="w2-stat-val val-slate">{isSynced ? '27' : '0'}</span>
+          <span className="w2-stat-val val-slate">{isSynced ? unconfiguredPagesCount : 0}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">ACTION REQUIRED</span>
-          <span className="w2-stat-val val-amber">{isSynced ? '29' : '0'}</span>
+          <span className="w2-stat-val val-amber">{isSynced ? actionRequiredCount : 0}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">EXCLUDED PAGES</span>
-          <span className="w2-stat-val val-slate">{isSynced ? '11' : '0'}</span>
+          <span className="w2-stat-val val-slate">{isSynced ? excludedPagesCount : 0}</span>
         </div>
       </div>
 
@@ -439,16 +447,8 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
                   <span className="act-time">{lastSyncDate || '07-08-2026 08:15'}</span>
                 </div>
                 <div className="act-row">
-                  <span className="act-label">2 new pages discovered</span>
+                  <span className="act-label">{exportedPages.length} pages discovered</span>
                   <span className="act-time">{lastSyncDate || '07-08-2026 08:15'}</span>
-                </div>
-                <div className="act-row">
-                  <span className="act-label">Audit completed</span>
-                  <span className="act-time">06-08-2026 14:32</span>
-                </div>
-                <div className="act-row">
-                  <span className="act-label">Page configuration updated</span>
-                  <span className="act-time">06-08-2026 11:05</span>
                 </div>
               </>
             ) : (
@@ -468,14 +468,13 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           </div>
           <div className="w2-audit-body">
             <div className="audit-gauge">
-              <span className="gauge-score">{isSynced ? '78' : '—'}</span>
-              <span className="gauge-max">{isSynced ? '/100' : ''}</span>
+              <span className="gauge-score">—</span>
             </div>
             <div className="audit-details">
               <span className="audit-label">Overall Score</span>
-              <span className="audit-rating">{isSynced ? 'Good' : 'Not Audited'}</span>
+              <span className="audit-rating">Not Audited</span>
               <span className="audit-sub">
-                {isSynced ? 'Audit completed: 06-08-2026 14:32' : 'Pending initial synchronisation'}
+                {isSynced ? 'Pending site audit' : 'Pending initial synchronisation'}
               </span>
             </div>
           </div>
@@ -489,7 +488,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           </div>
           <div className="w2-ai-body">
             <div className="ai-content">
-              <span className="ai-count">{isSynced ? '12 Available' : '0 Available'}</span>
+              <span className="ai-count">0 Available</span>
               <span className="ai-sub">Improve internal linking and technical SEO.</span>
               <button type="button" className="btn-ai-recs" disabled={!isSynced}>
                 View Recommendations ›
@@ -509,7 +508,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           </div>
           <div className="w2-status-body">
             <div className="status-content">
-              <span className="status-success-title">Connected</span>
+              <span className="status-success-title">
+                {site.topIndicator ? site.topIndicator.charAt(0).toUpperCase() + site.topIndicator.slice(1) : 'Connected'}
+              </span>
               <span className="status-sub">
                 {isSynced ? `Last sync: ${lastSyncDate || '07-08-2026 08:15'}` : 'Sync: Pending'}
               </span>
@@ -517,7 +518,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
                 {isSynced ? `Pages crawled: ${exportedPages.length}` : 'Pages: Not extracted'}
               </span>
               <span className="status-sub">
-                {isSynced ? 'New pages found: 2' : 'Status: Ready to Sync'}
+                {isSynced ? `Unconfigured pages: ${unconfiguredPagesCount}` : 'Status: Ready to Sync'}
               </span>
             </div>
             <div className="status-icon-side">
