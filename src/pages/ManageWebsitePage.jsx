@@ -97,10 +97,21 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [syncError, setSyncError] = useState(null)
   const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
 
-  // Extract exported pages and posts directly from pkg.pages and pkg.posts
+  // Extract exported pages and posts using flexible accessor chain
   const pkg = storedPackageData || site?.storedPackageData
-  const exportedPages = pkg?.pages || []
-  const _exportedPosts = pkg?.posts || []
+  const exportedPages =
+    pkg?.pages ||
+    pkg?.data?.pages ||
+    pkg?.packageData?.pages ||
+    pkg?.content?.pages ||
+    (Array.isArray(pkg?.data) ? pkg.data : []) ||
+    []
+  const _exportedPosts =
+    pkg?.posts ||
+    pkg?.data?.posts ||
+    pkg?.packageData?.posts ||
+    pkg?.content?.posts ||
+    []
 
   // Dynamic calculated metrics from stored package pages
   const configuredPagesCount = exportedPages.filter(p => p.isConfigured === true).length
