@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.4-dropdown-filtering',
+    version: 'v2.4-dropdown-filtering',
+    gitTag: 'v2.4-filtered-audit-dropdown-excluded-pages',
+    commit: 'af93fc6',
+    date: '07-08-2026 17:29',
+    title: 'Filtered Excluded Pages from Audit Dropdown',
+    description: 'Filtered out excluded pages (Priority 0 / Excluded pages like Privacy Policy and About Us) from the W4 Audit Results page selector dropdown so only active SEO pages appear.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.4-filtered-audit-dropdown-excluded-pages.md',
+  },
+  {
     id: 'v2.3-audit-mapping',
     version: 'v2.3-audit-mapping',
     gitTag: 'v2.3-verified-page-auditor-mapping',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:25',
     title: 'Verified Page Auditor Result Mapping',
     description: 'Verified and mapped all 8 returned TSE Page Auditor criteria (Meta Title, Meta Description, H1, H2, Word Count, Internal Links, Images, Alt Text) and action checklist weaknesses directly to W4 Audit Results screen.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.3-verified-page-auditor-mapping.md',
   },
   {
