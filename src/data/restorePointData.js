@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.0-wp',
+    version: 'v1.0-wp',
+    gitTag: 'v1.0-wordpress-import-working',
+    commit: '2cd1a2c',
+    date: '07-08-2026 12:50',
+    title: 'First Working WordPress Import',
+    description: 'First fully working WordPress integration. Website connection, WordPress sync, Exporter integration, live page inventory import, and W3 Page Management.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.0-wordpress-import-working.md',
+  },
+  {
     id: 'v1.2',
     version: 'v1.2',
     gitTag: 'v1.2-wordpress-synchronisation-architecture',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 07:13',
     title: 'WordPress Synchronisation Architecture',
     description: 'Complete and approved WordPress Synchronisation Architecture. Integration contracts, package versioning, packageId (UUID), and orchestration boundaries frozen baseline before implementation.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.2-wordpress-synchronisation-architecture.md',
   },
   {

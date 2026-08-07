@@ -10,7 +10,8 @@ Every future restore point must update this file.
 | v1.0 | `v1.0-clean-foundation` | `8464b6f` | 30-07-2026 13:46 | Clean Vite + React foundation. GitHub Pages deployment configured (later replaced by TSE Deployer). No application code. | Superseded |
 | v1.2-old | `v1.2-websites-dashboard` | `9f42b7e` | 30-07-2026 17:39 | Milestone 2 dashboard with sidebar, summary cards and website grid. Superseded when dashboard was cleared for master tile approach. | Superseded |
 | v1.1 | `v1.1-foundation-master-tile` | `61c1e83` | 07-08-2026 05:39 | Project Foundation complete and approved. Automatic deployment verified via TSE Deployer. Master Website Tile built and approved. | Superseded |
-| v1.2 | `v1.2-wordpress-synchronisation-architecture` | `8e0897e` | 07-08-2026 07:13 | Complete and approved WordPress Synchronisation Architecture. Integration contracts, package versioning, packageId (UUID), and orchestration boundaries frozen baseline before implementation. | **Current** |
+| v1.2 | `v1.2-wordpress-synchronisation-architecture` | `8e0897e` | 07-08-2026 07:13 | Complete and approved WordPress Synchronisation Architecture. Integration contracts, package versioning, packageId (UUID), and orchestration boundaries frozen baseline before implementation. | Superseded |
+| v1.0-wp | `v1.0-wordpress-import-working` | `2cd1a2c` | 07-08-2026 12:50 | First fully working WordPress integration. Website connection, WordPress sync, Exporter integration, live page inventory import, and W3 Page Management. | **Current** |
 
 ---
 
