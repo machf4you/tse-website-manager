@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.7-remove-status',
+    version: 'v1.7-remove-status',
+    gitTag: 'v1.7-removed-redundant-status-column',
+    commit: '044108f',
+    date: '07-08-2026 16:48',
+    title: 'Removed Redundant Status Column',
+    description: 'Removed the duplicate Status column and reallocated width to the Target column (now 28% width) for long target phrase display. Action Required filter tab remains tied to unconfigured actions.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.7-removed-redundant-status-column.md',
+  },
+  {
     id: 'v1.6-page-width',
     version: 'v1.6-page-width',
     gitTag: 'v1.6-increased-page-width',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 16:45',
     title: 'Increased Page Width (10%)',
     description: 'Expanded main page container max-width by 10% across Page Management (1400px -> 1540px) and Dashboard views (1320px -> 1452px) for roomier multi-column layouts.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.6-increased-page-width.md',
   },
   {
