@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.1-prio-sort',
+    version: 'v2.1-prio-sort',
+    gitTag: 'v2.1-default-priority-sort',
+    commit: 'afdeece',
+    date: '07-08-2026 17:16',
+    title: 'Default Priority Sort Order',
+    description: 'Updated W3 Page Management default sort column state from alphabetical title order to Priority order (Hubs -> Landing -> Topical -> Unclassified/Excluded).',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.1-default-priority-sort.md',
+  },
+  {
     id: 'v2.0-auditor-integration',
     version: 'v2.0-auditor-integration',
     gitTag: 'v2.0-tse-page-auditor-integration',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:11',
     title: 'TSE Page Auditor Integration',
     description: 'Integrated Website Manager directly with the separate TSE Page Auditor engine (POST /api/audit). Sends Website ID, Page ID, Page URL, Target Phrase, and SEO Page Type, rendering returned audit scores and action checklists dynamically.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.0-tse-page-auditor-integration.md',
   },
   {
