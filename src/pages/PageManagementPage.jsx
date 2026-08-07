@@ -4,39 +4,9 @@ import './PageManagementPage.css'
 export default function PageManagementPage({ site, storedPackageData, onBack, onTabChange }) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
 
-  // Extract exported page inventory from stored exporter package using priority chain
-  const pagesList = (() => {
-    console.log('[DEBUG PageManagementPage] storedPackageData:', storedPackageData)
-    if (!storedPackageData) return []
-    console.log('[DEBUG PageManagementPage] storedPackageData.packageData:', storedPackageData.packageData)
-    console.log('[DEBUG PageManagementPage] storedPackageData.packageData?.pages:', storedPackageData.packageData?.pages)
-    console.log('[DEBUG PageManagementPage] storedPackageData.packageData?.content?.pages:', storedPackageData.packageData?.content?.pages)
-    console.log('[DEBUG PageManagementPage] storedPackageData.content?.pages:', storedPackageData.content?.pages)
-    console.log('[DEBUG PageManagementPage] storedPackageData.pages:', storedPackageData.pages)
-    console.log('[DEBUG PageManagementPage] storedPackageData.data?.pages:', storedPackageData.data?.pages)
-    return (
-      storedPackageData.packageData?.pages ||
-      storedPackageData.packageData?.content?.pages ||
-      storedPackageData.content?.pages ||
-      storedPackageData.pages ||
-      storedPackageData.data?.pages ||
-      (Array.isArray(storedPackageData.data) ? storedPackageData.data : []) ||
-      []
-    )
-  })()
-
-  // Extract exported blog posts from stored exporter package using priority chain
-  const _postsList = (() => {
-    if (!storedPackageData) return []
-    return (
-      storedPackageData.packageData?.posts ||
-      storedPackageData.packageData?.content?.posts ||
-      storedPackageData.content?.posts ||
-      storedPackageData.posts ||
-      storedPackageData.data?.posts ||
-      []
-    )
-  })()
+  // Extract exported page inventory directly from storedPackageData.data.pages
+  const pagesList = storedPackageData?.data?.pages || []
+  const _postsList = storedPackageData?.data?.posts || []
 
   // Filter pages based on filter tab selection
   const filteredPages = pagesList.filter(p => {

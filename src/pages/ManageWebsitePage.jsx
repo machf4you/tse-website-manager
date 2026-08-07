@@ -97,41 +97,10 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [syncError, setSyncError] = useState(null)
   const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
 
-  // Extract exported page inventory from stored exporter package using priority chain
-  const exportedPages = (() => {
-    const pkg = storedPackageData || site?.storedPackageData
-    console.log('[DEBUG ManageWebsitePage] storedPackageData:', pkg)
-    if (!pkg) return []
-    console.log('[DEBUG ManageWebsitePage] pkg.packageData:', pkg.packageData)
-    console.log('[DEBUG ManageWebsitePage] pkg.packageData?.pages:', pkg.packageData?.pages)
-    console.log('[DEBUG ManageWebsitePage] pkg.packageData?.content?.pages:', pkg.packageData?.content?.pages)
-    console.log('[DEBUG ManageWebsitePage] pkg.content?.pages:', pkg.content?.pages)
-    console.log('[DEBUG ManageWebsitePage] pkg.pages:', pkg.pages)
-    console.log('[DEBUG ManageWebsitePage] pkg.data?.pages:', pkg.data?.pages)
-    return (
-      pkg.packageData?.pages ||
-      pkg.packageData?.content?.pages ||
-      pkg.content?.pages ||
-      pkg.pages ||
-      pkg.data?.pages ||
-      (Array.isArray(pkg.data) ? pkg.data : []) ||
-      []
-    )
-  })()
-
-  // Extract exported blog posts from stored exporter package using priority chain
-  const _exportedPosts = (() => {
-    const pkg = storedPackageData || site?.storedPackageData
-    if (!pkg) return []
-    return (
-      pkg.packageData?.posts ||
-      pkg.packageData?.content?.posts ||
-      pkg.content?.posts ||
-      pkg.posts ||
-      pkg.data?.posts ||
-      []
-    )
-  })()
+  // Extract exported page inventory directly from storedPackageData.data.pages
+  const pkg = storedPackageData || site?.storedPackageData
+  const exportedPages = pkg?.data?.pages || []
+  const _exportedPosts = pkg?.data?.posts || []
 
   const timerRef = useRef(null)
 
