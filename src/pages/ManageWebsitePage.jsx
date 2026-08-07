@@ -148,19 +148,6 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   if (!site) return null
 
-  if (activeTab === 'w3') {
-    return (
-      <PageManagementPage
-        site={site}
-        storedPackageData={storedPackageData || site.storedPackageData}
-        onBack={() => setActiveTab('w2')}
-        onTabChange={(tab) => setActiveTab(tab)}
-        onSyncFromWordPress={handleSynchroniseClick}
-        isSyncing={isSyncing}
-      />
-    )
-  }
-
   const handleSynchroniseClick = async () => {
     if (isSyncing) return
     setIsSyncing(true)
@@ -221,6 +208,19 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         }
       }
     }, 500)
+  }
+
+  if (activeTab === 'w3') {
+    return (
+      <PageManagementPage
+        site={site}
+        storedPackageData={storedPackageData || site.storedPackageData}
+        onBack={() => setActiveTab('w2')}
+        onTabChange={(tab) => setActiveTab(tab)}
+        onSyncFromWordPress={handleSynchroniseClick}
+        isSyncing={isSyncing}
+      />
+    )
   }
 
   const progressPercent = Math.round(((stageIndex + 1) / SYNC_STAGES.length) * 100)
