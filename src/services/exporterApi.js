@@ -37,11 +37,15 @@ export async function fetchTseWordPressExportPackage({
     })
 
     if (!response.ok) {
+      let customMsg = `TSE Exporter endpoint returned status ${response.status} (${response.statusText}).`
+      if (response.status === 401) {
+        customMsg = 'WordPress Authentication Failed: Invalid Username or Application Password (HTTP 401).'
+      }
       return {
         success: false,
         status: response.status,
         error: `EXPORTER_HTTP_${response.status}`,
-        message: `TSE Exporter endpoint returned status ${response.status} (${response.statusText}).`,
+        message: customMsg,
       }
     }
 
