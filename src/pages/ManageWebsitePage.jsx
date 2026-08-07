@@ -114,8 +114,8 @@ export default function ManageWebsitePage({ site, onBack }) {
     // Call Exporter Service
     const exporterPromise = fetchTseWordPressExportPackage({
       websiteUrl: site.url,
-      username: site.connectedUser || site.wpUser,
-      applicationPassword: site.wpPass,
+      username: site.wpUser || site.connectedUser || '',
+      applicationPassword: site.wpPass || '',
     })
 
     let idx = 0

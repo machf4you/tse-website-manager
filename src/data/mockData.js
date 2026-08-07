@@ -5,6 +5,8 @@ export const mockSiteTile = {
   name: 'Bathroom Upgrades',
   url: 'https://www.bathroomupgrades.co.uk',
   platform: 'wordpress',
+  wpUser: 'admin',
+  wpPass: '',
   lifecycleStage: 7,
   topIndicator: 'connected', // connected | partial | disconnected | pending | connecting
   isSynchronised: true,
@@ -20,7 +22,7 @@ export const mockSiteTile = {
 }
 
 // ── Factory: build a Stage 3 (Platform Connected) record after WP connection
-export function buildWordPressSite({ name, url, portfolio, elementorEnabled, user }) {
+export function buildWordPressSite({ name, url, portfolio, elementorEnabled, user, wpUser, wpPass }) {
   return {
     id: Date.now(),
     name,
@@ -28,7 +30,9 @@ export function buildWordPressSite({ name, url, portfolio, elementorEnabled, use
     platform: 'wordpress',
     portfolio,
     elementorEnabled,
-    connectedUser: user ? user.name : null,
+    wpUser: wpUser || (user ? user.name : ''),
+    wpPass: wpPass || '',
+    connectedUser: user ? user.name : (wpUser || null),
     lifecycleStage: 3,
     topIndicator: 'connected',
     isSynchronised: false,

@@ -236,9 +236,9 @@ export default function AddWebsiteDialog({
           portfolio,
           elementorEnabled,
           user: res.user,
+          wpUser: wpUser.trim(),
+          wpPass: wpPass.trim(),
         })
-        newTile.wpUser = wpUser.trim()
-        newTile.wpPass = wpPass.trim()
 
         if (onAddWebsite) {
           onAddWebsite(newTile)
