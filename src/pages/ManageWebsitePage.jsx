@@ -97,6 +97,31 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [syncError, setSyncError] = useState(null)
   const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
 
+  // Extract exported page inventory from stored exporter package using priority chain
+  const exportedPages = (() => {
+    const pkg = storedPackageData || site?.storedPackageData
+    if (!pkg) return []
+    return (
+      pkg.content?.pages ||
+      pkg.pages ||
+      pkg.data?.pages ||
+      (Array.isArray(pkg.data) ? pkg.data : []) ||
+      []
+    )
+  })()
+
+  // Extract exported blog posts from stored exporter package using priority chain
+  const _exportedPosts = (() => {
+    const pkg = storedPackageData || site?.storedPackageData
+    if (!pkg) return []
+    return (
+      pkg.content?.posts ||
+      pkg.posts ||
+      pkg.data?.posts ||
+      []
+    )
+  })()
+
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -274,7 +299,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">TOTAL PAGES FOUND</span>
-          <span className="w2-stat-val val-white">{isSynced ? '40' : '0'}</span>
+          <span className="w2-stat-val val-white">{isSynced ? exportedPages.length : 0}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">CONFIGURED PAGES</span>
@@ -501,7 +526,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
                 {isSynced ? `Last sync: ${lastSyncDate || '07-08-2026 08:15'}` : 'Sync: Pending'}
               </span>
               <span className="status-sub">
-                {isSynced ? 'Pages crawled: 40' : 'Pages: Not extracted'}
+                {isSynced ? `Pages crawled: ${exportedPages.length}` : 'Pages: Not extracted'}
               </span>
               <span className="status-sub">
                 {isSynced ? 'New pages found: 2' : 'Status: Ready to Sync'}

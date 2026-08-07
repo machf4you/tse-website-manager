@@ -4,14 +4,27 @@ import './PageManagementPage.css'
 export default function PageManagementPage({ site, storedPackageData, onBack, onTabChange }) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
 
-  // Extract exported page inventory from stored exporter package
+  // Extract exported page inventory from stored exporter package using priority chain
   const pagesList = (() => {
     if (!storedPackageData) return []
-    if (Array.isArray(storedPackageData.pages)) return storedPackageData.pages
-    if (Array.isArray(storedPackageData.content?.pages)) return storedPackageData.content.pages
-    if (Array.isArray(storedPackageData.data?.pages)) return storedPackageData.data.pages
-    if (Array.isArray(storedPackageData.data)) return storedPackageData.data
-    return []
+    return (
+      storedPackageData.content?.pages ||
+      storedPackageData.pages ||
+      storedPackageData.data?.pages ||
+      (Array.isArray(storedPackageData.data) ? storedPackageData.data : []) ||
+      []
+    )
+  })()
+
+  // Extract exported blog posts from stored exporter package using priority chain
+  const _postsList = (() => {
+    if (!storedPackageData) return []
+    return (
+      storedPackageData.content?.posts ||
+      storedPackageData.posts ||
+      storedPackageData.data?.posts ||
+      []
+    )
   })()
 
   // Filter pages based on filter tab selection
