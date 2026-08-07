@@ -1,14 +1,18 @@
 /**
  * Resilient package data extractor & metadata normalizer
- * Normalizes title, url, page type, and applies automatic exclusion rules upon import.
+ * Normalizes title, url, SEO Page Type classification, and applies automatic exclusion rules upon import.
  */
 
-export function normalizeImportedPage(p) {
+export function normalizeImportedPage(p, siteUrl = '') {
   if (!p || typeof p !== 'object') return p
 
-  // 1. Page Title (use actual WP title, do not display "Untitled Page" unless genuinely missing)
+  // 1. Meta Title / Page Title (use actual WP title, do not display "Untitled Page" unless genuinely missing)
   let title = ''
-  if (typeof p.title === 'object' && p.title !== null) {
+  if (typeof p.metaTitle === 'string' && p.metaTitle.trim()) {
+    title = p.metaTitle.trim()
+  } else if (typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) {
+    title = p.yoast_head_json.title.trim()
+  } else if (typeof p.title === 'object' && p.title !== null) {
     title = p.title.rendered || p.title.raw || ''
   } else if (typeof p.title === 'string') {
     title = p.title
@@ -22,23 +26,7 @@ export function normalizeImportedPage(p) {
   // 2. URL
   const url = (p.link || p.url || p.guid?.rendered || p.guid || '').trim()
 
-  // 3. Page Type (Import WordPress object type: Page, Post, Category, Tag, Author, Archive, Custom Post Type, Attachment, Other)
-  let rawType = p.type || p.post_type || p.pageType || (p.taxonomy ? p.taxonomy : 'page')
-  let type = 'Page'
-  if (rawType) {
-    const lType = String(rawType).toLowerCase()
-    if (lType === 'page') type = 'Page'
-    else if (lType === 'post') type = 'Post'
-    else if (lType === 'category') type = 'Category'
-    else if (lType === 'tag' || lType === 'post_tag') type = 'Tag'
-    else if (lType === 'author') type = 'Author'
-    else if (lType === 'archive') type = 'Archive'
-    else if (lType === 'attachment') type = 'Attachment'
-    else if (lType === 'nav_menu_item') type = 'Other'
-    else type = lType.charAt(0).toUpperCase() + lType.slice(1)
-  }
-
-  // 4. Automatic Exclusion Rules
+  // 3. Automatic Exclusion Rules
   const lowerTitle = title.toLowerCase()
   const lowerUrl = url.toLowerCase()
 
@@ -69,12 +57,39 @@ export function normalizeImportedPage(p) {
 
   const isExcluded = p.isExcluded !== undefined ? Boolean(p.isExcluded) : matchesExclusion
 
+  // 4. SEO Page Classification (Website Manager SEO Page Type)
+  // Rule 1: Home page -> Always classify as Hub
+  const cleanUrlPath = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '')
+  const cleanSiteUrl = siteUrl ? siteUrl.trim().replace(/\/+$/, '') : ''
+  const isHomePage =
+    p.isHome === true ||
+    p.is_front_page === true ||
+    cleanUrlPath === '' ||
+    cleanUrlPath === '/' ||
+    (cleanSiteUrl && url.replace(/\/+$/, '') === cleanSiteUrl) ||
+    lowerTitle === 'home' ||
+    lowerTitle === 'homepage'
+
+  let seoPageType = 'Unclassified'
+  if (isExcluded) {
+    seoPageType = 'Excluded'
+  } else if (isHomePage) {
+    seoPageType = 'Hub'
+  } else {
+    seoPageType = 'Unclassified'
+  }
+
+  // Set Type column to represent Website Manager SEO Classification
+  const type = seoPageType
+
   return {
     ...p,
     title,
     url,
     type,
+    seoPageType,
     isExcluded,
+    isHomePage,
   }
 }
 
@@ -117,9 +132,9 @@ function extractRawPagesFromPackage(pkg) {
   return []
 }
 
-export function extractPagesFromPackage(pkg) {
+export function extractPagesFromPackage(pkg, siteUrl = '') {
   const rawPages = extractRawPagesFromPackage(pkg)
-  return rawPages.map(normalizeImportedPage)
+  return rawPages.map(page => normalizeImportedPage(page, siteUrl))
 }
 
 export function extractPostsFromPackage(pkg) {

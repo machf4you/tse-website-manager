@@ -7,7 +7,7 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
 
   // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
-  const pagesList = extractPagesFromPackage(pkg)
+  const pagesList = extractPagesFromPackage(pkg, site?.url)
   const _postsList = extractPostsFromPackage(pkg)
 
   // Filter pages based on filter tab selection
@@ -150,7 +150,15 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
                     <div className="w3-page-title">{page.title}</div>
                     <div className="w3-page-slug">{page.url}</div>
                   </td>
-                  <td className="col-type">{page.type}</td>
+                  <td className="col-type">
+                    <span className={
+                      page.type === 'Hub' ? 'type-hub' :
+                      page.type === 'Excluded' ? 'type-excluded' :
+                      'type-unclassified'
+                    }>
+                      {page.type}
+                    </span>
+                  </td>
                   <td className="col-priority">{page.priority || '-'}</td>
                   <td className="col-target">{page.target || '-'}</td>
                   <td className="col-status">
