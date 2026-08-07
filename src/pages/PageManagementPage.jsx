@@ -299,18 +299,22 @@ export default function PageManagementPage({
                   <td className="col-priority">{page.priority !== undefined ? page.priority : 0}</td>
                   <td className="col-target">{page.target || page.targetPhrase || ''}</td>
                   <td className="col-status">
-                    <span className={page.isExcluded ? 'status-excluded' : (page.isConfigured ? 'status-included' : 'status-included')}>
-                      {page.isExcluded ? 'Excluded' : (page.isConfigured ? 'Configured' : 'Included')}
+                    <span className={
+                      page.isExcluded ? 'status-excluded' :
+                      page.isConfigured ? 'status-configured' :
+                      'status-unconfigured'
+                    }>
+                      {page.isExcluded ? 'Excluded' : (page.isConfigured ? 'Configured' : 'Unconfigured')}
                     </span>
                   </td>
                   <td className="col-actions">
                     <button
                       type="button"
-                      className="btn-configure-page"
+                      className={`btn-configure-page ${page.isConfigured ? 'btn-configured-state' : ''}`}
                       onClick={() => setEditingPage(page)}
                       id={`btn-configure-page-${page.id || idx}`}
                     >
-                      Configure
+                      {page.isConfigured ? 'Configured' : 'Configure'}
                     </button>
                   </td>
                 </tr>
