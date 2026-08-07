@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.7-target-not-set',
+    version: 'v2.7-target-not-set',
+    gitTag: 'v2.7-target-column-not-set-fallback',
+    commit: '1a79640',
+    date: '07-08-2026 17:44',
+    title: 'Not Set Fallback for Target Column',
+    description: 'Updated Target column on W3 Page Management table to display "Not Set" in muted italicized text until a target phrase is entered.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.7-target-column-not-set-fallback.md',
+  },
+  {
     id: 'v2.6-exclude-fix',
     version: 'v2.6-exclude-fix',
     gitTag: 'v2.6-fixed-one-click-exclude-key-matching',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:41',
     title: 'Fixed Instant Exclude Action',
     description: 'Fixed key matching for 1-click Exclude/Include row actions so pages disappear from the active table view instantly when Excluded.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.6-fixed-one-click-exclude-key-matching.md',
   },
   {
