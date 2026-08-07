@@ -208,6 +208,31 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.sortable-th:hover {
+  color: #ffffff;
+}
+
+.sort-icon {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.7rem;
+}
+
+.sort-icon.inactive {
+  opacity: 0.35;
+}
+
+.sort-icon.active {
+  color: rgb(52, 211, 153);
+  opacity: 1;
+}
+
 .w3-table td {
   padding: 10px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);

@@ -11,6 +11,17 @@ export default function PageManagementPage({
   isSyncing,
 }) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
+  const [sortColumn, setSortColumn] = useState('page') // 'page' | 'type' | 'priority'
+  const [sortDirection, setSortDirection] = useState('asc') // 'asc' | 'desc'
+
+  const handleSort = (col) => {
+    if (sortColumn === col) {
+      setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortColumn(col)
+      setSortDirection('asc')
+    }
+  }
 
   // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
@@ -25,11 +36,37 @@ export default function PageManagementPage({
     return true
   })
 
+  // Sort filtered pages based on sortColumn and sortDirection
+  const sortedPages = [...filteredPages].sort((a, b) => {
+    let valA = ''
+    let valB = ''
+
+    if (sortColumn === 'page') {
+      valA = (a.title || '').toLowerCase()
+      valB = (b.title || '').toLowerCase()
+    } else if (sortColumn === 'type') {
+      valA = (a.type || '').toLowerCase()
+      valB = (b.type || '').toLowerCase()
+    } else if (sortColumn === 'priority') {
+      valA = String(a.priority || '').toLowerCase()
+      valB = String(b.priority || '').toLowerCase()
+    }
+
+    if (valA < valB) return sortDirection === 'asc' ? -1 : 1
+    if (valA > valB) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+
   // Calculate filter tab counts
   const allCount = pagesList.length
   const configuredCount = pagesList.filter(p => p.isConfigured === true).length
   const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded).length
   const excludedCount = pagesList.filter(p => p.isExcluded === true).length
+
+  const renderSortIndicator = (col) => {
+    if (sortColumn !== col) return <span className="sort-icon inactive">↕</span>
+    return <span className="sort-icon active">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+  }
 
   return (
     <div className="w3-page-container">
@@ -153,17 +190,23 @@ export default function PageManagementPage({
         <table className="w3-table">
           <thead>
             <tr>
-              <th>Page</th>
-              <th>Type</th>
-              <th>Priority</th>
+              <th className="sortable-th" onClick={() => handleSort('page')}>
+                Page {renderSortIndicator('page')}
+              </th>
+              <th className="sortable-th" onClick={() => handleSort('type')}>
+                Type {renderSortIndicator('type')}
+              </th>
+              <th className="sortable-th" onClick={() => handleSort('priority')}>
+                Priority {renderSortIndicator('priority')}
+              </th>
               <th>Target</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredPages.length > 0 ? (
-              filteredPages.map((page, idx) => (
+            {sortedPages.length > 0 ? (
+              sortedPages.map((page, idx) => (
                 <tr key={page.id || idx}>
                   <td className="col-page">
                     <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
