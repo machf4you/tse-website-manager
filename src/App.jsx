@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import './App.css'
 import WebsitesDashboard from './pages/WebsitesDashboard'
+import GlobalSettings from './pages/GlobalSettings'
 
 const ArrowLeftIcon = () => (
   <svg
@@ -64,6 +66,8 @@ const SlidersIcon = () => (
 )
 
 function App() {
+  const [activeNavTab, setActiveNavTab] = useState('websites')
+
   return (
     <div className="app">
       <header className="app-header" role="banner">
@@ -92,17 +96,20 @@ function App() {
         <nav className="header-nav" aria-label="Primary navigation">
           <button
             type="button"
-            className="nav-tab active"
-            aria-current="page"
+            className={`nav-tab ${activeNavTab === 'websites' ? 'active' : ''}`}
+            aria-current={activeNavTab === 'websites' ? 'page' : undefined}
             id="nav-tab-websites"
+            onClick={() => setActiveNavTab('websites')}
           >
             <GlobeIcon />
             Websites
           </button>
           <button
             type="button"
-            className="nav-tab"
+            className={`nav-tab ${activeNavTab === 'global-settings' ? 'active' : ''}`}
+            aria-current={activeNavTab === 'global-settings' ? 'page' : undefined}
             id="nav-tab-global-settings"
+            onClick={() => setActiveNavTab('global-settings')}
           >
             <SlidersIcon />
             Global Settings
@@ -120,7 +127,8 @@ function App() {
         role="main"
         aria-label="Main content"
       >
-        <WebsitesDashboard />
+        {activeNavTab === 'websites' && <WebsitesDashboard />}
+        {activeNavTab === 'global-settings' && <GlobalSettings />}
       </main>
     </div>
   )

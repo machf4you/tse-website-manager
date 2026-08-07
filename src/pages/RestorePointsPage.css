@@ -1,0 +1,232 @@
+/* ── Restore Points Page ── */
+.restore-points-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+}
+
+/* Header Row */
+.rp-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rp-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: rgb(248, 250, 252);
+  margin: 0 0 0.25rem 0;
+}
+
+.rp-subtitle {
+  font-size: 0.875rem;
+  color: rgb(148, 163, 184);
+  margin: 0;
+}
+
+/* Create Restore Point Button */
+.btn-create-restore-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: rgb(16, 185, 129);
+  color: rgb(255, 255, 255);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-create-restore-point:hover {
+  background-color: rgb(5, 150, 105);
+}
+
+/* Table Wrapper */
+.rp-table-wrapper {
+  background-color: rgb(17, 24, 39);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.rp-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+}
+
+.rp-table th {
+  background-color: rgba(255, 255, 255, 0.03);
+  color: rgb(148, 163, 184);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rp-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: rgb(226, 232, 240);
+  vertical-align: middle;
+}
+
+.rp-row {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.rp-row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.rp-row-selected {
+  background-color: rgba(16, 185, 129, 0.08);
+}
+
+/* Cell specifics */
+.rp-cell-version {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.rp-version-badge {
+  font-weight: 700;
+  color: rgb(248, 250, 252);
+}
+
+.rp-current-badge {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: rgb(52, 211, 153);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.rp-cell-tag code,
+.rp-cell-commit code {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background-color: rgba(0, 0, 0, 0.25);
+  padding: 3px 6px;
+  border-radius: 4px;
+  color: rgb(148, 163, 184);
+}
+
+.rp-cell-date {
+  white-space: nowrap;
+  color: rgb(148, 163, 184);
+}
+
+.rp-cell-title {
+  font-weight: 600;
+  color: rgb(248, 250, 252);
+  white-space: nowrap;
+}
+
+.rp-cell-desc {
+  color: rgb(148, 163, 184);
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+/* Modal / Detail View */
+.rp-doc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+  backdrop-filter: blur(4px);
+}
+
+.rp-doc-modal {
+  background-color: rgb(17, 24, 39);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+  color: rgb(248, 250, 252);
+}
+
+.rp-doc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rp-doc-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.rp-doc-sub {
+  font-size: 0.8rem;
+  color: rgb(148, 163, 184);
+}
+
+.rp-doc-close {
+  background: none;
+  border: none;
+  color: rgb(148, 163, 184);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.rp-doc-body {
+  padding: 1.5rem;
+}
+
+.rp-doc-placeholder ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.rp-doc-notice {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px dashed rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  color: rgb(52, 211, 153);
+  font-size: 0.85rem;
+  text-align: center;
+}
