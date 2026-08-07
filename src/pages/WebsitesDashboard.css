@@ -1,7 +1,36 @@
-/* Single tile preview — centres the tile in the content area */
+/* Single tile preview */
 .tile-preview-page {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: flex-start;
   padding: 2.5rem;
+  gap: 1.5rem;
 }
+
+/* Action row above tile */
+.tile-preview-actions {
+  display: flex;
+  align-items: center;
+}
+
+/* Add Website button */
+.btn-add-website {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: rgb(16, 185, 129);
+  color: rgb(255, 255, 255);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-add-website:hover {
+  background-color: rgb(5, 150, 105);
+}
+
