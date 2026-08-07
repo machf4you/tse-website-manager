@@ -38,7 +38,7 @@ const INDICATOR = {
   connecting:   { label: 'CONNECTING…',  cls: 'status-connecting'   },
 }
 
-export default function WebsiteTile({ site, onManage }) {
+export default function WebsiteTile({ site, onManage, onEdit }) {
   const ind = INDICATOR[site.topIndicator] || INDICATOR.pending
 
   return (
@@ -98,6 +98,7 @@ export default function WebsiteTile({ site, onManage }) {
         type="button"
         className="tile-btn-secondary"
         id={`btn-edit-${site.id}`}
+        onClick={() => onEdit && onEdit(site)}
       >
         Edit Website
       </button>

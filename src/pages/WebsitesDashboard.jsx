@@ -10,6 +10,7 @@ const STORAGE_KEY = 'tse_connected_websites_v1'
 export default function WebsitesDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [managedSite, setManagedSite] = useState(null)
+  const [editingSite, setEditingSite] = useState(null)
   const [sites, setSites] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -37,6 +38,11 @@ export default function WebsitesDashboard() {
     setSites(prev => [newSite, ...prev])
   }
 
+  const handleUpdateWebsite = (updatedSite) => {
+    setSites(prev => prev.map(s => s.id === updatedSite.id ? updatedSite : s))
+    setEditingSite(null)
+  }
+
   if (managedSite) {
     return (
       <ManageWebsitePage
@@ -61,7 +67,10 @@ export default function WebsitesDashboard() {
           type="button"
           className="btn-add-website"
           id="btn-add-website"
-          onClick={() => setDialogOpen(true)}
+          onClick={() => {
+            setEditingSite(null)
+            setDialogOpen(true)
+          }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
@@ -79,15 +88,21 @@ export default function WebsitesDashboard() {
             key={site.id}
             site={site}
             onManage={setManagedSite}
+            onEdit={setEditingSite}
           />
         ))}
       </div>
 
-      {/* Dialog */}
+      {/* Add / Edit Dialog */}
       <AddWebsiteDialog
-        isOpen={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        isOpen={dialogOpen || Boolean(editingSite)}
+        onClose={() => {
+          setDialogOpen(false)
+          setEditingSite(null)
+        }}
         onAddWebsite={handleAddWebsite}
+        onUpdateWebsite={handleUpdateWebsite}
+        editingSite={editingSite}
       />
 
     </div>

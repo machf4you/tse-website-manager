@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { connectWordPress, WP_STEPS } from '../services/wordpressApi'
 import { buildWordPressSite } from '../data/mockData'
 import './AddWebsiteDialog.css'
@@ -80,7 +80,7 @@ function PortfolioSelect({ id, value, onChange, disabled }) {
   )
 }
 
-/* ── Magento field set (UI preserved, no logic) ── */
+/* ── Magento field set ── */
 function MagentoFields() {
   return (
     <>
@@ -106,7 +106,13 @@ function OtherFields() {
 }
 
 /* ── Main dialog ── */
-export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
+export default function AddWebsiteDialog({
+  isOpen,
+  onClose,
+  onAddWebsite,
+  onUpdateWebsite,
+  editingSite = null,
+}) {
   const [platform, setPlatform] = useState('wordpress')
   
   // WordPress form state
@@ -125,6 +131,20 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
     auth: 'pending',
     perms: 'pending',
   })
+
+  // Populate fields when editing an existing site
+  useEffect(() => {
+    if (isOpen && editingSite) {
+      setWpName(editingSite.name || '')
+      setWpUrl(editingSite.url || '')
+      setWpUser(editingSite.connectedUser || editingSite.wpUser || '')
+      setWpPass(editingSite.wpPass || '')
+      setPortfolio(editingSite.portfolio || 'tse')
+      setElementorEnabled(editingSite.elementorEnabled || false)
+    } else if (isOpen && !editingSite) {
+      resetForm()
+    }
+  }, [isOpen, editingSite])
 
   if (!isOpen) return null
 
@@ -195,16 +215,34 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
     }
 
     if (res.success) {
-      const newTile = buildWordPressSite({
-        name: wpName.trim(),
-        url: wpUrl.trim(),
-        portfolio,
-        elementorEnabled,
-        user: res.user,
-      })
+      if (editingSite && onUpdateWebsite) {
+        // Update existing site
+        const updatedTile = {
+          ...editingSite,
+          name: wpName.trim(),
+          url: wpUrl.trim(),
+          portfolio,
+          elementorEnabled,
+          wpUser: wpUser.trim(),
+          wpPass: wpPass.trim(),
+          connectedUser: res.user ? res.user.name : wpUser.trim(),
+        }
+        onUpdateWebsite(updatedTile)
+      } else {
+        // Build new site
+        const newTile = buildWordPressSite({
+          name: wpName.trim(),
+          url: wpUrl.trim(),
+          portfolio,
+          elementorEnabled,
+          user: res.user,
+        })
+        newTile.wpUser = wpUser.trim()
+        newTile.wpPass = wpPass.trim()
 
-      if (onAddWebsite) {
-        onAddWebsite(newTile)
+        if (onAddWebsite) {
+          onAddWebsite(newTile)
+        }
       }
 
       resetForm()
@@ -220,14 +258,14 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
       className="aw-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-label="Connect new website"
+      aria-label={editingSite ? 'Edit website connection' : 'Connect new website'}
       onClick={handleBackdrop}
     >
       <div className="aw-dialog">
 
         {/* Header */}
         <div className="aw-header">
-          <h2 className="aw-title">Connect New Website</h2>
+          <h2 className="aw-title">{editingSite ? 'Edit Website Connection' : 'Connect New Website'}</h2>
           <button
             type="button"
             className="aw-close"
@@ -358,7 +396,7 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
             id="btn-connect-website"
             disabled={isConnecting || platform !== 'wordpress'}
           >
-            {isConnecting ? 'Connecting…' : 'Connect Website'}
+            {isConnecting ? (editingSite ? 'Updating…' : 'Connecting…') : (editingSite ? 'Update Connection' : 'Connect Website')}
           </button>
         </div>
 
