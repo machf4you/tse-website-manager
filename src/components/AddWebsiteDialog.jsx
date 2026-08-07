@@ -138,7 +138,7 @@ export default function AddWebsiteDialog({
     if (isOpen && editingSite) {
       setWpName(editingSite.name || '')
       setWpUrl(editingSite.url || '')
-      setWpUser(editingSite.connectedUser || editingSite.wpUser || '')
+      setWpUser(editingSite.wpUser || editingSite.connectedUser || '')
       setWpPass(editingSite.wpPass || '')
       setPortfolio(editingSite.portfolio || 'tse')
       setElementorEnabled(editingSite.elementorEnabled || false)
