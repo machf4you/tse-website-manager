@@ -224,16 +224,16 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       </div>
 
       {/* ── Stage 3: Unsynchronised Prominent Banner ── */}
-      {!isSynced && (
+      {(!isSynced || exportedPages.length === 0) && (
         <div className={`w2-unsynced-banner ${syncError ? 'banner-error' : ''}`} role="alert" id="banner-unsynchronised">
           {!isSyncing ? (
             <>
               <div className="w2-banner-text">
                 <h2 className="w2-banner-heading">
-                  {syncError ? 'Synchronisation Failed' : 'This website has not yet been synchronised.'}
+                  {syncError ? 'Synchronisation Failed' : (exportedPages.length === 0 && isSynced ? 'Synchronisation Package Required' : 'This website has not yet been synchronised.')}
                 </h2>
                 <p className="w2-banner-explanation">
-                  {syncError ? syncError : 'Synchronisation is required before pages, audits and other website data become available.'}
+                  {syncError ? syncError : (exportedPages.length === 0 && isSynced ? 'Page inventory is empty. Click Synchronise Website to fetch pages from WordPress.' : 'Synchronisation is required before pages, audits and other website data become available.')}
                 </p>
               </div>
               <button
@@ -292,9 +292,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       </div>
 
       {/* Proof Banner for Stored Package Data */}
-      {storedPackageData && (
+      {storedPackageData && exportedPages.length > 0 && (
         <div className="w2-package-proof-badge" id="package-proof-badge">
-          <span>Package Stored: ID {storedPackageData.packageId || 'UUID'} (Schema {storedPackageData.schemaVersion || '1.0'})</span>
+          <span>Package Stored: ID {storedPackageData.packageId || 'UUID'} ({exportedPages.length} Pages Exported)</span>
         </div>
       )}
 
