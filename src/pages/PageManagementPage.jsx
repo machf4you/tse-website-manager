@@ -5,8 +5,9 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
 
   // Extract exported page inventory directly from storedPackageData.data.pages
-  const pagesList = storedPackageData?.data?.pages || []
-  const _postsList = storedPackageData?.data?.posts || []
+  const pagesList = storedPackageData?.data?.pages || storedPackageData?.pages || []
+  const _postsList = storedPackageData?.data?.posts || storedPackageData?.posts || []
+  console.log('[RENDER W3]', { storedPackageData, pagesListLength: pagesList.length })
 
   // Filter pages based on filter tab selection
   const filteredPages = pagesList.filter(p => {

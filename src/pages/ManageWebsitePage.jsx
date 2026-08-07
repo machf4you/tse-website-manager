@@ -99,8 +99,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   // Extract exported page inventory directly from storedPackageData.data.pages
   const pkg = storedPackageData || site?.storedPackageData
-  const exportedPages = pkg?.data?.pages || []
-  const _exportedPosts = pkg?.data?.posts || []
+  const exportedPages = pkg?.data?.pages || pkg?.pages || []
+  const _exportedPosts = pkg?.data?.posts || pkg?.posts || []
+  console.log('[RENDER W2]', { pkg, exportedPagesLength: exportedPages.length })
 
   const timerRef = useRef(null)
 
