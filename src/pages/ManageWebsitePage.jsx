@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -55,8 +55,8 @@ const BrainIcon = () => (
   </svg>
 )
 
-const RefreshCwIcon = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+const RefreshCwIcon = ({ className }) => (
+  <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
     <path d="M3 3v5h5"/>
     <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
@@ -64,16 +64,66 @@ const RefreshCwIcon = () => (
   </svg>
 )
 
+const SYNC_STAGES = [
+  'Preparing synchronisation...',
+  'Connecting to WordPress...',
+  'Calling TSE WordPress Exporter...',
+  'Waiting for exporter...',
+  'Receiving synchronisation package...',
+  'Saving package...',
+  'Synchronisation complete.',
+]
+
+function formatNowDDMMYYYYHHMM() {
+  const d = new Date()
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${day}-${month}-${year} ${hours}:${minutes}`
+}
+
 export default function ManageWebsitePage({ site, onBack }) {
   const [isSynced, setIsSynced] = useState(() => {
     return Boolean(site && site.isSynchronised === true && site.lastSyncTimestamp)
   })
+  const [lastSyncDate, setLastSyncDate] = useState(() => site ? site.lastSyncTimestamp : null)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [stageIndex, setStageIndex] = useState(0)
+
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [])
 
   if (!site) return null
 
   const handleSynchroniseClick = () => {
-    setIsSynced(true)
+    if (isSyncing) return
+    setIsSyncing(true)
+    setStageIndex(0)
+
+    let idx = 0
+    timerRef.current = setInterval(() => {
+      idx += 1
+      if (idx < SYNC_STAGES.length) {
+        setStageIndex(idx)
+      } else {
+        clearInterval(timerRef.current)
+        timerRef.current = null
+        const completedTime = formatNowDDMMYYYYHHMM()
+        setLastSyncDate(completedTime)
+        setIsSynced(true)
+        setIsSyncing(false)
+      }
+    }, 600)
   }
+
+  const progressPercent = Math.round(((stageIndex + 1) / SYNC_STAGES.length) * 100)
 
   return (
     <div className="w2-dashboard">
@@ -93,21 +143,38 @@ export default function ManageWebsitePage({ site, onBack }) {
       {/* ── Stage 3: Unsynchronised Prominent Banner ── */}
       {!isSynced && (
         <div className="w2-unsynced-banner" role="alert" id="banner-unsynchronised">
-          <div className="w2-banner-text">
-            <h2 className="w2-banner-heading">This website has not yet been synchronised.</h2>
-            <p className="w2-banner-explanation">
-              Synchronisation is required before pages, audits and other website data become available.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="w2-btn-sync-primary"
-            id="btn-synchronise-website"
-            onClick={handleSynchroniseClick}
-          >
-            <RefreshCwIcon />
-            Synchronise Website
-          </button>
+          {!isSyncing ? (
+            <>
+              <div className="w2-banner-text">
+                <h2 className="w2-banner-heading">This website has not yet been synchronised.</h2>
+                <p className="w2-banner-explanation">
+                  Synchronisation is required before pages, audits and other website data become available.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="w2-btn-sync-primary"
+                id="btn-synchronise-website"
+                onClick={handleSynchroniseClick}
+              >
+                <RefreshCwIcon />
+                Synchronise Website
+              </button>
+            </>
+          ) : (
+            <div className="w2-sync-progress-panel" id="sync-progress-panel">
+              <div className="w2-sync-progress-header">
+                <div className="w2-sync-stage-title">
+                  <RefreshCwIcon className="icon-spin" />
+                  <span>Stage {stageIndex + 1} of {SYNC_STAGES.length}: {SYNC_STAGES[stageIndex]}</span>
+                </div>
+                <span className="w2-sync-percent">{progressPercent}%</span>
+              </div>
+              <div className="w2-progress-bar-track">
+                <div className="w2-progress-bar-fill" style={{ width: `${progressPercent}%` }} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -291,11 +358,11 @@ export default function ManageWebsitePage({ site, onBack }) {
               <>
                 <div className="act-row">
                   <span className="act-label">WordPress sync completed</span>
-                  <span className="act-time">07-08-2026 08:15</span>
+                  <span className="act-time">{lastSyncDate || '07-08-2026 08:15'}</span>
                 </div>
                 <div className="act-row">
                   <span className="act-label">2 new pages discovered</span>
-                  <span className="act-time">07-08-2026 08:15</span>
+                  <span className="act-time">{lastSyncDate || '07-08-2026 08:15'}</span>
                 </div>
                 <div className="act-row">
                   <span className="act-label">Audit completed</span>
@@ -366,7 +433,7 @@ export default function ManageWebsitePage({ site, onBack }) {
             <div className="status-content">
               <span className="status-success-title">Connected</span>
               <span className="status-sub">
-                {isSynced ? 'Last crawl: 07-08-2026 08:15' : 'Sync: Pending'}
+                {isSynced ? `Last sync: ${lastSyncDate || '07-08-2026 08:15'}` : 'Sync: Pending'}
               </span>
               <span className="status-sub">
                 {isSynced ? 'Pages crawled: 40' : 'Pages: Not extracted'}
