@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.3-audit-mapping',
+    version: 'v2.3-audit-mapping',
+    gitTag: 'v2.3-verified-page-auditor-mapping',
+    commit: '3fe468c',
+    date: '07-08-2026 17:25',
+    title: 'Verified Page Auditor Result Mapping',
+    description: 'Verified and mapped all 8 returned TSE Page Auditor criteria (Meta Title, Meta Description, H1, H2, Word Count, Internal Links, Images, Alt Text) and action checklist weaknesses directly to W4 Audit Results screen.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.3-verified-page-auditor-mapping.md',
+  },
+  {
     id: 'v2.2-module-designations',
     version: 'v2.2-module-designations',
     gitTag: 'v2.2-updated-w4-w5-w6-w7-module-designations',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:18',
     title: 'W4-W7 Module Designations',
     description: 'Renamed Page Audit Results to W4, Review Links to W5, Site Analysis to W6, and Website Settings to W7 across navigation tabs, pill tags, and dashboard cards.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.2-updated-w4-w5-w6-w7-module-designations.md',
   },
   {
