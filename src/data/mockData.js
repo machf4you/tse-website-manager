@@ -7,6 +7,8 @@ export const mockSiteTile = {
   platform: 'wordpress',
   lifecycleStage: 7,
   topIndicator: 'connected', // connected | partial | disconnected | pending | connecting
+  isSynchronised: true,
+  lastSyncTimestamp: '05-07-2026 14:30',
   taskCount: 4,
   status: {
     connection:       { label: 'Connected',          value: 'Connected',          variant: 'green'  },
@@ -29,6 +31,8 @@ export function buildWordPressSite({ name, url, portfolio, elementorEnabled, use
     connectedUser: user ? user.name : null,
     lifecycleStage: 3,
     topIndicator: 'connected',
+    isSynchronised: false,
+    lastSyncTimestamp: null,
     taskCount: 0,
     status: {
       connection:       { label: 'Connected',         value: 'Connected',          variant: 'green'  },

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -32,9 +33,7 @@ const SlidersIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
     <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
     <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
-    <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
-    <line x1="2" y1="14" x2="6" y2="14"/><line x1="10" y1="8" x2="14" y2="8"/>
-    <line x1="18" y1="16" x2="22" y2="16"/>
+    <line x1="20" y1="21" x2="20" y2="16"/><line x1="18" y1="16" x2="22" y2="16"/>
   </svg>
 )
 
@@ -56,8 +55,29 @@ const BrainIcon = () => (
   </svg>
 )
 
+const RefreshCwIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+    <path d="M3 3v5h5"/>
+    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+    <path d="M16 16h5v5"/>
+  </svg>
+)
+
 export default function ManageWebsitePage({ site, onBack }) {
+  const [syncStatus, setSyncStatus] = useState({
+    isSynced: site ? site.isSynchronised !== false : false,
+    syncMessage: null,
+  })
+
   if (!site) return null
+
+  const handleSynchroniseClick = () => {
+    setSyncStatus(prev => ({
+      ...prev,
+      syncMessage: 'Synchronisation ready. Connects to TSE WordPress Exporter in Stage 4.',
+    }))
+  }
 
   return (
     <div className="w2-dashboard">
@@ -73,6 +93,31 @@ export default function ManageWebsitePage({ site, onBack }) {
           ← Back to All Connected Websites
         </button>
       </div>
+
+      {/* ── Stage 3: Unsynchronised Prominent Banner ── */}
+      {!syncStatus.isSynced && (
+        <div className="w2-unsynced-banner" role="alert" id="banner-unsynchronised">
+          <div className="w2-banner-text">
+            <div className="w2-banner-title">
+              <span className="w2-banner-dot" aria-hidden="true" />
+              Website Connected — Synchronisation Pending
+            </div>
+            <p className="w2-banner-msg">This website has not yet been synchronised.</p>
+            {syncStatus.syncMessage && (
+              <p className="w2-banner-info">{syncStatus.syncMessage}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className="w2-btn-sync-primary"
+            id="btn-synchronise-website"
+            onClick={handleSynchroniseClick}
+          >
+            <RefreshCwIcon />
+            Synchronise Website
+          </button>
+        </div>
+      )}
 
       {/* ── Header Title & Main Action Buttons ── */}
       <div className="w2-header">
@@ -110,23 +155,23 @@ export default function ManageWebsitePage({ site, onBack }) {
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">TOTAL PAGES FOUND</span>
-          <span className="w2-stat-val val-white">40</span>
+          <span className="w2-stat-val val-white">{syncStatus.isSynced ? '40' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">CONFIGURED PAGES</span>
-          <span className="w2-stat-val val-emerald">2</span>
+          <span className="w2-stat-val val-emerald">{syncStatus.isSynced ? '2' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">UNCONFIGURED PAGES</span>
-          <span className="w2-stat-val val-slate">27</span>
+          <span className="w2-stat-val val-slate">{syncStatus.isSynced ? '27' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">ACTION REQUIRED</span>
-          <span className="w2-stat-val val-amber">29</span>
+          <span className="w2-stat-val val-amber">{syncStatus.isSynced ? '29' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">EXCLUDED PAGES</span>
-          <span className="w2-stat-val val-slate">11</span>
+          <span className="w2-stat-val val-slate">{syncStatus.isSynced ? '11' : '0'}</span>
         </div>
       </div>
 
@@ -134,7 +179,7 @@ export default function ManageWebsitePage({ site, onBack }) {
       <div className="w2-feature-cards-grid">
 
         {/* Card 1: Manage Pages */}
-        <div className="w2-feature-card theme-emerald">
+        <div className={`w2-feature-card theme-emerald ${!syncStatus.isSynced ? 'card-locked' : ''}`}>
           <div className="w2-fc-header">
             <div className="w2-fc-icon-bg">
               <FileTextIcon />
@@ -150,10 +195,18 @@ export default function ManageWebsitePage({ site, onBack }) {
             <li><span className="chk-icon">✓</span> Include / exclude pages</li>
             <li><span className="chk-icon">✓</span> Bulk actions and exports</li>
           </ul>
-          <button type="button" className="w2-fc-btn btn-open-emerald" id="btn-open-pages">
-            Open Pages ›
-          </button>
-          <span className="w2-fc-tag">W3 | PAGE MANAGEMENT</span>
+          {syncStatus.isSynced ? (
+            <button type="button" className="w2-fc-btn btn-open-emerald" id="btn-open-pages">
+              Open Pages ›
+            </button>
+          ) : (
+            <button type="button" className="w2-fc-btn btn-open-disabled" id="btn-open-pages" disabled>
+              Locked (Requires Synchronisation)
+            </button>
+          )}
+          <span className="w2-fc-tag">
+            {syncStatus.isSynced ? 'W3 | PAGE MANAGEMENT' : 'W3 | PAGE MANAGEMENT (LOCKED)'}
+          </span>
         </div>
 
         {/* Card 2: Review Links */}
@@ -242,22 +295,31 @@ export default function ManageWebsitePage({ site, onBack }) {
             <button type="button" className="ic-link">View All</button>
           </div>
           <div className="w2-activity-list">
-            <div className="act-row">
-              <span className="act-label">WordPress sync completed</span>
-              <span className="act-time">07-08-2026 08:15</span>
-            </div>
-            <div className="act-row">
-              <span className="act-label">2 new pages discovered</span>
-              <span className="act-time">07-08-2026 08:15</span>
-            </div>
-            <div className="act-row">
-              <span className="act-label">Audit completed</span>
-              <span className="act-time">06-08-2026 14:32</span>
-            </div>
-            <div className="act-row">
-              <span className="act-label">Page configuration updated</span>
-              <span className="act-time">06-08-2026 11:05</span>
-            </div>
+            {syncStatus.isSynced ? (
+              <>
+                <div className="act-row">
+                  <span className="act-label">WordPress sync completed</span>
+                  <span className="act-time">07-08-2026 08:15</span>
+                </div>
+                <div className="act-row">
+                  <span className="act-label">2 new pages discovered</span>
+                  <span className="act-time">07-08-2026 08:15</span>
+                </div>
+                <div className="act-row">
+                  <span className="act-label">Audit completed</span>
+                  <span className="act-time">06-08-2026 14:32</span>
+                </div>
+                <div className="act-row">
+                  <span className="act-label">Page configuration updated</span>
+                  <span className="act-time">06-08-2026 11:05</span>
+                </div>
+              </>
+            ) : (
+              <div className="act-row">
+                <span className="act-label">WordPress connection established</span>
+                <span className="act-time">Just now</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -269,13 +331,15 @@ export default function ManageWebsitePage({ site, onBack }) {
           </div>
           <div className="w2-audit-body">
             <div className="audit-gauge">
-              <span className="gauge-score">78</span>
-              <span className="gauge-max">/100</span>
+              <span className="gauge-score">{syncStatus.isSynced ? '78' : '—'}</span>
+              <span className="gauge-max">{syncStatus.isSynced ? '/100' : ''}</span>
             </div>
             <div className="audit-details">
               <span className="audit-label">Overall Score</span>
-              <span className="audit-rating">Good</span>
-              <span className="audit-sub">Audit completed: 06-08-2026 14:32</span>
+              <span className="audit-rating">{syncStatus.isSynced ? 'Good' : 'Not Audited'}</span>
+              <span className="audit-sub">
+                {syncStatus.isSynced ? 'Audit completed: 06-08-2026 14:32' : 'Pending initial synchronisation'}
+              </span>
             </div>
           </div>
         </div>
@@ -288,9 +352,11 @@ export default function ManageWebsitePage({ site, onBack }) {
           </div>
           <div className="w2-ai-body">
             <div className="ai-content">
-              <span className="ai-count">12 Available</span>
+              <span className="ai-count">{syncStatus.isSynced ? '12 Available' : '0 Available'}</span>
               <span className="ai-sub">Improve internal linking and technical SEO.</span>
-              <button type="button" className="btn-ai-recs">View Recommendations ›</button>
+              <button type="button" className="btn-ai-recs" disabled={!syncStatus.isSynced}>
+                View Recommendations ›
+              </button>
             </div>
             <div className="ai-icon-side">
               <BrainIcon />
@@ -306,10 +372,16 @@ export default function ManageWebsitePage({ site, onBack }) {
           </div>
           <div className="w2-status-body">
             <div className="status-content">
-              <span className="status-success-title">Success</span>
-              <span className="status-sub">Last crawl: 07-08-2026 08:15</span>
-              <span className="status-sub">Pages crawled: 40</span>
-              <span className="status-sub">New pages found: 2</span>
+              <span className="status-success-title">Connected</span>
+              <span className="status-sub">
+                {syncStatus.isSynced ? 'Last crawl: 07-08-2026 08:15' : 'Sync: Pending'}
+              </span>
+              <span className="status-sub">
+                {syncStatus.isSynced ? 'Pages crawled: 40' : 'Pages: Not extracted'}
+              </span>
+              <span className="status-sub">
+                {syncStatus.isSynced ? 'New pages found: 2' : 'Status: Ready to Sync'}
+              </span>
             </div>
             <div className="status-icon-side">
               <CheckCircleIcon />
