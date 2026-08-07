@@ -8,6 +8,8 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
   const pagesList = (() => {
     if (!storedPackageData) return []
     return (
+      storedPackageData.packageData?.pages ||
+      storedPackageData.packageData?.content?.pages ||
       storedPackageData.content?.pages ||
       storedPackageData.pages ||
       storedPackageData.data?.pages ||
@@ -20,6 +22,8 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
   const _postsList = (() => {
     if (!storedPackageData) return []
     return (
+      storedPackageData.packageData?.posts ||
+      storedPackageData.packageData?.content?.posts ||
       storedPackageData.content?.posts ||
       storedPackageData.posts ||
       storedPackageData.data?.posts ||

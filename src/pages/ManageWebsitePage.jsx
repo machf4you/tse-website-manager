@@ -102,6 +102,8 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     const pkg = storedPackageData || site?.storedPackageData
     if (!pkg) return []
     return (
+      pkg.packageData?.pages ||
+      pkg.packageData?.content?.pages ||
       pkg.content?.pages ||
       pkg.pages ||
       pkg.data?.pages ||
@@ -115,6 +117,8 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     const pkg = storedPackageData || site?.storedPackageData
     if (!pkg) return []
     return (
+      pkg.packageData?.posts ||
+      pkg.packageData?.content?.posts ||
       pkg.content?.posts ||
       pkg.posts ||
       pkg.data?.posts ||
