@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.0-auditor-integration',
+    version: 'v2.0-auditor-integration',
+    gitTag: 'v2.0-tse-page-auditor-integration',
+    commit: '310ae58',
+    date: '07-08-2026 17:11',
+    title: 'TSE Page Auditor Integration',
+    description: 'Integrated Website Manager directly with the separate TSE Page Auditor engine (POST /api/audit). Sends Website ID, Page ID, Page URL, Target Phrase, and SEO Page Type, rendering returned audit scores and action checklists dynamically.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.0-tse-page-auditor-integration.md',
+  },
+  {
     id: 'v1.9-audit-results',
     version: 'v1.9-audit-results',
     gitTag: 'v1.9-latest-page-audit-results-page',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:00',
     title: 'Latest Page Audit Results View',
     description: 'Created W3 / W4 Latest Page Audit Results view matching exact design mockup. Features interactive page selector dropdown, audit score indicator (6/8 Passed), 3-column page metadata cards, 8-element SEO Audit Table, and Action Checklist for staff fixes.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.9-latest-page-audit-results-page.md',
   },
   {
