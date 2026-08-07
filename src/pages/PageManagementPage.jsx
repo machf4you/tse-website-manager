@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
+import ConfigurePageDialog from '../components/ConfigurePageDialog'
 import './PageManagementPage.css'
 
 export default function PageManagementPage({
@@ -13,6 +14,18 @@ export default function PageManagementPage({
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
   const [sortColumn, setSortColumn] = useState('page') // 'page' | 'type' | 'priority'
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' | 'desc'
+  const [editingPage, setEditingPage] = useState(null)
+
+  const [configurations, setConfigurations] = useState(() => {
+    try {
+      const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+      const saved = localStorage.getItem(siteIdKey)
+      if (saved) return JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed to load page configurations:', e)
+    }
+    return {}
+  })
 
   const handleSort = (col) => {
     if (sortColumn === col) {
@@ -23,10 +36,51 @@ export default function PageManagementPage({
     }
   }
 
-  // Extract exported pages and posts using resilient package extractor
+  const handleSavePageConfig = (config) => {
+    const pageKey = config.pageId || config.url
+    const updatedMap = {
+      ...configurations,
+      [pageKey]: config,
+    }
+    setConfigurations(updatedMap)
+    try {
+      const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+      localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
+    } catch (e) {
+      console.error('Failed to save page configuration:', e)
+    }
+  }
+
+  // Extract exported pages and merge user custom configurations
   const pkg = storedPackageData || site?.storedPackageData
-  const pagesList = extractPagesFromPackage(pkg, site?.url)
+  const rawPagesList = extractPagesFromPackage(pkg, site?.url)
   const _postsList = extractPostsFromPackage(pkg)
+
+  const pagesList = rawPagesList.map(page => {
+    const pageKey = page.id || page.url
+    const override = configurations[pageKey]
+    if (override) {
+      return {
+        ...page,
+        originalTitle: page.title,
+        title: override.proposedTitle || page.title,
+        proposedTitle: override.proposedTitle || page.title,
+        target: override.targetPhrase || page.target || '',
+        targetPhrase: override.targetPhrase || '',
+        type: override.type || page.type,
+        seoPageType: override.type || page.type,
+        priority: override.priority !== undefined ? override.priority : page.priority,
+        isConfigured: override.isConfigured !== undefined ? override.isConfigured : true,
+        isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
+      }
+    }
+    return {
+      ...page,
+      originalTitle: page.title,
+      proposedTitle: page.title,
+      targetPhrase: page.target || '',
+    }
+  })
 
   // Filter pages based on filter tab selection
   const filteredPages = pagesList.filter(p => {
@@ -55,8 +109,8 @@ export default function PageManagementPage({
       if (pA > pB) return sortDirection === 'asc' ? 1 : -1
       return 0
     } else if (sortColumn === 'target') {
-      valA = (a.target || '').toLowerCase()
-      valB = (b.target || '').toLowerCase()
+      valA = (a.target || a.targetPhrase || '').toLowerCase()
+      valB = (b.target || b.targetPhrase || '').toLowerCase()
     } else if (sortColumn === 'status') {
       valA = (a.isExcluded ? 'Excluded' : (a.isConfigured ? 'Configured' : 'Included')).toLowerCase()
       valB = (b.isExcluded ? 'Excluded' : (b.isConfigured ? 'Configured' : 'Included')).toLowerCase()
@@ -226,7 +280,7 @@ export default function PageManagementPage({
           <tbody>
             {sortedPages.length > 0 ? (
               sortedPages.map((page, idx) => (
-                <tr key={page.id || idx}>
+                <tr key={page.id || page.url || idx}>
                   <td className="col-page">
                     <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
                     <div className="w3-page-slug">{page.url || ''}</div>
@@ -243,16 +297,17 @@ export default function PageManagementPage({
                     </span>
                   </td>
                   <td className="col-priority">{page.priority !== undefined ? page.priority : 0}</td>
-                  <td className="col-target">{''}</td>
+                  <td className="col-target">{page.target || page.targetPhrase || ''}</td>
                   <td className="col-status">
-                    <span className={page.isExcluded ? 'status-excluded' : 'status-included'}>
-                      {page.isExcluded ? 'Excluded' : 'Included'}
+                    <span className={page.isExcluded ? 'status-excluded' : (page.isConfigured ? 'status-included' : 'status-included')}>
+                      {page.isExcluded ? 'Excluded' : (page.isConfigured ? 'Configured' : 'Included')}
                     </span>
                   </td>
                   <td className="col-actions">
                     <button
                       type="button"
                       className="btn-configure-page"
+                      onClick={() => setEditingPage(page)}
                       id={`btn-configure-page-${page.id || idx}`}
                     >
                       Configure
@@ -270,6 +325,16 @@ export default function PageManagementPage({
           </tbody>
         </table>
       </div>
+
+      {/* ── Configure Page Targeting Modal ── */}
+      {editingPage && (
+        <ConfigurePageDialog
+          siteUrl={site?.url}
+          page={editingPage}
+          onClose={() => setEditingPage(null)}
+          onSave={handleSavePageConfig}
+        />
+      )}
 
     </div>
   )
