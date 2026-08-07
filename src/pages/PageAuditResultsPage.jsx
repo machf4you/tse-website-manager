@@ -60,18 +60,129 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   }, [selectedUrl, currentPage.url, currentPage.target, currentPage.type])
 
   // Map elements from returned Page Auditor result or template fallback
-  const auditElements = liveAuditData?.element_scores?.length > 0 ? (
-    liveAuditData.element_scores.map((item, idx) => ({
-      id: item.name ? item.name.toLowerCase().replace(/\s+/g, '_') : `item_${idx}`,
-      name: item.name || 'SEO Check',
-      currentValue: item.current_value || '—',
-      hasTargetPhrase: item.has_target_phrase !== undefined ? item.has_target_phrase : true,
-      status: item.status ? (item.status.charAt(0).toUpperCase() + item.status.slice(1)) : 'Pass',
-      recommendation: item.recommendation || '—',
-      recommendationType: item.status === 'fail' ? 'fail' : (item.status === 'warn' ? 'warning' : 'default'),
+  let auditElements = []
+  let failedIssues = []
+
+  if (liveAuditData) {
+    const snap = liveAuditData.page_snapshot || {}
+    const assess = liveAuditData.page_assessment || {}
+    const breakdown = assess.fit_breakdown || {}
+
+    // Combine all check findings from strengths, weaknesses, recommendations
+    const allChecks = [
+      ...(liveAuditData.strengths || []),
+      ...(liveAuditData.weaknesses || []),
+      ...(liveAuditData.recommendations || []),
+    ]
+
+    const getCheck = (labelName) => allChecks.find(c => (c.label || '').toLowerCase() === labelName.toLowerCase())
+
+    const titleCheck = getCheck('Title Tag') || getCheck('Meta Title')
+    const descCheck = getCheck('Meta Description')
+    const h1Check = getCheck('H1')
+    const h2Check = getCheck('H2 Count') || getCheck('H2')
+    const wordCheck = getCheck('Word Count')
+    const linkCheck = getCheck('Internal Link Count') || getCheck('Internal Links')
+    const imgCheck = getCheck('Image Count')
+    const altCheck = getCheck('Images Missing Alt Text') || getCheck('Alt Text')
+
+    const getStatusText = (checkObj) => {
+      if (!checkObj) return 'Pass'
+      if (checkObj.status === 'pass') return 'Pass'
+      if (checkObj.status === 'fail') return 'Fail'
+      return 'Pass'
+    }
+
+    const missingAltCount = snap.image_count !== undefined && snap.image_alt_coverage !== undefined
+      ? Math.round((1 - snap.image_alt_coverage) * snap.image_count)
+      : 0
+
+    auditElements = [
+      {
+        id: 'meta_title',
+        name: 'Meta Title',
+        currentValue: snap.title || displayTitle,
+        hasTargetPhrase: breakdown.title === 'Yes',
+        status: getStatusText(titleCheck),
+        recommendation: titleCheck?.detail || '—',
+        recommendationType: titleCheck?.status === 'fail' ? 'fail' : (titleCheck?.status === 'warn' ? 'warning' : 'default'),
+      },
+      {
+        id: 'meta_description',
+        name: 'Meta Description',
+        currentValue: snap.meta_description || '—',
+        hasTargetPhrase: breakdown.description === 'Yes',
+        status: getStatusText(descCheck),
+        recommendation: descCheck?.detail || '—',
+        recommendationType: descCheck?.status === 'fail' ? 'fail' : (descCheck?.status === 'warn' ? 'warning' : 'default'),
+      },
+      {
+        id: 'h1',
+        name: 'H1',
+        currentValue: (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '—',
+        hasTargetPhrase: breakdown.h1 === 'Yes',
+        status: getStatusText(h1Check),
+        recommendation: h1Check?.detail || `Add target phrase "${targetPhrase}" to H1 heading`,
+        recommendationType: h1Check?.status === 'fail' ? 'fail' : 'warning',
+        issueCode: 'ISSUE 1: H1',
+      },
+      {
+        id: 'h2_count',
+        name: 'H2 Count',
+        currentValue: `${Array.isArray(snap.h2) ? snap.h2.length : (snap.h2 || 0)} H2 headings`,
+        hasTargetPhrase: breakdown.h2 === 'Yes',
+        status: getStatusText(h2Check),
+        recommendation: h2Check?.detail || `Add target phrase "${targetPhrase}" to at least one H2 heading`,
+        recommendationType: h2Check?.status === 'fail' ? 'fail' : 'warning',
+      },
+      {
+        id: 'word_count',
+        name: 'Word Count',
+        currentValue: `${snap.word_count !== undefined ? snap.word_count : 0} words`,
+        hasTargetPhrase: breakdown.content === 'Yes',
+        status: getStatusText(wordCheck),
+        recommendation: wordCheck?.detail || '—',
+        recommendationType: wordCheck?.status === 'fail' ? 'fail' : 'default',
+      },
+      {
+        id: 'internal_links',
+        name: 'Internal Link Count',
+        currentValue: `${snap.internal_link_count !== undefined ? snap.internal_link_count : 0} incoming internal links`,
+        hasTargetPhrase: false,
+        status: getStatusText(linkCheck),
+        recommendation: linkCheck?.detail || 'Current Internal Links: 0 | Minimum Required to Pass Audit: 3',
+        recommendationType: linkCheck?.status === 'fail' ? 'fail' : 'warning',
+        issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
+      },
+      {
+        id: 'image_count',
+        name: 'Image Count',
+        currentValue: `${snap.image_count !== undefined ? snap.image_count : 0} images`,
+        hasTargetPhrase: false,
+        status: getStatusText(imgCheck),
+        recommendation: imgCheck?.detail || '—',
+        recommendationType: imgCheck?.status === 'fail' ? 'fail' : 'warning',
+      },
+      {
+        id: 'missing_alt',
+        name: 'Images Missing Alt Text',
+        currentValue: `${missingAltCount} images with missing/generic alt text`,
+        hasTargetPhrase: 'N/A',
+        status: getStatusText(altCheck),
+        recommendation: altCheck?.detail || '—',
+        recommendationType: altCheck?.status === 'fail' ? 'fail' : 'default',
+      },
+    ]
+
+    failedIssues = (liveAuditData.weaknesses || []).map((w, idx) => ({
+      id: w.key || `issue_${idx}`,
+      issueCode: `ISSUE ${idx + 1}: ${w.label ? w.label.toUpperCase() : 'CHECK'}`,
+      recommendation: w.detail || w.label || '',
+      name: w.label || 'SEO Check',
     }))
-  ) : (
-    [
+  } else {
+    // Template fallback when server is offline
+    auditElements = [
       {
         id: 'meta_title',
         name: 'Meta Title',
@@ -143,24 +254,14 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         recommendation: '—',
       },
     ]
-  )
 
-  // Map action checklist from returned Page Auditor result or template fallback
-  const failedIssues = liveAuditData?.action_checklist?.length > 0 ? (
-    liveAuditData.action_checklist.map((issue, idx) => ({
-      id: `issue_${idx}`,
-      issueCode: issue.code || `ISSUE ${idx + 1}`,
-      recommendation: issue.title || issue.recommendation || '',
-      name: issue.area || 'SEO Check',
-    }))
-  ) : (
-    auditElements.filter(el => el.status === 'Fail').map((el, idx) => ({
+    failedIssues = auditElements.filter(el => el.status === 'Fail').map((el, idx) => ({
       id: el.id,
       issueCode: el.issueCode || `ISSUE ${idx + 1}: ${el.name.toUpperCase()}`,
       recommendation: el.recommendation,
       name: el.name,
     }))
-  )
+  }
 
   const passedCount = liveAuditData?.overall_score !== undefined ? (
     Math.round((liveAuditData.overall_score / 100) * auditElements.length)
