@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.5-audit-cols',
+    version: 'v1.5-audit-cols',
+    gitTag: 'v1.5-last-audit-and-audit-page-columns',
+    commit: 'bea6e54',
+    date: '07-08-2026 16:42',
+    title: 'Last Audit & Audit Page Columns',
+    description: 'Added Last Audit and Audit Page columns between Status and Actions in W3 Page Management. Unconfigured URLs render semi-invisible faded gray buttons that illuminate into active buttons upon URL configuration.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.5-last-audit-and-audit-page-columns.md',
+  },
+  {
     id: 'v1.4-targeting',
     version: 'v1.4-targeting',
     gitTag: 'v1.4-configure-page-targeting',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 14:54',
     title: 'Configure Page Targeting Dialog',
     description: 'Configure Page Targeting modal popup dialog matching exact mock template. Supports page URL path pre-population, static title, editable proposed title, target phrase input, page type dropdown, automatic priority auto-fill, and live row state updates.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.4-configure-page-targeting.md',
   },
   {
