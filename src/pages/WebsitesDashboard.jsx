@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import WebsiteTile from '../components/WebsiteTile'
 import AddWebsiteDialog from '../components/AddWebsiteDialog'
+import ManageWebsitePage from './ManageWebsitePage'
 import { mockSiteTile } from '../data/mockData'
 import './WebsitesDashboard.css'
 
@@ -8,6 +9,7 @@ const STORAGE_KEY = 'tse_connected_websites_v1'
 
 export default function WebsitesDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [managedSite, setManagedSite] = useState(null)
   const [sites, setSites] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -35,6 +37,15 @@ export default function WebsitesDashboard() {
     setSites(prev => [newSite, ...prev])
   }
 
+  if (managedSite) {
+    return (
+      <ManageWebsitePage
+        site={managedSite}
+        onBack={() => setManagedSite(null)}
+      />
+    )
+  }
+
   return (
     <div className="tile-preview-page">
 
@@ -58,7 +69,11 @@ export default function WebsitesDashboard() {
       {/* Website Tiles Grid */}
       <div className="website-tiles-grid">
         {sites.map(site => (
-          <WebsiteTile key={site.id} site={site} />
+          <WebsiteTile
+            key={site.id}
+            site={site}
+            onManage={setManagedSite}
+          />
         ))}
       </div>
 
