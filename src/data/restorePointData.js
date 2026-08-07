@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.6-exclude-fix',
+    version: 'v2.6-exclude-fix',
+    gitTag: 'v2.6-fixed-one-click-exclude-key-matching',
+    commit: '820b27e',
+    date: '07-08-2026 17:41',
+    title: 'Fixed Instant Exclude Action',
+    description: 'Fixed key matching for 1-click Exclude/Include row actions so pages disappear from the active table view instantly when Excluded.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.6-fixed-one-click-exclude-key-matching.md',
+  },
+  {
     id: 'v2.5-exclude-actions',
     version: 'v2.5-exclude-actions',
     gitTag: 'v2.5-one-click-exclude-row-actions',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:38',
     title: '1-Click Exclude Row Action Buttons',
     description: 'Added 1-click Exclude / Include row action buttons on W3 Page Management table. Clicking Exclude sets Priority 0 and hides remnant URLs from active views instantly.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.5-one-click-exclude-row-actions.md',
   },
   {
