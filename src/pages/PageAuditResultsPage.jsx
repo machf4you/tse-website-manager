@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { executePageAudit } from '../services/pageAuditorApi'
 import './PageAuditResultsPage.css'
 
 export default function PageAuditResultsPage({ site, page, pagesList = [], onBack }) {
   // Allow selecting any page from the dropdown
   const [selectedUrl, setSelectedUrl] = useState(() => page?.url || pagesList[0]?.url || '')
+  const [liveAuditData, setLiveAuditData] = useState(null)
+  const [isLoadingAudit, setIsLoadingAudit] = useState(false)
+  const [_auditError, setAuditError] = useState(null)
 
   // Active page object being reviewed
   const currentPage = pagesList.find(p => p.url === selectedUrl) || page || pagesList[0] || {}
@@ -25,83 +29,144 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     cleanPath = fullUrl
   }
 
-  // Audit results database (dynamic per page)
-  const auditElements = [
-    {
-      id: 'meta_title',
-      name: 'Meta Title',
-      currentValue: displayTitle,
-      hasTargetPhrase: true,
-      status: 'Pass',
-      recommendation: '—',
-    },
-    {
-      id: 'meta_description',
-      name: 'Meta Description',
-      currentValue: `Looking for professional ${targetPhrase} in South London? We provide high-quality, reliable solutions tailored to your needs. Get your free quote today!`,
-      hasTargetPhrase: true,
-      status: 'Pass',
-      recommendation: '—',
-    },
-    {
-      id: 'h1',
-      name: 'H1',
-      currentValue: `${displayTitle} Specialists Across South East London`,
-      hasTargetPhrase: false,
-      status: 'Fail',
-      recommendation: `Add target phrase "${targetPhrase}" to H1 heading`,
-      recommendationType: 'fail',
-      issueCode: 'ISSUE 1: H1',
-    },
-    {
-      id: 'h2_count',
-      name: 'H2 Count',
-      currentValue: '4 H2 headings',
-      hasTargetPhrase: false,
-      status: 'Pass',
-      recommendation: `Add target phrase "${targetPhrase}" to at least one H2 heading`,
-      recommendationType: 'warning',
-    },
-    {
-      id: 'word_count',
-      name: 'Word Count',
-      currentValue: '1039 words',
-      hasTargetPhrase: true,
-      status: 'Pass',
-      recommendation: '—',
-    },
-    {
-      id: 'internal_links',
-      name: 'Internal Link Count',
-      currentValue: '0 incoming internal links',
-      hasTargetPhrase: false,
-      status: 'Fail',
-      recommendation: 'Current Internal Links: 0 | Minimum Required to Pass Audit: 3',
-      recommendationType: 'fail',
-      issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
-    },
-    {
-      id: 'image_count',
-      name: 'Image Count',
-      currentValue: '1 images',
-      hasTargetPhrase: false,
-      status: 'Pass',
-      recommendation: `Optimize image alt tags or filenames with target phrase "${targetPhrase}"`,
-      recommendationType: 'warning',
-    },
-    {
-      id: 'missing_alt',
-      name: 'Images Missing Alt Text',
-      currentValue: '0 images with missing/generic alt text',
-      hasTargetPhrase: 'N/A',
-      status: 'Pass',
-      recommendation: '—',
-    },
-  ]
+  // Execute audit call to Page Auditor server
+  useEffect(() => {
+    let isMounted = true
+    async function runLiveAudit() {
+      if (!currentPage || !currentPage.url) return
+      setIsLoadingAudit(true)
+      setAuditError(null)
+      try {
+        const result = await executePageAudit({
+          siteId: site?.id || 'site-1',
+          pageId: currentPage.id || currentPage.url,
+          url: currentPage.url,
+          targetPhrase: currentPage.target || currentPage.targetPhrase || targetPhrase,
+          seoPageType: currentPage.type || currentPage.seoPageType || pageType,
+        })
+        if (isMounted) {
+          setLiveAuditData(result)
+          setIsLoadingAudit(false)
+        }
+      } catch (e) {
+        if (isMounted) {
+          setAuditError(e.message)
+          setIsLoadingAudit(false)
+        }
+      }
+    }
+    runLiveAudit()
+    return () => { isMounted = false }
+  }, [selectedUrl, currentPage.url, currentPage.target, currentPage.type])
 
-  // Filter out issues that failed
-  const failedIssues = auditElements.filter(el => el.status === 'Fail')
-  const passedCount = auditElements.length - failedIssues.length
+  // Map elements from returned Page Auditor result or template fallback
+  const auditElements = liveAuditData?.element_scores?.length > 0 ? (
+    liveAuditData.element_scores.map((item, idx) => ({
+      id: item.name ? item.name.toLowerCase().replace(/\s+/g, '_') : `item_${idx}`,
+      name: item.name || 'SEO Check',
+      currentValue: item.current_value || '—',
+      hasTargetPhrase: item.has_target_phrase !== undefined ? item.has_target_phrase : true,
+      status: item.status ? (item.status.charAt(0).toUpperCase() + item.status.slice(1)) : 'Pass',
+      recommendation: item.recommendation || '—',
+      recommendationType: item.status === 'fail' ? 'fail' : (item.status === 'warn' ? 'warning' : 'default'),
+    }))
+  ) : (
+    [
+      {
+        id: 'meta_title',
+        name: 'Meta Title',
+        currentValue: displayTitle,
+        hasTargetPhrase: true,
+        status: 'Pass',
+        recommendation: '—',
+      },
+      {
+        id: 'meta_description',
+        name: 'Meta Description',
+        currentValue: `Looking for professional ${targetPhrase} in South London? We provide high-quality, reliable solutions tailored to your needs. Get your free quote today!`,
+        hasTargetPhrase: true,
+        status: 'Pass',
+        recommendation: '—',
+      },
+      {
+        id: 'h1',
+        name: 'H1',
+        currentValue: `${displayTitle} Specialists Across South East London`,
+        hasTargetPhrase: false,
+        status: 'Fail',
+        recommendation: `Add target phrase "${targetPhrase}" to H1 heading`,
+        recommendationType: 'fail',
+        issueCode: 'ISSUE 1: H1',
+      },
+      {
+        id: 'h2_count',
+        name: 'H2 Count',
+        currentValue: '4 H2 headings',
+        hasTargetPhrase: false,
+        status: 'Pass',
+        recommendation: `Add target phrase "${targetPhrase}" to at least one H2 heading`,
+        recommendationType: 'warning',
+      },
+      {
+        id: 'word_count',
+        name: 'Word Count',
+        currentValue: '1039 words',
+        hasTargetPhrase: true,
+        status: 'Pass',
+        recommendation: '—',
+      },
+      {
+        id: 'internal_links',
+        name: 'Internal Link Count',
+        currentValue: '0 incoming internal links',
+        hasTargetPhrase: false,
+        status: 'Fail',
+        recommendation: 'Current Internal Links: 0 | Minimum Required to Pass Audit: 3',
+        recommendationType: 'fail',
+        issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
+      },
+      {
+        id: 'image_count',
+        name: 'Image Count',
+        currentValue: '1 images',
+        hasTargetPhrase: false,
+        status: 'Pass',
+        recommendation: `Optimize image alt tags or filenames with target phrase "${targetPhrase}"`,
+        recommendationType: 'warning',
+      },
+      {
+        id: 'missing_alt',
+        name: 'Images Missing Alt Text',
+        currentValue: '0 images with missing/generic alt text',
+        hasTargetPhrase: 'N/A',
+        status: 'Pass',
+        recommendation: '—',
+      },
+    ]
+  )
+
+  // Map action checklist from returned Page Auditor result or template fallback
+  const failedIssues = liveAuditData?.action_checklist?.length > 0 ? (
+    liveAuditData.action_checklist.map((issue, idx) => ({
+      id: `issue_${idx}`,
+      issueCode: issue.code || `ISSUE ${idx + 1}`,
+      recommendation: issue.title || issue.recommendation || '',
+      name: issue.area || 'SEO Check',
+    }))
+  ) : (
+    auditElements.filter(el => el.status === 'Fail').map((el, idx) => ({
+      id: el.id,
+      issueCode: el.issueCode || `ISSUE ${idx + 1}: ${el.name.toUpperCase()}`,
+      recommendation: el.recommendation,
+      name: el.name,
+    }))
+  )
+
+  const passedCount = liveAuditData?.overall_score !== undefined ? (
+    Math.round((liveAuditData.overall_score / 100) * auditElements.length)
+  ) : (
+    auditElements.length - failedIssues.length
+  )
   const totalCount = auditElements.length
 
   return (
@@ -137,6 +202,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
               className="w4-select-page"
               value={selectedUrl}
               onChange={(e) => setSelectedUrl(e.target.value)}
+              disabled={isLoadingAudit}
             >
               {pagesList.length > 0 ? (
                 pagesList.map((p, idx) => (
@@ -155,8 +221,10 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           <div className="w4-score-box">
             <span className="w4-score-label">AUDIT SCORE</span>
             <div className="w4-score-value">
-              {passedCount} / {totalCount} Passed
-              <span className="w4-score-subtext"> ({failedIssues.length} issues to fix)</span>
+              {isLoadingAudit ? 'Auditing...' : `${passedCount} / ${totalCount} Passed`}
+              {!isLoadingAudit && (
+                <span className="w4-score-subtext"> ({failedIssues.length} issues to fix)</span>
+              )}
             </div>
           </div>
         </div>
