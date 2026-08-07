@@ -48,6 +48,10 @@ export default function WebsitesDashboard() {
       <ManageWebsitePage
         site={managedSite}
         onBack={() => setManagedSite(null)}
+        onUpdateSite={(updated) => {
+          setManagedSite(updated)
+          handleUpdateWebsite(updated)
+        }}
       />
     )
   }

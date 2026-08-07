@@ -86,7 +86,7 @@ function formatNowDDMMYYYYHHMM() {
   return `${day}-${month}-${year} ${hours}:${minutes}`
 }
 
-export default function ManageWebsitePage({ site, onBack }) {
+export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [activeTab, setActiveTab] = useState('w2')
   const [isSynced, setIsSynced] = useState(() => {
     return Boolean(site && site.isSynchronised === true && site.lastSyncTimestamp)
@@ -111,7 +111,7 @@ export default function ManageWebsitePage({ site, onBack }) {
     return (
       <PageManagementPage
         site={site}
-        storedPackageData={storedPackageData}
+        storedPackageData={storedPackageData || site.storedPackageData}
         onBack={() => setActiveTab('w2')}
         onTabChange={(tab) => setActiveTab(tab)}
       />
@@ -148,6 +148,17 @@ export default function ManageWebsitePage({ site, onBack }) {
           setStoredPackageData(result.packageData)
           const completedTime = formatNowDDMMYYYYHHMM()
           setLastSyncDate(completedTime)
+
+          const updatedSite = {
+            ...site,
+            isSynchronised: true,
+            lastSyncTimestamp: completedTime,
+            storedPackageData: result.packageData,
+          }
+
+          if (onUpdateSite) {
+            onUpdateSite(updatedSite)
+          }
 
           setTimeout(() => {
             setIsSynced(true)
