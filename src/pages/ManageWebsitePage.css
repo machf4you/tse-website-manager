@@ -1,127 +1,471 @@
-/* ── Manage Website Page ── */
-.manage-website-page {
+/* ═══════════════════════════════════════════════════════════
+   W2 | WEBSITE DASHBOARD STYLES
+   Authoritative Reference: W2 screenshot specification
+   ═══════════════════════════════════════════════════════════ */
+
+.w2-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  padding: 2.5rem;
+  gap: 1.5rem;
+  padding: 2rem 2.5rem 3.5rem;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1320px;
+  margin: 0 auto;
   box-sizing: border-box;
-}
-
-/* Header Banner */
-.mwp-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1rem;
-  background-color: rgb(17, 24, 39);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.mwp-btn-back {
-  background: none;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  color: rgb(148, 163, 184);
   font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 6px 12px;
-  cursor: pointer;
-  transition: background-color 0.15s, color 0.15s;
-}
-
-.mwp-btn-back:hover {
-  background-color: rgba(255, 255, 255, 0.08);
   color: rgb(248, 250, 252);
 }
 
-.mwp-site-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.mwp-site-title-row {
+/* ── Top Back Button Row ── */
+.w2-back-row {
   display: flex;
   align-items: center;
-  gap: 12px;
 }
 
-.mwp-site-name {
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: rgb(248, 250, 252);
-  margin: 0;
-}
-
-.mwp-badge-status {
+.w2-btn-back {
+  background: none;
+  border: none;
+  color: rgb(16, 185, 129);
   font-family: 'Inter', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 800;
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.05em;
-}
-
-.mwp-badge-connected {
-  background-color: rgba(16, 185, 129, 0.15);
-  color: rgb(52, 211, 153);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.mwp-site-url {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  color: rgb(52, 211, 153);
-  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
   transition: opacity 0.15s;
 }
 
-.mwp-site-url:hover {
-  opacity: 0.85;
+.w2-btn-back:hover {
+  opacity: 0.8;
 }
 
-/* Sections Grid */
-.mwp-sections-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+/* ── Header Section ── */
+.w2-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.w2-header-title-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.w2-pill-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: rgb(52, 211, 153);
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.w2-site-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: rgb(248, 250, 252);
+  margin: 0;
+  line-height: 1.1;
+}
+
+.w2-site-url {
+  font-size: 0.85rem;
+  color: rgb(148, 163, 184);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.15s;
+}
+
+.w2-site-url:hover {
+  color: rgb(52, 211, 153);
+}
+
+/* Header Buttons */
+.w2-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.w2-btn-secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: rgb(248, 250, 252);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.w2-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.w2-btn-amber {
+  background-color: rgb(249, 115, 22);
+  border: none;
+  border-radius: 8px;
+  color: rgb(255, 255, 255);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.w2-btn-amber:hover {
+  background-color: rgb(234, 88, 12);
+}
+
+.w2-btn-emerald {
+  background-color: rgb(16, 185, 129);
+  border: none;
+  border-radius: 8px;
+  color: rgb(255, 255, 255);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.w2-btn-emerald:hover {
+  background-color: rgb(5, 150, 105);
+}
+
+/* ── 6 Stat Metric Cards ── */
+.w2-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
   width: 100%;
 }
 
-.mwp-section-card {
-  background-color: rgb(17, 24, 39);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+.w2-stat-card {
+  background-color: rgb(15, 23, 42);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.w2-stat-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgb(148, 163, 184);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.w2-stat-val {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.val-connected { color: rgb(16, 185, 129); }
+.val-white     { color: rgb(248, 250, 252); }
+.val-emerald   { color: rgb(52, 211, 153); }
+.val-slate     { color: rgb(148, 163, 184); }
+.val-amber     { color: rgb(251, 191, 36); }
+
+/* ── 4 Main Feature Cards ── */
+.w2-feature-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.w2-feature-card {
+  background-color: rgb(15, 23, 42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.w2-fc-header {
+  display: flex;
+  align-items: center;
   gap: 0.75rem;
-  transition: border-color 0.15s;
 }
 
-.mwp-section-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+.w2-fc-icon-bg {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.mwp-section-title {
+/* Feature Themes */
+.theme-emerald .w2-fc-icon-bg { background-color: rgba(16, 185, 129, 0.12); color: rgb(16, 185, 129); }
+.theme-purple  .w2-fc-icon-bg { background-color: rgba(168, 85, 247, 0.12); color: rgb(168, 85, 247); }
+.theme-blue    .w2-fc-icon-bg { background-color: rgba(59, 130, 246, 0.12); color: rgb(59, 130, 246); }
+.theme-amber   .w2-fc-icon-bg { background-color: rgba(245, 158, 11, 0.12); color: rgb(245, 158, 11); }
+
+.w2-fc-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: rgb(248, 250, 252);
   margin: 0;
 }
 
-.mwp-section-placeholder {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
-  color: rgb(100, 116, 139);
+.w2-fc-desc {
+  font-size: 0.8rem;
+  color: rgb(148, 163, 184);
   margin: 0;
-  font-style: italic;
+  line-height: 1.35;
+}
+
+/* Feature Checklists */
+.w2-fc-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: rgb(226, 232, 240);
+  flex: 1;
+}
+
+.w2-fc-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chk-icon {
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+.theme-emerald .chk-icon { color: rgb(16, 185, 129); }
+.theme-purple  .chk-icon { color: rgb(168, 85, 247); }
+.theme-blue    .chk-icon { color: rgb(59, 130, 246); }
+.theme-amber   .chk-icon { color: rgb(245, 158, 11); }
+
+/* Feature Action Buttons */
+.w2-fc-btn {
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.w2-fc-btn:hover { opacity: 0.9; }
+
+.btn-open-emerald { background-color: rgb(16, 185, 129); }
+.btn-open-purple  { background-color: rgb(168, 85, 247); }
+.btn-open-blue    { background-color: rgb(59, 130, 246); }
+.btn-open-amber   { background-color: rgb(245, 158, 11); }
+
+.w2-fc-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: rgb(148, 163, 184);
+  text-align: center;
+}
+
+/* ── Section Heading: WEBSITE INTELLIGENCE ── */
+.w2-section-heading {
+  margin-top: 0.5rem;
+}
+
+.w2-section-heading h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: rgb(248, 250, 252);
+  margin: 0;
+}
+
+/* ── 4 Intelligence Cards Grid ── */
+.w2-intel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.w2-intel-card {
+  background-color: rgb(15, 23, 42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.w2-ic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.ic-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgb(248, 250, 252);
+}
+
+.ic-link {
+  background: none;
+  border: none;
+  color: rgb(52, 211, 153);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Card 1: Activity List */
+.w2-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.act-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.act-label { color: rgb(226, 232, 240); }
+.act-time  { color: rgb(148, 163, 184); font-size: 0.72rem; }
+
+/* Card 2: Audit Body */
+.w2-audit-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.audit-gauge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid rgb(16, 185, 129);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gauge-score { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 800; color: rgb(248, 250, 252); }
+.gauge-max   { font-size: 0.65rem; color: rgb(148, 163, 184); }
+
+.audit-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.audit-label  { font-size: 0.7rem; color: rgb(148, 163, 184); }
+.audit-rating { font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 700; color: rgb(16, 185, 129); }
+.audit-sub    { font-size: 0.7rem; color: rgb(148, 163, 184); }
+
+/* Card 3: AI Recommendations Body */
+.w2-ai-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.ai-count { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 800; color: rgb(168, 85, 247); }
+.ai-sub   { font-size: 0.72rem; color: rgb(148, 163, 184); max-width: 160px; line-height: 1.3; }
+
+.btn-ai-recs {
+  background: none;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: rgb(168, 85, 247);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.ai-icon-side { color: rgb(168, 85, 247); opacity: 0.7; }
+
+/* Card 4: Status Body */
+.w2-status-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.status-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.status-success-title { font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 800; color: rgb(16, 185, 129); }
+.status-sub           { font-size: 0.72rem; color: rgb(148, 163, 184); }
+.status-icon-side     { color: rgb(16, 185, 129); opacity: 0.8; }
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .w2-stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .w2-feature-cards-grid { grid-template-columns: repeat(2, 1fr); }
+  .w2-intel-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .w2-dashboard { padding: 1.25rem; }
+  .w2-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .w2-feature-cards-grid { grid-template-columns: 1fr; }
+  .w2-intel-grid { grid-template-columns: 1fr; }
 }
