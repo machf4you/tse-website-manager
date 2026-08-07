@@ -10,7 +10,7 @@ Every future restore point must update this file.
 | v1.0 | `v1.0-clean-foundation` | `8464b6f` | 2026-07-30 | Clean Vite + React foundation. GitHub Pages deployment configured (later replaced by TSE Deployer). No application code. | Superseded |
 | v1.2-old | `v1.2-websites-dashboard` | `9f42b7e` | 2026-07-30 | Milestone 2 dashboard with sidebar, summary cards and website grid. Superseded when dashboard was cleared for master tile approach. | Superseded |
 | v1.1 | `v1.1-foundation-master-tile` | `61c1e83` | 2026-08-07 | Project Foundation complete and approved. Automatic deployment verified via TSE Deployer. Master Website Tile built and approved. | Superseded |
-| v1.2 | `v1.2-wordpress-synchronisation-architecture` | `HEAD` | 2026-08-07 | Complete and approved WordPress Synchronisation Architecture. Integration contracts, package versioning, packageId (UUID), and orchestration boundaries frozen baseline before implementation. | **Current** |
+| v1.2 | `v1.2-wordpress-synchronisation-architecture` | `8e0897e` | 2026-08-07 | Complete and approved WordPress Synchronisation Architecture. Integration contracts, package versioning, packageId (UUID), and orchestration boundaries frozen baseline before implementation. | **Current** |
 
 ---
 
