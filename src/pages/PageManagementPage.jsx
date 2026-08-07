@@ -30,10 +30,11 @@ export default function PageManagementPage({
 
   // Filter pages based on filter tab selection
   const filteredPages = pagesList.filter(p => {
-    if (filter === 'configured') return p.isConfigured === true
-    if (filter === 'action_required') return p.isConfigured !== true && !p.isExcluded
-    if (filter === 'excluded') return p.isExcluded === true
-    return true
+    if (filter === 'configured') return p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded'
+    if (filter === 'action_required') return p.isConfigured !== true && !p.isExcluded && p.type !== 'Excluded'
+    if (filter === 'excluded') return p.isExcluded === true || p.type === 'Excluded'
+    // Default ('all'): display active included pages only (hide excluded pages)
+    return !p.isExcluded && p.type !== 'Excluded'
   })
 
   // Sort filtered pages based on sortColumn and sortDirection
@@ -67,10 +68,10 @@ export default function PageManagementPage({
   })
 
   // Calculate filter tab counts
-  const allCount = pagesList.length
-  const configuredCount = pagesList.filter(p => p.isConfigured === true).length
-  const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded).length
-  const excludedCount = pagesList.filter(p => p.isExcluded === true).length
+  const allCount = pagesList.filter(p => !p.isExcluded && p.type !== 'Excluded').length
+  const configuredCount = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
+  const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded && p.type !== 'Excluded').length
+  const excludedCount = pagesList.filter(p => p.isExcluded === true || p.type === 'Excluded').length
 
   const renderSortIndicator = (col) => {
     if (sortColumn !== col) return <span className="sort-icon inactive">↕</span>
