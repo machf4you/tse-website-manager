@@ -1,24 +1,14 @@
 import { useState } from 'react'
+import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import './PageManagementPage.css'
 
 export default function PageManagementPage({ site, storedPackageData, onBack, onTabChange }) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
 
-  // Extract exported pages and posts using flexible accessor chain
+  // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
-  const pagesList =
-    pkg?.pages ||
-    pkg?.data?.pages ||
-    pkg?.packageData?.pages ||
-    pkg?.content?.pages ||
-    (Array.isArray(pkg?.data) ? pkg.data : []) ||
-    []
-  const _postsList =
-    pkg?.posts ||
-    pkg?.data?.posts ||
-    pkg?.packageData?.posts ||
-    pkg?.content?.posts ||
-    []
+  const pagesList = extractPagesFromPackage(pkg)
+  const _postsList = extractPostsFromPackage(pkg)
 
   // Filter pages based on filter tab selection
   const filteredPages = pagesList.filter(p => {

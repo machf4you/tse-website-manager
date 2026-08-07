@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { fetchTseWordPressExportPackage } from '../services/exporterApi'
+import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import PageManagementPage from './PageManagementPage'
 import './ManageWebsitePage.css'
 
@@ -86,6 +87,8 @@ function formatNowDDMMYYYYHHMM() {
   return `${day}-${month}-${year} ${hours}:${minutes}`
 }
 
+
+
 export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [activeTab, setActiveTab] = useState('w2')
   const [isSynced, setIsSynced] = useState(() => {
@@ -97,21 +100,10 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const [syncError, setSyncError] = useState(null)
   const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
 
-  // Extract exported pages and posts using flexible accessor chain
+  // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
-  const exportedPages =
-    pkg?.pages ||
-    pkg?.data?.pages ||
-    pkg?.packageData?.pages ||
-    pkg?.content?.pages ||
-    (Array.isArray(pkg?.data) ? pkg.data : []) ||
-    []
-  const _exportedPosts =
-    pkg?.posts ||
-    pkg?.data?.posts ||
-    pkg?.packageData?.posts ||
-    pkg?.content?.posts ||
-    []
+  const exportedPages = extractPagesFromPackage(pkg)
+  const _exportedPosts = extractPostsFromPackage(pkg)
 
   // Dynamic calculated metrics from stored package pages
   const configuredPagesCount = exportedPages.filter(p => p.isConfigured === true).length
@@ -175,13 +167,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         // Await real Exporter response
         const result = await exporterPromise
 
-        const resPages =
-          result.packageData?.pages ||
-          result.packageData?.data?.pages ||
-          result.packageData?.packageData?.pages ||
-          result.packageData?.content?.pages ||
-          (Array.isArray(result.packageData?.data) ? result.packageData.data : []) ||
-          []
+        const resPages = extractPagesFromPackage(result.packageData)
 
         if (result.success && result.packageData && resPages.length > 0) {
           setStageIndex(6) // Synchronisation complete.
