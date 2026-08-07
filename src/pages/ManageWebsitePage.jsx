@@ -114,7 +114,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     if (site) {
       setIsSynced(Boolean(site.isSynchronised === true && site.lastSyncTimestamp))
       setLastSyncDate(site.lastSyncTimestamp || null)
-      setStoredPackageData(site.storedPackageData || null)
+      if (site.storedPackageData) {
+        setStoredPackageData(site.storedPackageData)
+      }
     }
   }, [site])
 

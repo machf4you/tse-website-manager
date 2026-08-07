@@ -4,9 +4,10 @@ import './PageManagementPage.css'
 export default function PageManagementPage({ site, storedPackageData, onBack, onTabChange }) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
 
-  // Extract exported pages and posts directly from storedPackageData.pages and storedPackageData.posts
-  const pagesList = storedPackageData?.pages || []
-  const _postsList = storedPackageData?.posts || []
+  // Extract exported pages and posts directly from pkg.pages and pkg.posts
+  const pkg = storedPackageData || site?.storedPackageData
+  const pagesList = pkg?.pages || []
+  const _postsList = pkg?.posts || []
 
   // Filter pages based on filter tab selection
   const filteredPages = pagesList.filter(p => {
