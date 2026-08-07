@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.4-targeting',
+    version: 'v1.4-targeting',
+    gitTag: 'v1.4-configure-page-targeting',
+    commit: '753a7f8',
+    date: '07-08-2026 14:54',
+    title: 'Configure Page Targeting Dialog',
+    description: 'Configure Page Targeting modal popup dialog matching exact mock template. Supports page URL path pre-population, static title, editable proposed title, target phrase input, page type dropdown, automatic priority auto-fill, and live row state updates.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.4-configure-page-targeting.md',
+  },
+  {
     id: 'v1.3-classifications',
     version: 'v1.3-classifications',
     gitTag: 'v1.3-page-type-classifications',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 14:04',
     title: 'Page Type Classifications Section',
     description: 'Page Type Classifications menu item created in Global Settings containing editable classification rules document, commercial vs informational definitions, and comment history log.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.3-page-type-classifications.md',
   },
   {
