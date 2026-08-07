@@ -305,17 +305,22 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
               onChange={(e) => setSelectedUrl(e.target.value)}
               disabled={isLoadingAudit}
             >
-              {pagesList.length > 0 ? (
-                pagesList.map((p, idx) => (
-                  <option key={p.id || p.url || idx} value={p.url}>
-                    {p.url ? (new URL(p.url, site?.url || 'https://example.com').pathname || '/') : '/'} ({p.proposedTitle || p.title || 'Untitled'})
+              {(() => {
+                const selectablePages = pagesList.filter(p => !p.isExcluded && p.priority !== 0 && p.type !== 'Excluded' && p.type !== 'Unclassified / Excluded')
+                const displayList = selectablePages.length > 0 ? selectablePages : (pagesList.length > 0 ? pagesList : [])
+                if (displayList.length > 0) {
+                  return displayList.map((p, idx) => (
+                    <option key={p.id || p.url || idx} value={p.url}>
+                      {p.url ? (new URL(p.url, site?.url || 'https://example.com').pathname || '/') : '/'} ({p.proposedTitle || p.title || 'Untitled'})
+                    </option>
+                  ))
+                }
+                return (
+                  <option value={currentPage.url || '/'}>
+                    {cleanPath} ({displayTitle})
                   </option>
-                ))
-              ) : (
-                <option value={currentPage.url || '/'}>
-                  {cleanPath} ({displayTitle})
-                </option>
-              )}
+                )
+              })()}
             </select>
           </div>
 
