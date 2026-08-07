@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.2-rules',
+    version: 'v1.2-rules',
+    gitTag: 'v1.2-global-import-rules',
+    commit: '[AUTO]',
+    date: '07-08-2026 13:01',
+    title: 'WordPress Import Rules Section',
+    description: 'WordPress Import Rules section created in Global Settings with Auto-Exclusion rules, Default Include rule, WP Object Types reference, and Future Import Rules placeholders.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.2-global-import-rules.md',
+  },
+  {
     id: 'v1.1-meta',
     version: 'v1.1-meta',
     gitTag: 'v1.1-page-metadata-import',
-    commit: '[AUTO]',
+    commit: '0e7d1f4',
     date: '07-08-2026 12:58',
     title: 'WordPress Page Import Metadata',
     description: 'Complete WordPress page import metadata. Title, URL, Page Type object mapping, and automatic exclusion rules.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.1-page-metadata-import.md',
   },
   {

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import RestorePointsPage from './RestorePointsPage'
+import WordPressImportRulesPage from './WordPressImportRulesPage'
 import './GlobalSettings.css'
 
 const SETTINGS_MENU = [
-  { id: 'restore-points', label: 'Restore Points', icon: 'history' },
-  { id: 'general',        label: 'General',        icon: 'settings', disabled: true },
-  { id: 'api-keys',       label: 'API Credentials',icon: 'key',      disabled: true },
-  { id: 'defaults',       label: 'Defaults',       icon: 'sliders',  disabled: true },
+  { id: 'restore-points', label: 'Restore Points',        icon: 'history' },
+  { id: 'import-rules',   label: 'WordPress Import Rules',icon: 'download' },
+  { id: 'general',        label: 'General',               icon: 'settings', disabled: true },
+  { id: 'api-keys',       label: 'API Credentials',       icon: 'key',      disabled: true },
+  { id: 'defaults',       label: 'Defaults',              icon: 'sliders',  disabled: true },
 ]
 
 export default function GlobalSettings() {
@@ -40,6 +42,7 @@ export default function GlobalSettings() {
       {/* Main Settings Content */}
       <main className="gs-content">
         {activeTab === 'restore-points' && <RestorePointsPage />}
+        {activeTab === 'import-rules'   && <WordPressImportRulesPage />}
       </main>
 
     </div>

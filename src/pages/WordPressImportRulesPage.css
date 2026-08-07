@@ -1,0 +1,216 @@
+/* ── WordPress Import Rules Page ── */
+.import-rules-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 1600px;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.ir-header {
+  margin-bottom: 0.5rem;
+}
+
+.ir-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: rgb(248, 250, 252);
+  margin: 0 0 0.25rem 0;
+}
+
+.ir-subtitle {
+  font-size: 0.875rem;
+  color: rgb(148, 163, 184);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 900px;
+}
+
+/* Rule Card Container */
+.ir-card {
+  background-color: rgb(17, 24, 39);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ir-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ir-card-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgb(248, 250, 252);
+  margin: 0;
+}
+
+.ir-card-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: rgb(248, 113, 113);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-green {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: rgb(52, 211, 153);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.badge-blue {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: rgb(96, 165, 250);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.badge-amber {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: rgb(251, 191, 36);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.ir-card-desc {
+  font-size: 0.85rem;
+  color: rgb(148, 163, 184);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Section 1: Excluded Pages Grid */
+.ir-grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.ir-rule-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 10px 14px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.ir-rule-icon {
+  font-size: 0.9rem;
+}
+
+.ir-rule-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgb(226, 232, 240);
+  flex: 1;
+}
+
+.ir-rule-status {
+  font-size: 0.7rem;
+  color: rgb(148, 163, 184);
+  background-color: rgba(0, 0, 0, 0.25);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Section 2: Default Include Box */
+.ir-default-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+}
+
+.ir-default-pill {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgb(52, 211, 153);
+  background-color: rgba(16, 185, 129, 0.2);
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+
+.ir-default-text {
+  font-size: 0.85rem;
+  color: rgb(226, 232, 240);
+}
+
+/* Section 3: Object Types Flex Tags */
+.ir-tags-flex {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.ir-type-tag {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgb(226, 232, 240);
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
+/* Section 4: Future Placeholders Grid */
+.ir-placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.ir-placeholder-card {
+  padding: 1rem 1.25rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ir-ph-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ir-ph-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgb(226, 232, 240);
+}
+
+.ir-ph-lock {
+  font-size: 0.7rem;
+  color: rgb(148, 163, 184);
+}
+
+.ir-ph-desc {
+  font-size: 0.8rem;
+  color: rgb(148, 163, 184);
+  margin: 0;
+  line-height: 1.4;
+}
