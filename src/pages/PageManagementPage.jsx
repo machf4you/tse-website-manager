@@ -50,6 +50,15 @@ export default function PageManagementPage({
     } else if (sortColumn === 'priority') {
       valA = String(a.priority || '').toLowerCase()
       valB = String(b.priority || '').toLowerCase()
+    } else if (sortColumn === 'target') {
+      valA = (a.target || '').toLowerCase()
+      valB = (b.target || '').toLowerCase()
+    } else if (sortColumn === 'status') {
+      valA = (a.isExcluded ? 'Excluded' : (a.isConfigured ? 'Configured' : 'Included')).toLowerCase()
+      valB = (b.isExcluded ? 'Excluded' : (b.isConfigured ? 'Configured' : 'Included')).toLowerCase()
+    } else if (sortColumn === 'actions') {
+      valA = String(a.id || '').toLowerCase()
+      valB = String(b.id || '').toLowerCase()
     }
 
     if (valA < valB) return sortDirection === 'asc' ? -1 : 1
@@ -199,9 +208,15 @@ export default function PageManagementPage({
               <th className="sortable-th" onClick={() => handleSort('priority')}>
                 Priority {renderSortIndicator('priority')}
               </th>
-              <th>Target</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th className="sortable-th" onClick={() => handleSort('target')}>
+                Target {renderSortIndicator('target')}
+              </th>
+              <th className="sortable-th" onClick={() => handleSort('status')}>
+                Status {renderSortIndicator('status')}
+              </th>
+              <th className="sortable-th" onClick={() => handleSort('actions')}>
+                Actions {renderSortIndicator('actions')}
+              </th>
             </tr>
           </thead>
           <tbody>
