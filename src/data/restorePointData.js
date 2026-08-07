@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.9-audit-results',
+    version: 'v1.9-audit-results',
+    gitTag: 'v1.9-latest-page-audit-results-page',
+    commit: '2aa932b',
+    date: '07-08-2026 17:00',
+    title: 'Latest Page Audit Results View',
+    description: 'Created W3 / W4 Latest Page Audit Results view matching exact design mockup. Features interactive page selector dropdown, audit score indicator (6/8 Passed), 3-column page metadata cards, 8-element SEO Audit Table, and Action Checklist for staff fixes.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.9-latest-page-audit-results-page.md',
+  },
+  {
     id: 'v1.8-prio-header',
     version: 'v1.8-prio-header',
     gitTag: 'v1.8-renamed-priority-to-prio',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 16:50',
     title: 'Renamed Priority Header to Prio',
     description: 'Renamed Priority table header to Prio and enforced white-space nowrap across sortable header titles to prevent sort arrows from wrapping onto second lines.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.8-renamed-priority-to-prio.md',
   },
   {
