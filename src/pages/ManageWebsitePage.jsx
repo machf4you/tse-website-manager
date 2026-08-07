@@ -100,7 +100,14 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   // Extract exported page inventory from stored exporter package using priority chain
   const exportedPages = (() => {
     const pkg = storedPackageData || site?.storedPackageData
+    console.log('[DEBUG ManageWebsitePage] storedPackageData:', pkg)
     if (!pkg) return []
+    console.log('[DEBUG ManageWebsitePage] pkg.packageData:', pkg.packageData)
+    console.log('[DEBUG ManageWebsitePage] pkg.packageData?.pages:', pkg.packageData?.pages)
+    console.log('[DEBUG ManageWebsitePage] pkg.packageData?.content?.pages:', pkg.packageData?.content?.pages)
+    console.log('[DEBUG ManageWebsitePage] pkg.content?.pages:', pkg.content?.pages)
+    console.log('[DEBUG ManageWebsitePage] pkg.pages:', pkg.pages)
+    console.log('[DEBUG ManageWebsitePage] pkg.data?.pages:', pkg.data?.pages)
     return (
       pkg.packageData?.pages ||
       pkg.packageData?.content?.pages ||

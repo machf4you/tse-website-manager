@@ -6,7 +6,14 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
 
   // Extract exported page inventory from stored exporter package using priority chain
   const pagesList = (() => {
+    console.log('[DEBUG PageManagementPage] storedPackageData:', storedPackageData)
     if (!storedPackageData) return []
+    console.log('[DEBUG PageManagementPage] storedPackageData.packageData:', storedPackageData.packageData)
+    console.log('[DEBUG PageManagementPage] storedPackageData.packageData?.pages:', storedPackageData.packageData?.pages)
+    console.log('[DEBUG PageManagementPage] storedPackageData.packageData?.content?.pages:', storedPackageData.packageData?.content?.pages)
+    console.log('[DEBUG PageManagementPage] storedPackageData.content?.pages:', storedPackageData.content?.pages)
+    console.log('[DEBUG PageManagementPage] storedPackageData.pages:', storedPackageData.pages)
+    console.log('[DEBUG PageManagementPage] storedPackageData.data?.pages:', storedPackageData.data?.pages)
     return (
       storedPackageData.packageData?.pages ||
       storedPackageData.packageData?.content?.pages ||
