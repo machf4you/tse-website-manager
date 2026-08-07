@@ -306,8 +306,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
               disabled={isLoadingAudit}
             >
               {(() => {
-                const selectablePages = pagesList.filter(p => !p.isExcluded && p.priority !== 0 && p.type !== 'Excluded' && p.type !== 'Unclassified / Excluded')
-                const displayList = selectablePages.length > 0 ? selectablePages : (pagesList.length > 0 ? pagesList : [])
+                const selectablePages = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.priority !== 0 && p.type !== 'Excluded' && p.type !== 'Unclassified / Excluded')
+                const displayList = selectablePages.length > 0 ? selectablePages : (pagesList.length > 0 ? pagesList.filter(p => p.isConfigured === true) : [])
                 if (displayList.length > 0) {
                   return displayList.map((p, idx) => (
                     <option key={p.id || p.url || idx} value={p.url}>

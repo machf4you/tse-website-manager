@@ -87,8 +87,9 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  flex: 1;
-  min-width: 320px;
+  flex: 0 1 80%;
+  max-width: 80%;
+  min-width: 280px;
 }
 
 .w4-control-label {
