@@ -33,8 +33,8 @@ export default function PageManagementPage({
     if (filter === 'configured') return p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'action_required') return p.isConfigured !== true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'excluded') return p.isExcluded === true || p.type === 'Excluded'
-    // 'all': returns all pages (grand total = Excluded + Configured + Action Required)
-    return true
+    // Default ('all'): hide excluded pages from table view (only active included pages are visible)
+    return !p.isExcluded && p.type !== 'Excluded'
   })
 
   // Sort filtered pages based on sortColumn and sortDirection
