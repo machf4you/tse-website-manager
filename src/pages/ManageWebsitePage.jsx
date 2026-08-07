@@ -138,6 +138,8 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         storedPackageData={storedPackageData || site.storedPackageData}
         onBack={() => setActiveTab('w2')}
         onTabChange={(tab) => setActiveTab(tab)}
+        onSyncFromWordPress={handleSynchroniseClick}
+        isSyncing={isSyncing}
       />
     )
   }

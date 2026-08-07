@@ -2,7 +2,14 @@ import { useState } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import './PageManagementPage.css'
 
-export default function PageManagementPage({ site, storedPackageData, onBack, onTabChange }) {
+export default function PageManagementPage({
+  site,
+  storedPackageData,
+  onBack,
+  onTabChange,
+  onSyncFromWordPress,
+  isSyncing,
+}) {
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
 
   // Extract exported pages and posts using resilient package extractor
@@ -49,8 +56,14 @@ export default function PageManagementPage({ site, storedPackageData, onBack, on
         </div>
 
         <div className="w3-header-actions">
-          <button type="button" className="w3-btn-secondary" id="btn-w3-sync-wp">
-            Sync from WordPress
+          <button
+            type="button"
+            className="w3-btn-secondary"
+            id="btn-w3-sync-wp"
+            onClick={onSyncFromWordPress}
+            disabled={isSyncing}
+          >
+            {isSyncing ? 'Syncing...' : 'Sync from WordPress'}
           </button>
           <button type="button" className="w3-btn-emerald" id="btn-w3-run-audit">
             Run Audit ▷
