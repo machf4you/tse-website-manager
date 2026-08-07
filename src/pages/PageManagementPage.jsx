@@ -52,20 +52,26 @@ export default function PageManagementPage({
     }
   }
 
-  const handleExcludePage = (pageUrl) => {
+  const handleExcludePage = (page) => {
+    const pageKey = page.id || page.url || page.pageUrl
+    const urlKey = page.url || page.pageUrl || ''
     setConfigurations(prev => {
       const updated = {
         ...prev,
-        [pageUrl]: {
-          ...(prev[pageUrl] || {}),
-          url: pageUrl,
+        [pageKey]: {
+          ...(prev[pageKey] || {}),
+          pageId: page.id,
+          url: urlKey,
           isExcluded: true,
           type: 'Excluded',
           seoPageType: 'Excluded',
           priority: 0,
           isConfigured: true,
           status: 'configured',
-        }
+        },
+      }
+      if (urlKey && urlKey !== pageKey) {
+        updated[urlKey] = updated[pageKey]
       }
       try {
         const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
@@ -77,10 +83,13 @@ export default function PageManagementPage({
     })
   }
 
-  const handleIncludePage = (pageUrl) => {
+  const handleIncludePage = (page) => {
+    const pageKey = page.id || page.url || page.pageUrl
+    const urlKey = page.url || page.pageUrl || ''
     setConfigurations(prev => {
       const updated = { ...prev }
-      delete updated[pageUrl]
+      delete updated[pageKey]
+      if (urlKey) delete updated[urlKey]
       try {
         const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
         localStorage.setItem(siteIdKey, JSON.stringify(updated))
@@ -97,8 +106,9 @@ export default function PageManagementPage({
   const _postsList = extractPostsFromPackage(pkg)
 
   const pagesList = rawPagesList.map(page => {
-    const pageKey = page.id || page.url
-    const override = configurations[pageKey]
+    const pageKey = page.id || page.url || page.pageUrl
+    const urlKey = page.url || page.pageUrl || ''
+    const override = configurations[pageKey] || (urlKey ? configurations[urlKey] : null)
     if (override) {
       return {
         ...page,
@@ -379,7 +389,7 @@ export default function PageManagementPage({
                       <button
                         type="button"
                         className="btn-row-include"
-                        onClick={() => handleIncludePage(page.url)}
+                        onClick={() => handleIncludePage(page)}
                         title="Include page back in active list"
                         id={`btn-include-page-${page.id || idx}`}
                       >
@@ -389,7 +399,7 @@ export default function PageManagementPage({
                       <button
                         type="button"
                         className="btn-row-exclude"
-                        onClick={() => handleExcludePage(page.url)}
+                        onClick={() => handleExcludePage(page)}
                         title="Exclude page with 1-click"
                         id={`btn-exclude-page-${page.id || idx}`}
                       >
