@@ -49,8 +49,11 @@ export default function PageManagementPage({
       valA = (a.type || '').toLowerCase()
       valB = (b.type || '').toLowerCase()
     } else if (sortColumn === 'priority') {
-      valA = String(a.priority || '').toLowerCase()
-      valB = String(b.priority || '').toLowerCase()
+      const pA = a.priority !== undefined ? Number(a.priority) : 0
+      const pB = b.priority !== undefined ? Number(b.priority) : 0
+      if (pA < pB) return sortDirection === 'asc' ? -1 : 1
+      if (pA > pB) return sortDirection === 'asc' ? 1 : -1
+      return 0
     } else if (sortColumn === 'target') {
       valA = (a.target || '').toLowerCase()
       valB = (b.target || '').toLowerCase()
@@ -239,7 +242,7 @@ export default function PageManagementPage({
                       {page.type || 'Unclassified'}
                     </span>
                   </td>
-                  <td className="col-priority">{''}</td>
+                  <td className="col-priority">{page.priority !== undefined ? page.priority : 0}</td>
                   <td className="col-target">{''}</td>
                   <td className="col-status">
                     <span className={page.isExcluded ? 'status-excluded' : 'status-included'}>

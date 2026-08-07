@@ -200,12 +200,29 @@ export function normalizeImportedPage(p, siteUrl = '') {
   const seoPageType = classifyPageType(p, title, url, isExcluded, isHomePage)
   const type = seoPageType
 
+  // 5. Priority Level Rule:
+  // Hub -> Priority 1
+  // Landing -> Priority 2
+  // Topical -> Priority 3
+  // Unclassified / Excluded -> Priority 0
+  let priority = 0
+  if (seoPageType === 'Hub') {
+    priority = 1
+  } else if (seoPageType === 'Landing') {
+    priority = 2
+  } else if (seoPageType === 'Topical') {
+    priority = 3
+  } else {
+    priority = 0
+  }
+
   return {
     ...p,
     title,
     url,
     type,
     seoPageType,
+    priority,
     isExcluded,
     isHomePage,
   }
