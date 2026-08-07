@@ -268,6 +268,14 @@
   font-size: 0.88rem;
 }
 
+.target-not-set {
+  color: rgb(148, 163, 184);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
 .col-type {
   width: 10%;
   color: rgb(203, 213, 225);

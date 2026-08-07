@@ -353,7 +353,13 @@ export default function PageManagementPage({
                     </span>
                   </td>
                   <td className="col-priority">{page.priority !== undefined ? page.priority : 0}</td>
-                  <td className="col-target">{page.target || page.targetPhrase || ''}</td>
+                  <td className="col-target">
+                    {(page.target || page.targetPhrase || '').trim() ? (
+                      page.target || page.targetPhrase
+                    ) : (
+                      <span className="target-not-set">Not Set</span>
+                    )}
+                  </td>
                   <td className="col-last-audit">
                     <button
                       type="button"
