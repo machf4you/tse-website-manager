@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.1-meta',
+    version: 'v1.1-meta',
+    gitTag: 'v1.1-page-metadata-import',
+    commit: '[AUTO]',
+    date: '07-08-2026 12:58',
+    title: 'WordPress Page Import Metadata',
+    description: 'Complete WordPress page import metadata. Title, URL, Page Type object mapping, and automatic exclusion rules.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.1-page-metadata-import.md',
+  },
+  {
     id: 'v1.0-wp',
     version: 'v1.0-wp',
     gitTag: 'v1.0-wordpress-import-working',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 12:50',
     title: 'First Working WordPress Import',
     description: 'First fully working WordPress integration. Website connection, WordPress sync, Exporter integration, live page inventory import, and W3 Page Management.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.0-wordpress-import-working.md',
   },
   {
