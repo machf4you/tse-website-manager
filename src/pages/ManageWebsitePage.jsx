@@ -90,7 +90,24 @@ function formatNowDDMMYYYYHHMM() {
 
 
 export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
-  const [activeTab, setActiveTab] = useState('w2')
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tse_active_tab_v1')
+      if (saved) return saved
+    } catch (e) {
+      console.error('Failed to load active tab from localStorage:', e)
+    }
+    return 'w2'
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tse_active_tab_v1', activeTab)
+    } catch (e) {
+      console.error('Failed to save active tab to localStorage:', e)
+    }
+  }, [activeTab])
+
   const [isSynced, setIsSynced] = useState(() => {
     return Boolean(site && site.isSynchronised === true && site.lastSyncTimestamp)
   })

@@ -9,7 +9,6 @@ const STORAGE_KEY = 'tse_connected_websites_v1'
 
 export default function WebsitesDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [managedSite, setManagedSite] = useState(null)
   const [editingSite, setEditingSite] = useState(null)
   const [sites, setSites] = useState(() => {
     try {
@@ -25,6 +24,35 @@ export default function WebsitesDashboard() {
     }
     return [mockSiteTile]
   })
+
+  const [managedSite, setManagedSiteState] = useState(() => {
+    try {
+      const savedId = localStorage.getItem('tse_managed_site_id_v1')
+      if (savedId) {
+        const saved = localStorage.getItem(STORAGE_KEY)
+        const allSites = saved ? JSON.parse(saved) : [mockSiteTile]
+        const found = allSites.find(s => s.id === savedId)
+        if (found) return found
+      }
+    } catch (e) {
+      console.error('Failed to load managed site from localStorage:', e)
+    }
+    return null
+  })
+
+  const setManagedSite = (site) => {
+    setManagedSiteState(site)
+    try {
+      if (site && site.id) {
+        localStorage.setItem('tse_managed_site_id_v1', site.id)
+      } else {
+        localStorage.removeItem('tse_managed_site_id_v1')
+        localStorage.removeItem('tse_active_tab_v1')
+      }
+    } catch (e) {
+      console.error('Failed to save managed site to localStorage:', e)
+    }
+  }
 
   useEffect(() => {
     try {
@@ -46,6 +74,9 @@ export default function WebsitesDashboard() {
   const handleDeleteWebsite = (siteId) => {
     setSites(prev => prev.filter(s => s.id !== siteId))
     setEditingSite(null)
+    if (managedSite && managedSite.id === siteId) {
+      setManagedSite(null)
+    }
   }
 
   if (managedSite) {
