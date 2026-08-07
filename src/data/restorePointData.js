@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.2-module-designations',
+    version: 'v2.2-module-designations',
+    gitTag: 'v2.2-updated-w4-w5-w6-w7-module-designations',
+    commit: 'ec2afbd',
+    date: '07-08-2026 17:18',
+    title: 'W4-W7 Module Designations',
+    description: 'Renamed Page Audit Results to W4, Review Links to W5, Site Analysis to W6, and Website Settings to W7 across navigation tabs, pill tags, and dashboard cards.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.2-updated-w4-w5-w6-w7-module-designations.md',
+  },
+  {
     id: 'v2.1-prio-sort',
     version: 'v2.1-prio-sort',
     gitTag: 'v2.1-default-priority-sort',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:16',
     title: 'Default Priority Sort Order',
     description: 'Updated W3 Page Management default sort column state from alphabetical title order to Priority order (Hubs -> Landing -> Topical -> Unclassified/Excluded).',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.1-default-priority-sort.md',
   },
   {
