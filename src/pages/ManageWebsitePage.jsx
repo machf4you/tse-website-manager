@@ -426,7 +426,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           <button type="button" className="w2-fc-btn btn-open-purple" id="btn-open-links">
             Open Links ›
           </button>
-          <span className="w2-fc-tag">W4 | INTERNAL LINKING</span>
+          <span className="w2-fc-tag">W5 | REVIEW LINKS</span>
         </div>
 
         {/* Card 3: Site Analysis */}
@@ -449,7 +449,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           <button type="button" className="w2-fc-btn btn-open-blue" id="btn-open-site-analysis">
             Open Site Analysis ›
           </button>
-          <span className="w2-fc-tag">W5 | SITE ANALYSIS</span>
+          <span className="w2-fc-tag">W6 | SITE ANALYSIS</span>
         </div>
 
         {/* Card 4: Website Settings */}
@@ -472,7 +472,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           <button type="button" className="w2-fc-btn btn-open-amber" id="btn-open-settings">
             Open Settings ›
           </button>
-          <span className="w2-fc-tag">W6 | WEBSITE SETTINGS</span>
+          <span className="w2-fc-tag">W7 | WEBSITE SETTINGS</span>
         </div>
 
       </div>

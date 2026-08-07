@@ -187,7 +187,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
         {/* Page Title & Pill Badge */}
         <div className="w4-header-block">
-          <span className="w4-pill-badge">W3 | LATEST PAGE AUDIT RESULTS</span>
+          <span className="w4-pill-badge">W4 | LATEST PAGE AUDIT RESULTS</span>
           <h1 className="w4-main-title">Now We Need To Optimize The SEO Elements Of This Page</h1>
         </div>
 

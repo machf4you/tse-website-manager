@@ -197,26 +197,26 @@ export default function PageManagementPage({
         <button
           type="button"
           className="w3-tab"
-          onClick={() => onTabChange && onTabChange('w4')}
+          onClick={() => onTabChange && onTabChange('w5')}
           id="tab-w3-review-links"
         >
-          W4 | Review Links
-        </button>
-        <button
-          type="button"
-          className="w3-tab"
-          onClick={() => onTabChange && onTabChange('w5')}
-          id="tab-w3-site-analysis"
-        >
-          W5 | Site Analysis
+          W5 | Review Links
         </button>
         <button
           type="button"
           className="w3-tab"
           onClick={() => onTabChange && onTabChange('w6')}
+          id="tab-w3-site-analysis"
+        >
+          W6 | Site Analysis
+        </button>
+        <button
+          type="button"
+          className="w3-tab"
+          onClick={() => onTabChange && onTabChange('w7')}
           id="tab-w3-website-settings"
         >
-          W6 | Website Settings
+          W7 | Website Settings
         </button>
       </div>
 
