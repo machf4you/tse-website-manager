@@ -341,6 +341,47 @@
   font-size: 0.75rem;
 }
 
+.col-last-audit, .col-audit-page {
+  text-align: center;
+}
+
+.btn-table-audit-muted, .btn-table-audit-action {
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Gray, almost semi-invisible faded button state for unconfigured URLs */
+.btn-audit-faded {
+  opacity: 0.18;
+  color: rgb(148, 163, 184);
+  background-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: not-allowed;
+  user-select: none;
+}
+
+/* Crisp, active visible button state when URL is configured */
+.btn-audit-active {
+  opacity: 1;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+}
+
+.btn-audit-active:hover {
+  background-color: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: rgb(52, 211, 153);
+  transform: translateY(-1px);
+}
+
 .btn-configure-page {
   background: none;
   border: none;

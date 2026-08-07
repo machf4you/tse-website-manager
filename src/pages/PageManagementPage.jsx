@@ -112,8 +112,14 @@ export default function PageManagementPage({
       valA = (a.target || a.targetPhrase || '').toLowerCase()
       valB = (b.target || b.targetPhrase || '').toLowerCase()
     } else if (sortColumn === 'status') {
-      valA = (a.isExcluded ? 'Excluded' : (a.isConfigured ? 'Configured' : 'Included')).toLowerCase()
-      valB = (b.isExcluded ? 'Excluded' : (b.isConfigured ? 'Configured' : 'Included')).toLowerCase()
+      valA = (a.isExcluded ? 'Excluded' : (a.isConfigured ? 'Configured' : 'Unconfigured')).toLowerCase()
+      valB = (b.isExcluded ? 'Excluded' : (b.isConfigured ? 'Configured' : 'Unconfigured')).toLowerCase()
+    } else if (sortColumn === 'lastAudit') {
+      valA = (a.lastAuditDate || 'Never').toLowerCase()
+      valB = (b.lastAuditDate || 'Never').toLowerCase()
+    } else if (sortColumn === 'auditPage') {
+      valA = (a.isConfigured ? 'Audit Page' : 'Not Configured').toLowerCase()
+      valB = (b.isConfigured ? 'Audit Page' : 'Not Configured').toLowerCase()
     } else if (sortColumn === 'actions') {
       valA = String(a.id || '').toLowerCase()
       valB = String(b.id || '').toLowerCase()
@@ -272,6 +278,12 @@ export default function PageManagementPage({
               <th className="sortable-th" onClick={() => handleSort('status')}>
                 Status {renderSortIndicator('status')}
               </th>
+              <th className="sortable-th" onClick={() => handleSort('lastAudit')}>
+                Last Audit {renderSortIndicator('lastAudit')}
+              </th>
+              <th className="sortable-th" onClick={() => handleSort('auditPage')}>
+                Audit Page {renderSortIndicator('auditPage')}
+              </th>
               <th className="sortable-th" onClick={() => handleSort('actions')}>
                 Actions {renderSortIndicator('actions')}
               </th>
@@ -307,6 +319,26 @@ export default function PageManagementPage({
                       {page.isExcluded ? 'Excluded' : (page.isConfigured ? 'Configured' : 'Unconfigured')}
                     </span>
                   </td>
+                  <td className="col-last-audit">
+                    <button
+                      type="button"
+                      className={`btn-table-audit-muted ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
+                      disabled={!page.isConfigured}
+                      id={`btn-last-audit-${page.id || idx}`}
+                    >
+                      {page.isConfigured ? (page.lastAuditDate || 'Never') : 'Never'}
+                    </button>
+                  </td>
+                  <td className="col-audit-page">
+                    <button
+                      type="button"
+                      className={`btn-table-audit-action ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
+                      disabled={!page.isConfigured}
+                      id={`btn-audit-page-${page.id || idx}`}
+                    >
+                      Audit Page
+                    </button>
+                  </td>
                   <td className="col-actions">
                     <button
                       type="button"
@@ -321,7 +353,7 @@ export default function PageManagementPage({
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="w3-empty-row">
+                <td colSpan="8" className="w3-empty-row">
                   No pages found in stored exporter package.
                 </td>
               </tr>
