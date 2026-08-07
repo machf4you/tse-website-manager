@@ -52,6 +52,26 @@
   flex-wrap: wrap;
 }
 
+.w2-unsynced-banner.banner-error {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, rgba(220, 38, 38, 0.14) 100%);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.w2-unsynced-banner.banner-error .w2-banner-heading {
+  color: rgb(248, 113, 113);
+}
+
+.w2-package-proof-badge {
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: rgb(52, 211, 153);
+}
+
 .w2-banner-text {
   display: flex;
   flex-direction: column;

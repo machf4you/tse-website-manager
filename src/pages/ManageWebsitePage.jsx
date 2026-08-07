@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { fetchTseWordPressExportPackage } from '../services/exporterApi'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -91,6 +92,8 @@ export default function ManageWebsitePage({ site, onBack }) {
   const [lastSyncDate, setLastSyncDate] = useState(() => site ? site.lastSyncTimestamp : null)
   const [isSyncing, setIsSyncing] = useState(false)
   const [stageIndex, setStageIndex] = useState(0)
+  const [syncError, setSyncError] = useState(null)
+  const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
 
   const timerRef = useRef(null)
 
@@ -102,25 +105,49 @@ export default function ManageWebsitePage({ site, onBack }) {
 
   if (!site) return null
 
-  const handleSynchroniseClick = () => {
+  const handleSynchroniseClick = async () => {
     if (isSyncing) return
     setIsSyncing(true)
+    setSyncError(null)
     setStageIndex(0)
 
+    // Call Exporter Service
+    const exporterPromise = fetchTseWordPressExportPackage({
+      websiteUrl: site.url,
+      username: site.connectedUser || site.wpUser,
+      applicationPassword: site.wpPass,
+    })
+
     let idx = 0
-    timerRef.current = setInterval(() => {
+    timerRef.current = setInterval(async () => {
       idx += 1
-      if (idx < SYNC_STAGES.length) {
+      if (idx < SYNC_STAGES.length - 1) {
         setStageIndex(idx)
       } else {
         clearInterval(timerRef.current)
         timerRef.current = null
-        const completedTime = formatNowDDMMYYYYHHMM()
-        setLastSyncDate(completedTime)
-        setIsSynced(true)
-        setIsSyncing(false)
+
+        // Await real Exporter response
+        const result = await exporterPromise
+
+        if (result.success && result.packageData) {
+          setStageIndex(6) // Synchronisation complete.
+          setStoredPackageData(result.packageData)
+          const completedTime = formatNowDDMMYYYYHHMM()
+          setLastSyncDate(completedTime)
+
+          setTimeout(() => {
+            setIsSynced(true)
+            setIsSyncing(false)
+          }, 500)
+        } else {
+          // If exporter call fails: Keep banner visible and show error
+          setIsSyncing(false)
+          setIsSynced(false)
+          setSyncError(result.message || 'Failed to connect to TSE WordPress Exporter endpoint.')
+        }
       }
-    }, 600)
+    }, 500)
   }
 
   const progressPercent = Math.round(((stageIndex + 1) / SYNC_STAGES.length) * 100)
@@ -142,13 +169,15 @@ export default function ManageWebsitePage({ site, onBack }) {
 
       {/* ── Stage 3: Unsynchronised Prominent Banner ── */}
       {!isSynced && (
-        <div className="w2-unsynced-banner" role="alert" id="banner-unsynchronised">
+        <div className={`w2-unsynced-banner ${syncError ? 'banner-error' : ''}`} role="alert" id="banner-unsynchronised">
           {!isSyncing ? (
             <>
               <div className="w2-banner-text">
-                <h2 className="w2-banner-heading">This website has not yet been synchronised.</h2>
+                <h2 className="w2-banner-heading">
+                  {syncError ? 'Synchronisation Failed' : 'This website has not yet been synchronised.'}
+                </h2>
                 <p className="w2-banner-explanation">
-                  Synchronisation is required before pages, audits and other website data become available.
+                  {syncError ? syncError : 'Synchronisation is required before pages, audits and other website data become available.'}
                 </p>
               </div>
               <button
@@ -158,7 +187,7 @@ export default function ManageWebsitePage({ site, onBack }) {
                 onClick={handleSynchroniseClick}
               >
                 <RefreshCwIcon />
-                Synchronise Website
+                {syncError ? 'Retry Synchronisation' : 'Synchronise Website'}
               </button>
             </>
           ) : (
@@ -205,6 +234,13 @@ export default function ManageWebsitePage({ site, onBack }) {
           </button>
         </div>
       </div>
+
+      {/* Proof Banner for Stored Package Data */}
+      {storedPackageData && (
+        <div className="w2-package-proof-badge" id="package-proof-badge">
+          <span>Package Stored: ID {storedPackageData.packageId || 'UUID'} (Schema {storedPackageData.schemaVersion || '1.0'})</span>
+        </div>
+      )}
 
       {/* ── 6 Stat Summary Metric Cards ── */}
       <div className="w2-stats-grid">
