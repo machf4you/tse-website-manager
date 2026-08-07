@@ -6,12 +6,22 @@
 export function normalizeImportedPage(p, siteUrl = '') {
   if (!p || typeof p !== 'object') return p
 
-  // 1. Meta Title / Page Title (use actual WP title, do not display "Untitled Page" unless genuinely missing)
+  // 1. Meta Title / Page Title (prioritizes Meta Title from SEO plugins, exporter payload, and WP Core title)
   let title = ''
   if (typeof p.metaTitle === 'string' && p.metaTitle.trim()) {
     title = p.metaTitle.trim()
+  } else if (typeof p.meta_title === 'string' && p.meta_title.trim()) {
+    title = p.meta_title.trim()
+  } else if (typeof p.seo_title === 'string' && p.seo_title.trim()) {
+    title = p.seo_title.trim()
+  } else if (typeof p.seoTitle === 'string' && p.seoTitle.trim()) {
+    title = p.seoTitle.trim()
   } else if (typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) {
     title = p.yoast_head_json.title.trim()
+  } else if (typeof p.rank_math_title === 'string' && p.rank_math_title.trim()) {
+    title = p.rank_math_title.trim()
+  } else if (typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) {
+    title = p._yoast_wpseo_title.trim()
   } else if (typeof p.title === 'object' && p.title !== null) {
     title = p.title.rendered || p.title.raw || ''
   } else if (typeof p.title === 'string') {
