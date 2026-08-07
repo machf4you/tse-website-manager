@@ -28,11 +28,13 @@ export function saveRestorePointIndex(items) {
   }
 }
 
-export function formatDateDDMMYYYY(d = new Date()) {
+export function formatDateTimeDDMMYYYYHHMM(d = new Date()) {
   const day = String(d.getDate()).padStart(2, '0')
   const month = String(d.getMonth() + 1).padStart(2, '0')
   const year = d.getFullYear()
-  return `${day}-${month}-${year}`
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${day}-${month}-${year} ${hours}:${minutes}`
 }
 
 export async function createRestorePoint({ version, title, description }) {
@@ -56,7 +58,7 @@ export async function createRestorePoint({ version, title, description }) {
   const gitTag = `${cleanVersion}-${slug}`
   const docFile = `RESTORE-POINT-${gitTag}.md`
   const mockCommit = Math.random().toString(16).substring(2, 9)
-  const todayDate = formatDateDDMMYYYY(new Date())
+  const todayDate = formatDateTimeDDMMYYYYHHMM(new Date())
 
   // 3. Create Record
   const newPoint = {

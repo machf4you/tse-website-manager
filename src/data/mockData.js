@@ -12,7 +12,7 @@ export const mockSiteTile = {
     connection:       { label: 'Connected',          value: 'Connected',          variant: 'green'  },
     platformApi:      { label: 'WordPress API',      value: 'Securely Connected', variant: 'green', icon: 'lock' },
     configured:       { label: 'Configured',         value: 'Pages Configured (2/29)', variant: 'amber' },
-    audited:          { label: 'Audited',            value: 'Audited (05-07-2026)', variant: 'green' },
+    audited:          { label: 'Audited',            value: 'Audited (05-07-2026 14:30)', variant: 'green' },
     tasksOutstanding: { label: 'Tasks Outstanding',  value: '3 Outstanding',      variant: 'amber'  },
   },
 }
