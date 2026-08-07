@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.8-configured-dropdown',
+    version: 'v2.8-configured-dropdown',
+    gitTag: 'v2.8-configured-only-audit-dropdown-20pct-narrower',
+    commit: '970a47b',
+    date: '07-08-2026 17:47',
+    title: 'Configured URLs Only in Audit Dropdown',
+    description: 'Filtered the W4 Audit Results page selector dropdown to display Configured URLs only, and reduced the dropdown container width by 20%.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.8-configured-only-audit-dropdown-20pct-narrower.md',
+  },
+  {
     id: 'v2.7-target-not-set',
     version: 'v2.7-target-not-set',
     gitTag: 'v2.7-target-column-not-set-fallback',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:44',
     title: 'Not Set Fallback for Target Column',
     description: 'Updated Target column on W3 Page Management table to display "Not Set" in muted italicized text until a target phrase is entered.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.7-target-column-not-set-fallback.md',
   },
   {
