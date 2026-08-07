@@ -51,6 +51,15 @@ export async function fetchTseWordPressExportPackage({
 
     const packageData = await response.json()
 
+    // If WordPress returns a WP_Error payload (e.g. { code: '...', message: '...' })
+    if (packageData && packageData.code && packageData.message && !packageData.pages && !packageData.data?.pages) {
+      return {
+        success: false,
+        error: packageData.code,
+        message: `WordPress Error (${packageData.code}): ${packageData.message}`,
+      }
+    }
+
     return {
       success: true,
       packageData,

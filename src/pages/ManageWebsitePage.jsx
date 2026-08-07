@@ -175,7 +175,15 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         // Await real Exporter response
         const result = await exporterPromise
 
-        if (result.success && result.packageData) {
+        const resPages =
+          result.packageData?.pages ||
+          result.packageData?.data?.pages ||
+          result.packageData?.packageData?.pages ||
+          result.packageData?.content?.pages ||
+          (Array.isArray(result.packageData?.data) ? result.packageData.data : []) ||
+          []
+
+        if (result.success && result.packageData && resPages.length > 0) {
           setStageIndex(6) // Synchronisation complete.
           setStoredPackageData(result.packageData)
           const completedTime = formatNowDDMMYYYYHHMM()
@@ -196,6 +204,10 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
             setIsSynced(true)
             setIsSyncing(false)
           }, 500)
+        } else if (result.success && result.packageData && resPages.length === 0) {
+          setIsSyncing(false)
+          setIsSynced(false)
+          setSyncError('WordPress connected, but the TSE Exporter returned 0 pages. Please verify the TSE Site Exporter plugin is activated in WP Admin.')
         } else {
           // If exporter call fails: Keep banner visible and show error
           setIsSyncing(false)
