@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { fetchTseWordPressExportPackage } from '../services/exporterApi'
+import PageManagementPage from './PageManagementPage'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -86,6 +87,7 @@ function formatNowDDMMYYYYHHMM() {
 }
 
 export default function ManageWebsitePage({ site, onBack }) {
+  const [activeTab, setActiveTab] = useState('w2')
   const [isSynced, setIsSynced] = useState(() => {
     return Boolean(site && site.isSynchronised === true && site.lastSyncTimestamp)
   })
@@ -104,6 +106,17 @@ export default function ManageWebsitePage({ site, onBack }) {
   }, [])
 
   if (!site) return null
+
+  if (activeTab === 'w3') {
+    return (
+      <PageManagementPage
+        site={site}
+        storedPackageData={storedPackageData}
+        onBack={() => setActiveTab('w2')}
+        onTabChange={(tab) => setActiveTab(tab)}
+      />
+    )
+  }
 
   const handleSynchroniseClick = async () => {
     if (isSyncing) return
@@ -291,7 +304,12 @@ export default function ManageWebsitePage({ site, onBack }) {
             <li><span className="chk-icon">✓</span> Bulk actions and exports</li>
           </ul>
           {isSynced ? (
-            <button type="button" className="w2-fc-btn btn-open-emerald" id="btn-open-pages">
+            <button
+              type="button"
+              className="w2-fc-btn btn-open-emerald"
+              id="btn-open-pages"
+              onClick={() => setActiveTab('w3')}
+            >
               Open Pages ›
             </button>
           ) : (
