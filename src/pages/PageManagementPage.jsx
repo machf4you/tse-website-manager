@@ -267,7 +267,7 @@ export default function PageManagementPage({
                 Type {renderSortIndicator('type')}
               </th>
               <th className="sortable-th" onClick={() => handleSort('priority')}>
-                Priority {renderSortIndicator('priority')}
+                Prio {renderSortIndicator('priority')}
               </th>
               <th className="sortable-th" onClick={() => handleSort('target')}>
                 Target {renderSortIndicator('target')}
