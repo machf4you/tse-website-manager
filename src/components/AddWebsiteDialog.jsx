@@ -53,16 +53,32 @@ function SelectPlaceholder({ label, id }) {
   )
 }
 
+function PortfolioSelect({ id }) {
+  return (
+    <div className="aw-field">
+      <label className="aw-label" htmlFor={id}>Portfolio</label>
+      <select className="aw-input aw-select" id={id} defaultValue="">
+        <option value="" disabled>Select portfolio…</option>
+        <option value="tse">TSE</option>
+        <option value="scm">SCM</option>
+        <option value="client">Client</option>
+        <option value="internal">Internal</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+  )
+}
+
 /* ── WordPress field set ── */
 function WordPressFields() {
   return (
     <>
-      <Field label="Website Name"                id="wp-name"     placeholder="e.g. Bathroom Upgrades" />
-      <Field label="Website URL"                 id="wp-url"      placeholder="https://www.example.co.uk" />
-      <Field label="WordPress Username"          id="wp-user"     placeholder="admin" />
+      <Field label="Website Name"                   id="wp-name"  placeholder="e.g. Bathroom Upgrades" />
+      <Field label="Website URL"                    id="wp-url"   placeholder="https://www.example.co.uk" />
+      <Field label="WordPress Username"             id="wp-user"  placeholder="admin" />
       <Field label="WordPress Application Password" id="wp-pass"  type="password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" />
-      <Field label="Portfolio"                   id="wp-portfolio" placeholder="e.g. TSE Clients" />
-      <Toggle label="Elementor Enabled"          id="wp-elementor" />
+      <PortfolioSelect id="wp-portfolio" />
+      <Toggle label="Elementor Enabled"             id="wp-elementor" />
     </>
   )
 }
@@ -71,14 +87,14 @@ function WordPressFields() {
 function MagentoFields() {
   return (
     <>
-      <Field label="Website Name"          id="mg-name"       placeholder="e.g. My Magento Store" />
-      <Field label="Website URL (Frontend)" id="mg-url"       placeholder="https://www.example.co.uk" />
-      <Field label="Magento Backend URL"   id="mg-backend"    placeholder="https://www.example.co.uk/admin" />
-      <Field label="API Base URL"          id="mg-api"        placeholder="https://www.example.co.uk/rest/V1" />
-      <Field label="API Username"          id="mg-api-user"   placeholder="api_user" />
-      <Field label="API Password / Token"  id="mg-api-pass"   type="password" placeholder="••••••••••••••••" />
+      <Field label="Website Name"           id="mg-name"     placeholder="e.g. My Magento Store" />
+      <Field label="Website URL (Frontend)" id="mg-url"      placeholder="https://www.example.co.uk" />
+      <Field label="Magento Backend URL"    id="mg-backend"  placeholder="https://www.example.co.uk/admin" />
+      <Field label="API Base URL"           id="mg-api"      placeholder="https://www.example.co.uk/rest/V1" />
+      <Field label="API Username"           id="mg-api-user" placeholder="api_user" />
+      <Field label="API Password / Token"   id="mg-api-pass" type="password" placeholder="••••••••••••••••" />
       <SelectPlaceholder label="Store View" id="mg-store" />
-      <Field label="Portfolio"             id="mg-portfolio"  placeholder="e.g. TSE Clients" />
+      <PortfolioSelect id="mg-portfolio" />
     </>
   )
 }
