@@ -156,7 +156,7 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
     if (isConnecting) return
     setErrorMsg(null)
 
-    // 1. Validation
+    // Validation
     if (!wpName.trim()) {
       setErrorMsg('Please enter a Website Name.')
       return
@@ -181,14 +181,20 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
       setStepStates(prev => ({ ...prev, [stepId]: status }))
     }
 
-    // 2. REST API Connection & Verification
-    const res = await connectWordPress(
-      { url: wpUrl, username: wpUser, password: wpPass },
-      updateStep
-    )
+    // REST API Connection & Verification
+    let res
+    try {
+      res = await connectWordPress(
+        { url: wpUrl, username: wpUser, password: wpPass },
+        updateStep
+      )
+    } catch (err) {
+      setIsConnecting(false)
+      setErrorMsg('Unexpected error: ' + err.message)
+      return
+    }
 
     if (res.success) {
-      // 3. Save website record & create tile
       const newTile = buildWordPressSite({
         name: wpName.trim(),
         url: wpUrl.trim(),
@@ -350,7 +356,6 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
             form="aw-connect-form"
             className="aw-btn-connect"
             id="btn-connect-website"
-            onClick={handleConnect}
             disabled={isConnecting || platform !== 'wordpress'}
           >
             {isConnecting ? 'Connecting…' : 'Connect Website'}
