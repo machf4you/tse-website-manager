@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.8-prio-header',
+    version: 'v1.8-prio-header',
+    gitTag: 'v1.8-renamed-priority-to-prio',
+    commit: '11e1ea2',
+    date: '07-08-2026 16:50',
+    title: 'Renamed Priority Header to Prio',
+    description: 'Renamed Priority table header to Prio and enforced white-space nowrap across sortable header titles to prevent sort arrows from wrapping onto second lines.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.8-renamed-priority-to-prio.md',
+  },
+  {
     id: 'v1.7-remove-status',
     version: 'v1.7-remove-status',
     gitTag: 'v1.7-removed-redundant-status-column',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 16:48',
     title: 'Removed Redundant Status Column',
     description: 'Removed the duplicate Status column and reallocated width to the Target column (now 28% width) for long target phrase display. Action Required filter tab remains tied to unconfigured actions.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.7-removed-redundant-status-column.md',
   },
   {
