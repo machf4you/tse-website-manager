@@ -260,7 +260,21 @@
   font-family: monospace;
 }
 
-.col-type, .col-priority, .col-target {
+.col-target {
+  width: 28%;
+  font-weight: 600;
+  color: rgb(241, 245, 249);
+  font-size: 0.88rem;
+}
+
+.col-type {
+  width: 10%;
+  color: rgb(203, 213, 225);
+  font-size: 0.82rem;
+}
+
+.col-priority {
+  width: 6%;
   color: rgb(203, 213, 225);
   font-size: 0.82rem;
 }

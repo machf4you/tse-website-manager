@@ -111,9 +111,6 @@ export default function PageManagementPage({
     } else if (sortColumn === 'target') {
       valA = (a.target || a.targetPhrase || '').toLowerCase()
       valB = (b.target || b.targetPhrase || '').toLowerCase()
-    } else if (sortColumn === 'status') {
-      valA = (a.isExcluded ? 'Excluded' : (a.isConfigured ? 'Configured' : 'Unconfigured')).toLowerCase()
-      valB = (b.isExcluded ? 'Excluded' : (b.isConfigured ? 'Configured' : 'Unconfigured')).toLowerCase()
     } else if (sortColumn === 'lastAudit') {
       valA = (a.lastAuditDate || 'Never').toLowerCase()
       valB = (b.lastAuditDate || 'Never').toLowerCase()
@@ -275,9 +272,6 @@ export default function PageManagementPage({
               <th className="sortable-th" onClick={() => handleSort('target')}>
                 Target {renderSortIndicator('target')}
               </th>
-              <th className="sortable-th" onClick={() => handleSort('status')}>
-                Status {renderSortIndicator('status')}
-              </th>
               <th className="sortable-th" onClick={() => handleSort('lastAudit')}>
                 Last Audit {renderSortIndicator('lastAudit')}
               </th>
@@ -310,15 +304,6 @@ export default function PageManagementPage({
                   </td>
                   <td className="col-priority">{page.priority !== undefined ? page.priority : 0}</td>
                   <td className="col-target">{page.target || page.targetPhrase || ''}</td>
-                  <td className="col-status">
-                    <span className={
-                      page.isExcluded ? 'status-excluded' :
-                      page.isConfigured ? 'status-configured' :
-                      'status-unconfigured'
-                    }>
-                      {page.isExcluded ? 'Excluded' : (page.isConfigured ? 'Configured' : 'Unconfigured')}
-                    </span>
-                  </td>
                   <td className="col-last-audit">
                     <button
                       type="button"
@@ -353,7 +338,7 @@ export default function PageManagementPage({
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="w3-empty-row">
+                <td colSpan="7" className="w3-empty-row">
                   No pages found in stored exporter package.
                 </td>
               </tr>
