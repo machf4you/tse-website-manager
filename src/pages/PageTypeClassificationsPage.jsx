@@ -29,7 +29,8 @@ These should automatically be classified as Excluded because they are normally n
 - Accessibility Statement
 
 2. Website Utility Pages
-- Contact page (depending on site strategy)
+- About Us page (/about-us/)
+- Contact page (/contact-us/)
 - Thank You pages
 - Confirmation pages
 - Search results pages
@@ -135,6 +136,12 @@ Do NOT force a classification if confidence is low.
 Do NOT classify based only on WordPress post type, URL structure alone, or Page name alone.`
 
 const DEFAULT_COMMENTS = [
+  {
+    id: 'c3',
+    author: 'System Admin',
+    timestamp: '07-08-2026 14:10',
+    text: 'Reclassified /about-us/ and /contact-us/ as Excluded pages, and updated global Website Manager rules to auto-exclude About Us and Contact pages for all future websites.'
+  },
   {
     id: 'c2',
     author: 'System Admin',

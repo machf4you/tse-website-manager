@@ -49,7 +49,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage) {
     'loft-conversions', 'house-extensions', 'garage-conversions',
     'renovations-and-refurbishments', 'building-services', 'services',
     'our-services', 'architectural-planning-support', 'plastering-decorating',
-    'kitchen-fitting', 'bathroom-installations', 'projects', 'about-us', 'contact-us'
+    'kitchen-fitting', 'bathroom-installations', 'projects'
   ].some(slug => cleanSlug === slug || cleanSlug.endsWith('/' + slug))
 
   const isCommercialTitle = commercialKeywords.some(kw => lowerTitle.includes(kw) || lowerUrl.includes(kw))
@@ -148,6 +148,8 @@ export function normalizeImportedPage(p, siteUrl = '') {
     'accessibility statement', 'accessibility',
 
     // Website Utility Pages
+    'about us', 'about-us', 'about',
+    'contact us', 'contact-us', 'contact',
     'thank you', 'thank-you', 'thankyou',
     'confirmation',
     'search results', 'search',
