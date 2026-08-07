@@ -103,6 +103,7 @@
   color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 600;
+  cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
   white-space: nowrap;
 }
@@ -136,6 +137,8 @@
 /* ── Content Area ── */
 .app-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   background-color: var(--bg-color);
 }
 
