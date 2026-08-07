@@ -27,12 +27,12 @@ export default function WebsitesDashboard() {
 
   const [managedSite, setManagedSiteState] = useState(() => {
     try {
-      const savedId = localStorage.getItem('tse_managed_site_id_v1')
-      if (savedId) {
-        const saved = localStorage.getItem(STORAGE_KEY)
-        const allSites = saved ? JSON.parse(saved) : [mockSiteTile]
-        const found = allSites.find(s => s.id === savedId)
-        if (found) return found
+      const savedObj = localStorage.getItem('tse_managed_site_object_v1')
+      if (savedObj) {
+        const parsed = JSON.parse(savedObj)
+        if (parsed && typeof parsed === 'object' && parsed.name) {
+          return parsed
+        }
       }
     } catch (e) {
       console.error('Failed to load managed site from localStorage:', e)
@@ -43,9 +43,13 @@ export default function WebsitesDashboard() {
   const setManagedSite = (site) => {
     setManagedSiteState(site)
     try {
-      if (site && site.id) {
-        localStorage.setItem('tse_managed_site_id_v1', site.id)
+      if (site) {
+        localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(site))
+        if (site.id !== undefined) {
+          localStorage.setItem('tse_managed_site_id_v1', String(site.id))
+        }
       } else {
+        localStorage.removeItem('tse_managed_site_object_v1')
         localStorage.removeItem('tse_managed_site_id_v1')
         localStorage.removeItem('tse_active_tab_v1')
       }
