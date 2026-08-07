@@ -65,18 +65,14 @@ const RefreshCwIcon = () => (
 )
 
 export default function ManageWebsitePage({ site, onBack }) {
-  const [syncStatus, setSyncStatus] = useState({
-    isSynced: site ? site.isSynchronised !== false : false,
-    syncMessage: null,
+  const [isSynced, setIsSynced] = useState(() => {
+    return Boolean(site && site.isSynchronised === true && site.lastSyncTimestamp)
   })
 
   if (!site) return null
 
   const handleSynchroniseClick = () => {
-    setSyncStatus(prev => ({
-      ...prev,
-      syncMessage: 'Synchronisation ready. Connects to TSE WordPress Exporter in Stage 4.',
-    }))
+    setIsSynced(true)
   }
 
   return (
@@ -95,17 +91,13 @@ export default function ManageWebsitePage({ site, onBack }) {
       </div>
 
       {/* ── Stage 3: Unsynchronised Prominent Banner ── */}
-      {!syncStatus.isSynced && (
+      {!isSynced && (
         <div className="w2-unsynced-banner" role="alert" id="banner-unsynchronised">
           <div className="w2-banner-text">
-            <div className="w2-banner-title">
-              <span className="w2-banner-dot" aria-hidden="true" />
-              Website Connected — Synchronisation Pending
-            </div>
-            <p className="w2-banner-msg">This website has not yet been synchronised.</p>
-            {syncStatus.syncMessage && (
-              <p className="w2-banner-info">{syncStatus.syncMessage}</p>
-            )}
+            <h2 className="w2-banner-heading">This website has not yet been synchronised.</h2>
+            <p className="w2-banner-explanation">
+              Synchronisation is required before pages, audits and other website data become available.
+            </p>
           </div>
           <button
             type="button"
@@ -155,23 +147,23 @@ export default function ManageWebsitePage({ site, onBack }) {
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">TOTAL PAGES FOUND</span>
-          <span className="w2-stat-val val-white">{syncStatus.isSynced ? '40' : '0'}</span>
+          <span className="w2-stat-val val-white">{isSynced ? '40' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">CONFIGURED PAGES</span>
-          <span className="w2-stat-val val-emerald">{syncStatus.isSynced ? '2' : '0'}</span>
+          <span className="w2-stat-val val-emerald">{isSynced ? '2' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">UNCONFIGURED PAGES</span>
-          <span className="w2-stat-val val-slate">{syncStatus.isSynced ? '27' : '0'}</span>
+          <span className="w2-stat-val val-slate">{isSynced ? '27' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">ACTION REQUIRED</span>
-          <span className="w2-stat-val val-amber">{syncStatus.isSynced ? '29' : '0'}</span>
+          <span className="w2-stat-val val-amber">{isSynced ? '29' : '0'}</span>
         </div>
         <div className="w2-stat-card">
           <span className="w2-stat-label">EXCLUDED PAGES</span>
-          <span className="w2-stat-val val-slate">{syncStatus.isSynced ? '11' : '0'}</span>
+          <span className="w2-stat-val val-slate">{isSynced ? '11' : '0'}</span>
         </div>
       </div>
 
@@ -179,7 +171,7 @@ export default function ManageWebsitePage({ site, onBack }) {
       <div className="w2-feature-cards-grid">
 
         {/* Card 1: Manage Pages */}
-        <div className={`w2-feature-card theme-emerald ${!syncStatus.isSynced ? 'card-locked' : ''}`}>
+        <div className={`w2-feature-card theme-emerald ${!isSynced ? 'card-locked' : ''}`}>
           <div className="w2-fc-header">
             <div className="w2-fc-icon-bg">
               <FileTextIcon />
@@ -195,7 +187,7 @@ export default function ManageWebsitePage({ site, onBack }) {
             <li><span className="chk-icon">✓</span> Include / exclude pages</li>
             <li><span className="chk-icon">✓</span> Bulk actions and exports</li>
           </ul>
-          {syncStatus.isSynced ? (
+          {isSynced ? (
             <button type="button" className="w2-fc-btn btn-open-emerald" id="btn-open-pages">
               Open Pages ›
             </button>
@@ -205,7 +197,7 @@ export default function ManageWebsitePage({ site, onBack }) {
             </button>
           )}
           <span className="w2-fc-tag">
-            {syncStatus.isSynced ? 'W3 | PAGE MANAGEMENT' : 'W3 | PAGE MANAGEMENT (LOCKED)'}
+            {isSynced ? 'W3 | PAGE MANAGEMENT' : 'W3 | PAGE MANAGEMENT (LOCKED)'}
           </span>
         </div>
 
@@ -295,7 +287,7 @@ export default function ManageWebsitePage({ site, onBack }) {
             <button type="button" className="ic-link">View All</button>
           </div>
           <div className="w2-activity-list">
-            {syncStatus.isSynced ? (
+            {isSynced ? (
               <>
                 <div className="act-row">
                   <span className="act-label">WordPress sync completed</span>
@@ -331,14 +323,14 @@ export default function ManageWebsitePage({ site, onBack }) {
           </div>
           <div className="w2-audit-body">
             <div className="audit-gauge">
-              <span className="gauge-score">{syncStatus.isSynced ? '78' : '—'}</span>
-              <span className="gauge-max">{syncStatus.isSynced ? '/100' : ''}</span>
+              <span className="gauge-score">{isSynced ? '78' : '—'}</span>
+              <span className="gauge-max">{isSynced ? '/100' : ''}</span>
             </div>
             <div className="audit-details">
               <span className="audit-label">Overall Score</span>
-              <span className="audit-rating">{syncStatus.isSynced ? 'Good' : 'Not Audited'}</span>
+              <span className="audit-rating">{isSynced ? 'Good' : 'Not Audited'}</span>
               <span className="audit-sub">
-                {syncStatus.isSynced ? 'Audit completed: 06-08-2026 14:32' : 'Pending initial synchronisation'}
+                {isSynced ? 'Audit completed: 06-08-2026 14:32' : 'Pending initial synchronisation'}
               </span>
             </div>
           </div>
@@ -352,9 +344,9 @@ export default function ManageWebsitePage({ site, onBack }) {
           </div>
           <div className="w2-ai-body">
             <div className="ai-content">
-              <span className="ai-count">{syncStatus.isSynced ? '12 Available' : '0 Available'}</span>
+              <span className="ai-count">{isSynced ? '12 Available' : '0 Available'}</span>
               <span className="ai-sub">Improve internal linking and technical SEO.</span>
-              <button type="button" className="btn-ai-recs" disabled={!syncStatus.isSynced}>
+              <button type="button" className="btn-ai-recs" disabled={!isSynced}>
                 View Recommendations ›
               </button>
             </div>
@@ -374,13 +366,13 @@ export default function ManageWebsitePage({ site, onBack }) {
             <div className="status-content">
               <span className="status-success-title">Connected</span>
               <span className="status-sub">
-                {syncStatus.isSynced ? 'Last crawl: 07-08-2026 08:15' : 'Sync: Pending'}
+                {isSynced ? 'Last crawl: 07-08-2026 08:15' : 'Sync: Pending'}
               </span>
               <span className="status-sub">
-                {syncStatus.isSynced ? 'Pages crawled: 40' : 'Pages: Not extracted'}
+                {isSynced ? 'Pages crawled: 40' : 'Pages: Not extracted'}
               </span>
               <span className="status-sub">
-                {syncStatus.isSynced ? 'New pages found: 2' : 'Status: Ready to Sync'}
+                {isSynced ? 'New pages found: 2' : 'Status: Ready to Sync'}
               </span>
             </div>
             <div className="status-icon-side">
