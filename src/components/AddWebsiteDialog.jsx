@@ -256,7 +256,7 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
         </div>
 
         {/* Form fields */}
-        <form className="aw-form" onSubmit={handleConnect}>
+        <form id="aw-connect-form" className="aw-form" onSubmit={handleConnect}>
           {errorMsg && (
             <div className="aw-error-banner" role="alert">
               {errorMsg}
@@ -346,7 +346,8 @@ export default function AddWebsiteDialog({ isOpen, onClose, onAddWebsite }) {
             Cancel
           </button>
           <button
-            type="button"
+            type="submit"
+            form="aw-connect-form"
             className="aw-btn-connect"
             id="btn-connect-website"
             onClick={handleConnect}
