@@ -43,6 +43,11 @@ export default function WebsitesDashboard() {
     setEditingSite(null)
   }
 
+  const handleDeleteWebsite = (siteId) => {
+    setSites(prev => prev.filter(s => s.id !== siteId))
+    setEditingSite(null)
+  }
+
   if (managedSite) {
     return (
       <ManageWebsitePage
@@ -106,6 +111,7 @@ export default function WebsitesDashboard() {
         }}
         onAddWebsite={handleAddWebsite}
         onUpdateWebsite={handleUpdateWebsite}
+        onDeleteWebsite={handleDeleteWebsite}
         editingSite={editingSite}
       />
 

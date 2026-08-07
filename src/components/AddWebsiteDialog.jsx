@@ -111,6 +111,7 @@ export default function AddWebsiteDialog({
   onClose,
   onAddWebsite,
   onUpdateWebsite,
+  onDeleteWebsite,
   editingSite = null,
 }) {
   const [platform, setPlatform] = useState('wordpress')
@@ -163,6 +164,17 @@ export default function AddWebsiteDialog({
   function handleClose() {
     resetForm()
     onClose()
+  }
+
+  function handleDelete() {
+    if (!editingSite) return
+    const confirmed = window.confirm(`Are you sure you want to permanently delete "${editingSite.name}" from Website Manager?`)
+    if (confirmed) {
+      if (onDeleteWebsite) {
+        onDeleteWebsite(editingSite.id)
+      }
+      handleClose()
+    }
   }
 
   function handleBackdrop(e) {
@@ -381,23 +393,36 @@ export default function AddWebsiteDialog({
 
         {/* Footer */}
         <div className="aw-footer">
-          <button
-            type="button"
-            className="aw-btn-cancel"
-            onClick={handleClose}
-            disabled={isConnecting}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="aw-connect-form"
-            className="aw-btn-connect"
-            id="btn-connect-website"
-            disabled={isConnecting || platform !== 'wordpress'}
-          >
-            {isConnecting ? (editingSite ? 'Updating…' : 'Connecting…') : (editingSite ? 'Update Connection' : 'Connect Website')}
-          </button>
+          {editingSite && (
+            <button
+              type="button"
+              className="aw-btn-delete"
+              id="btn-delete-website"
+              onClick={handleDelete}
+              disabled={isConnecting}
+            >
+              Delete Website
+            </button>
+          )}
+          <div className="aw-footer-actions">
+            <button
+              type="button"
+              className="aw-btn-cancel"
+              onClick={handleClose}
+              disabled={isConnecting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="aw-connect-form"
+              className="aw-btn-connect"
+              id="btn-connect-website"
+              disabled={isConnecting || platform !== 'wordpress'}
+            >
+              {isConnecting ? (editingSite ? 'Updating…' : 'Connecting…') : (editingSite ? 'Update Connection' : 'Connect Website')}
+            </button>
+          </div>
         </div>
 
       </div>
