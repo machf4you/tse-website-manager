@@ -140,24 +140,41 @@ export function normalizeImportedPage(p, siteUrl = '') {
   const lowerUrl = url.toLowerCase()
 
   const exclusionPatterns = [
+    // Legal / Policy Pages
     'privacy policy', 'privacy-policy',
     'cookie policy', 'cookie-policy',
     'terms & conditions', 'terms-and-conditions', 'terms of service', 'terms-of-service', 'terms-conditions',
-    'accessibility',
-    'sitemap',
-    'feed', 'rss', 'xml',
-    'search',
-    'author',
-    'archive',
-    'attachment',
-    '404',
+    'disclaimer',
+    'accessibility statement', 'accessibility',
+
+    // Website Utility Pages
     'thank you', 'thank-you', 'thankyou',
+    'confirmation',
+    'search results', 'search',
+    '404', '404 page', 'not found',
+    'login', 'wp-login',
+    'register', 'signup', 'sign-up',
+    'lost password', 'lost-password', 'reset-password',
+    'my account', 'my-account',
+
+    // WordPress / System Pages
+    'author archive', 'author',
+    'date archive', 'date',
+    'tag archive', 'tag',
+    'attachment', 'media attachment',
+    'feed', 'rss', 'xml sitemap', 'sitemap',
+
+    // Ecommerce / Transaction Pages
     'cart',
     'checkout',
-    'my account', 'my-account', 'account',
-    'login', 'wp-login',
-    'register', 'signup',
-    'lost password', 'lost-password', 'reset-password'
+    'basket',
+    'wishlist',
+    'compare',
+
+    // Other Non-SEO Pages
+    'internal search',
+    'test page', 'test-page',
+    'draft', 'staging', 'sample page'
   ]
 
   const matchesExclusion = exclusionPatterns.some(pattern => {

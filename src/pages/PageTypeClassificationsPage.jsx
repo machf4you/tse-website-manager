@@ -15,6 +15,62 @@ Add the following classifications:
 These classifications are SEO classifications, NOT WordPress post types.
 
 ----------------------------------------
+Excluded Pages
+----------------------------------------
+
+These should automatically be classified as Excluded because they are normally not SEO management targets:
+
+1. Legal / Policy Pages
+- Privacy Policy
+- Cookie Policy
+- Terms & Conditions
+- Terms of Service
+- Disclaimer
+- Accessibility Statement
+
+2. Website Utility Pages
+- Contact page (depending on site strategy)
+- Thank You pages
+- Confirmation pages
+- Search results pages
+- 404 page
+- Login pages
+- Register pages
+- Lost Password pages
+- My Account pages
+
+3. WordPress/System Pages
+- Author archive pages
+- Date archive pages
+- Category archive pages (unless specifically used as SEO landing pages)
+- Tag archive pages
+- Attachment pages
+- Media attachment URLs
+- Feed pages
+- RSS feeds
+- XML feeds
+
+4. Ecommerce / Transaction Pages
+- Cart
+- Checkout
+- Basket
+- Account
+- Wishlist
+- Compare pages
+
+5. Other Non-SEO Pages
+- Internal search pages
+- Duplicate/system-generated pages
+- Test pages
+- Draft/private pages
+- Staging pages
+- Empty pages with no meaningful content
+
+Rule:
+If a page exists purely for website operation, compliance, account management, or system functionality, it should be Excluded.
+If it has a genuine search purpose, it should not be excluded and should remain available for Hub / Landing / Topical classification.
+
+----------------------------------------
 Landing Pages
 ----------------------------------------
 
@@ -79,6 +135,12 @@ Do NOT force a classification if confidence is low.
 Do NOT classify based only on WordPress post type, URL structure alone, or Page name alone.`
 
 const DEFAULT_COMMENTS = [
+  {
+    id: 'c2',
+    author: 'System Admin',
+    timestamp: '07-08-2026 14:07',
+    text: 'Expanded Excluded Pages rules: Legal/Policy (Privacy, Cookies, Terms, Disclaimer, Accessibility), Utility (Thank You, Confirmation, Search, 404, Login, Register), System (Author, Date, Tag archives, Attachment, Feed, RSS), Ecommerce (Cart, Checkout, Basket, Wishlist, Compare), and Non-SEO operational pages.'
+  },
   {
     id: 'c1',
     author: 'System Admin',
