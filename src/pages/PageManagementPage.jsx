@@ -25,6 +25,12 @@ export default function PageManagementPage({
     return true
   })
 
+  // Calculate filter tab counts
+  const allCount = pagesList.length
+  const configuredCount = pagesList.filter(p => p.isConfigured === true).length
+  const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded).length
+  const excludedCount = pagesList.filter(p => p.isExcluded === true).length
+
   return (
     <div className="w3-page-container">
 
@@ -100,13 +106,13 @@ export default function PageManagementPage({
           type="button"
           className="w3-tab"
           onClick={() => onTabChange && onTabChange('w6')}
-          id="tab-w3-settings"
+          id="tab-w3-website-settings"
         >
           W6 | Website Settings
         </button>
       </div>
 
-      {/* ── Sub Filter Tabs ── */}
+      {/* ── Filter Tabs ── */}
       <div className="w3-filter-tabs">
         <button
           type="button"
@@ -114,7 +120,7 @@ export default function PageManagementPage({
           onClick={() => setFilter('all')}
           id="filter-all"
         >
-          All
+          All ({allCount})
         </button>
         <button
           type="button"
@@ -122,7 +128,7 @@ export default function PageManagementPage({
           onClick={() => setFilter('configured')}
           id="filter-configured"
         >
-          Configured
+          Configured ({configuredCount})
         </button>
         <button
           type="button"
@@ -130,7 +136,7 @@ export default function PageManagementPage({
           onClick={() => setFilter('action_required')}
           id="filter-action-required"
         >
-          Action Required
+          Action Required ({actionRequiredCount})
         </button>
         <button
           type="button"
@@ -138,7 +144,7 @@ export default function PageManagementPage({
           onClick={() => setFilter('excluded')}
           id="filter-excluded"
         >
-          Excluded
+          Excluded ({excludedCount})
         </button>
       </div>
 
