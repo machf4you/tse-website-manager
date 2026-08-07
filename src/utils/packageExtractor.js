@@ -3,6 +3,76 @@
  * Normalizes title, url, SEO Page Type classification, and applies automatic exclusion rules upon import.
  */
 
+export function classifyPageType(p, title, url, isExcluded, isHomePage) {
+  // 1. Excluded pages -> Excluded
+  if (isExcluded) return 'Excluded'
+
+  // 2. Homepage -> Hub
+  if (isHomePage) return 'Hub'
+
+  const lowerTitle = title.toLowerCase()
+  const lowerUrl = url.toLowerCase()
+  const cleanSlug = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '').replace(/^\/+/, '').toLowerCase()
+
+  // 3. Informational Intent Triggers (Topical Pages)
+  const informationalStarters = [
+    'how much', 'how to', 'do i need', 'what is', 'what are', 'can builders', 'can i', 'why ',
+    'should i', 'when to', 'where to', 'is it worth', 'which one', 'best types', 'types of',
+    'popular types', 'guide', 'tips', 'ideas', 'advice', 'checklist', 'faqs', 'faq',
+    'everything you need to know', 'pros and cons', 'cost vs value', 'without planning permission',
+    'reasons to', 'ways to', 'things to', 'what adds more value', 'ideas for'
+  ]
+
+  const isQuestionOrGuideTitle = informationalStarters.some(starter => lowerTitle.includes(starter) || lowerUrl.includes(starter))
+  const isBlogPostType = p.post_type === 'post' || lowerUrl.includes('/blog/') || lowerUrl.includes('/news/') || lowerUrl.includes('/insights/') || lowerUrl.includes('/articles/')
+  const isArticleAuthority = p.authority?.strategic_type === 'article' || p.classification?.strategic_type === 'article' || p.intent === 'informational'
+
+  let informationalScore = 0
+  if (isQuestionOrGuideTitle) informationalScore += 4
+  if (isBlogPostType) informationalScore += 3
+  if (isArticleAuthority) informationalScore += 2
+
+  // 4. Commercial Intent Triggers (Landing Pages)
+  const commercialKeywords = [
+    'loft conversion', 'loft conversions',
+    'house extension', 'house extensions', 'home extension', 'home extensions',
+    'garage conversion', 'garage conversions',
+    'renovation', 'renovations', 'refurbishment', 'refurbishments',
+    'kitchen fitting', 'kitchen fitters', 'kitchen installation',
+    'bathroom installation', 'bathroom fitters', 'bathroom renovation',
+    'builders', 'building services', 'architectural', 'planning support',
+    'services', 'our services', 'service area', 'contractor', 'contractors',
+    'carpentry', 'joinery', 'plastering', 'decorating', 'roofing', 'landscaping'
+  ]
+
+  const isServiceLandingSlug = [
+    'loft-conversions', 'house-extensions', 'garage-conversions',
+    'renovations-and-refurbishments', 'building-services', 'services',
+    'our-services', 'architectural-planning-support', 'plastering-decorating',
+    'kitchen-fitting', 'bathroom-installations', 'projects', 'about-us', 'contact-us'
+  ].some(slug => cleanSlug === slug || cleanSlug.endsWith('/' + slug))
+
+  const isCommercialTitle = commercialKeywords.some(kw => lowerTitle.includes(kw) || lowerUrl.includes(kw))
+  const isServiceAuthority = p.authority?.strategic_type === 'service' || p.authority?.strategic_type === 'landing' || p.post_type === 'service' || p.intent === 'commercial'
+
+  let commercialScore = 0
+  if (isServiceLandingSlug) commercialScore += 4
+  if (isCommercialTitle && !isQuestionOrGuideTitle) commercialScore += 3
+  if (isServiceAuthority) commercialScore += 2
+  if (p.post_type === 'page' && !isQuestionOrGuideTitle && !isBlogPostType) commercialScore += 1
+
+  // 5. Classification Decision Matrix (Strict Confidence Thresholds)
+  if (informationalScore >= 3 && informationalScore > commercialScore) {
+    return 'Topical'
+  }
+  if (commercialScore >= 2 && commercialScore > informationalScore) {
+    return 'Landing'
+  }
+
+  // 6. Anything uncertain remains Unclassified
+  return 'Unclassified'
+}
+
 export function normalizeImportedPage(p, siteUrl = '') {
   if (!p || typeof p !== 'object') return p
 
@@ -96,8 +166,7 @@ export function normalizeImportedPage(p, siteUrl = '') {
 
   const isExcluded = p.isExcluded !== undefined ? Boolean(p.isExcluded) : matchesExclusion
 
-  // 4. SEO Page Classification (Website Manager SEO Page Type)
-  // Rule 1: Home page -> Always classify as Hub
+  // 4. SEO Page Classification Rules
   const cleanUrlPath = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '')
   const cleanSiteUrl = siteUrl ? siteUrl.trim().replace(/\/+$/, '') : ''
   const isHomePage =
@@ -109,16 +178,7 @@ export function normalizeImportedPage(p, siteUrl = '') {
     lowerTitle === 'home' ||
     lowerTitle === 'homepage'
 
-  let seoPageType = 'Unclassified'
-  if (isExcluded) {
-    seoPageType = 'Excluded'
-  } else if (isHomePage) {
-    seoPageType = 'Hub'
-  } else {
-    seoPageType = 'Unclassified'
-  }
-
-  // Set Type column to represent Website Manager SEO Classification
+  const seoPageType = classifyPageType(p, title, url, isExcluded, isHomePage)
   const type = seoPageType
 
   return {
