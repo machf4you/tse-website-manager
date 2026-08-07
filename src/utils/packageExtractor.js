@@ -9,8 +9,10 @@ export function normalizeImportedPage(p, siteUrl = '') {
   // 1. Meta Title / Page Title resolution
   let title = ''
 
-  // A. Check TSE Exporter nested meta title & content h1 (TSE Exporter v2.12.9 format)
-  if (typeof p.meta?.title === 'string' && p.meta.title.trim()) {
+  // A. Check TSE Exporter nested seo.title, meta.title & content h1 (TSE Exporter v2.12.9 format)
+  if (typeof p.seo?.title === 'string' && p.seo.title.trim()) {
+    title = p.seo.title.trim()
+  } else if (typeof p.meta?.title === 'string' && p.meta.title.trim()) {
     title = p.meta.title.trim()
   } else if (Array.isArray(p.content?.h1) && typeof p.content.h1[0] === 'string' && p.content.h1[0].trim()) {
     title = p.content.h1[0].trim()
@@ -28,13 +30,13 @@ export function normalizeImportedPage(p, siteUrl = '') {
   if (!title && typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) title = p._yoast_wpseo_title.trim()
 
   // C. Primary WordPress post object title field (post_title)
-  if (!title && typeof p.post_title === 'string' && p.post_title.trim()) {
+  if (!title && typeof p.post_title === 'string' && p.post_title.trim() && p.post_title.trim().toLowerCase() !== 'home') {
     title = p.post_title.trim()
   }
 
   // D. WP REST API title field (title.rendered or string title)
   if (!title && p.title) {
-    if (typeof p.title === 'string' && p.title.trim() && p.title.trim() !== 'Untitled Page') {
+    if (typeof p.title === 'string' && p.title.trim() && p.title.trim() !== 'Untitled Page' && p.title.trim().toLowerCase() !== 'home') {
       title = p.title.trim()
     } else if (typeof p.title === 'object' && p.title !== null) {
       title = (p.title.rendered || p.title.raw || '').trim()
@@ -42,6 +44,9 @@ export function normalizeImportedPage(p, siteUrl = '') {
   }
 
   // E. Fallbacks for slug/name (convert slug to title if needed)
+  if (!title && typeof p.post_title === 'string' && p.post_title.trim()) {
+    title = p.post_title.trim()
+  }
   if (!title && typeof p.name === 'string' && p.name.trim()) {
     title = p.name.trim()
   }
