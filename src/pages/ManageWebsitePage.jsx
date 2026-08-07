@@ -105,6 +105,14 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const timerRef = useRef(null)
 
   useEffect(() => {
+    if (site) {
+      setIsSynced(Boolean(site.isSynchronised === true && site.lastSyncTimestamp))
+      setLastSyncDate(site.lastSyncTimestamp || null)
+      setStoredPackageData(site.storedPackageData || null)
+    }
+  }, [site])
+
+  useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }

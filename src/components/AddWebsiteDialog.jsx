@@ -177,6 +177,23 @@ export default function AddWebsiteDialog({
     }
   }
 
+  function handleResetSync() {
+    if (!editingSite) return
+    const confirmed = window.confirm(`Reset synchronisation for "${editingSite.name}"? This will clear stored exporter data and return the site to an unsynchronised state.`)
+    if (confirmed) {
+      const resetSite = {
+        ...editingSite,
+        isSynchronised: false,
+        lastSyncTimestamp: null,
+        storedPackageData: null,
+      }
+      if (onUpdateWebsite) {
+        onUpdateWebsite(resetSite)
+      }
+      handleClose()
+    }
+  }
+
   function handleBackdrop(e) {
     if (e.target === e.currentTarget && !isConnecting) {
       handleClose()
@@ -394,15 +411,26 @@ export default function AddWebsiteDialog({
         {/* Footer */}
         <div className="aw-footer">
           {editingSite && (
-            <button
-              type="button"
-              className="aw-btn-delete"
-              id="btn-delete-website"
-              onClick={handleDelete}
-              disabled={isConnecting}
-            >
-              Delete Website
-            </button>
+            <div className="aw-footer-left">
+              <button
+                type="button"
+                className="aw-btn-reset-sync"
+                id="btn-reset-sync"
+                onClick={handleResetSync}
+                disabled={isConnecting}
+              >
+                Reset Synchronisation
+              </button>
+              <button
+                type="button"
+                className="aw-btn-delete"
+                id="btn-delete-website"
+                onClick={handleDelete}
+                disabled={isConnecting}
+              >
+                Delete Website
+              </button>
+            </div>
           )}
           <div className="aw-footer-actions">
             <button

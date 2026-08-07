@@ -222,6 +222,31 @@
   flex-shrink: 0;
 }
 
+.aw-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aw-btn-reset-sync {
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background-color: rgba(245, 158, 11, 0.12);
+  color: rgb(251, 191, 36);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aw-btn-reset-sync:hover {
+  background-color: rgba(245, 158, 11, 0.22);
+  border-color: rgba(245, 158, 11, 0.55);
+  color: #ffffff;
+}
+
 .aw-footer-actions {
   display: flex;
   align-items: center;
