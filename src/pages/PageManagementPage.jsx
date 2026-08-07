@@ -33,8 +33,8 @@ export default function PageManagementPage({
     if (filter === 'configured') return p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'action_required') return p.isConfigured !== true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'excluded') return p.isExcluded === true || p.type === 'Excluded'
-    // Default ('all'): display active included pages only (hide excluded pages)
-    return !p.isExcluded && p.type !== 'Excluded'
+    // 'all': returns all pages (grand total = Excluded + Configured + Action Required)
+    return true
   })
 
   // Sort filtered pages based on sortColumn and sortDirection
@@ -67,8 +67,8 @@ export default function PageManagementPage({
     return 0
   })
 
-  // Calculate filter tab counts
-  const allCount = pagesList.filter(p => !p.isExcluded && p.type !== 'Excluded').length
+  // Calculate filter tab counts (All = Excluded + Configured + Action Required)
+  const allCount = pagesList.length
   const configuredCount = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
   const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded && p.type !== 'Excluded').length
   const excludedCount = pagesList.filter(p => p.isExcluded === true || p.type === 'Excluded').length
