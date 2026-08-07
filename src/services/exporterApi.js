@@ -1,62 +1,48 @@
 /**
- * Integration Service: TSE WordPress Exporter API Client
- * Responsible ONLY for issuing the SYNCHRONISE request payload to the TSE Exporter.
- * Performs NO WordPress REST API calls directly inside Website Manager.
- */
-
-// Configurable endpoint for the external TSE WordPress Exporter engine
-export const TSE_EXPORTER_ENDPOINT_URL = import.meta.env?.VITE_TSE_EXPORTER_ENDPOINT || null
-
-/**
- * Sends a synchronisation request to the TSE WordPress Exporter.
+ * Integration Service: TSE WordPress Exporter Client
+ * Connects to the TSE WordPress Exporter REST endpoint.
  *
- * Request Payload (strictly specified by architecture):
- * - websiteId
- * - websiteUrl
- * - username
- * - applicationPassword
- * - action = 'SYNCHRONISE'
+ * Endpoint: GET {websiteUrl}/wp-json/tse-site-exporter/v1/export
+ * Authentication: WordPress Application Password (Basic Auth)
  */
-export async function callTseWordPressExporter({
-  websiteId,
+
+export async function fetchTseWordPressExportPackage({
   websiteUrl,
   username,
   applicationPassword,
 }) {
-  // Requirement 4: Check if endpoint URL is defined
-  if (!TSE_EXPORTER_ENDPOINT_URL) {
-    return {
-      success: false,
-      error: 'EXPORTER_ENDPOINT_NOT_DEFINED',
-      message: 'The TSE WordPress Exporter endpoint URL has not yet been defined in the environment configuration.',
-      requiredInfo: [
-        'TSE WordPress Exporter API Endpoint URL (e.g. https://exporter.thesearchequation.co.uk/api/export)',
-        'Authentication method / API key for the Exporter service (if required)',
-        'CORS policy / HTTP header requirements for cross-origin export requests',
-      ],
-    }
+  if (!websiteUrl) {
+    return { success: false, error: 'MISSING_URL', message: 'Website URL is required.' }
   }
 
-  const payload = {
-    websiteId,
-    websiteUrl,
-    username,
-    applicationPassword,
-    action: 'SYNCHRONISE',
+  // 1. Normalize Website Base URL
+  const cleanUrl = websiteUrl.trim().replace(/\/+$/, '')
+  const endpoint = `${cleanUrl}/wp-json/tse-site-exporter/v1/export`
+
+  // 2. Prepare Headers
+  const headers = {
+    'Accept': 'application/json',
   }
 
+  if (username && applicationPassword) {
+    const authString = btoa(`${username.trim()}:${applicationPassword.trim()}`)
+    headers['Authorization'] = `Basic ${authString}`
+  }
+
+  // 3. Issue GET Request
   try {
-    const response = await fetch(TSE_EXPORTER_ENDPOINT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(payload),
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers,
     })
 
     if (!response.ok) {
-      throw new Error(`TSE Exporter returned status ${response.status}`)
+      return {
+        success: false,
+        status: response.status,
+        error: `EXPORTER_HTTP_${response.status}`,
+        message: `TSE Exporter endpoint returned status ${response.status} (${response.statusText}).`,
+      }
     }
 
     const packageData = await response.json()
@@ -68,8 +54,34 @@ export async function callTseWordPressExporter({
   } catch (error) {
     return {
       success: false,
-      error: 'EXPORTER_REQUEST_FAILED',
-      message: error.message || 'Failed to connect to TSE WordPress Exporter endpoint.',
+      error: 'EXPORTER_NETWORK_ERROR',
+      message: error.message || 'Failed to reach TSE WordPress Exporter endpoint.',
     }
   }
+}
+
+/**
+ * Backward compatible alias for exporterApi service caller
+ */
+export async function callTseWordPressExporter({
+  websiteId,
+  websiteUrl,
+  username,
+  applicationPassword,
+}) {
+  const result = await fetchTseWordPressExportPackage({
+    websiteUrl,
+    username,
+    applicationPassword,
+  })
+
+  if (result.success && result.packageData) {
+    return {
+      success: true,
+      websiteId,
+      packageData: result.packageData,
+    }
+  }
+
+  return result
 }
