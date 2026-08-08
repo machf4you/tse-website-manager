@@ -7,7 +7,7 @@ export const restorePointIndexData = [
     id: 'v3.2-live-page-auditor',
     version: 'v3.2-live-page-auditor',
     gitTag: 'v3.2-live-page-auditor-integrated',
-    commit: 'pending',
+    commit: '2f77494',
     date: '08-08-2026 06:51',
     title: 'Live Page Auditor Integrated',
     description: 'First fully working integration between Website Manager and the existing TSE Page Auditor. Verified live API communication, configured page precedence, and strict W3/W4 Audit Results rendering.',
