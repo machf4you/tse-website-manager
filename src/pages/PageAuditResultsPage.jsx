@@ -9,8 +9,25 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   const [isLoadingAudit, setIsLoadingAudit] = useState(false)
   const [auditError, setAuditError] = useState(null)
 
-  // Active page object being reviewed
-  const currentPage = pagesList.find(p => p.url === selectedUrl) || page || pagesList[0] || {}
+  // Active page selection precedence:
+  // 1. Configured page (passed via the page prop)
+  // 2. Matching configured page from pagesList
+  // 3. Raw exported page from pagesList
+  // 4. Fallback
+  const matchedFromList = pagesList.find(p => p.url === selectedUrl)
+
+  const currentPage = (() => {
+    if (page && (page.url === selectedUrl || !selectedUrl) && (page.isConfigured || page.targetPhrase)) {
+      return page
+    }
+    if (matchedFromList && (matchedFromList.isConfigured || matchedFromList.targetPhrase)) {
+      return matchedFromList
+    }
+    if (matchedFromList) {
+      return matchedFromList
+    }
+    return page || pagesList[0] || {}
+  })()
 
   const targetPhrase = currentPage.target || currentPage.targetPhrase || ''
   const pageType = currentPage.type || currentPage.seoPageType || 'Landing Page'

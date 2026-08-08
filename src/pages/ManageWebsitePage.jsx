@@ -121,8 +121,39 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
-  const exportedPages = extractPagesFromPackage(pkg)
+  const rawExportedPages = extractPagesFromPackage(pkg)
   const _exportedPosts = extractPostsFromPackage(pkg)
+
+  // Merge localStorage page configurations so targetPhrase, priority, and type are preserved globally
+  const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+  const savedConfigs = (() => {
+    try {
+      const saved = localStorage.getItem(siteIdKey)
+      return saved ? JSON.parse(saved) : {}
+    } catch (e) {
+      return {}
+    }
+  })()
+
+  const exportedPages = rawExportedPages.map(page => {
+    const pageKey = page.id || page.url
+    const override = savedConfigs[pageKey] || (page.url ? savedConfigs[page.url] : null)
+    if (override) {
+      return {
+        ...page,
+        title: override.proposedTitle || page.title,
+        proposedTitle: override.proposedTitle || page.title,
+        target: override.targetPhrase || page.target || '',
+        targetPhrase: override.targetPhrase || '',
+        type: override.type || page.type,
+        seoPageType: override.type || page.type,
+        priority: override.priority !== undefined ? override.priority : page.priority,
+        isConfigured: override.isConfigured !== undefined ? override.isConfigured : true,
+        isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
+      }
+    }
+    return page
+  })
 
   // Dynamic calculated metrics from stored package pages
   const configuredPagesCount = exportedPages.filter(p => p.isConfigured === true).length
