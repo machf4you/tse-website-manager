@@ -331,7 +331,6 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
                 <tr>
                   <th className="col-element">SEO Element</th>
                   <th className="col-val">Current Value</th>
-                  <th className="col-target-p">Target Phrase</th>
                   <th className="col-stat">Status</th>
                   <th className="col-recom">Recommended Action</th>
                 </tr>
@@ -341,15 +340,6 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
                   <tr key={el.id}>
                     <td className="col-element font-bold">{el.name}</td>
                     <td className="col-val">{el.currentValue}</td>
-                    <td className="col-target-p">
-                      {el.hasTargetPhrase === 'N/A' ? (
-                        <span className="pill-na">N/A</span>
-                      ) : el.hasTargetPhrase ? (
-                        <span className="pill-target-yes">Yes</span>
-                      ) : (
-                        <span className="pill-target-no">No</span>
-                      )}
-                    </td>
                     <td className="col-stat">
                       <span className={`pill-status ${el.status.toLowerCase()}`}>
                         {el.status}
