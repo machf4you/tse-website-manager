@@ -2,92 +2,6 @@ import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
 import './PageAuditResultsPage.css'
 
-// Real HTML extractor helper from WordPress package object
-function extractRealPageElements(currentPage, siteUrl = '') {
-  const html = currentPage?.content?.rendered || currentPage?.post_content || currentPage?.content?.raw || (typeof currentPage?.content === 'string' ? currentPage.content : '') || ''
-  const title = currentPage?.proposedTitle || currentPage?.title || currentPage?.seo?.title || currentPage?.meta?.title || 'Untitled Page'
-  const metaDesc = currentPage?.metaDescription || currentPage?.seo?.description || currentPage?.meta?.description || '—'
-  
-  // 1. Real H1
-  let h1 = '—'
-  if (Array.isArray(currentPage?.content?.h1) && currentPage.content.h1[0]) {
-    h1 = currentPage.content.h1[0]
-  } else if (typeof currentPage?.h1 === 'string' && currentPage.h1.trim()) {
-    h1 = currentPage.h1.trim()
-  } else if (html) {
-    const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
-    if (h1Match) h1 = h1Match[1].replace(/<[^>]+>/g, '').trim()
-  }
-  if (h1 === '—' && title) {
-    h1 = title
-  }
-
-  // 2. Real H2 list
-  const h2List = []
-  if (Array.isArray(currentPage?.content?.h2)) {
-    h2List.push(...currentPage.content.h2)
-  } else if (html) {
-    const h2Matches = html.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/gi)
-    for (const m of h2Matches) {
-      const txt = m[1].replace(/<[^>]+>/g, '').trim()
-      if (txt) h2List.push(txt)
-    }
-  }
-
-  // 3. Real Word Count
-  let wordCount = 0
-  if (currentPage?.content?.word_count !== undefined) {
-    wordCount = currentPage.content.word_count
-  } else if (html) {
-    const plainText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-    wordCount = plainText ? plainText.split(/\s+/).length : 0
-  }
-
-  // 4. Real Images & Alt Tags
-  let imageCount = 0
-  let missingAltCount = 0
-  if (currentPage?.content?.images && Array.isArray(currentPage.content.images)) {
-    imageCount = currentPage.content.images.length
-    missingAltCount = currentPage.content.images.filter(img => !img.alt || !img.alt.trim()).length
-  } else if (html) {
-    const imgMatches = html.matchAll(/<img[^>]+>/gi)
-    for (const m of imgMatches) {
-      imageCount++
-      const tag = m[0]
-      const altMatch = tag.match(/alt=["']([^"']*)["']/i)
-      if (!altMatch || !altMatch[1].trim()) {
-        missingAltCount++
-      }
-    }
-  }
-
-  // 5. Real Internal Links
-  let internalLinkCount = 0
-  if (currentPage?.content?.internal_links && Array.isArray(currentPage.content.internal_links)) {
-    internalLinkCount = currentPage.content.internal_links.length
-  } else if (html) {
-    const linkMatches = html.matchAll(/<a[^>]+href=["']([^"']+)["'][^>]*>/gi)
-    const siteDomain = siteUrl ? siteUrl.replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase() : ''
-    for (const m of linkMatches) {
-      const href = m[1]
-      if (href.startsWith('/') || (siteDomain && href.toLowerCase().includes(siteDomain))) {
-        internalLinkCount++
-      }
-    }
-  }
-
-  return {
-    title,
-    metaDesc,
-    h1,
-    h2List,
-    wordCount,
-    imageCount,
-    missingAltCount,
-    internalLinkCount,
-  }
-}
-
 export default function PageAuditResultsPage({ site, page, pagesList = [], onBack }) {
   // Allow selecting any page from the dropdown
   const [selectedUrl, setSelectedUrl] = useState(() => page?.url || pagesList[0]?.url || '')
@@ -98,9 +12,9 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   // Active page object being reviewed
   const currentPage = pagesList.find(p => p.url === selectedUrl) || page || pagesList[0] || {}
 
-  const targetPhrase = currentPage.target || currentPage.targetPhrase || 'loft conversions south london'
+  const targetPhrase = currentPage.target || currentPage.targetPhrase || ''
   const pageType = currentPage.type || currentPage.seoPageType || 'Landing Page'
-  const displayTitle = currentPage.proposedTitle || currentPage.title || 'Loft Conversions & Extensions'
+  const displayTitle = currentPage.proposedTitle || currentPage.title || 'Untitled'
   const fullUrl = currentPage.url || site?.url || '/'
 
   // Clean path display
@@ -115,13 +29,14 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     cleanPath = fullUrl
   }
 
-  // Execute audit call to Page Auditor server
+  // Execute audit call to Page Auditor server ONLY
   useEffect(() => {
     let isMounted = true
     async function runLiveAudit() {
       if (!currentPage || !currentPage.url) return
       setIsLoadingAudit(true)
       setAuditError(null)
+      setLiveAuditData(null)
       try {
         const result = await executePageAudit({
           siteId: site?.id || 'site-1',
@@ -136,7 +51,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         }
       } catch (e) {
         if (isMounted) {
-          setAuditError(e.message)
+          setAuditError(e.message || 'Failed to connect to Page Auditor backend.')
           setIsLoadingAudit(false)
         }
       }
@@ -145,7 +60,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     return () => { isMounted = false }
   }, [selectedUrl, currentPage.url, currentPage.target, currentPage.type])
 
-  // Map elements from returned Page Auditor result or real local WordPress package data
+  // Map ONLY values returned by TSE Page Auditor
   let auditElements = []
   let failedIssues = []
 
@@ -266,102 +181,11 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       recommendation: w.detail || w.label || '',
       name: w.label || 'SEO Check',
     }))
-  } else {
-    // Local Real WordPress Package Data Extraction (when API server is offline)
-    const realData = extractRealPageElements(currentPage, site?.url)
-    const hasTargetInTitle = targetPhrase ? realData.title.toLowerCase().includes(targetPhrase.toLowerCase()) : false
-    const hasTargetInH1 = targetPhrase ? realData.h1.toLowerCase().includes(targetPhrase.toLowerCase()) : false
-
-    auditElements = [
-      {
-        id: 'meta_title',
-        name: 'Meta Title',
-        currentValue: realData.title,
-        hasTargetPhrase: hasTargetInTitle,
-        status: hasTargetInTitle ? 'Pass' : 'Fail',
-        recommendation: hasTargetInTitle ? '—' : `Include target phrase "${targetPhrase}" in Meta Title`,
-        recommendationType: hasTargetInTitle ? 'default' : 'fail',
-      },
-      {
-        id: 'meta_description',
-        name: 'Meta Description',
-        currentValue: realData.metaDesc,
-        hasTargetPhrase: targetPhrase && realData.metaDesc.toLowerCase().includes(targetPhrase.toLowerCase()),
-        status: realData.metaDesc !== '—' ? 'Pass' : 'Fail',
-        recommendation: realData.metaDesc !== '—' ? '—' : 'Add a meta description tag',
-        recommendationType: realData.metaDesc !== '—' ? 'default' : 'fail',
-      },
-      {
-        id: 'h1',
-        name: 'H1',
-        currentValue: realData.h1,
-        hasTargetPhrase: hasTargetInH1,
-        status: hasTargetInH1 ? 'Pass' : 'Fail',
-        recommendation: hasTargetInH1 ? '—' : `Add target phrase "${targetPhrase}" to H1 heading`,
-        recommendationType: hasTargetInH1 ? 'default' : 'fail',
-        issueCode: 'ISSUE 1: H1',
-      },
-      {
-        id: 'h2_count',
-        name: 'H2 Count',
-        currentValue: `${realData.h2List.length} H2 headings`,
-        hasTargetPhrase: targetPhrase ? realData.h2List.some(h => h.toLowerCase().includes(targetPhrase.toLowerCase())) : false,
-        status: realData.h2List.length >= 2 ? 'Pass' : 'Fail',
-        recommendation: realData.h2List.length >= 2 ? '—' : 'Add at least 2 H2 headings to structure page content',
-        recommendationType: realData.h2List.length >= 2 ? 'default' : 'warning',
-      },
-      {
-        id: 'word_count',
-        name: 'Word Count',
-        currentValue: `${realData.wordCount} words`,
-        hasTargetPhrase: targetPhrase ? true : false,
-        status: realData.wordCount >= 300 ? 'Pass' : 'Fail',
-        recommendation: realData.wordCount >= 300 ? '—' : 'Increase content length to at least 300 words',
-        recommendationType: realData.wordCount >= 300 ? 'default' : 'fail',
-      },
-      {
-        id: 'internal_links',
-        name: 'Internal Link Count',
-        currentValue: `${realData.internalLinkCount} incoming internal links`,
-        hasTargetPhrase: false,
-        status: realData.internalLinkCount >= 3 ? 'Pass' : 'Fail',
-        recommendation: realData.internalLinkCount >= 3 ? '—' : `Current Internal Links: ${realData.internalLinkCount} | Minimum Required to Pass Audit: 3`,
-        recommendationType: realData.internalLinkCount >= 3 ? 'default' : 'fail',
-        issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
-      },
-      {
-        id: 'image_count',
-        name: 'Image Count',
-        currentValue: `${realData.imageCount} images`,
-        hasTargetPhrase: false,
-        status: realData.imageCount >= 1 ? 'Pass' : 'Fail',
-        recommendation: realData.imageCount >= 1 ? '—' : 'Add images with target phrase alt text to enhance visual content',
-        recommendationType: realData.imageCount >= 1 ? 'default' : 'warning',
-      },
-      {
-        id: 'missing_alt',
-        name: 'Images Missing Alt Text',
-        currentValue: `${realData.missingAltCount} images with missing/generic alt text`,
-        hasTargetPhrase: 'N/A',
-        status: realData.missingAltCount === 0 ? 'Pass' : 'Fail',
-        recommendation: realData.missingAltCount === 0 ? '—' : `Add descriptive alt text to ${realData.missingAltCount} images`,
-        recommendationType: realData.missingAltCount === 0 ? 'default' : 'warning',
-      },
-    ]
-
-    failedIssues = auditElements.filter(el => el.status === 'Fail').map((el, idx) => ({
-      id: el.id,
-      issueCode: el.issueCode || `ISSUE ${idx + 1}: ${el.name.toUpperCase()}`,
-      recommendation: el.recommendation,
-      name: el.name,
-    }))
   }
 
   const passedCount = liveAuditData?.overall_score !== undefined ? (
     Math.round((liveAuditData.overall_score / 100) * auditElements.length)
-  ) : (
-    auditElements.filter(el => el.status === 'Pass').length
-  )
+  ) : 0
   const totalCount = auditElements.length
 
   return (
@@ -386,15 +210,11 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
             <span className="w4-pill-badge">W4 | LATEST PAGE AUDIT RESULTS</span>
             {liveAuditData ? (
               <span className="w4-status-connected" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#10b981', backgroundColor: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
-                🟢 LIVE API DATA (TSE Page Auditor @ :8000)
-              </span>
-            ) : auditError ? (
-              <span className="w4-status-disconnected" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', padding: '2px 8px', borderRadius: '4px' }} title={auditError}>
-                🟠 LOCAL EXPORTED PACKAGE DATA (Backend API Offline)
+                🟢 LIVE API DATA
               </span>
             ) : (
-              <span className="w4-status-loading" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#60a5fa' }}>
-                🔵 Checking API Status...
+              <span className="w4-status-offline" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
+                Page Auditor Offline — Audit Cannot Run
               </span>
             )}
           </div>
@@ -436,9 +256,15 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           <div className="w4-score-box">
             <span className="w4-score-label">AUDIT SCORE</span>
             <div className="w4-score-value">
-              {isLoadingAudit ? 'Auditing...' : `${passedCount} / ${totalCount} Passed`}
-              {!isLoadingAudit && (
-                <span className="w4-score-subtext"> ({failedIssues.length} issues to fix)</span>
+              {isLoadingAudit ? (
+                'Auditing...'
+              ) : liveAuditData ? (
+                <>
+                  {passedCount} / {totalCount} Passed
+                  <span className="w4-score-subtext"> ({failedIssues.length} issues to fix)</span>
+                </>
+              ) : (
+                'Offline'
               )}
             </div>
           </div>
@@ -454,7 +280,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
           <div className="w4-info-card">
             <span className="w4-info-label">TARGET PHRASE</span>
-            <div className="w4-info-target-phrase">{targetPhrase}</div>
+            <div className="w4-info-target-phrase">{targetPhrase || 'Not Set'}</div>
           </div>
 
           <div className="w4-info-card">
@@ -471,54 +297,65 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           </div>
         </div>
 
-        {/* SEO Elements Audit Table */}
+        {/* SEO Elements Audit Table / Offline State */}
         <div className="w4-table-card">
-          <table className="w4-audit-table">
-            <thead>
-              <tr>
-                <th className="col-element">SEO Element</th>
-                <th className="col-val">Current Value</th>
-                <th className="col-target-p">Target Phrase</th>
-                <th className="col-stat">Status</th>
-                <th className="col-recom">Recommended Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {auditElements.map((el) => (
-                <tr key={el.id}>
-                  <td className="col-element font-bold">{el.name}</td>
-                  <td className="col-val">{el.currentValue}</td>
-                  <td className="col-target-p">
-                    {el.hasTargetPhrase === 'N/A' ? (
-                      <span className="pill-na">N/A</span>
-                    ) : el.hasTargetPhrase ? (
-                      <span className="pill-target-yes">Yes</span>
-                    ) : (
-                      <span className="pill-target-no">No</span>
-                    )}
-                  </td>
-                  <td className="col-stat">
-                    <span className={`pill-status ${el.status.toLowerCase()}`}>
-                      {el.status}
-                    </span>
-                  </td>
-                  <td className="col-recom">
-                    {el.recommendation === '—' ? (
-                      <span className="text-muted">—</span>
-                    ) : (
-                      <span className={`recom-text ${el.recommendationType || 'default'}`}>
-                        {el.recommendation}
-                      </span>
-                    )}
-                  </td>
+          {!liveAuditData && !isLoadingAudit ? (
+            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#ef4444' }}>
+              <div style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '8px' }}>
+                Page Auditor Offline — Audit Cannot Run
+              </div>
+              <div style={{ fontSize: '0.88rem', color: '#94a3b8' }}>
+                Please ensure the TSE Page Auditor backend server (<code>python server.py</code> inside <code>c:\Antigravity\tse-page-auditor\backend</code>) is running.
+              </div>
+            </div>
+          ) : (
+            <table className="w4-audit-table">
+              <thead>
+                <tr>
+                  <th className="col-element">SEO Element</th>
+                  <th className="col-val">Current Value</th>
+                  <th className="col-target-p">Target Phrase</th>
+                  <th className="col-stat">Status</th>
+                  <th className="col-recom">Recommended Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {auditElements.map((el) => (
+                  <tr key={el.id}>
+                    <td className="col-element font-bold">{el.name}</td>
+                    <td className="col-val">{el.currentValue}</td>
+                    <td className="col-target-p">
+                      {el.hasTargetPhrase === 'N/A' ? (
+                        <span className="pill-na">N/A</span>
+                      ) : el.hasTargetPhrase ? (
+                        <span className="pill-target-yes">Yes</span>
+                      ) : (
+                        <span className="pill-target-no">No</span>
+                      )}
+                    </td>
+                    <td className="col-stat">
+                      <span className={`pill-status ${el.status.toLowerCase()}`}>
+                        {el.status}
+                      </span>
+                    </td>
+                    <td className="col-recom">
+                      {el.recommendation === '—' ? (
+                        <span className="text-muted">—</span>
+                      ) : (
+                        <span className={`recom-text ${el.recommendationType || 'default'}`}>
+                          {el.recommendation}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         {/* Action Checklist: What to Fix Card */}
-        {failedIssues.length > 0 && (
+        {liveAuditData && failedIssues.length > 0 && (
           <div className="w4-checklist-card">
             <div className="w4-checklist-header">
               <span className="w4-warning-icon">⚠</span>
