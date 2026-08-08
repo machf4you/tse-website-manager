@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.9-real-data-fallback',
+    version: 'v2.9-real-data-fallback',
+    gitTag: 'v2.9-live-api-and-real-package-fallback',
+    commit: 'f5e288d',
+    date: '08-08-2026 06:30',
+    title: 'Real Exported Data & Live API Indicator',
+    description: 'Added live connection status badge (Live API vs Stored Package Data) and real HTML parser that extracts real H1, H2s, word count, internal links, and images from WordPress export bundle when offline.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.9-live-api-and-real-package-fallback.md',
+  },
+  {
     id: 'v2.8-configured-dropdown',
     version: 'v2.8-configured-dropdown',
     gitTag: 'v2.8-configured-only-audit-dropdown-20pct-narrower',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-08-2026 17:47',
     title: 'Configured URLs Only in Audit Dropdown',
     description: 'Filtered the W4 Audit Results page selector dropdown to display Configured URLs only, and reduced the dropdown container width by 20%.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.8-configured-only-audit-dropdown-20pct-narrower.md',
   },
   {
