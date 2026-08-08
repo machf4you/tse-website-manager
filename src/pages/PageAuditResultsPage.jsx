@@ -3,8 +3,29 @@ import { executePageAudit } from '../services/pageAuditorApi'
 import './PageAuditResultsPage.css'
 
 export default function PageAuditResultsPage({ site, page, pagesList = [], onBack }) {
-  // Allow selecting any page from the dropdown
-  const [selectedUrl, setSelectedUrl] = useState(() => page?.url || pagesList[0]?.url || '')
+  const selectedUrlStorageKey = site?.id ? `tse_audit_selected_url_${site.id}` : 'tse_audit_selected_url_default'
+
+  // Allow selecting any page from the dropdown, with localStorage persistence
+  const [selectedUrl, setSelectedUrl] = useState(() => {
+    try {
+      const saved = localStorage.getItem(selectedUrlStorageKey)
+      if (saved && pagesList.some(p => p.url === saved)) return saved
+    } catch (e) {
+      // ignore
+    }
+    return page?.url || pagesList[0]?.url || ''
+  })
+
+  useEffect(() => {
+    if (selectedUrl) {
+      try {
+        localStorage.setItem(selectedUrlStorageKey, selectedUrl)
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [selectedUrl, selectedUrlStorageKey])
+
   const [liveAuditData, setLiveAuditData] = useState(null)
   const [isLoadingAudit, setIsLoadingAudit] = useState(false)
   const [auditError, setAuditError] = useState(null)
@@ -115,6 +136,13 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       ? Math.round((1 - snap.image_alt_coverage) * snap.image_count)
       : 0
 
+    const hasH2Target = breakdown.h2 === 'Yes' || (
+      Array.isArray(snap.h2) && targetPhrase && snap.h2.some(h => {
+        const text = typeof h === 'string' ? h : (h?.text || '')
+        return text.toLowerCase().includes(targetPhrase.toLowerCase())
+      })
+    )
+
     auditElements = [
       {
         id: 'meta_title',
@@ -148,10 +176,10 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         id: 'h2_count',
         name: 'H2 Count',
         currentValue: `${Array.isArray(snap.h2) ? snap.h2.length : (snap.h2 || 0)} H2 headings`,
-        hasTargetPhrase: breakdown.h2 === 'Yes',
-        status: getStatusText(h2Check),
-        recommendation: h2Check?.detail || `Add target phrase "${targetPhrase}" to at least one H2 heading`,
-        recommendationType: h2Check?.status === 'fail' ? 'fail' : 'warning',
+        hasTargetPhrase: hasH2Target,
+        status: hasH2Target ? 'Pass' : 'Fail',
+        recommendation: hasH2Target ? '—' : 'Add the target phrase to at least one H2 heading.',
+        recommendationType: hasH2Target ? 'default' : 'fail',
       },
       {
         id: 'word_count',

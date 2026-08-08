@@ -265,6 +265,13 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         isSyncing={isSyncing}
         onViewAudit={(page) => {
           setSelectedPageForAudit(page)
+          if (page && page.url) {
+            try {
+              localStorage.setItem(`tse_audit_selected_url_${site?.id || 'default'}`, page.url)
+            } catch (e) {
+              // ignore
+            }
+          }
           setActiveTab('w3_audit_results')
         }}
       />
