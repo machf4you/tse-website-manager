@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.3-ui-remove-target-col',
+    version: 'v3.3-ui-remove-target-col',
+    gitTag: 'v3.3-ui-remove-target-phrase-column',
+    commit: 'ecd18b0',
+    date: '08-08-2026 07:05',
+    title: 'Removed Redundant Target Phrase Column',
+    description: 'Removed redundant Target Phrase column from W4 SEO Elements audit table, allocating extra horizontal width for Current Value and Recommended Action.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.3-ui-remove-target-phrase-column.md',
+  },
+  {
     id: 'v3.2-live-page-auditor',
     version: 'v3.2-live-page-auditor',
     gitTag: 'v3.2-live-page-auditor-integrated',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '08-08-2026 06:51',
     title: 'Live Page Auditor Integrated',
     description: 'First fully working integration between Website Manager and the existing TSE Page Auditor. Verified live API communication, configured page precedence, and strict W3/W4 Audit Results rendering.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.2-live-page-auditor-integrated.md',
   },
   {
