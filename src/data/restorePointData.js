@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.4-h2-logic-refinement',
+    version: 'v3.4-h2-logic-refinement',
+    gitTag: 'v3.4-h2-audit-logic-refinement',
+    commit: '52d17da',
+    date: '08-08-2026 07:14',
+    title: 'H2 Audit Logic Refinement',
+    description: 'Updated H2 audit evaluation so that if no H2 headings contain the Target Phrase, Status is Fail with recommendation to add it. If one or more H2s contain the Target Phrase, Status is Pass with recommendation "—".',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.4-h2-audit-logic-refinement.md',
+  },
+  {
     id: 'v3.3-ui-remove-target-col',
     version: 'v3.3-ui-remove-target-col',
     gitTag: 'v3.3-ui-remove-target-phrase-column',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '08-08-2026 07:05',
     title: 'Removed Redundant Target Phrase Column',
     description: 'Removed redundant Target Phrase column from W4 SEO Elements audit table, allocating extra horizontal width for Current Value and Recommended Action.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.3-ui-remove-target-phrase-column.md',
   },
   {
