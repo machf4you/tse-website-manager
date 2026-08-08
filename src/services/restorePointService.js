@@ -11,7 +11,16 @@ export function getRestorePointIndex() {
     if (saved) {
       const parsed = JSON.parse(saved)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
+        // Always prioritize fresh code master restore points over stale local cache
+        const existingTags = new Set(parsed.map(item => item.gitTag || item.version || item.id))
+        const missingCodeItems = restorePointIndexData.filter(item => !existingTags.has(item.gitTag || item.version || item.id))
+        
+        // Place missing code items at the top and maintain single Current status
+        const merged = [...missingCodeItems, ...parsed]
+        merged.forEach((item, idx) => {
+          item.status = idx === 0 ? 'Current' : 'Superseded'
+        })
+        return merged
       }
     }
   } catch (e) {
