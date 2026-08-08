@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.1-configured-precedence',
+    version: 'v3.1-configured-precedence',
+    gitTag: 'v3.1-fix-configured-page-precedence-for-auditor',
+    commit: 'd05764d',
+    date: '08-08-2026 06:47',
+    title: 'Configured Page Precedence for Auditor',
+    description: 'Enforced strict precedence order so the configured page (URL, Target Phrase, Classification) is always passed to the Page Auditor backend API instead of raw unconfigured exporter records.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.1-fix-configured-page-precedence-for-auditor.md',
+  },
+  {
     id: 'v3.0-strict-auditor-api',
     version: 'v3.0-strict-auditor-api',
     gitTag: 'v3.0-strict-tse-page-auditor-data-source',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '08-08-2026 06:37',
     title: 'Strict TSE Page Auditor Backend Requirement',
     description: 'Completely removed all fallback calculation logic. W4 Page Audit Results strictly displays live data returned by TSE Page Auditor backend API, showing "Page Auditor Offline — Audit Cannot Run" when backend is unavailable.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.0-strict-tse-page-auditor-data-source.md',
   },
   {
