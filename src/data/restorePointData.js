@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.2-live-page-auditor',
+    version: 'v3.2-live-page-auditor',
+    gitTag: 'v3.2-live-page-auditor-integrated',
+    commit: 'pending',
+    date: '08-08-2026 06:51',
+    title: 'Live Page Auditor Integrated',
+    description: 'First fully working integration between Website Manager and the existing TSE Page Auditor. Verified live API communication, configured page precedence, and strict W3/W4 Audit Results rendering.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.2-live-page-auditor-integrated.md',
+  },
+  {
     id: 'v3.1-configured-precedence',
     version: 'v3.1-configured-precedence',
     gitTag: 'v3.1-fix-configured-page-precedence-for-auditor',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '08-08-2026 06:47',
     title: 'Configured Page Precedence for Auditor',
     description: 'Enforced strict precedence order so the configured page (URL, Target Phrase, Classification) is always passed to the Page Auditor backend API instead of raw unconfigured exporter records.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.1-fix-configured-page-precedence-for-auditor.md',
   },
   {
