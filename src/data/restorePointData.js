@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.0-strict-auditor-api',
+    version: 'v3.0-strict-auditor-api',
+    gitTag: 'v3.0-strict-tse-page-auditor-data-source',
+    commit: '144f3c3',
+    date: '08-08-2026 06:37',
+    title: 'Strict TSE Page Auditor Backend Requirement',
+    description: 'Completely removed all fallback calculation logic. W4 Page Audit Results strictly displays live data returned by TSE Page Auditor backend API, showing "Page Auditor Offline — Audit Cannot Run" when backend is unavailable.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.0-strict-tse-page-auditor-data-source.md',
+  },
+  {
     id: 'v2.9-real-data-fallback',
     version: 'v2.9-real-data-fallback',
     gitTag: 'v2.9-live-api-and-real-package-fallback',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '08-08-2026 06:30',
     title: 'Real Exported Data & Live API Indicator',
     description: 'Added live connection status badge (Live API vs Stored Package Data) and real HTML parser that extracts real H1, H2s, word count, internal links, and images from WordPress export bundle when offline.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.9-live-api-and-real-package-fallback.md',
   },
   {
