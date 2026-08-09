@@ -2,6 +2,32 @@ import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
 import './PageAuditResultsPage.css'
 
+function getCleanPathname(fullUrl, siteBaseUrl) {
+  if (!fullUrl || typeof fullUrl !== 'string') return '/'
+  const trimmed = fullUrl.trim()
+  if (!trimmed || trimmed === 'https://' || trimmed === 'http://' || trimmed === 'https:///' || trimmed === 'http:///') return '/'
+
+  try {
+    const safeUrlStr = trimmed.includes(' ') ? encodeURI(trimmed) : trimmed
+    if (safeUrlStr.startsWith('http://') || safeUrlStr.startsWith('https://')) {
+      const parsed = new URL(safeUrlStr)
+      return parsed.pathname || '/'
+    }
+    const base = (siteBaseUrl && typeof siteBaseUrl === 'string' && (siteBaseUrl.startsWith('http://') || siteBaseUrl.startsWith('https://')))
+      ? siteBaseUrl.trim()
+      : 'https://example.com'
+    const parsed = new URL(safeUrlStr, base)
+    return parsed.pathname || '/'
+  } catch (_e) {
+    if (trimmed.startsWith('/')) return trimmed
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      const clean = trimmed.replace(/^https?:\/\/[^/]+/, '')
+      return clean.startsWith('/') ? clean : `/${clean}`
+    }
+    return `/${trimmed}`
+  }
+}
+
 export default function PageAuditResultsPage({ site, page, pagesList = [], onBack }) {
   const selectedUrlStorageKey = site?.id ? `tse_audit_selected_url_${site.id}` : 'tse_audit_selected_url_default'
 
@@ -56,16 +82,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   const fullUrl = currentPage.url || site?.url || '/'
 
   // Clean path display
-  let cleanPath = '/'
-  try {
-    if (fullUrl.startsWith('http://') || fullUrl.startsWith('https://')) {
-      cleanPath = new URL(fullUrl).pathname || '/'
-    } else {
-      cleanPath = fullUrl
-    }
-  } catch (_e) {
-    cleanPath = fullUrl
-  }
+  const cleanPath = getCleanPathname(fullUrl, site?.url)
 
   // Execute audit call to Page Auditor server ONLY
   useEffect(() => {
@@ -348,11 +365,14 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
                 const selectablePages = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.priority !== 0 && p.type !== 'Excluded' && p.type !== 'Unclassified / Excluded')
                 const displayList = selectablePages.length > 0 ? selectablePages : (pagesList.length > 0 ? pagesList.filter(p => p.isConfigured === true) : [])
                 if (displayList.length > 0) {
-                  return displayList.map((p, idx) => (
-                    <option key={p.id || p.url || idx} value={p.url}>
-                      {p.url ? (new URL(p.url, site?.url || 'https://example.com').pathname || '/') : '/'} ({p.proposedTitle || p.title || 'Untitled'})
-                    </option>
-                  ))
+                  return displayList.map((p, idx) => {
+                    const formattedPath = getCleanPathname(p.url, site?.url)
+                    return (
+                      <option key={p.id || p.url || idx} value={p.url}>
+                        {formattedPath} ({p.proposedTitle || p.title || 'Untitled'})
+                      </option>
+                    )
+                  })
                 }
                 return (
                   <option value={currentPage.url || '/'}>

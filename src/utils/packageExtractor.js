@@ -133,7 +133,11 @@ export function normalizeImportedPage(p, siteUrl = '') {
   title = title || 'Untitled Page'
 
   // 2. URL
-  const url = (p.link || p.url || p.guid?.rendered || p.guid || '').trim()
+  let rawUrl = (p.link || p.url || p.guid?.rendered || (typeof p.guid === 'string' ? p.guid : '') || '').trim()
+  if (rawUrl === 'https://' || rawUrl === 'http://' || rawUrl === 'https:///' || rawUrl === 'http:///') {
+    rawUrl = siteUrl ? siteUrl.trim() : '/'
+  }
+  const url = rawUrl
 
   // 3. Automatic Exclusion Rules
   const lowerTitle = title.toLowerCase()
