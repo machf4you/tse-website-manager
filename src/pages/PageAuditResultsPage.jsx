@@ -332,15 +332,15 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
       const pLinks = p.internal_links || p.links || []
       const rawContent = (
-        typeof p.content === 'string' && p.content.trim() ? p.content :
-        typeof p.content?.rendered === 'string' && p.content.rendered.trim() ? p.content.rendered :
-        typeof p.content?.raw === 'string' && p.content.raw.trim() ? p.content.raw :
-        typeof p.post_content === 'string' && p.post_content.trim() ? p.post_content :
-        typeof p.body_text === 'string' && p.body_text.trim() ? p.body_text :
-        typeof p.html === 'string' && p.html.trim() ? p.html :
-        typeof p.post_excerpt === 'string' && p.post_excerpt.trim() ? p.post_excerpt :
-        typeof p.excerpt === 'string' && p.excerpt.trim() ? p.excerpt :
-        typeof p.excerpt?.rendered === 'string' && p.excerpt.rendered.trim() ? p.excerpt.rendered : ''
+        typeof p.content?.rendered === 'string' && p.content.rendered.trim() ? p.content.rendered.trim() :
+        typeof p.content?.raw === 'string' && p.content.raw.trim() ? p.content.raw.trim() :
+        typeof p.content === 'string' && p.content.trim() ? p.content.trim() :
+        typeof p.post_content === 'string' && p.post_content.trim() ? p.post_content.trim() :
+        typeof p.body_text === 'string' && p.body_text.trim() ? p.body_text.trim() :
+        typeof p.html === 'string' && p.html.trim() ? p.html.trim() :
+        typeof p.post_excerpt === 'string' && p.post_excerpt.trim() ? p.post_excerpt.trim() :
+        typeof p.excerpt?.rendered === 'string' && p.excerpt.rendered.trim() ? p.excerpt.rendered.trim() :
+        typeof p.excerpt === 'string' && p.excerpt.trim() ? p.excerpt.trim() : ''
       )
       
       // Exclude navigation, header, footer, logo, and menu components
