@@ -172,6 +172,23 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       }
     }
 
+    const wordCount = snap.word_count !== undefined ? snap.word_count : 0
+    const hasContentTarget = breakdown.content === 'Yes'
+    const wordCountStatus = (wordCount >= 300 && hasContentTarget) ? 'Pass' : 'Fail'
+    
+    let wordCountRec = '—'
+    if (wordCountStatus === 'Fail') {
+      if (wordCount < 300) {
+        wordCountRec = `Increase content length to at least 300 words (currently ${wordCount} words)`
+      } else if (!hasContentTarget) {
+        wordCountRec = `Add target phrase "${targetPhrase}" naturally within body content`
+      } else if (wordCheck?.detail) {
+        wordCountRec = wordCheck.detail
+      } else {
+        wordCountRec = `Increase content length to at least 300 words and add target phrase "${targetPhrase}"`
+      }
+    }
+
     auditElements = [
       {
         id: 'meta_title',
@@ -210,14 +227,15 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         recommendation: hasH2Target ? '—' : 'Add the target phrase to at least one H2 heading.',
         recommendationType: hasH2Target ? 'default' : 'fail',
       },
+
       {
         id: 'word_count',
         name: 'Word Count',
-        currentValue: `${snap.word_count !== undefined ? snap.word_count : 0} words`,
-        hasTargetPhrase: breakdown.content === 'Yes',
-        status: getStatusText(wordCheck),
-        recommendation: wordCheck?.detail || '—',
-        recommendationType: wordCheck?.status === 'fail' ? 'fail' : 'default',
+        currentValue: `${wordCount} words`,
+        hasTargetPhrase: hasContentTarget,
+        status: wordCountStatus,
+        recommendation: wordCountRec,
+        recommendationType: wordCountStatus === 'Pass' ? 'default' : 'fail',
       },
       {
         id: 'internal_links',
