@@ -673,14 +673,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
               </div>
             </div>
           ) : (
-            <>
-              {/* Temporary Diagnostic Banner (Scoped inside liveAuditData render block) */}
-              <div style={{ backgroundColor: '#1e1b4b', border: '2px solid #6366f1', color: '#818cf8', padding: '12px 18px', borderRadius: '8px', margin: '0 0 16px 0', fontSize: '1.2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span>LIVE incomingLinkCount =</span>
-                <span style={{ fontSize: '1.5rem', color: '#10b981', backgroundColor: '#064e3b', padding: '2px 10px', borderRadius: '4px', border: '1px solid #10b981' }}>{incomingLinkCount}</span>
-              </div>
-
-              <table className="w4-audit-table">
+            <table className="w4-audit-table">
               <thead>
                 <tr>
                   <th className="col-element">SEO Element</th>
@@ -712,7 +705,6 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
                 ))}
               </tbody>
             </table>
-          </>
           )}
         </div>
 
