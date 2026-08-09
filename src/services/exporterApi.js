@@ -37,18 +37,31 @@ export async function fetchTseWordPressExportPackage({
     })
 
     if (!response.ok) {
-      // Fallback: Fetch public WordPress REST API pages directly
+      // Fallback: Fetch public WordPress REST API pages, posts, and projects directly
       try {
-        const fallbackRes = await fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`)
-        if (fallbackRes.ok) {
-          const fallbackPages = await fallbackRes.json()
-          if (Array.isArray(fallbackPages) && fallbackPages.length > 0) {
-            return {
-              success: true,
-              packageData: {
-                pages: fallbackPages,
-                site_info: { url: cleanUrl }
-              }
+        const [pagesRes, postsRes, projRes] = await Promise.all([
+          fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`),
+          fetch(`${cleanUrl}/wp-json/wp/v2/posts?per_page=100`),
+          fetch(`${cleanUrl}/wp-json/wp/v2/projects?per_page=100`)
+        ])
+
+        const pages = pagesRes.ok ? await pagesRes.json() : []
+        const posts = postsRes.ok ? await postsRes.json() : []
+        const projects = projRes.ok ? await projRes.json() : []
+
+        const combinedPages = [
+          ...(Array.isArray(pages) ? pages : []),
+          ...(Array.isArray(posts) ? posts : []),
+          ...(Array.isArray(projects) ? projects : [])
+        ]
+
+        if (combinedPages.length > 0) {
+          return {
+            success: true,
+            packageData: {
+              pages: combinedPages,
+              posts,
+              site_info: { url: cleanUrl }
             }
           }
         }
@@ -72,18 +85,31 @@ export async function fetchTseWordPressExportPackage({
 
     // If WordPress returns a WP_Error payload (e.g. { code: '...', message: '...' })
     if (packageData && packageData.code && packageData.message && !packageData.pages && !packageData.data?.pages) {
-      // Fallback to public REST API pages
+      // Fallback to public REST API pages, posts, and projects
       try {
-        const fallbackRes = await fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`)
-        if (fallbackRes.ok) {
-          const fallbackPages = await fallbackRes.json()
-          if (Array.isArray(fallbackPages) && fallbackPages.length > 0) {
-            return {
-              success: true,
-              packageData: {
-                pages: fallbackPages,
-                site_info: { url: cleanUrl }
-              }
+        const [pagesRes, postsRes, projRes] = await Promise.all([
+          fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`),
+          fetch(`${cleanUrl}/wp-json/wp/v2/posts?per_page=100`),
+          fetch(`${cleanUrl}/wp-json/wp/v2/projects?per_page=100`)
+        ])
+
+        const pages = pagesRes.ok ? await pagesRes.json() : []
+        const posts = postsRes.ok ? await postsRes.json() : []
+        const projects = projRes.ok ? await projRes.json() : []
+
+        const combinedPages = [
+          ...(Array.isArray(pages) ? pages : []),
+          ...(Array.isArray(posts) ? posts : []),
+          ...(Array.isArray(projects) ? projects : [])
+        ]
+
+        if (combinedPages.length > 0) {
+          return {
+            success: true,
+            packageData: {
+              pages: combinedPages,
+              posts,
+              site_info: { url: cleanUrl }
             }
           }
         }
