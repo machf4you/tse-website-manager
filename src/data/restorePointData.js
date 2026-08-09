@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.9-word-count-rule',
+    version: 'v3.9-word-count-rule',
+    gitTag: 'v3.9-simplified-word-count-rule',
+    commit: 'dd22af0',
+    date: '09-08-2026 06:45',
+    title: 'Simplified Word Count & Content Depth Rule',
+    description: 'Simplified Word Count audit rule for Version 1: Word count >= 300 words + Target Phrase presence required to pass. Removed density calculations, thresholds, and over-optimization checks.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.9-simplified-word-count-rule.md',
+  },
+  {
     id: 'v3.8-meta-desc-rule',
     version: 'v3.8-meta-desc-rule',
     gitTag: 'v3.8-meta-description-rule-refinement',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:38',
     title: 'Meta Description Rule Refinement',
     description: 'Updated Meta Description audit rule: Target Phrase presence (exact or natural variation) AND length between 120 and 160 characters required to pass. Recommended actions display specific required fixes.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.8-meta-description-rule-refinement.md',
   },
   {
