@@ -152,7 +152,11 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
     const titleCheck = getCheck('Title Tag') || getCheck('Meta Title')
     const descCheck = getCheck('Meta Description')
-    const h1Check = getCheck('H1')
+    const h1Check = getCheck('H1 Tag') || getCheck('H1 Heading') || getCheck('H1 Presence') || getCheck('H1')
+    const hasH1Target = breakdown.h1 === 'Yes' || (
+      snap.h1 && (Array.isArray(snap.h1) ? snap.h1.length > 0 : Boolean(snap.h1))
+    )
+    const h1Status = (hasH1Target && h1Check?.status !== 'fail') ? 'Pass' : 'Fail'
     const h2Check = getCheck('H2 Count') || getCheck('H2')
     const wordCheck = getCheck('Word Count')
     const linkCheck = getCheck('Internal Link Count') || getCheck('Internal Links')
@@ -265,9 +269,9 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         name: 'H1',
         currentValue: (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '—',
         hasTargetPhrase: breakdown.h1 === 'Yes',
-        status: getStatusText(h1Check),
-        recommendation: h1Check?.detail || `Add target phrase "${targetPhrase}" to H1 heading`,
-        recommendationType: h1Check?.status === 'fail' ? 'fail' : 'warning',
+        status: h1Status,
+        recommendation: h1Status === 'Pass' ? '—' : (h1Check?.detail || `Add target phrase "${targetPhrase}" to H1 heading`),
+        recommendationType: h1Status === 'Pass' ? 'default' : 'fail',
         issueCode: 'ISSUE 1: H1',
       },
       {
