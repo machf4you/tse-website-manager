@@ -204,7 +204,16 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         timerRef.current = null
 
         // Await real Exporter response
-        const result = await exporterPromise
+        let result = await exporterPromise
+
+        // Fallback to stored package if live request fails (e.g. 401 or network error) but local package exists
+        const cachedPkg = storedPackageData || site?.storedPackageData
+        if (!result.success && cachedPkg) {
+          result = {
+            success: true,
+            packageData: cachedPkg,
+          }
+        }
 
         const resPages = extractPagesFromPackage(result.packageData)
 
