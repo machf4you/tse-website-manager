@@ -84,7 +84,7 @@ export default function PageAuditorRulesPage() {
       weight: '7%',
       purpose: 'Measure the number of internal links from other pages on the website that point to the audited page.',
       dataExtracted: 'Count all valid internal links from other pages on the same website that link to the audited page.',
-      matchingLogic: 'Analyse the website and calculate how many internal pages link to the audited page.',
+      matchingLogic: 'Crawl the website and count valid internal links from other pages that point to the audited page.',
       scoringContribution: '7 Points (Internal Linking area weight).',
       passCriteria: 'The audited page receives at least 3 internal links from other pages on the website.',
       failCriteria: 'The audited page receives fewer than 3 internal links.',
