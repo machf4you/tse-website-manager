@@ -90,6 +90,61 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   const [isRerunRequested, setIsRerunRequested] = useState(false)
   const [isCurrentPageStale, setIsCurrentPageStale] = useState(false)
   const [staleReasonText, setStaleReasonText] = useState(null)
+  const [enrichedPagesList, setEnrichedPagesList] = useState([])
+
+  // Auto-enrich pagesList with live WP content if local content is empty
+  useEffect(() => {
+    let isMounted = true
+    async function autoEnrichPages() {
+      if (!Array.isArray(pagesList) || pagesList.length === 0) return
+      const hasEmptyContent = pagesList.some(p => {
+        const c = typeof p.content === 'string' ? p.content : (p.content?.rendered || p.content?.raw || p.body_text || p.html || '')
+        return !c || c.trim().length === 0
+      })
+      if (!hasEmptyContent) return
+
+      try {
+        const domainUrl = site?.url || pagesList[0]?.url || 'https://ascentbuilders.co.uk'
+        const cleanDomain = domainUrl.replace(/\/$/, '')
+        const [pagesRes, postsRes, projRes] = await Promise.all([
+          fetch(`${cleanDomain}/wp-json/wp/v2/pages?per_page=100`),
+          fetch(`${cleanDomain}/wp-json/wp/v2/posts?per_page=100`),
+          fetch(`${cleanDomain}/wp-json/wp/v2/projects?per_page=100`)
+        ])
+
+        const pages = pagesRes.ok ? await pagesRes.json() : []
+        const posts = postsRes.ok ? await postsRes.json() : []
+        const projects = projRes.ok ? await projRes.json() : []
+        const combined = [...pages, ...posts, ...projects]
+
+        if (isMounted && combined.length > 0) {
+          const contentMap = new Map()
+          combined.forEach(item => {
+            const itemUrl = item.link || item.url
+            const text = item.content?.rendered || item.content?.raw || item.body_text || item.content || ''
+            if (itemUrl && text) {
+              contentMap.set(normalizeUrlForMatching(itemUrl), text)
+            }
+          })
+
+          const enriched = pagesList.map(p => {
+            const pNorm = normalizeUrlForMatching(p.url)
+            const freshContent = contentMap.get(pNorm)
+            if (freshContent) {
+              return { ...p, content: freshContent, body_text: freshContent }
+            }
+            return p
+          })
+
+          setEnrichedPagesList(enriched)
+        }
+      } catch (err) {
+        console.error('Auto-enrichment error:', err)
+      }
+    }
+    autoEnrichPages()
+    return () => { isMounted = false }
+  }, [pagesList, site?.url])
 
   // Execute or load audit call for selected page
   useEffect(() => {
@@ -317,7 +372,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       return norm.slice(slashIdx)
     }
 
-    const incomingLinkCount = (currentPage?.url && Array.isArray(pagesList)) ? pagesList.filter(p => {
+    const effectivePagesList = enrichedPagesList.length > 0 ? enrichedPagesList : pagesList
+    const incomingLinkCount = (currentPage?.url && Array.isArray(effectivePagesList)) ? effectivePagesList.filter(p => {
       if (!p || !p.url) return false
       
       const targetNormUrl = normalizeUrlForMatching(currentPage.url)
