@@ -17,9 +17,10 @@ export default function WebsitesDashboard() {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
           const cleaned = parsed.map(s => {
-            if (s.name === 'Bathroom Upgrades') return mockSiteTile
             return {
               ...s,
+              isSynchronised: s.isSynchronised !== undefined ? s.isSynchronised : false,
+              lastSyncTimestamp: s.lastSyncTimestamp || null,
               lastAuditTimestamp: s.lastAuditTimestamp || null,
               taskCount: s.taskCount && s.taskCount !== 3 ? s.taskCount : 0,
             }
@@ -39,9 +40,10 @@ export default function WebsitesDashboard() {
       if (savedObj) {
         const parsed = JSON.parse(savedObj)
         if (parsed && typeof parsed === 'object' && parsed.name) {
-          if (parsed.name === 'Bathroom Upgrades') return mockSiteTile
           return {
             ...parsed,
+            isSynchronised: parsed.isSynchronised !== undefined ? parsed.isSynchronised : false,
+            lastSyncTimestamp: parsed.lastSyncTimestamp || null,
             lastAuditTimestamp: parsed.lastAuditTimestamp || null,
             taskCount: parsed.taskCount && parsed.taskCount !== 3 ? parsed.taskCount : 0,
           }

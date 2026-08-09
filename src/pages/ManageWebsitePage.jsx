@@ -203,13 +203,28 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   useEffect(() => {
     if (site) {
-      setIsSynced(Boolean(site.isSynchronised === true && site.lastSyncTimestamp))
-      setLastSyncDate(site.lastSyncTimestamp || null)
-      if (site.storedPackageData) {
-        setStoredPackageData(site.storedPackageData)
+      try {
+        const saved = localStorage.getItem(packageStorageKey)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (parsed && parsed.isSynchronised && parsed.packageData) {
+            setIsSynced(true)
+            if (parsed.lastSyncTimestamp) setLastSyncDate(parsed.lastSyncTimestamp)
+            setStoredPackageData(parsed.packageData)
+            return
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      if (site.isSynchronised && site.lastSyncTimestamp) {
+        setIsSynced(true)
+        setLastSyncDate(site.lastSyncTimestamp)
+        if (site.storedPackageData) setStoredPackageData(site.storedPackageData)
       }
     }
-  }, [site])
+  }, [site, packageStorageKey])
 
   useEffect(() => {
     return () => {
