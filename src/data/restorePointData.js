@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.1-internal-link-wording',
+    version: 'v4.1-internal-link-wording',
+    gitTag: 'v4.1-internal-link-matching-logic-wording',
+    commit: '26c66f5',
+    date: '09-08-2026 06:56',
+    title: 'Internal Link Matching Logic Wording Improvement',
+    description: 'Updated Matching Logic text for Internal Link Count in Page Auditor Rules reference page to: Crawl the website and count valid internal links from other pages that point to the audited page.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.1-internal-link-matching-logic-wording.md',
+  },
+  {
     id: 'v4.0-incoming-link-rule',
     version: 'v4.0-incoming-link-rule',
     gitTag: 'v4.0-incoming-internal-link-audit',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:54',
     title: 'Incoming Internal Link Count Audit Rule',
     description: 'Updated Internal Link Count audit rule to measure incoming internal links pointing TO the audited page from other site pages (min 3 required to pass).',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.0-incoming-internal-link-audit.md',
   },
   {
