@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.6-stable-rendering',
+    version: 'v4.6-stable-rendering',
+    gitTag: 'v4.6-stable-page-auditor-rendering',
+    commit: 'fc8da93',
+    date: '09-08-2026 07:51',
+    title: 'Stable Page Auditor Rendering Fix',
+    description: 'Fixed W4 render crash after HTTP 200 OK by introducing robust getCleanPathname helper in PageAuditResultsPage.jsx and sanitizing scheme placeholders upon import in packageExtractor.js.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.6-stable-page-auditor-rendering.md',
+  },
+  {
     id: 'v4.6-clean-baseline',
     version: 'v4.6-clean-baseline',
     gitTag: 'v4.6-clean-baseline-reset',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 07:29',
     title: 'Clean Baseline State Reset',
     description: 'Returned Website Manager to clean baseline: Audited displays Never when no live audit exists, Tasks Outstanding displays 0 when no tasks generated.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.6-clean-baseline-reset.md',
   },
   {
