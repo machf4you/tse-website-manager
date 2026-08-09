@@ -233,7 +233,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       const targetSlug = targetUrl.replace(/^https?:\/\/[^/]+/, '')
       
       const pLinks = p.internal_links || p.links || []
-      const pContent = (p.content || p.html || p.body_text || '').toLowerCase()
+      const rawContent = typeof p.content === 'string' ? p.content : (p.content?.rendered || p.content?.raw || p.body_text || p.html || '')
+      const pContent = rawContent.toLowerCase()
       
       const hasLinkObj = Array.isArray(pLinks) && pLinks.some(l => {
         const href = (typeof l === 'string' ? l : (l?.href || '')).replace(/\/+$/, '').toLowerCase()

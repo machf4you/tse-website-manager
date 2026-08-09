@@ -220,10 +220,14 @@ export function normalizeImportedPage(p, siteUrl = '') {
     priority = 0
   }
 
+  const contentText = typeof p.content === 'string' ? p.content : (p.content?.rendered || p.content?.raw || p.body_text || p.html || '')
+
   return {
     ...p,
     title,
     url,
+    content: contentText,
+    body_text: contentText,
     type,
     seoPageType,
     priority,
