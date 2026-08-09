@@ -377,6 +377,15 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
     console.log('[LINK_TRACE_1] currentPage.url:', currentPage?.url)
     console.log('[LINK_TRACE_2] pagesList.length:', pagesList?.length)
+    if (Array.isArray(pagesList)) {
+      pagesList.forEach((p, idx) => {
+        const url = p?.url || p?.link || ''
+        if (url.includes('loft-conversions')) {
+          const rawContent = typeof p?.content === 'string' ? p.content : (p?.content?.rendered || p?.content?.raw || p?.body_text || p?.html || '')
+          console.log(`[PAGES_LIST_INSPECT] idx=${idx} title="${p?.title}" url="${url}" contentLen=${rawContent.length} containsBanstead=${rawContent.toLowerCase().includes('banstead')}`)
+        }
+      })
+    }
     console.log('[LINK_TRACE_3] calculated incomingLinkCount:', incomingLinkCount)
 
     const linksStatus = incomingLinkCount >= 3 ? 'Pass' : 'Fail'
