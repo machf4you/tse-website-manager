@@ -236,10 +236,21 @@ export function normalizeImportedPage(p, siteUrl = '') {
 
   const contentText = extractContentText(p)
 
+  // Remove heavy WP REST AST objects (yoast_head_json, _links, acf) to ensure quota-safe localStorage persistence
+  const cleanPage = { ...p }
+  delete cleanPage.yoast_head_json
+  delete cleanPage.yoast_head
+  delete cleanPage._links
+  delete cleanPage.acf
+  delete cleanPage.meta
+  delete cleanPage.class_list
+
   return {
-    ...p,
+    ...cleanPage,
+    id: p.id || p.ID || url,
     title,
     url,
+    link: url,
     content: contentText,
     body_text: contentText,
     type,
