@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.2-image-count-wording',
+    version: 'v4.2-image-count-wording',
+    gitTag: 'v4.2-image-count-recommended-action-wording',
+    commit: '862bf9b',
+    date: '09-08-2026 06:58',
+    title: 'Image Count Recommended Action Wording Improvement',
+    description: 'Updated Recommended Action wording for Image Count rule to: Add relevant images that support the page content. Ensure every image has descriptive alt text.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.2-image-count-recommended-action-wording.md',
+  },
+  {
     id: 'v4.1-internal-link-wording',
     version: 'v4.1-internal-link-wording',
     gitTag: 'v4.1-internal-link-matching-logic-wording',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:56',
     title: 'Internal Link Matching Logic Wording Improvement',
     description: 'Updated Matching Logic text for Internal Link Count in Page Auditor Rules reference page to: Crawl the website and count valid internal links from other pages that point to the audited page.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.1-internal-link-matching-logic-wording.md',
   },
   {
