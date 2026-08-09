@@ -375,6 +375,10 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       return false
     }).length : 0
 
+    console.log('[LINK_TRACE_1] currentPage.url:', currentPage?.url)
+    console.log('[LINK_TRACE_2] pagesList.length:', pagesList?.length)
+    console.log('[LINK_TRACE_3] calculated incomingLinkCount:', incomingLinkCount)
+
     const linksStatus = incomingLinkCount >= 3 ? 'Pass' : 'Fail'
 
     auditElements = [
