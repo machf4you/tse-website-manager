@@ -454,7 +454,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     const linkCheck = getCheck('Internal Link Count') || getCheck('Internal Links')
     const incomingAnchorsList = Array.isArray(snap.incoming_anchors) ? snap.incoming_anchors : []
     const incomingAnchorsTotal = incomingAnchorsList.reduce((sum, item) => sum + (item.count || 1), 0)
-    const displayIncomingLinks = snap.internal_link_count !== undefined ? snap.internal_link_count : incomingAnchorsTotal
+    const displayIncomingLinks = incomingAnchorsList.length > 0 ? incomingAnchorsTotal : incomingLinkCount
     const finalLinkStatus = linkCheck ? (linkCheck.status === 'fail' ? 'Fail' : 'Pass') : (displayIncomingLinks >= 3 ? 'Pass' : 'Fail')
 
     auditElements = [
