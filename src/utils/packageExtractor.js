@@ -220,7 +220,21 @@ export function normalizeImportedPage(p, siteUrl = '') {
     priority = 0
   }
 
-  const contentText = typeof p.content === 'string' ? p.content : (p.content?.rendered || p.content?.raw || p.body_text || p.html || '')
+  const extractContentText = (obj) => {
+    if (!obj || typeof obj !== 'object') return ''
+    if (typeof obj.content === 'string' && obj.content.trim()) return obj.content.trim()
+    if (typeof obj.content?.rendered === 'string' && obj.content.rendered.trim()) return obj.content.rendered.trim()
+    if (typeof obj.content?.raw === 'string' && obj.content.raw.trim()) return obj.content.raw.trim()
+    if (typeof obj.post_content === 'string' && obj.post_content.trim()) return obj.post_content.trim()
+    if (typeof obj.body_text === 'string' && obj.body_text.trim()) return obj.body_text.trim()
+    if (typeof obj.html === 'string' && obj.html.trim()) return obj.html.trim()
+    if (typeof obj.post_excerpt === 'string' && obj.post_excerpt.trim()) return obj.post_excerpt.trim()
+    if (typeof obj.excerpt === 'string' && obj.excerpt.trim()) return obj.excerpt.trim()
+    if (typeof obj.excerpt?.rendered === 'string' && obj.excerpt.rendered.trim()) return obj.excerpt.rendered.trim()
+    return ''
+  }
+
+  const contentText = extractContentText(p)
 
   return {
     ...p,
