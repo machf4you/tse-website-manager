@@ -509,7 +509,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         currentValue: `${displayIncomingLinks} incoming internal links`,
         hasTargetPhrase: true,
         status: finalLinkStatus,
-        recommendation: finalLinkStatus === 'Pass' ? '—' : (linkCheck?.detail || `Current Incoming Internal Links: ${displayIncomingLinks} | Minimum Required to Pass Audit: 3`),
+        recommendation: finalLinkStatus === 'Pass' ? '—' : `Current Incoming Internal Links: ${displayIncomingLinks} | Minimum Required to Pass Audit: 3`,
         recommendationType: finalLinkStatus === 'Pass' ? 'default' : 'fail',
         issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
       },
