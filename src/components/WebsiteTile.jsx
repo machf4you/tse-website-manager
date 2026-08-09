@@ -1,3 +1,4 @@
+import { extractPagesFromPackage } from '../utils/packageExtractor'
 import './WebsiteTile.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -39,7 +40,54 @@ const INDICATOR = {
 }
 
 export default function WebsiteTile({ site, onManage, onEdit }) {
-  const ind = INDICATOR[site.topIndicator] || INDICATOR.pending
+  const isConnected = Boolean(site.isSynchronised || site.topIndicator === 'connected')
+  const ind = isConnected ? INDICATOR.connected : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
+
+  // 1. Calculate live pages & configured metrics
+  const pkg = site.storedPackageData
+  const rawPages = extractPagesFromPackage(pkg)
+  const totalPages = rawPages.length
+
+  const siteIdKey = site.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+  let savedConfigs = {}
+  try {
+    const saved = localStorage.getItem(siteIdKey)
+    if (saved) savedConfigs = JSON.parse(saved)
+  } catch (e) {
+    // ignore
+  }
+
+  const configuredPagesCount = rawPages.filter(p => {
+    const pageKey = p.id || p.url
+    const override = savedConfigs[pageKey] || (p.url ? savedConfigs[p.url] : null)
+    if (override) return override.isConfigured !== false && Boolean(override.targetPhrase)
+    return Boolean(p.isConfigured && (p.target || p.targetPhrase))
+  }).length
+
+  let configuredText = 'Not Configured'
+  let configuredVariant = 'grey'
+  if (totalPages > 0) {
+    configuredText = `Pages Configured (${configuredPagesCount}/${totalPages})`
+    configuredVariant = configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')
+  }
+
+  // 2. Calculate live audit date/time (display 'Never' if no audit completed)
+  const auditTime = site.lastAuditTimestamp || site.lastSyncTimestamp || null
+  const auditedText = auditTime ? `Audited (${auditTime})` : 'Never'
+  const auditedVariant = auditTime ? 'green' : 'grey'
+
+  // 3. Calculate live outstanding tasks (0 when none exist)
+  const taskCount = site.taskCount !== undefined ? site.taskCount : (totalPages > 0 ? Math.max(0, totalPages - configuredPagesCount) : 0)
+  const taskText = `${taskCount} Outstanding`
+  const taskVariant = taskCount > 0 ? 'amber' : 'green'
+
+  const liveStatusRows = [
+    { label: 'Connection',       value: isConnected ? 'Connected' : 'Disconnected', variant: isConnected ? 'green' : 'red' },
+    { label: 'WordPress API',    value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
+    { label: 'Configured',       value: configuredText, variant: configuredVariant },
+    { label: 'Audited',          value: auditedText, variant: auditedVariant },
+    { label: 'Tasks Outstanding', value: taskText, variant: taskVariant },
+  ]
 
   return (
     <div className="website-tile" role="article" aria-label={`${site.name} website tile`}>
@@ -51,7 +99,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
           {ind.label}
         </span>
         <span className="task-count-badge">
-          {site.taskCount} TASKS
+          {taskCount} TASKS
         </span>
       </div>
 
@@ -75,7 +123,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
           <span>STATUS</span>
         </div>
 
-        {Object.values(site.status).map((row, i) => (
+        {liveStatusRows.map((row, i) => (
           <div key={i} className="status-row">
             <span className="status-row-label">{row.label}</span>
             <StatusBadge value={row.value} variant={row.variant} icon={row.icon} />
