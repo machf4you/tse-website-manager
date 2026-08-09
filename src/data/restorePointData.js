@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.4-v1-rules-summary',
+    version: 'v4.4-v1-rules-summary',
+    gitTag: 'v4.4-v1-approved-rules-summary-banner',
+    commit: 'd84e0f2',
+    date: '09-08-2026 07:03',
+    title: 'Version 1 Approved Audit Standards Summary Banner',
+    description: 'Added prominent Version 1 Approved Audit Standards summary banner to the top of Global Settings -> Page Auditor Rules reference page.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.4-v1-approved-rules-summary-banner.md',
+  },
+  {
     id: 'v4.3-missing-alt-rule',
     version: 'v4.3-missing-alt-rule',
     gitTag: 'v4.3-images-missing-alt-text-rule',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 07:00',
     title: 'Images Missing Alt Text Audit Rule Version 1',
     description: 'Updated Images Missing Alt Text audit rule for Version 1: Pass when all relevant images have meaningful alt text (0 missing), Fail when 1+ relevant images are missing alt text.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.3-images-missing-alt-text-rule.md',
   },
   {
