@@ -452,7 +452,9 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       })
     }
     console.log("W4 DISPLAY incomingLinkCount =", incomingLinkCount)
-    const linksStatus = incomingLinkCount >= 3 ? 'Pass' : 'Fail'
+    const linkCheck = getCheck('Internal Link Count') || getCheck('Internal Links')
+    const displayIncomingLinks = snap.internal_link_count !== undefined ? snap.internal_link_count : incomingLinkCount
+    const finalLinkStatus = linkCheck ? (linkCheck.status === 'fail' ? 'Fail' : 'Pass') : (displayIncomingLinks >= 3 ? 'Pass' : 'Fail')
 
     auditElements = [
       {
@@ -505,11 +507,11 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       {
         id: 'internal_links',
         name: 'Internal Link Count',
-        currentValue: `${incomingLinkCount} incoming internal links`,
+        currentValue: `${displayIncomingLinks} incoming internal links`,
         hasTargetPhrase: true,
-        status: linksStatus,
-        recommendation: linksStatus === 'Pass' ? '—' : `Current Incoming Internal Links: ${incomingLinkCount} | Minimum Required to Pass Audit: 3`,
-        recommendationType: linksStatus === 'Pass' ? 'default' : 'fail',
+        status: finalLinkStatus,
+        recommendation: finalLinkStatus === 'Pass' ? '—' : (linkCheck?.detail || `Current Incoming Internal Links: ${displayIncomingLinks} | Minimum Required to Pass Audit: 3`),
+        recommendationType: finalLinkStatus === 'Pass' ? 'default' : 'fail',
         issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
       },
       {
