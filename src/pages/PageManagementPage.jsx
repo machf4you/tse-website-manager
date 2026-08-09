@@ -170,8 +170,28 @@ export default function PageManagementPage({
     return !p.isExcluded && p.type !== 'Excluded'
   })
 
-  // Sort filtered pages based on sortColumn and sortDirection
+  // Sort filtered pages: Configured pages list first, ordered by priority (1, 2, 3...)
   const sortedPages = [...filteredPages].sort((a, b) => {
+    // 1. Primary ordering: Configured pages list first before unconfigured pages
+    const isConfigA = Boolean(a.isConfigured && !a.isExcluded && a.type !== 'Excluded')
+    const isConfigB = Boolean(b.isConfigured && !b.isExcluded && b.type !== 'Excluded')
+
+    if (isConfigA !== isConfigB) {
+      return isConfigA ? -1 : 1
+    }
+
+    // 2. Priority order for configured pages (Priority 1 -> Priority 2 -> Priority 3...)
+    if (sortColumn === 'priority') {
+      const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
+      const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
+      if (pA !== pB) {
+        return sortDirection === 'asc' ? pA - pB : pB - pA
+      }
+      const tA = (a.title || '').toLowerCase()
+      const tB = (b.title || '').toLowerCase()
+      return tA.localeCompare(tB)
+    }
+
     let valA = ''
     let valB = ''
 
@@ -181,12 +201,6 @@ export default function PageManagementPage({
     } else if (sortColumn === 'type') {
       valA = (a.type || '').toLowerCase()
       valB = (b.type || '').toLowerCase()
-    } else if (sortColumn === 'priority') {
-      const pA = a.priority !== undefined ? Number(a.priority) : 0
-      const pB = b.priority !== undefined ? Number(b.priority) : 0
-      if (pA < pB) return sortDirection === 'asc' ? -1 : 1
-      if (pA > pB) return sortDirection === 'asc' ? 1 : -1
-      return 0
     } else if (sortColumn === 'target') {
       valA = (a.target || a.targetPhrase || '').toLowerCase()
       valB = (b.target || b.targetPhrase || '').toLowerCase()
