@@ -63,7 +63,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
 
       <div className="il-title-section">
         <div className="il-title-left">
-          <span className="il-pill-badge">W4 | INTERNAL LINKING</span>
+          <span className="il-pill-badge">W5 | INTERNAL LINKING</span>
           <h1 className="il-site-title">{websiteTitle}</h1>
           <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="il-site-url">
             {websiteUrl} &#x2197;
@@ -81,11 +81,11 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
         <button type="button" className="il-tab-btn" onClick={() => onNavigateTab?.('w3-manage-pages')}>
           W3 | Manage Pages
         </button>
-        <button type="button" className="il-tab-btn il-tab-btn-active">
-          W4 | Internal Linking
+        <button type="button" className="il-tab-btn" onClick={() => onNavigateTab?.('w4-audit-results')}>
+          W4 | Audit Results
         </button>
-        <button type="button" className="il-tab-btn" onClick={() => onNavigateTab?.('w5-analysis')}>
-          W5 | Analysis
+        <button type="button" className="il-tab-btn il-tab-btn-active">
+          W5 | Internal Linking
         </button>
         <button type="button" className="il-tab-btn" onClick={() => onNavigateTab?.('w6-settings')}>
           W6 | Website Settings

@@ -295,7 +295,8 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         onNavigateBack={() => setActiveTab('w2')}
         onNavigateTab={(tab) => {
           if (tab === 'w3-manage-pages') setActiveTab('w3')
-          else if (tab === 'w4-internal-linking') setActiveTab('w4_internal_linking')
+          else if (tab === 'w4-audit-results') setActiveTab('w4')
+          else if (tab === 'w5-internal-linking' || tab === 'w4-internal-linking') setActiveTab('w4_internal_linking')
           else setActiveTab('w2')
         }}
       />
