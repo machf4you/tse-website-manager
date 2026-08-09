@@ -211,7 +211,13 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
         if (result.success && result.packageData && resPages.length > 0) {
           setStageIndex(6) // Synchronisation complete.
-          setStoredPackageData(result.packageData)
+          
+          const normalizedPackageData = {
+            ...(typeof result.packageData === 'object' && result.packageData !== null ? result.packageData : {}),
+            pages: resPages,
+          }
+
+          setStoredPackageData(normalizedPackageData)
           const completedTime = formatNowDDMMYYYYHHMM()
           setLastSyncDate(completedTime)
 
@@ -254,7 +260,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
             ...site,
             isSynchronised: true,
             lastSyncTimestamp: completedTime,
-            storedPackageData: result.packageData,
+            storedPackageData: normalizedPackageData,
           }
 
           if (onUpdateSite) {
