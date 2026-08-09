@@ -233,7 +233,6 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     const h1Status = (hasH1Target && h1Check?.status !== 'fail') ? 'Pass' : 'Fail'
     const h2Check = getCheck('H2 Count') || getCheck('H2')
     const wordCheck = getCheck('Word Count')
-    const linkCheck = getCheck('Internal Link Count') || getCheck('Internal Links')
     const imgCheck = getCheck('Image Count')
     const altCheck = getCheck('Images Missing Alt Text') || getCheck('Alt Text')
 
