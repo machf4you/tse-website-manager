@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.8-meta-desc-rule',
+    version: 'v3.8-meta-desc-rule',
+    gitTag: 'v3.8-meta-description-rule-refinement',
+    commit: 'e8b2405',
+    date: '09-08-2026 06:38',
+    title: 'Meta Description Rule Refinement',
+    description: 'Updated Meta Description audit rule: Target Phrase presence (exact or natural variation) AND length between 120 and 160 characters required to pass. Recommended actions display specific required fixes.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.8-meta-description-rule-refinement.md',
+  },
+  {
     id: 'v3.7-view-persistence',
     version: 'v3.7-view-persistence',
     gitTag: 'v3.7-persist-active-view-across-refreshes',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:35',
     title: 'Active View Persistence Across Refreshes',
     description: 'Enforced full localStorage view state persistence for top navigation tabs (Websites vs Global Settings) and sub-tabs (Page Auditor Rules, Restore Points) so refreshing the browser stays on the exact current view.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.7-persist-active-view-across-refreshes.md',
   },
   {
