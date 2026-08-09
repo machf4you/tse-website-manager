@@ -269,9 +269,9 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         name: 'Image Count',
         currentValue: `${snap.image_count !== undefined ? snap.image_count : 0} images`,
         hasTargetPhrase: false,
-        status: getStatusText(imgCheck),
-        recommendation: imgCheck?.detail || '—',
-        recommendationType: imgCheck?.status === 'fail' ? 'fail' : 'warning',
+        status: (snap.image_count > 0) ? 'Pass' : 'Fail',
+        recommendation: (snap.image_count > 0) ? '—' : 'Add relevant images that support the page content. Ensure every image has descriptive alt text.',
+        recommendationType: (snap.image_count > 0) ? 'default' : 'fail',
       },
       {
         id: 'missing_alt',

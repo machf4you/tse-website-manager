@@ -103,7 +103,7 @@ export default function PageAuditorRulesPage() {
       scoringContribution: 'Part of 6 Points (Images area weight: 20/100 area score warning for 0 images).',
       passCriteria: 'Page contains at least 1 image.',
       failCriteria: 'Page contains 0 images.',
-      recommendedAction: 'Add 1-2 relevant images with descriptive alt text.',
+      recommendedAction: 'Add relevant images that support the page content. Ensure every image has descriptive alt text.',
       passExample: 'Images: 4 images found on page.',
       failExample: 'Images: 0 images found on page.',
     },
