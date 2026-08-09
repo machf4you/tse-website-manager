@@ -300,56 +300,79 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         wordCountRec = `Increase content length to at least 300 words and add target phrase "${targetPhrase}"`
       }
     }
-    const incomingLinkCount = (currentPage?.url && Array.isArray(pagesList)) ? pagesList.filter(p => {
-      if (!p || !p.url || p.url === currentPage.url) return false
-      const targetUrl = (currentPage.url || '').replace(/\/+$/, '').toLowerCase()
-      if (!targetUrl) return false
+    // Resilient URL normalization helper functions for internal link matching
+    const normalizeUrlForMatching = (url) => {
+      if (!url || typeof url !== 'string') return ''
+      let cleaned = url.trim().toLowerCase()
+      cleaned = cleaned.replace(/^https?:\/\//, '')
+      cleaned = cleaned.replace(/^www\./, '')
+      cleaned = cleaned.replace(/\/+$/, '')
+      return cleaned
+    }
 
-      const domainMatch = targetUrl.match(/^(https?:\/\/[^/]+)/)
-      const domain = domainMatch ? domainMatch[1] : ''
-      const targetSlug = domain ? targetUrl.slice(domain.length) : targetUrl
-      const isHome = currentPage.isHomePage || !targetSlug || targetSlug === '/'
+    const getPathSlugForMatching = (url) => {
+      const norm = normalizeUrlForMatching(url)
+      if (!norm) return ''
+      const slashIdx = norm.indexOf('/')
+      if (slashIdx === -1) return '/'
+      return norm.slice(slashIdx)
+    }
+
+    const incomingLinkCount = (currentPage?.url && Array.isArray(pagesList)) ? pagesList.filter(p => {
+      if (!p || !p.url) return false
+      
+      const targetNormUrl = normalizeUrlForMatching(currentPage.url)
+      const targetPathSlug = getPathSlugForMatching(currentPage.url)
+      const pNormUrl = normalizeUrlForMatching(p.url)
+      
+      // Do not count self-referential links on the audited page itself
+      if (targetNormUrl && pNormUrl && targetNormUrl === pNormUrl) return false
+
+      const isHome = currentPage.isHomePage || !targetPathSlug || targetPathSlug === '/'
 
       const pLinks = p.internal_links || p.links || []
       const rawContent = typeof p.content === 'string' ? p.content : (p.content?.rendered || p.content?.raw || p.body_text || p.html || '')
-      const pContent = rawContent.toLowerCase()
+      
+      // Exclude navigation, header, footer, logo, and menu components
+      const bodyOnlyContent = rawContent
+        .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+        .replace(/<div[^>]*class="[^"]*(header|nav|footer|logo|site-header|site-footer|menu)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
 
-      if (isHome) {
-        // Homepage matching: Look for links pointing to domain root ("https://domain.com", "https://domain.com/", or href="/")
-        const hasHomeLinkObj = Array.isArray(pLinks) && pLinks.some(l => {
-          const href = (typeof l === 'string' ? l : (l?.href || '')).trim().toLowerCase()
-          return href === targetUrl || href === `${targetUrl}/` || href === '/' || href === '' || (domain && (href === domain || href === `${domain}/`))
-        })
-
-        const hasHomeContentLink = (
-          (domain && (pContent.includes(`href="${domain}"`) || pContent.includes(`href="${domain}/"`))) ||
-          pContent.includes(`href="${targetUrl}"`) ||
-          pContent.includes(`href="${targetUrl}/"`) ||
-          pContent.includes('href="/"')
-        )
-
-        return hasHomeLinkObj || hasHomeContentLink
-      }
-
-      // Normal page matching
-      const cleanSlug = targetSlug.replace(/\/+$/, '').toLowerCase()
+      // Check extracted link objects first
       const hasLinkObj = Array.isArray(pLinks) && pLinks.some(l => {
-        const href = (typeof l === 'string' ? l : (l?.href || '')).replace(/\/+$/, '').toLowerCase()
-        return href.includes(targetUrl) || (cleanSlug && cleanSlug !== '/' && (href.endsWith(cleanSlug) || href.includes(cleanSlug)))
+        const href = (typeof l === 'string' ? l : (l?.href || '')).trim()
+        const normHref = normalizeUrlForMatching(href)
+        const hrefSlug = getPathSlugForMatching(href)
+        if (isHome) {
+          return normHref === targetNormUrl || hrefSlug === '/' || href === '/' || href === ''
+        }
+        return normHref === targetNormUrl || (targetPathSlug && targetPathSlug !== '/' && hrefSlug === targetPathSlug)
       })
 
-      const hasContentLink = (
-        pContent.includes(targetUrl) ||
-        (cleanSlug && cleanSlug !== '/' && (
-          pContent.includes(`href="${cleanSlug}"`) ||
-          pContent.includes(`href="${cleanSlug}/"`) ||
-          pContent.includes(`href="${domain}${cleanSlug}"`) ||
-          pContent.includes(`href="${domain}${cleanSlug}/"`) ||
-          pContent.includes(cleanSlug)
-        ))
-      )
+      if (hasLinkObj) return true
 
-      return hasLinkObj || hasContentLink
+      // Parse HTML anchor tags in body content
+      const linkRegex = /<a\s+[^>]*href=["']([^"']*)["'][^>]*>/gi
+      let match
+      while ((match = linkRegex.exec(bodyOnlyContent)) !== null) {
+        const href = match[1]
+        const normHref = normalizeUrlForMatching(href)
+        const hrefSlug = getPathSlugForMatching(href)
+
+        if (isHome) {
+          if (normHref === targetNormUrl || hrefSlug === '/' || href === '/' || href === '') {
+            return true
+          }
+        } else {
+          if (normHref === targetNormUrl || (targetPathSlug && targetPathSlug !== '/' && hrefSlug === targetPathSlug)) {
+            return true
+          }
+        }
+      }
+
+      return false
     }).length : 0
 
     const linksStatus = incomingLinkCount >= 3 ? 'Pass' : 'Fail'
