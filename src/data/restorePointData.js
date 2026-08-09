@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.3-missing-alt-rule',
+    version: 'v4.3-missing-alt-rule',
+    gitTag: 'v4.3-images-missing-alt-text-rule',
+    commit: '6eeefab',
+    date: '09-08-2026 07:00',
+    title: 'Images Missing Alt Text Audit Rule Version 1',
+    description: 'Updated Images Missing Alt Text audit rule for Version 1: Pass when all relevant images have meaningful alt text (0 missing), Fail when 1+ relevant images are missing alt text.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.3-images-missing-alt-text-rule.md',
+  },
+  {
     id: 'v4.2-image-count-wording',
     version: 'v4.2-image-count-wording',
     gitTag: 'v4.2-image-count-recommended-action-wording',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:58',
     title: 'Image Count Recommended Action Wording Improvement',
     description: 'Updated Recommended Action wording for Image Count rule to: Add relevant images that support the page content. Ensure every image has descriptive alt text.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.2-image-count-recommended-action-wording.md',
   },
   {
