@@ -7,12 +7,32 @@ export const restorePointIndexData = [
     id: 'v4.9-stable-baseline',
     version: 'v4.9-stable-baseline',
     gitTag: 'v4.9-w4-stable-ui-mock-data-baseline',
-    commit: 'pending',
+    commit: '22dfa88',
     date: '09-08-2026 08:02',
     title: 'Baseline End-to-End Website Audit Workflow',
     description: 'Marks the first stable end-to-end Website Audit workflow (Synchronisation, Configuration, Launch, FastAPI Communication, W4 Rendering). Baseline for replacing remaining placeholder logic with live audit data.',
     status: 'Current',
     docFile: 'RESTORE-POINT-v4.9-w4-stable-ui-mock-data-baseline.md',
+    purpose: 'Establishes a completely stable baseline for the end-to-end Website Audit workflow across all 7 module views without UI crashes or rendering errors.',
+    verifiedWorking: [
+      'Website Synchronisation (6-stage progress flow)',
+      'Page Configuration (Meta Title, Target Phrase, SEO Page Type & Priority mapping)',
+      'Audit Launch (POST /api/audit payload dispatch to FastAPI server)',
+      'FastAPI Backend Communication (Python server connection & response processing)',
+      'W4 Audit Results Page Rendering (Score breakdown, SEO elements audit table & Action Checklist)',
+      'UI View Persistence across Ctrl+F5 browser refreshes'
+    ],
+    outstandingWork: [
+      'Replace remaining mock/placeholder metrics with live incoming link calculations',
+      'Verify image count & alt text coverage against live extracted page data',
+      'Validate overall audit score calculation once all live metrics are connected'
+    ],
+    filesChanged: [
+      'src/pages/PageAuditResultsPage.jsx',
+      'src/utils/packageExtractor.js',
+      'src/services/pageAuditorApi.js',
+      'src/data/restorePointData.js'
+    ],
   },
   {
     id: 'v4.8-content-normalization',
@@ -24,6 +44,14 @@ export const restorePointIndexData = [
     description: 'Normalized WordPress REST API content object ({ rendered: "..." }) into plain string content during package extraction in packageExtractor.js and inside incomingLinkCount calculation in PageAuditResultsPage.jsx.',
     status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.8-content-string-normalization.md',
+    purpose: 'Normalizes WordPress REST API content object structures into clean string content upon import.',
+    verifiedWorking: [
+      'WordPress content object parsing ({ rendered: "..." })',
+      'String content extraction for incoming internal link counting',
+      'Safe string execution without toLowerCase errors'
+    ],
+    outstandingWork: ['End-to-end baseline verification'],
+    filesChanged: ['src/utils/packageExtractor.js', 'src/pages/PageAuditResultsPage.jsx'],
   },
   {
     id: 'v4.7-explicit-status',
@@ -35,6 +63,14 @@ export const restorePointIndexData = [
     description: 'Updated H1 and audit element status mapping in PageAuditResultsPage.jsx to compute explicit Pass/Fail strings from breakdown and snap properties, preventing undefined status errors during table rendering.',
     status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.7-audit-elements-explicit-status-mapping.md',
+    purpose: 'Ensures every audit element row is created with an explicit, non-undefined Pass/Fail status string.',
+    verifiedWorking: [
+      'Explicit H1 status calculation',
+      'SEO elements audit table rendering',
+      'Non-undefined status string guarantee'
+    ],
+    outstandingWork: ['Content string normalization'],
+    filesChanged: ['src/pages/PageAuditResultsPage.jsx'],
   },
   {
     id: 'v4.6-stable-rendering',

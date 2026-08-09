@@ -87,18 +87,25 @@ export default function RestorePointsPage() {
         onSuccess={(updatedList) => setRestorePoints(updatedList)}
       />
 
-      {/* Document View Drawer / Modal Placeholder */}
+      {/* Document View Drawer / Modal */}
       {selectedPoint && (
         <div className="rp-doc-modal-backdrop" onClick={() => setSelectedPoint(null)}>
           <div className="rp-doc-modal" onClick={e => e.stopPropagation()}>
+            
+            {/* Header */}
             <div className="rp-doc-header">
               <div>
                 <h3 className="rp-doc-title">
                   {selectedPoint.version} — {selectedPoint.title}
                 </h3>
-                <span className="rp-doc-sub">
-                  File: <code>{selectedPoint.docFile}</code> | Commit: <code>{selectedPoint.commit}</code>
-                </span>
+                <div className="rp-doc-meta-row">
+                  <span className="rp-meta-item">Tag: <code>{selectedPoint.gitTag}</code></span>
+                  <span className="rp-meta-item">Commit: <code>{selectedPoint.commit}</code></span>
+                  <span className="rp-meta-item">Date: {selectedPoint.date}</span>
+                  <span className={`rp-status-tag ${selectedPoint.status === 'Current' ? 'current' : 'superseded'}`}>
+                    {selectedPoint.status}
+                  </span>
+                </div>
               </div>
               <button
                 type="button"
@@ -109,21 +116,84 @@ export default function RestorePointsPage() {
                 ✕
               </button>
             </div>
+
+            {/* Answer Banner: What does restoring this point give me? */}
+            <div className="rp-restoration-summary-box">
+              <div className="rp-summary-title">💡 What does restoring this point give me?</div>
+              <p className="rp-summary-text">
+                Restoring to <strong>{selectedPoint.version}</strong> reverts the codebase state to Git tag <code>{selectedPoint.gitTag}</code> (commit <code>{selectedPoint.commit}</code>), delivering: <em>{selectedPoint.description}</em>
+              </p>
+            </div>
+
+            {/* Document Content Sections */}
             <div className="rp-doc-body">
-              <div className="rp-doc-placeholder">
-                <p><strong>Restore Point Details:</strong></p>
-                <ul>
-                  <li><strong>Version:</strong> {selectedPoint.version}</li>
-                  <li><strong>Git Tag:</strong> {selectedPoint.gitTag}</li>
-                  <li><strong>Commit:</strong> {selectedPoint.commit}</li>
-                  <li><strong>Date:</strong> {selectedPoint.date}</li>
-                  <li><strong>Status:</strong> {selectedPoint.status}</li>
-                </ul>
+
+              {/* Section 1: Purpose */}
+              <div className="rp-doc-section">
+                <h4 className="rp-section-heading">🎯 Purpose</h4>
+                <p className="rp-section-text">
+                  {selectedPoint.purpose || selectedPoint.description}
+                </p>
+              </div>
+
+              {/* Section 2: Verified Working */}
+              <div className="rp-doc-section">
+                <h4 className="rp-section-heading">✅ Verified Working</h4>
+                {Array.isArray(selectedPoint.verifiedWorking) && selectedPoint.verifiedWorking.length > 0 ? (
+                  <ul className="rp-section-list">
+                    {selectedPoint.verifiedWorking.map((item, idx) => (
+                      <li key={idx}>✓ {item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="rp-section-text">
+                    Verified working state recorded for version <code>{selectedPoint.version}</code>.
+                  </p>
+                )}
+              </div>
+
+              {/* Section 3: Known Outstanding Work */}
+              <div className="rp-doc-section">
+                <h4 className="rp-section-heading">⏳ Known Outstanding Work</h4>
+                {Array.isArray(selectedPoint.outstandingWork) && selectedPoint.outstandingWork.length > 0 ? (
+                  <ul className="rp-section-list outstanding">
+                    {selectedPoint.outstandingWork.map((item, idx) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="rp-section-text text-muted">
+                    No open blocking issues reported for this restore point release.
+                  </p>
+                )}
+              </div>
+
+              {/* Section 4: Files Changed */}
+              <div className="rp-doc-section">
+                <h4 className="rp-section-heading">📁 Files Changed</h4>
+                {Array.isArray(selectedPoint.filesChanged) && selectedPoint.filesChanged.length > 0 ? (
+                  <div className="rp-files-grid">
+                    {selectedPoint.filesChanged.map((file, idx) => (
+                      <code key={idx} className="rp-file-tag">{file}</code>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rp-section-text text-muted">
+                    Documented in commit <code>{selectedPoint.commit}</code> (tag <code>{selectedPoint.gitTag}</code>).
+                  </p>
+                )}
+              </div>
+
+              {/* Section 5: Notes & File Reference */}
+              <div className="rp-doc-section">
+                <h4 className="rp-section-heading">📝 Documentation & File Reference</h4>
                 <div className="rp-doc-notice">
-                  📄 Document contents from <code>{selectedPoint.docFile}</code> will be loaded here.
+                  📄 Master restore documentation file: <code>{selectedPoint.docFile}</code>
                 </div>
               </div>
+
             </div>
+
           </div>
         </div>
       )}
