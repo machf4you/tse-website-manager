@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.5-auditor-rules-menu',
+    version: 'v3.5-auditor-rules-menu',
+    gitTag: 'v3.5-global-settings-page-auditor-rules',
+    commit: 'd7ed56a',
+    date: '09-08-2026 06:27',
+    title: 'Page Auditor Rules Menu Item in Global Settings',
+    description: 'Added Page Auditor Rules menu item under Global Settings displaying read-only documentation of all 8 audit elements, weights, criteria, and recommendations.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.5-global-settings-page-auditor-rules.md',
+  },
+  {
     id: 'v3.4-h2-logic-refinement',
     version: 'v3.4-h2-logic-refinement',
     gitTag: 'v3.4-h2-audit-logic-refinement',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '08-08-2026 07:14',
     title: 'H2 Audit Logic Refinement',
     description: 'Updated H2 audit evaluation so that if no H2 headings contain the Target Phrase, Status is Fail with recommendation to add it. If one or more H2s contain the Target Phrase, Status is Pass with recommendation "—".',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.4-h2-audit-logic-refinement.md',
   },
   {
