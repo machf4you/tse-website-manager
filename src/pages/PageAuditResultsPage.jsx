@@ -450,7 +450,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       {
         id: 'internal_links',
         name: 'Internal Link Count',
-        currentValue: 'TEST 999',
+        currentValue: `${incomingLinkCount} incoming internal links`,
         hasTargetPhrase: true,
         status: linksStatus,
         recommendation: linksStatus === 'Pass' ? '—' : `Current Incoming Internal Links: ${incomingLinkCount} | Minimum Required to Pass Audit: 3`,
