@@ -4,6 +4,38 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v5.0-audit-baseline',
+    version: 'v5.0-audit-baseline',
+    gitTag: 'v5.0-w3-w4-audit-workflow-baseline',
+    commit: 'pending',
+    date: '09-08-2026 15:57',
+    title: 'Stable W3/W4 Audit Workflow Baseline',
+    description: 'Stable point before introducing page fingerprinting and intelligent audit freshness tracking across WordPress synchronisations.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v5.0-w3-w4-audit-workflow-baseline.md',
+    purpose: 'Stable point before introducing page fingerprinting and audit freshness tracking.',
+    verifiedWorking: [
+      'WordPress synchronisation (6-stage flow & package extraction)',
+      'Page configuration (Target phrase, SEO page type & priority mapping)',
+      'Individual page audits (FastAPI POST /api/audit integration)',
+      'Audit result persistence (localStorage caching per site/page)',
+      'W3 audited status display (3 consistent states & green Audited button)',
+      'Action Checklist generation (All failed elements rendered in What to Fix)',
+      'Internal Link Count calculation (Contextual homepage & normal slug matching)',
+      'W4 audit results loading (Stored payload instant render without re-audit)'
+    ],
+    outstandingWork: [
+      'No intelligent detection of page changes after sync',
+      'Audits do not currently indicate whether results are stale'
+    ],
+    filesChanged: [
+      'src/pages/PageManagementPage.jsx',
+      'src/pages/PageManagementPage.css',
+      'src/pages/PageAuditResultsPage.jsx',
+      'src/data/restorePointData.js'
+    ],
+  },
+  {
     id: 'v4.9-stable-baseline',
     version: 'v4.9-stable-baseline',
     gitTag: 'v4.9-w4-stable-ui-mock-data-baseline',
@@ -11,7 +43,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 08:02',
     title: 'Baseline End-to-End Website Audit Workflow',
     description: 'Marks the first stable end-to-end Website Audit workflow (Synchronisation, Configuration, Launch, FastAPI Communication, W4 Rendering). Baseline for replacing remaining placeholder logic with live audit data.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.9-w4-stable-ui-mock-data-baseline.md',
     purpose: 'Establishes a completely stable baseline for the end-to-end Website Audit workflow across all 7 module views without UI crashes or rendering errors.',
     verifiedWorking: [
