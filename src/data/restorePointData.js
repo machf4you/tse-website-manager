@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.5-tile-live-values',
+    version: 'v4.5-tile-live-values',
+    gitTag: 'v4.5-live-calculated-website-tile-values',
+    commit: 'be9dba4',
+    date: '09-08-2026 07:24',
+    title: 'Live Calculated W1 Website Tile Status Metrics',
+    description: 'Replaced static development/demo values on W1 Website Tile with live calculated metrics for Connection, WordPress API, Configured (configured/total pages), Audited date (or Never), and Outstanding Tasks count.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.5-live-calculated-website-tile-values.md',
+  },
+  {
     id: 'v4.4-v1-rules-summary',
     version: 'v4.4-v1-rules-summary',
     gitTag: 'v4.4-v1-approved-rules-summary-banner',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 07:03',
     title: 'Version 1 Approved Audit Standards Summary Banner',
     description: 'Added prominent Version 1 Approved Audit Standards summary banner to the top of Global Settings -> Page Auditor Rules reference page.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.4-v1-approved-rules-summary-banner.md',
   },
   {
