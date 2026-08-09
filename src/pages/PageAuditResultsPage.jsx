@@ -455,7 +455,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     const incomingAnchorsList = Array.isArray(snap.incoming_anchors) ? snap.incoming_anchors : []
     const incomingAnchorsTotal = incomingAnchorsList.reduce((sum, item) => sum + (item.count || 1), 0)
     const displayIncomingLinks = incomingAnchorsList.length > 0 ? incomingAnchorsTotal : incomingLinkCount
-    const finalLinkStatus = linkCheck ? (linkCheck.status === 'fail' ? 'Fail' : 'Pass') : (displayIncomingLinks >= 3 ? 'Pass' : 'Fail')
+    const finalLinkStatus = displayIncomingLinks >= 3 ? 'Pass' : 'Fail'
 
     auditElements = [
       {
