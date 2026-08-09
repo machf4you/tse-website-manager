@@ -188,8 +188,8 @@ export default function PageManagementPage({
       valA = (a.lastAuditDate || 'Never').toLowerCase()
       valB = (b.lastAuditDate || 'Never').toLowerCase()
     } else if (sortColumn === 'auditPage') {
-      valA = (a.isConfigured ? 'Audit Page' : 'Not Configured').toLowerCase()
-      valB = (b.isConfigured ? 'Audit Page' : 'Not Configured').toLowerCase()
+      valA = (a.isAudited ? 'Audited' : (a.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
+      valB = (b.isAudited ? 'Audited' : (b.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
     } else if (sortColumn === 'actions') {
       valA = String(a.id || '').toLowerCase()
       valB = String(b.id || '').toLowerCase()
@@ -395,15 +395,7 @@ export default function PageManagementPage({
                         🟢 {page.lastAuditDate}
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        className={`btn-table-audit-muted ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
-                        disabled={!page.isConfigured}
-                        onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
-                        id={`btn-last-audit-${page.id || idx}`}
-                      >
-                        Never
-                      </button>
+                      <span className="w3-text-plain">Never</span>
                     )}
                   </td>
                   <td className="col-audit-page">
@@ -417,16 +409,17 @@ export default function PageManagementPage({
                       >
                         Audited ✓
                       </button>
-                    ) : (
+                    ) : page.isConfigured ? (
                       <button
                         type="button"
-                        className={`btn-table-audit-action ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
-                        disabled={!page.isConfigured}
-                        onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
+                        className="btn-table-audit-action btn-audit-active"
+                        onClick={() => onViewAudit && onViewAudit(page)}
                         id={`btn-audit-page-${page.id || idx}`}
                       >
                         Audit Page
                       </button>
+                    ) : (
+                      <span className="w3-text-plain">Available</span>
                     )}
                   </td>
                   <td className="col-actions">
