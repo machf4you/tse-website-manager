@@ -137,6 +137,24 @@ export default function PageAuditorRulesPage() {
         </div>
       </div>
 
+      {/* Version 1 Approved Audit Standards Summary */}
+      <div className="v1-summary-card">
+        <div className="v1-summary-header">
+          <span className="v1-summary-badge">APPROVED VERSION 1</span>
+          <h2 className="v1-summary-title">Version 1 Approved Audit Standards</h2>
+        </div>
+        <ul className="v1-summary-list">
+          <li className="v1-summary-item"><span className="v1-summary-item-num">1.</span> <span><strong>Meta Title (15%):</strong> Target Phrase present anywhere in title + length between 50 and 65 characters.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">2.</span> <span><strong>Meta Description (8%):</strong> Target Phrase present (exact or natural variation) + length between 120 and 160 characters.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">3.</span> <span><strong>H1 Heading (15%):</strong> Single &lt;h1&gt; tag containing or topically matching the Target Phrase.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">4.</span> <span><strong>H2 Headings (8%):</strong> At least one &lt;h2&gt; subheading containing or topically matching the Target Phrase.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">5.</span> <span><strong>Word Count & Depth (18%):</strong> Minimum 300 words + Target Phrase present naturally in body text.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">6.</span> <span><strong>Internal Link Count (7%):</strong> Minimum 3 incoming internal links from other pages on the website.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">7.</span> <span><strong>Image Count (6%):</strong> Minimum 1 relevant image present on the page.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">8.</span> <span><strong>Images Missing Alt Text (6%):</strong> All images must have meaningful alt text (0 missing).</span></li>
+        </ul>
+      </div>
+
       {/* Summary Area Weights Table */}
       <div className="rules-weights-card">
         <h3 className="card-section-title">Audit Area Weights (100% Total)</h3>
