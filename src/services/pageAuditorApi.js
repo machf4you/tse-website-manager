@@ -25,6 +25,14 @@ export async function checkPageAuditorHealth() {
  * Sends: websiteId, pageId, pageUrl, targetPhrase, seoPageType
  */
 export async function executePageAudit({ siteId, pageId, url, targetPhrase, seoPageType }) {
+  let rulesConfig = null
+  try {
+    const raw = localStorage.getItem('tse_page_auditor_rules_v1') || localStorage.getItem('tse_global_rules_config')
+    if (raw) rulesConfig = JSON.parse(raw)
+  } catch (e) {
+    // ignore
+  }
+
   const payload = {
     site_id: siteId || 'site-1',
     page_id: pageId || url,
@@ -33,6 +41,14 @@ export async function executePageAudit({ siteId, pageId, url, targetPhrase, seoP
     assigned_type: seoPageType || 'Unclassified',
     secondary_phrases: [],
     render_js: false,
+    rules_parameters: rulesConfig || {
+      min_internal_links: 3,
+      min_word_count: 300,
+      meta_title_min: 50,
+      meta_title_max: 65,
+      meta_desc_min: 120,
+      meta_desc_max: 160,
+    }
   }
 
   console.log('[AUDIT_TRACE_STEP_1] Issuing POST request to /api/audit with payload:', payload)
