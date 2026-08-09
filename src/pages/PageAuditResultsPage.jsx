@@ -89,10 +89,18 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     let isMounted = true
     async function runLiveAudit() {
       if (!currentPage || !currentPage.url) return
+      console.log('[AUDIT_TRACE_STEP_4] Setting isLoadingAudit(true), auditError(null), liveAuditData(null)')
       setIsLoadingAudit(true)
       setAuditError(null)
       setLiveAuditData(null)
       try {
+        console.log('[AUDIT_TRACE_STEP_5] Executing executePageAudit with parameters:', {
+          siteId: site?.id || 'site-1',
+          pageId: currentPage.id || currentPage.url,
+          url: currentPage.url,
+          targetPhrase: currentPage.target || currentPage.targetPhrase || targetPhrase,
+          seoPageType: currentPage.type || currentPage.seoPageType || pageType,
+        })
         const result = await executePageAudit({
           siteId: site?.id || 'site-1',
           pageId: currentPage.id || currentPage.url,
@@ -100,11 +108,20 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           targetPhrase: currentPage.target || currentPage.targetPhrase || targetPhrase,
           seoPageType: currentPage.type || currentPage.seoPageType || pageType,
         })
+        console.log('[AUDIT_TRACE_STEP_6] executePageAudit returned result object:', result)
         if (isMounted) {
+          console.log('[AUDIT_TRACE_STEP_7] Invoking setLiveAuditData(result)...')
           setLiveAuditData(result)
+          console.log('[AUDIT_TRACE_STEP_8] Invoking setIsLoadingAudit(false)...')
           setIsLoadingAudit(false)
         }
       } catch (e) {
+        console.error('[AUDIT_TRACE_EXCEPTION_CAUGHT]', {
+          name: e.name,
+          message: e.message,
+          stack: e.stack,
+          errorObject: e
+        })
         if (isMounted) {
           setAuditError(e.message || 'Failed to connect to Page Auditor backend.')
           setIsLoadingAudit(false)

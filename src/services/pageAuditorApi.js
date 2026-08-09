@@ -35,6 +35,8 @@ export async function executePageAudit({ siteId, pageId, url, targetPhrase, seoP
     render_js: false,
   }
 
+  console.log('[AUDIT_TRACE_STEP_1] Issuing POST request to /api/audit with payload:', payload)
+
   const response = await fetch(`${PAGE_AUDITOR_API_BASE}/audit`, {
     method: 'POST',
     headers: {
@@ -43,10 +45,14 @@ export async function executePageAudit({ siteId, pageId, url, targetPhrase, seoP
     body: JSON.stringify(payload),
   })
 
+  console.log('[AUDIT_TRACE_STEP_2] Received HTTP status:', response.status)
+
   if (!response.ok) {
     const errText = await response.text()
     throw new Error(`Page Auditor HTTP error ${response.status}: ${errText}`)
   }
 
-  return await response.json()
+  const jsonResult = await response.json()
+  console.log('[AUDIT_TRACE_STEP_3] Raw response JSON immediately after parsing:', jsonResult)
+  return jsonResult
 }
