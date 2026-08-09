@@ -580,6 +580,12 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
             )}
           </div>
           <h1 className="w4-main-title">Now We Need To Optimize The SEO Elements Of This Page</h1>
+          
+          {/* Temporary Diagnostic Display */}
+          <div style={{ backgroundColor: '#1e1b4b', border: '2px solid #6366f1', color: '#818cf8', padding: '12px 18px', borderRadius: '8px', margin: '12px 0 16px 0', fontSize: '1.2rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>LIVE incomingLinkCount =</span>
+            <span style={{ fontSize: '1.5rem', color: '#10b981', backgroundColor: '#064e3b', padding: '2px 10px', borderRadius: '4px', border: '1px solid #10b981' }}>{incomingLinkCount}</span>
+          </div>
         </div>
 
         {/* Control Bar: Page Dropdown & Audit Score */}
