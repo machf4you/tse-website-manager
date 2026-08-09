@@ -1,22 +1,20 @@
-// ── Master mock tile — Stage 7: First Audit Completed ───────────────────
-// Matches the reference: audit-dev.thesearchequation.co.uk
 export const mockSiteTile = {
   id: 1,
-  name: 'Bathroom Upgrades',
-  url: 'https://www.bathroomupgrades.co.uk',
+  name: 'Ascent Builders',
+  url: 'https://ascentbuilders.co.uk',
   platform: 'wordpress',
   wpUser: 'admin',
   wpPass: '',
   lifecycleStage: 7,
   topIndicator: 'connected', // connected | partial | disconnected | pending | connecting
   isSynchronised: true,
-  lastSyncTimestamp: '05-07-2026 14:30',
-  taskCount: 4,
+  lastSyncTimestamp: '09-08-2026 06:00',
+  taskCount: 3,
   status: {
     connection:       { label: 'Connected',          value: 'Connected',          variant: 'green'  },
     platformApi:      { label: 'WordPress API',      value: 'Securely Connected', variant: 'green', icon: 'lock' },
-    configured:       { label: 'Configured',         value: 'Pages Configured (2/29)', variant: 'amber' },
-    audited:          { label: 'Audited',            value: 'Audited (05-07-2026 14:30)', variant: 'green' },
+    configured:       { label: 'Configured',         value: 'Pages Configured (14/35)', variant: 'amber' },
+    audited:          { label: 'Audited',            value: 'Audited (09-08-2026 06:00)', variant: 'green' },
     tasksOutstanding: { label: 'Tasks Outstanding',  value: '3 Outstanding',      variant: 'amber'  },
   },
 }

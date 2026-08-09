@@ -16,7 +16,8 @@ export default function WebsitesDashboard() {
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed
+          const cleaned = parsed.map(s => s.name === 'Bathroom Upgrades' ? mockSiteTile : s)
+          return cleaned
         }
       }
     } catch (e) {
@@ -31,6 +32,7 @@ export default function WebsitesDashboard() {
       if (savedObj) {
         const parsed = JSON.parse(savedObj)
         if (parsed && typeof parsed === 'object' && parsed.name) {
+          if (parsed.name === 'Bathroom Upgrades') return mockSiteTile
           return parsed
         }
       }
