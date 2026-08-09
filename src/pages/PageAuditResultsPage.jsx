@@ -459,6 +459,16 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
       },
       {
+        id: 'new_internal_link',
+        name: 'NEW Internal Link',
+        currentValue: `${incomingLinkCount} incoming internal links`,
+        hasTargetPhrase: true,
+        status: incomingLinkCount >= 3 ? 'Pass' : 'Fail',
+        recommendation: incomingLinkCount >= 3 ? '—' : `Current Incoming Internal Links: ${incomingLinkCount} | Minimum Required to Pass Audit: 3`,
+        recommendationType: incomingLinkCount >= 3 ? 'default' : 'fail',
+        issueCode: 'ISSUE 99: NEW INTERNAL LINK TEST',
+      },
+      {
         id: 'image_count',
         name: 'Image Count',
         currentValue: `${snap.image_count !== undefined ? snap.image_count : 0} images`,
