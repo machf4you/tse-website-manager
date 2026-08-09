@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.6-clean-baseline',
+    version: 'v4.6-clean-baseline',
+    gitTag: 'v4.6-clean-baseline-reset',
+    commit: 'fee9385',
+    date: '09-08-2026 07:29',
+    title: 'Clean Baseline State Reset',
+    description: 'Returned Website Manager to clean baseline: Audited displays Never when no live audit exists, Tasks Outstanding displays 0 when no tasks generated.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.6-clean-baseline-reset.md',
+  },
+  {
     id: 'v4.5-tile-live-values',
     version: 'v4.5-tile-live-values',
     gitTag: 'v4.5-live-calculated-website-tile-values',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 07:24',
     title: 'Live Calculated W1 Website Tile Status Metrics',
     description: 'Replaced static development/demo values on W1 Website Tile with live calculated metrics for Connection, WordPress API, Configured (configured/total pages), Audited date (or Never), and Outstanding Tasks count.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.5-live-calculated-website-tile-values.md',
   },
   {
