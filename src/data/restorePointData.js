@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.6-meta-title-rule',
+    version: 'v3.6-meta-title-rule',
+    gitTag: 'v3.6-meta-title-rule-refinement',
+    commit: '6599d47',
+    date: '09-08-2026 06:31',
+    title: 'Meta Title Rule Refinement',
+    description: 'Updated Meta Title audit rule: Target Phrase presence anywhere in title + 50-65 chars length passes. Placement near start is a recommendation only where natural.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.6-meta-title-rule-refinement.md',
+  },
+  {
     id: 'v3.5-auditor-rules-menu',
     version: 'v3.5-auditor-rules-menu',
     gitTag: 'v3.5-global-settings-page-auditor-rules',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:27',
     title: 'Page Auditor Rules Menu Item in Global Settings',
     description: 'Added Page Auditor Rules menu item under Global Settings displaying read-only documentation of all 8 audit elements, weights, criteria, and recommendations.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.5-global-settings-page-auditor-rules.md',
   },
   {
