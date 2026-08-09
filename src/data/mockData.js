@@ -5,17 +5,18 @@ export const mockSiteTile = {
   platform: 'wordpress',
   wpUser: 'admin',
   wpPass: '',
-  lifecycleStage: 7,
-  topIndicator: 'connected', // connected | partial | disconnected | pending | connecting
-  isSynchronised: true,
-  lastSyncTimestamp: '09-08-2026 06:00',
-  taskCount: 3,
+  lifecycleStage: 3,
+  topIndicator: 'connected',
+  isSynchronised: false,
+  lastSyncTimestamp: null,
+  lastAuditTimestamp: null,
+  taskCount: 0,
   status: {
-    connection:       { label: 'Connected',          value: 'Connected',          variant: 'green'  },
+    connection:       { label: 'Connected',          value: 'Connected',          variant: 'green' },
     platformApi:      { label: 'WordPress API',      value: 'Securely Connected', variant: 'green', icon: 'lock' },
-    configured:       { label: 'Configured',         value: 'Pages Configured (14/35)', variant: 'amber' },
-    audited:          { label: 'Audited',            value: 'Audited (09-08-2026 06:00)', variant: 'green' },
-    tasksOutstanding: { label: 'Tasks Outstanding',  value: '3 Outstanding',      variant: 'amber'  },
+    configured:       { label: 'Configured',         value: 'Not Configured',     variant: 'grey'  },
+    audited:          { label: 'Audited',            value: 'Never',              variant: 'grey'  },
+    tasksOutstanding: { label: 'Tasks Outstanding',  value: '0 Outstanding',      variant: 'green' },
   },
 }
 

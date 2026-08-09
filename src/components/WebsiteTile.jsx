@@ -72,12 +72,12 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   }
 
   // 2. Calculate live audit date/time (display 'Never' if no audit completed)
-  const auditTime = site.lastAuditTimestamp || site.lastSyncTimestamp || null
+  const auditTime = site.lastAuditTimestamp || null
   const auditedText = auditTime ? `Audited (${auditTime})` : 'Never'
   const auditedVariant = auditTime ? 'green' : 'grey'
 
   // 3. Calculate live outstanding tasks (0 when none exist)
-  const taskCount = site.taskCount !== undefined ? site.taskCount : (totalPages > 0 ? Math.max(0, totalPages - configuredPagesCount) : 0)
+  const taskCount = site.taskCount || 0
   const taskText = `${taskCount} Outstanding`
   const taskVariant = taskCount > 0 ? 'amber' : 'green'
 
