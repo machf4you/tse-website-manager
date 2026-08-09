@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.9-stable-baseline',
+    version: 'v4.9-stable-baseline',
+    gitTag: 'v4.9-w4-stable-ui-mock-data-baseline',
+    commit: 'pending',
+    date: '09-08-2026 08:02',
+    title: 'Baseline End-to-End Website Audit Workflow',
+    description: 'Marks the first stable end-to-end Website Audit workflow (Synchronisation, Configuration, Launch, FastAPI Communication, W4 Rendering). Baseline for replacing remaining placeholder logic with live audit data.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.9-w4-stable-ui-mock-data-baseline.md',
+  },
+  {
     id: 'v4.8-content-normalization',
     version: 'v4.8-content-normalization',
     gitTag: 'v4.8-content-string-normalization',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 07:58',
     title: 'Page Content String Normalization Fix',
     description: 'Normalized WordPress REST API content object ({ rendered: "..." }) into plain string content during package extraction in packageExtractor.js and inside incomingLinkCount calculation in PageAuditResultsPage.jsx.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.8-content-string-normalization.md',
   },
   {
