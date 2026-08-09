@@ -188,6 +188,23 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         wordCountRec = `Increase content length to at least 300 words and add target phrase "${targetPhrase}"`
       }
     }
+    const incomingLinkCount = pagesList.filter(p => {
+      if (!p.url || p.url === currentPage.url) return false
+      const targetUrl = currentPage.url.replace(/\/+$/, '').toLowerCase()
+      const targetSlug = targetUrl.replace(/^https?:\/\/[^/]+/, '')
+      
+      const pLinks = p.internal_links || p.links || []
+      const pContent = (p.content || p.html || p.body_text || '').toLowerCase()
+      
+      const hasLinkObj = Array.isArray(pLinks) && pLinks.some(l => {
+        const href = (typeof l === 'string' ? l : (l?.href || '')).replace(/\/+$/, '').toLowerCase()
+        return href.includes(targetUrl) || (targetSlug && targetSlug !== '/' && href.endsWith(targetSlug))
+      })
+      
+      return hasLinkObj || (targetSlug && targetSlug !== '/' && pContent.includes(targetSlug))
+    }).length
+
+    const linksStatus = incomingLinkCount >= 3 ? 'Pass' : 'Fail'
 
     auditElements = [
       {
@@ -240,11 +257,11 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       {
         id: 'internal_links',
         name: 'Internal Link Count',
-        currentValue: `${snap.internal_link_count !== undefined ? snap.internal_link_count : 0} incoming internal links`,
-        hasTargetPhrase: false,
-        status: getStatusText(linkCheck),
-        recommendation: linkCheck?.detail || 'Current Internal Links: 0 | Minimum Required to Pass Audit: 3',
-        recommendationType: linkCheck?.status === 'fail' ? 'fail' : 'warning',
+        currentValue: `${incomingLinkCount} incoming internal links`,
+        hasTargetPhrase: true,
+        status: linksStatus,
+        recommendation: linksStatus === 'Pass' ? '—' : `Current Incoming Internal Links: ${incomingLinkCount} | Minimum Required to Pass Audit: 3`,
+        recommendationType: linksStatus === 'Pass' ? 'default' : 'fail',
         issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
       },
       {
