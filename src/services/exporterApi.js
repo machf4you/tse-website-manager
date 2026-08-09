@@ -37,6 +37,25 @@ export async function fetchTseWordPressExportPackage({
     })
 
     if (!response.ok) {
+      // Fallback: Fetch public WordPress REST API pages directly
+      try {
+        const fallbackRes = await fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`)
+        if (fallbackRes.ok) {
+          const fallbackPages = await fallbackRes.json()
+          if (Array.isArray(fallbackPages) && fallbackPages.length > 0) {
+            return {
+              success: true,
+              packageData: {
+                pages: fallbackPages,
+                site_info: { url: cleanUrl }
+              }
+            }
+          }
+        }
+      } catch (fbError) {
+        console.error('WP REST fallback failed:', fbError)
+      }
+
       let customMsg = `TSE Exporter endpoint returned status ${response.status} (${response.statusText}).`
       if (response.status === 401) {
         customMsg = 'WordPress Authentication Failed: Invalid Username or Application Password (HTTP 401).'
@@ -53,6 +72,25 @@ export async function fetchTseWordPressExportPackage({
 
     // If WordPress returns a WP_Error payload (e.g. { code: '...', message: '...' })
     if (packageData && packageData.code && packageData.message && !packageData.pages && !packageData.data?.pages) {
+      // Fallback to public REST API pages
+      try {
+        const fallbackRes = await fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`)
+        if (fallbackRes.ok) {
+          const fallbackPages = await fallbackRes.json()
+          if (Array.isArray(fallbackPages) && fallbackPages.length > 0) {
+            return {
+              success: true,
+              packageData: {
+                pages: fallbackPages,
+                site_info: { url: cleanUrl }
+              }
+            }
+          }
+        }
+      } catch (fbError) {
+        console.error('WP REST fallback failed:', fbError)
+      }
+
       return {
         success: false,
         error: packageData.code,
