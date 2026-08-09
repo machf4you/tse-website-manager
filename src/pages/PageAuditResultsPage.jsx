@@ -459,16 +459,6 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
       },
       {
-        id: 'new_internal_link',
-        name: 'NEW Internal Link',
-        currentValue: `${incomingLinkCount} incoming internal links`,
-        hasTargetPhrase: true,
-        status: incomingLinkCount >= 3 ? 'Pass' : 'Fail',
-        recommendation: incomingLinkCount >= 3 ? '—' : `Current Incoming Internal Links: ${incomingLinkCount} | Minimum Required to Pass Audit: 3`,
-        recommendationType: incomingLinkCount >= 3 ? 'default' : 'fail',
-        issueCode: 'ISSUE 99: NEW INTERNAL LINK TEST',
-      },
-      {
         id: 'image_count',
         name: 'Image Count',
         currentValue: `${snap.image_count !== undefined ? snap.image_count : 0} images`,
@@ -499,7 +489,12 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       }))
 
     const extraWeaknesses = (liveAuditData.weaknesses || [])
-      .filter(w => !auditElements.some(el => (el.name || '').toLowerCase() === (w.label || '').toLowerCase()))
+      .filter(w => {
+        const l = (w.label || '').toLowerCase()
+        const k = (w.key || '').toLowerCase()
+        if (l.includes('internal link') || k.includes('internal_link')) return false
+        return !auditElements.some(el => (el.name || '').toLowerCase() === l)
+      })
       .map((w, idx) => ({
         id: w.key || `extra_weakness_${idx}`,
         issueCode: `ISSUE ${failedFromTable.length + idx + 1}: ${w.label ? w.label.toUpperCase() : 'CHECK'}`,
@@ -513,9 +508,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     }))
   }
 
-  const passedCount = liveAuditData?.overall_score !== undefined ? (
-    Math.round((liveAuditData.overall_score / 100) * auditElements.length)
-  ) : 0
+  const passedCount = auditElements.length > 0 ? auditElements.filter(el => el.status === 'Pass').length : 0
   const totalCount = auditElements.length
 
   return (
