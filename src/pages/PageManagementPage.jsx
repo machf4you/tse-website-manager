@@ -100,7 +100,19 @@ export default function PageManagementPage({
     })
   }
 
-  // Extract exported pages and merge user custom configurations
+  // Load stored page audit completions
+  const auditStorageKey = site?.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
+  const pageAudits = (() => {
+    try {
+      const saved = localStorage.getItem(auditStorageKey)
+      return saved ? JSON.parse(saved) : {}
+    } catch (e) {
+      console.error('Failed to load page audits:', e)
+      return {}
+    }
+  })()
+
+  // Extract exported pages and merge user custom configurations and audit data
   const pkg = storedPackageData || site?.storedPackageData
   const rawPagesList = extractPagesFromPackage(pkg, site?.url)
   const _postsList = extractPostsFromPackage(pkg)
@@ -109,6 +121,11 @@ export default function PageManagementPage({
     const pageKey = page.id || page.url || page.pageUrl
     const urlKey = page.url || page.pageUrl || ''
     const override = configurations[pageKey] || (urlKey ? configurations[urlKey] : null)
+    const auditRecord = pageAudits[pageKey] || (urlKey ? pageAudits[urlKey] : null)
+
+    const isAudited = Boolean(auditRecord && auditRecord.isAudited && auditRecord.lastAuditTimestamp)
+    const lastAuditDate = isAudited ? auditRecord.lastAuditTimestamp : (override?.lastAuditDate || page.lastAuditDate || 'Never')
+
     if (override) {
       return {
         ...page,
@@ -122,6 +139,9 @@ export default function PageManagementPage({
         priority: override.priority !== undefined ? override.priority : page.priority,
         isConfigured: override.isConfigured !== undefined ? override.isConfigured : true,
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
+        isAudited,
+        lastAuditDate,
+        auditResult: auditRecord?.auditResult || null,
       }
     }
     return {
@@ -129,6 +149,9 @@ export default function PageManagementPage({
       originalTitle: page.title,
       proposedTitle: page.title,
       targetPhrase: page.target || '',
+      isAudited,
+      lastAuditDate,
+      auditResult: auditRecord?.auditResult || null,
     }
   })
 
@@ -361,26 +384,50 @@ export default function PageManagementPage({
                     )}
                   </td>
                   <td className="col-last-audit">
-                    <button
-                      type="button"
-                      className={`btn-table-audit-muted ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
-                      disabled={!page.isConfigured}
-                      onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
-                      id={`btn-last-audit-${page.id || idx}`}
-                    >
-                      {page.isConfigured ? (page.lastAuditDate || 'Never') : 'Never'}
-                    </button>
+                    {page.isAudited ? (
+                      <button
+                        type="button"
+                        className="btn-audit-completed-badge"
+                        onClick={() => onViewAudit && onViewAudit(page)}
+                        id={`btn-last-audit-${page.id || idx}`}
+                        title="View completed audit results"
+                      >
+                        🟢 {page.lastAuditDate}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`btn-table-audit-muted ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
+                        disabled={!page.isConfigured}
+                        onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
+                        id={`btn-last-audit-${page.id || idx}`}
+                      >
+                        Never
+                      </button>
+                    )}
                   </td>
                   <td className="col-audit-page">
-                    <button
-                      type="button"
-                      className={`btn-table-audit-action ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
-                      disabled={!page.isConfigured}
-                      onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
-                      id={`btn-audit-page-${page.id || idx}`}
-                    >
-                      Audit Page
-                    </button>
+                    {page.isAudited ? (
+                      <button
+                        type="button"
+                        className="btn-audited-success"
+                        onClick={() => onViewAudit && onViewAudit(page)}
+                        id={`btn-audit-page-${page.id || idx}`}
+                        title="View completed audit results"
+                      >
+                        Audited ✓
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`btn-table-audit-action ${page.isConfigured ? 'btn-audit-active' : 'btn-audit-faded'}`}
+                        disabled={!page.isConfigured}
+                        onClick={() => page.isConfigured && onViewAudit && onViewAudit(page)}
+                        id={`btn-audit-page-${page.id || idx}`}
+                      >
+                        Audit Page
+                      </button>
+                    )}
                   </td>
                   <td className="col-actions">
                     <button

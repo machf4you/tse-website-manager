@@ -405,6 +405,49 @@
   transform: translateY(-1px);
 }
 
+/* Green badge for Last Audit when page has been audited */
+.btn-audit-completed-badge {
+  color: rgb(52, 211, 153);
+  font-weight: 700;
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-audit-completed-badge:hover {
+  background-color: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Green button style for Audit Page -> Audited once completed */
+.btn-audited-success {
+  opacity: 1;
+  color: #ffffff;
+  background-color: rgb(16, 185, 129);
+  border: 1px solid rgb(16, 185, 129);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-audited-success:hover {
+  background-color: rgb(5, 150, 105);
+  border-color: rgb(5, 150, 105);
+  transform: translateY(-1px);
+}
+
 .btn-configure-page {
   background: none;
   border: none;

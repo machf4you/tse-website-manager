@@ -84,23 +84,46 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   // Clean path display
   const cleanPath = getCleanPathname(fullUrl, site?.url)
 
-  // Execute audit call to Page Auditor server ONLY
+  // Storage key for page audit persistence
+  const auditStorageKey = site?.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
+  const [isRerunRequested, setIsRerunRequested] = useState(false)
+
+  // Execute or load audit call for selected page
   useEffect(() => {
     let isMounted = true
     async function runLiveAudit() {
       if (!currentPage || !currentPage.url) return
-      console.log('[AUDIT_TRACE_STEP_4] Setting isLoadingAudit(true), auditError(null), liveAuditData(null)')
+
+      const pageKey = currentPage.url || currentPage.id
+      let cachedAudit = null
+
+      // If re-run is NOT explicitly requested, check for cached audit result
+      if (!isRerunRequested) {
+        try {
+          const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+          const record = storedAudits[pageKey] || (currentPage.url ? storedAudits[currentPage.url] : null)
+          if (record && record.isAudited && record.auditResult) {
+            cachedAudit = record.auditResult
+          }
+        } catch (e) {
+          console.error('Failed to read stored audit data:', e)
+        }
+      }
+
+      if (cachedAudit) {
+        if (isMounted) {
+          setLiveAuditData(cachedAudit)
+          setIsLoadingAudit(false)
+          setAuditError(null)
+        }
+        return
+      }
+
       setIsLoadingAudit(true)
       setAuditError(null)
       setLiveAuditData(null)
+
       try {
-        console.log('[AUDIT_TRACE_STEP_5] Executing executePageAudit with parameters:', {
-          siteId: site?.id || 'site-1',
-          pageId: currentPage.id || currentPage.url,
-          url: currentPage.url,
-          targetPhrase: currentPage.target || currentPage.targetPhrase || targetPhrase,
-          seoPageType: currentPage.type || currentPage.seoPageType || pageType,
-        })
         const result = await executePageAudit({
           siteId: site?.id || 'site-1',
           pageId: currentPage.id || currentPage.url,
@@ -108,29 +131,65 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           targetPhrase: currentPage.target || currentPage.targetPhrase || targetPhrase,
           seoPageType: currentPage.type || currentPage.seoPageType || pageType,
         })
-        console.log('[AUDIT_TRACE_STEP_6] executePageAudit returned result object:', result)
+
         if (isMounted) {
-          console.log('[AUDIT_TRACE_STEP_7] Invoking setLiveAuditData(result)...')
           setLiveAuditData(result)
-          console.log('[AUDIT_TRACE_STEP_8] Invoking setIsLoadingAudit(false)...')
           setIsLoadingAudit(false)
+          setIsRerunRequested(false)
+
+          // Persist audit completion timestamp and payload
+          const now = new Date()
+          const pad = n => String(n).padStart(2, '0')
+          const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+
+          try {
+            const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+            storedAudits[pageKey] = {
+              isAudited: true,
+              lastAuditTimestamp: formattedTimestamp,
+              auditResult: result,
+            }
+            if (currentPage.url && currentPage.url !== pageKey) {
+              storedAudits[currentPage.url] = storedAudits[pageKey]
+            }
+            localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
+          } catch (e) {
+            console.error('Failed to save page audit result:', e)
+          }
+
+          // Update site record audit timestamp for W1 Website Tile
+          try {
+            const rawSites = localStorage.getItem('tse_website_dashboard_sites')
+            if (rawSites) {
+              const sitesList = JSON.parse(rawSites)
+              const updatedSites = sitesList.map(s => {
+                if (String(s.id) === String(site?.id)) {
+                  return {
+                    ...s,
+                    isAudited: true,
+                    lastAuditTimestamp: formattedTimestamp,
+                  }
+                }
+                return s
+              })
+              localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(updatedSites))
+            }
+          } catch (e) {
+            console.error('Failed to update site tile audit timestamp:', e)
+          }
         }
       } catch (e) {
-        console.error('[AUDIT_TRACE_EXCEPTION_CAUGHT]', {
-          name: e.name,
-          message: e.message,
-          stack: e.stack,
-          errorObject: e
-        })
+        console.error('[AUDIT_TRACE_EXCEPTION_CAUGHT]', e)
         if (isMounted) {
           setAuditError(e.message || 'Failed to connect to Page Auditor backend.')
           setIsLoadingAudit(false)
+          setIsRerunRequested(false)
         }
       }
     }
     runLiveAudit()
     return () => { isMounted = false }
-  }, [selectedUrl, currentPage.url, currentPage.target, currentPage.type])
+  }, [selectedUrl, currentPage.url, currentPage.target, currentPage.type, isRerunRequested])
 
   // Map ONLY values returned by TSE Page Auditor
   let auditElements = []
@@ -392,8 +451,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     <div className="w4-audit-wrapper">
       <div className="w4-audit-container">
 
-        {/* Top Back Navigation Link */}
-        <div className="w4-back-row">
+        {/* Top Back Navigation Link & Action Row */}
+        <div className="w4-back-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button
             type="button"
             className="w4-btn-back"
@@ -401,6 +460,16 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
             id="btn-back-to-website-management"
           >
             ← Back to Website Management
+          </button>
+          <button
+            type="button"
+            className="w3-btn-emerald"
+            onClick={() => setIsRerunRequested(true)}
+            disabled={isLoadingAudit}
+            id="btn-rerun-live-audit"
+            title="Re-run live audit for this page"
+          >
+            {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
           </button>
         </div>
 
