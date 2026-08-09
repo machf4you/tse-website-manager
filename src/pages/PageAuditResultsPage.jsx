@@ -188,9 +188,10 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         wordCountRec = `Increase content length to at least 300 words and add target phrase "${targetPhrase}"`
       }
     }
-    const incomingLinkCount = pagesList.filter(p => {
-      if (!p.url || p.url === currentPage.url) return false
-      const targetUrl = currentPage.url.replace(/\/+$/, '').toLowerCase()
+    const incomingLinkCount = (currentPage?.url && Array.isArray(pagesList)) ? pagesList.filter(p => {
+      if (!p || !p.url || p.url === currentPage.url) return false
+      const targetUrl = (currentPage.url || '').replace(/\/+$/, '').toLowerCase()
+      if (!targetUrl) return false
       const targetSlug = targetUrl.replace(/^https?:\/\/[^/]+/, '')
       
       const pLinks = p.internal_links || p.links || []
@@ -202,7 +203,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       })
       
       return hasLinkObj || (targetSlug && targetSlug !== '/' && pContent.includes(targetSlug))
-    }).length
+    }).length : 0
 
     const linksStatus = incomingLinkCount >= 3 ? 'Pass' : 'Fail'
 
