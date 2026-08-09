@@ -148,6 +148,30 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
     )
     const titleStatus = (!hasTitleTarget || titleCheck?.status === 'fail') ? 'Fail' : 'Pass'
 
+    const hasDescTarget = breakdown.description === 'Yes' || (
+      snap.meta_description && targetPhrase && snap.meta_description.toLowerCase().includes(targetPhrase.toLowerCase())
+    )
+    const descLen = (snap.meta_description || '').length
+    const descLenOk = descLen >= 120 && descLen <= 160
+    const descStatus = (hasDescTarget && descLenOk && descCheck?.status !== 'fail') ? 'Pass' : 'Fail'
+
+    let descRec = '—'
+    if (descStatus === 'Fail') {
+      if (!snap.meta_description) {
+        descRec = 'Add meta description containing target phrase'
+      } else if (!hasDescTarget) {
+        descRec = `Add target phrase "${targetPhrase}" to meta description`
+      } else if (descLen < 120) {
+        descRec = `Increase meta description length to at least 120 characters (currently ${descLen} characters)`
+      } else if (descLen > 160) {
+        descRec = `Reduce meta description length to under 160 characters (currently ${descLen} characters)`
+      } else if (descCheck?.detail) {
+        descRec = descCheck.detail
+      } else {
+        descRec = `Add target phrase "${targetPhrase}" to meta description (120-160 characters)`
+      }
+    }
+
     auditElements = [
       {
         id: 'meta_title',
@@ -162,10 +186,10 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         id: 'meta_description',
         name: 'Meta Description',
         currentValue: snap.meta_description || '—',
-        hasTargetPhrase: breakdown.description === 'Yes',
-        status: getStatusText(descCheck),
-        recommendation: descCheck?.detail || '—',
-        recommendationType: descCheck?.status === 'fail' ? 'fail' : (descCheck?.status === 'warn' ? 'warning' : 'default'),
+        hasTargetPhrase: hasDescTarget,
+        status: descStatus,
+        recommendation: descRec,
+        recommendationType: descStatus === 'Pass' ? 'default' : 'fail',
       },
       {
         id: 'h1',
