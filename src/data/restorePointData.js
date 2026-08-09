@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.0-incoming-link-rule',
+    version: 'v4.0-incoming-link-rule',
+    gitTag: 'v4.0-incoming-internal-link-audit',
+    commit: '66053df',
+    date: '09-08-2026 06:54',
+    title: 'Incoming Internal Link Count Audit Rule',
+    description: 'Updated Internal Link Count audit rule to measure incoming internal links pointing TO the audited page from other site pages (min 3 required to pass).',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.0-incoming-internal-link-audit.md',
+  },
+  {
     id: 'v3.9-word-count-rule',
     version: 'v3.9-word-count-rule',
     gitTag: 'v3.9-simplified-word-count-rule',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:45',
     title: 'Simplified Word Count & Content Depth Rule',
     description: 'Simplified Word Count audit rule for Version 1: Word count >= 300 words + Target Phrase presence required to pass. Removed density calculations, thresholds, and over-optimization checks.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.9-simplified-word-count-rule.md',
   },
   {
