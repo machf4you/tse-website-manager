@@ -230,18 +230,52 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       if (!p || !p.url || p.url === currentPage.url) return false
       const targetUrl = (currentPage.url || '').replace(/\/+$/, '').toLowerCase()
       if (!targetUrl) return false
-      const targetSlug = targetUrl.replace(/^https?:\/\/[^/]+/, '')
-      
+
+      const domainMatch = targetUrl.match(/^(https?:\/\/[^/]+)/)
+      const domain = domainMatch ? domainMatch[1] : ''
+      const targetSlug = domain ? targetUrl.slice(domain.length) : targetUrl
+      const isHome = currentPage.isHomePage || !targetSlug || targetSlug === '/'
+
       const pLinks = p.internal_links || p.links || []
       const rawContent = typeof p.content === 'string' ? p.content : (p.content?.rendered || p.content?.raw || p.body_text || p.html || '')
       const pContent = rawContent.toLowerCase()
-      
+
+      if (isHome) {
+        // Homepage matching: Look for links pointing to domain root ("https://domain.com", "https://domain.com/", or href="/")
+        const hasHomeLinkObj = Array.isArray(pLinks) && pLinks.some(l => {
+          const href = (typeof l === 'string' ? l : (l?.href || '')).trim().toLowerCase()
+          return href === targetUrl || href === `${targetUrl}/` || href === '/' || href === '' || (domain && (href === domain || href === `${domain}/`))
+        })
+
+        const hasHomeContentLink = (
+          (domain && (pContent.includes(`href="${domain}"`) || pContent.includes(`href="${domain}/"`))) ||
+          pContent.includes(`href="${targetUrl}"`) ||
+          pContent.includes(`href="${targetUrl}/"`) ||
+          pContent.includes('href="/"')
+        )
+
+        return hasHomeLinkObj || hasHomeContentLink
+      }
+
+      // Normal page matching
+      const cleanSlug = targetSlug.replace(/\/+$/, '').toLowerCase()
       const hasLinkObj = Array.isArray(pLinks) && pLinks.some(l => {
         const href = (typeof l === 'string' ? l : (l?.href || '')).replace(/\/+$/, '').toLowerCase()
-        return href.includes(targetUrl) || (targetSlug && targetSlug !== '/' && href.endsWith(targetSlug))
+        return href.includes(targetUrl) || (cleanSlug && cleanSlug !== '/' && (href.endsWith(cleanSlug) || href.includes(cleanSlug)))
       })
-      
-      return hasLinkObj || (targetSlug && targetSlug !== '/' && pContent.includes(targetSlug))
+
+      const hasContentLink = (
+        pContent.includes(targetUrl) ||
+        (cleanSlug && cleanSlug !== '/' && (
+          pContent.includes(`href="${cleanSlug}"`) ||
+          pContent.includes(`href="${cleanSlug}/"`) ||
+          pContent.includes(`href="${domain}${cleanSlug}"`) ||
+          pContent.includes(`href="${domain}${cleanSlug}/"`) ||
+          pContent.includes(cleanSlug)
+        ))
+      )
+
+      return hasLinkObj || hasContentLink
     }).length : 0
 
     const linksStatus = incomingLinkCount >= 3 ? 'Pass' : 'Fail'
