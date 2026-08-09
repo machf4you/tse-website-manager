@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v3.7-view-persistence',
+    version: 'v3.7-view-persistence',
+    gitTag: 'v3.7-persist-active-view-across-refreshes',
+    commit: 'ca17b19',
+    date: '09-08-2026 06:35',
+    title: 'Active View Persistence Across Refreshes',
+    description: 'Enforced full localStorage view state persistence for top navigation tabs (Websites vs Global Settings) and sub-tabs (Page Auditor Rules, Restore Points) so refreshing the browser stays on the exact current view.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v3.7-persist-active-view-across-refreshes.md',
+  },
+  {
     id: 'v3.6-meta-title-rule',
     version: 'v3.6-meta-title-rule',
     gitTag: 'v3.6-meta-title-rule-refinement',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 06:31',
     title: 'Meta Title Rule Refinement',
     description: 'Updated Meta Title audit rule: Target Phrase presence anywhere in title + 50-65 chars length passes. Placement near start is a recommendation only where natural.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v3.6-meta-title-rule-refinement.md',
   },
   {
