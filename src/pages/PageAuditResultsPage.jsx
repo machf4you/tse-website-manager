@@ -358,11 +358,28 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       },
     ]
 
-    failedIssues = (liveAuditData.weaknesses || []).map((w, idx) => ({
-      id: w.key || `issue_${idx}`,
-      issueCode: `ISSUE ${idx + 1}: ${w.label ? w.label.toUpperCase() : 'CHECK'}`,
-      recommendation: w.detail || w.label || '',
-      name: w.label || 'SEO Check',
+    // Construct Action Checklist items from all failed audit elements
+    const failedFromTable = auditElements
+      .filter(el => el.status === 'Fail' && el.recommendation && el.recommendation !== '—')
+      .map((el, idx) => ({
+        id: el.id || `fail_${idx}`,
+        issueCode: el.issueCode || `ISSUE ${idx + 1}: ${el.name.toUpperCase()}`,
+        recommendation: el.recommendation,
+        name: el.name,
+      }))
+
+    const extraWeaknesses = (liveAuditData.weaknesses || [])
+      .filter(w => !auditElements.some(el => (el.name || '').toLowerCase() === (w.label || '').toLowerCase()))
+      .map((w, idx) => ({
+        id: w.key || `extra_weakness_${idx}`,
+        issueCode: `ISSUE ${failedFromTable.length + idx + 1}: ${w.label ? w.label.toUpperCase() : 'CHECK'}`,
+        recommendation: w.detail || w.label || '',
+        name: w.label || 'SEO Check',
+      }))
+
+    failedIssues = [...failedFromTable, ...extraWeaknesses].map((issue, idx) => ({
+      ...issue,
+      issueCode: `ISSUE ${idx + 1}: ${issue.name.toUpperCase()}`,
     }))
   }
 
