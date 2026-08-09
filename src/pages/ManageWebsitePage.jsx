@@ -111,14 +111,50 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     }
   }, [activeTab])
 
+  const packageStorageKey = site?.id ? `tse_wp_package_${site.id}` : 'tse_wp_package_default'
+
+  const [storedPackageData, setStoredPackageData] = useState(() => {
+    try {
+      const saved = localStorage.getItem(packageStorageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && parsed.packageData) return parsed.packageData
+      }
+    } catch (e) {
+      console.error('Failed to load saved WP package from localStorage:', e)
+    }
+    return site ? site.storedPackageData || null : null
+  })
+
   const [isSynced, setIsSynced] = useState(() => {
+    try {
+      const saved = localStorage.getItem(packageStorageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && parsed.isSynchronised) return true
+      }
+    } catch (e) {
+      // ignore
+    }
     return Boolean(site && site.isSynchronised === true && site.lastSyncTimestamp)
   })
-  const [lastSyncDate, setLastSyncDate] = useState(() => site ? site.lastSyncTimestamp : null)
+
+  const [lastSyncDate, setLastSyncDate] = useState(() => {
+    try {
+      const saved = localStorage.getItem(packageStorageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && parsed.lastSyncTimestamp) return parsed.lastSyncTimestamp
+      }
+    } catch (e) {
+      // ignore
+    }
+    return site ? site.lastSyncTimestamp : null
+  })
+
   const [isSyncing, setIsSyncing] = useState(false)
   const [stageIndex, setStageIndex] = useState(0)
   const [syncError, setSyncError] = useState(null)
-  const [storedPackageData, setStoredPackageData] = useState(() => site ? site.storedPackageData || null : null)
   const [selectedPageForAudit, setSelectedPageForAudit] = useState(null)
 
   // Extract exported pages and posts using resilient package extractor
@@ -255,6 +291,17 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
             }
           } catch (e) {
             console.error('Failed during post-sync audit freshness tracking:', e)
+          }
+
+          // Save package to persistent localStorage key for site
+          try {
+            localStorage.setItem(packageStorageKey, JSON.stringify({
+              isSynchronised: true,
+              lastSyncTimestamp: completedTime,
+              packageData: normalizedPackageData
+            }))
+          } catch (e) {
+            console.error('Failed to save WP package to localStorage:', e)
           }
 
           const updatedSite = {
