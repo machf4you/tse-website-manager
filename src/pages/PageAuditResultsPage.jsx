@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
+import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import './PageAuditResultsPage.css'
 
 function getCleanPathname(fullUrl, siteBaseUrl) {
@@ -87,6 +88,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   // Storage key for page audit persistence
   const auditStorageKey = site?.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
   const [isRerunRequested, setIsRerunRequested] = useState(false)
+  const [isCurrentPageStale, setIsCurrentPageStale] = useState(false)
+  const [staleReasonText, setStaleReasonText] = useState(null)
 
   // Execute or load audit call for selected page
   useEffect(() => {
@@ -96,6 +99,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
       const pageKey = currentPage.url || currentPage.id
       let cachedAudit = null
+      let isStaleRecord = false
+      let staleReason = null
 
       // If re-run is NOT explicitly requested, check for cached audit result
       if (!isRerunRequested) {
@@ -104,6 +109,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           const record = storedAudits[pageKey] || (currentPage.url ? storedAudits[currentPage.url] : null)
           if (record && record.isAudited && record.auditResult) {
             cachedAudit = record.auditResult
+            isStaleRecord = Boolean(record.isStale)
+            staleReason = record.staleReason || null
           }
         } catch (e) {
           console.error('Failed to read stored audit data:', e)
@@ -115,6 +122,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           setLiveAuditData(cachedAudit)
           setIsLoadingAudit(false)
           setAuditError(null)
+          setIsCurrentPageStale(isStaleRecord)
+          setStaleReasonText(staleReason)
         }
         return
       }
@@ -122,6 +131,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       setIsLoadingAudit(true)
       setAuditError(null)
       setLiveAuditData(null)
+      setIsCurrentPageStale(false)
+      setStaleReasonText(null)
 
       try {
         const result = await executePageAudit({
@@ -137,16 +148,20 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           setIsLoadingAudit(false)
           setIsRerunRequested(false)
 
-          // Persist audit completion timestamp and payload
+          // Persist audit completion timestamp, fingerprint, and payload
           const now = new Date()
           const pad = n => String(n).padStart(2, '0')
           const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+          const currentFingerprint = generatePageSeoFingerprint(currentPage)
 
           try {
             const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
             storedAudits[pageKey] = {
               isAudited: true,
+              isStale: false,
+              staleReason: null,
               lastAuditTimestamp: formattedTimestamp,
+              fingerprint: currentFingerprint,
               auditResult: result,
             }
             if (currentPage.url && currentPage.url !== pageKey) {
@@ -472,6 +487,27 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
             {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
           </button>
         </div>
+
+        {/* Audit Stale Banner */}
+        {isCurrentPageStale && (
+          <div style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', color: '#fbbf24', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <strong style={{ fontSize: '0.95rem' }}>🟡 Audit Required ?</strong>
+              <div style={{ fontSize: '0.82rem', marginTop: '4px', color: '#fef08a' }}>
+                {staleReasonText || 'Page content or SEO elements were modified in WordPress after the last audit.'} Click "Re-run Audit ▷" to update audit results.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="w3-btn-emerald"
+              onClick={() => setIsRerunRequested(true)}
+              disabled={isLoadingAudit}
+              style={{ backgroundColor: '#f59e0b', borderColor: '#f59e0b', padding: '6px 14px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+            >
+              {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
+            </button>
+          </div>
+        )}
 
         {/* Page Title & Pill Badge */}
         <div className="w4-header-block">

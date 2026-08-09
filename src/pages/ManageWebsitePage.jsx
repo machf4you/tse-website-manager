@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { fetchTseWordPressExportPackage } from '../services/exporterApi'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
+import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import PageManagementPage from './PageManagementPage'
 import PageAuditResultsPage from './PageAuditResultsPage'
 import './ManageWebsitePage.css'
@@ -213,6 +214,41 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           setStoredPackageData(result.packageData)
           const completedTime = formatNowDDMMYYYYHHMM()
           setLastSyncDate(completedTime)
+
+          // Intelligent Audit Freshness Tracking: Compare per-page fingerprints
+          try {
+            const auditStorageKey = site?.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
+            const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+            let auditsUpdated = false
+
+            resPages.forEach(p => {
+              const pageKey = p.url || p.id
+              const record = storedAudits[pageKey] || (p.url ? storedAudits[p.url] : null)
+
+              if (record && record.isAudited) {
+                const newFingerprint = generatePageSeoFingerprint(p)
+                const prevFingerprint = record.fingerprint
+
+                if (prevFingerprint && prevFingerprint !== newFingerprint) {
+                  // Material SEO change detected! Flag page for re-audit (Audited ?)
+                  record.isStale = true
+                  record.staleReason = 'Page content or SEO elements modified in WordPress'
+                  auditsUpdated = true
+                } else if (prevFingerprint && prevFingerprint === newFingerprint) {
+                  // No material SEO change: Keep Audited ✓ (Green)
+                  record.isStale = false
+                  record.staleReason = null
+                  auditsUpdated = true
+                }
+              }
+            })
+
+            if (auditsUpdated) {
+              localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
+            }
+          } catch (e) {
+            console.error('Failed during post-sync audit freshness tracking:', e)
+          }
 
           const updatedSite = {
             ...site,

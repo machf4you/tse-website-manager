@@ -456,6 +456,49 @@
   transform: translateY(-1px);
 }
 
+/* Amber badge for Last Audit when page audit is stale (Audit Required ?) */
+.btn-audit-stale-badge {
+  color: rgb(251, 191, 36);
+  font-weight: 700;
+  background-color: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-audit-stale-badge:hover {
+  background-color: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.6);
+  transform: translateY(-1px);
+}
+
+/* Amber action button for Audit Required ? */
+.btn-audit-stale-action {
+  opacity: 1;
+  color: #ffffff;
+  background-color: rgb(245, 158, 11);
+  border: 1px solid rgb(245, 158, 11);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-audit-stale-action:hover {
+  background-color: rgb(217, 119, 6);
+  border-color: rgb(217, 119, 6);
+  transform: translateY(-1px);
+}
+
 .btn-configure-page {
   background: none;
   border: none;

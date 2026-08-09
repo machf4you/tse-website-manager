@@ -124,6 +124,8 @@ export default function PageManagementPage({
     const auditRecord = pageAudits[pageKey] || (urlKey ? pageAudits[urlKey] : null)
 
     const isAudited = Boolean(auditRecord && auditRecord.isAudited && auditRecord.lastAuditTimestamp)
+    const isStale = Boolean(auditRecord && auditRecord.isStale)
+    const staleReason = auditRecord?.staleReason || null
     const lastAuditDate = isAudited ? auditRecord.lastAuditTimestamp : (override?.lastAuditDate || page.lastAuditDate || 'Never')
 
     if (override) {
@@ -140,6 +142,8 @@ export default function PageManagementPage({
         isConfigured: override.isConfigured !== undefined ? override.isConfigured : true,
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
         isAudited,
+        isStale,
+        staleReason,
         lastAuditDate,
         auditResult: auditRecord?.auditResult || null,
       }
@@ -150,6 +154,8 @@ export default function PageManagementPage({
       proposedTitle: page.title,
       targetPhrase: page.target || '',
       isAudited,
+      isStale,
+      staleReason,
       lastAuditDate,
       auditResult: auditRecord?.auditResult || null,
     }
@@ -385,30 +391,54 @@ export default function PageManagementPage({
                   </td>
                   <td className="col-last-audit">
                     {page.isAudited ? (
-                      <button
-                        type="button"
-                        className="btn-audit-completed-badge"
-                        onClick={() => onViewAudit && onViewAudit(page)}
-                        id={`btn-last-audit-${page.id || idx}`}
-                        title="View completed audit results"
-                      >
-                        🟢 {page.lastAuditDate}
-                      </button>
+                      page.isStale ? (
+                        <button
+                          type="button"
+                          className="btn-audit-stale-badge"
+                          onClick={() => onViewAudit && onViewAudit(page)}
+                          id={`btn-last-audit-${page.id || idx}`}
+                          title={page.staleReason || 'WordPress data changed after last audit'}
+                        >
+                          🟡 Audit Stale ({page.lastAuditDate})
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-audit-completed-badge"
+                          onClick={() => onViewAudit && onViewAudit(page)}
+                          id={`btn-last-audit-${page.id || idx}`}
+                          title="View completed audit results"
+                        >
+                          🟢 {page.lastAuditDate}
+                        </button>
+                      )
                     ) : (
                       <span className="w3-text-plain">Never</span>
                     )}
                   </td>
                   <td className="col-audit-page">
                     {page.isAudited ? (
-                      <button
-                        type="button"
-                        className="btn-audited-success"
-                        onClick={() => onViewAudit && onViewAudit(page)}
-                        id={`btn-audit-page-${page.id || idx}`}
-                        title="View completed audit results"
-                      >
-                        Audited ✓
-                      </button>
+                      page.isStale ? (
+                        <button
+                          type="button"
+                          className="btn-audit-stale-action"
+                          onClick={() => onViewAudit && onViewAudit(page)}
+                          id={`btn-audit-page-${page.id || idx}`}
+                          title="WordPress content modified after audit - Re-audit recommended"
+                        >
+                          Audit Required ?
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn-audited-success"
+                          onClick={() => onViewAudit && onViewAudit(page)}
+                          id={`btn-audit-page-${page.id || idx}`}
+                          title="View completed audit results"
+                        >
+                          Audited ✓
+                        </button>
+                      )
                     ) : page.isConfigured ? (
                       <button
                         type="button"
