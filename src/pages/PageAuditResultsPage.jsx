@@ -278,9 +278,9 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         name: 'Images Missing Alt Text',
         currentValue: `${missingAltCount} images with missing/generic alt text`,
         hasTargetPhrase: 'N/A',
-        status: getStatusText(altCheck),
-        recommendation: altCheck?.detail || '—',
-        recommendationType: altCheck?.status === 'fail' ? 'fail' : 'default',
+        status: missingAltCount === 0 ? 'Pass' : 'Fail',
+        recommendation: missingAltCount === 0 ? '—' : `Add meaningful alt tags to ${missingAltCount} images missing them.`,
+        recommendationType: missingAltCount === 0 ? 'default' : 'fail',
       },
     ]
 
