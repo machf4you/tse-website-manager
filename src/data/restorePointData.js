@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.7-explicit-status',
+    version: 'v4.7-explicit-status',
+    gitTag: 'v4.7-audit-elements-explicit-status-mapping',
+    commit: 'f661ff6',
+    date: '09-08-2026 07:55',
+    title: 'Audit Elements Explicit Status Mapping Fix',
+    description: 'Updated H1 and audit element status mapping in PageAuditResultsPage.jsx to compute explicit Pass/Fail strings from breakdown and snap properties, preventing undefined status errors during table rendering.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.7-audit-elements-explicit-status-mapping.md',
+  },
+  {
     id: 'v4.6-stable-rendering',
     version: 'v4.6-stable-rendering',
     gitTag: 'v4.6-stable-page-auditor-rendering',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 07:51',
     title: 'Stable Page Auditor Rendering Fix',
     description: 'Fixed W4 render crash after HTTP 200 OK by introducing robust getCleanPathname helper in PageAuditResultsPage.jsx and sanitizing scheme placeholders upon import in packageExtractor.js.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.6-stable-page-auditor-rendering.md',
   },
   {
