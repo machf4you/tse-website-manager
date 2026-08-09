@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import RestorePointsPage from './RestorePointsPage'
 import WordPressImportRulesPage from './WordPressImportRulesPage'
 import PageTypeClassificationsPage from './PageTypeClassificationsPage'
@@ -16,7 +16,25 @@ const SETTINGS_MENU = [
 ]
 
 export default function GlobalSettings() {
-  const [activeTab, setActiveTab] = useState('restore-points')
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tse_global_settings_tab_v1')
+      if (saved && SETTINGS_MENU.some(m => m.id === saved && !m.disabled)) {
+        return saved
+      }
+    } catch (e) {
+      // ignore
+    }
+    return 'restore-points'
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tse_global_settings_tab_v1', activeTab)
+    } catch (e) {
+      // ignore
+    }
+  }, [activeTab])
 
   return (
     <div className="global-settings-layout">

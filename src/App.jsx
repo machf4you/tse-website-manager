@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import WebsitesDashboard from './pages/WebsitesDashboard'
 import GlobalSettings from './pages/GlobalSettings'
@@ -66,7 +66,25 @@ const SlidersIcon = () => (
 )
 
 function App() {
-  const [activeNavTab, setActiveNavTab] = useState('websites')
+  const [activeNavTab, setActiveNavTab] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tse_top_nav_tab_v1')
+      if (saved && (saved === 'websites' || saved === 'global-settings')) {
+        return saved
+      }
+    } catch (e) {
+      // ignore
+    }
+    return 'websites'
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('tse_top_nav_tab_v1', activeNavTab)
+    } catch (e) {
+      // ignore
+    }
+  }, [activeNavTab])
 
   return (
     <div className="app">
