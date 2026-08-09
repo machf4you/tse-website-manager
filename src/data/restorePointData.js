@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v4.8-content-normalization',
+    version: 'v4.8-content-normalization',
+    gitTag: 'v4.8-content-string-normalization',
+    commit: 'e142ea1',
+    date: '09-08-2026 07:58',
+    title: 'Page Content String Normalization Fix',
+    description: 'Normalized WordPress REST API content object ({ rendered: "..." }) into plain string content during package extraction in packageExtractor.js and inside incomingLinkCount calculation in PageAuditResultsPage.jsx.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v4.8-content-string-normalization.md',
+  },
+  {
     id: 'v4.7-explicit-status',
     version: 'v4.7-explicit-status',
     gitTag: 'v4.7-audit-elements-explicit-status-mapping',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '09-08-2026 07:55',
     title: 'Audit Elements Explicit Status Mapping Fix',
     description: 'Updated H1 and audit element status mapping in PageAuditResultsPage.jsx to compute explicit Pass/Fail strings from breakdown and snap properties, preventing undefined status errors during table rendering.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v4.7-audit-elements-explicit-status-mapping.md',
   },
   {
