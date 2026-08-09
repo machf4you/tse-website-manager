@@ -44,7 +44,20 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const ind = isConnected ? INDICATOR.connected : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
 
   // 1. Calculate live pages & configured metrics
-  const pkg = site.storedPackageData
+  const packageStorageKey = site.id ? `tse_wp_package_${site.id}` : 'tse_wp_package_default'
+  let pkg = site.storedPackageData
+  if (!pkg) {
+    try {
+      const savedPkg = localStorage.getItem(packageStorageKey)
+      if (savedPkg) {
+        const parsed = JSON.parse(savedPkg)
+        if (parsed && parsed.packageData) pkg = parsed.packageData
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   const rawPages = extractPagesFromPackage(pkg)
   const totalPages = rawPages.length
 
@@ -60,21 +73,33 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const configuredPagesCount = rawPages.filter(p => {
     const pageKey = p.id || p.url
     const override = savedConfigs[pageKey] || (p.url ? savedConfigs[p.url] : null)
-    if (override) return override.isConfigured !== false && Boolean(override.targetPhrase)
-    return Boolean(p.isConfigured && (p.target || p.targetPhrase))
+    if (override) {
+      return override.isConfigured === true && !override.isExcluded && override.type !== 'Excluded'
+    }
+    return Boolean(p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded')
   }).length
 
-  let configuredText = 'Not Configured'
-  let configuredVariant = 'grey'
-  if (totalPages > 0) {
-    configuredText = `Pages Configured (${configuredPagesCount}/${totalPages})`
-    configuredVariant = configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')
+  let configuredText = totalPages > 0 ? `${configuredPagesCount} of ${totalPages}` : 'Not Configured'
+  let configuredVariant = totalPages > 0 ? (configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')) : 'grey'
+
+  // 2. Calculate live audited pages count (e.g. 1 of 60)
+  const auditStorageKey = site.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
+  let storedAudits = {}
+  try {
+    const savedAudits = localStorage.getItem(auditStorageKey)
+    if (savedAudits) storedAudits = JSON.parse(savedAudits)
+  } catch (e) {
+    // ignore
   }
 
-  // 2. Calculate live audit date/time (display 'Never' if no audit completed)
-  const auditTime = site.lastAuditTimestamp || null
-  const auditedText = auditTime ? `Audited (${auditTime})` : 'Never'
-  const auditedVariant = auditTime ? 'green' : 'grey'
+  const auditedPagesCount = rawPages.filter(p => {
+    const pageKey = p.id || p.url
+    const record = storedAudits[pageKey] || (p.url ? storedAudits[p.url] : null)
+    return Boolean(record && record.isAudited && record.auditResult)
+  }).length
+
+  let auditedText = totalPages > 0 ? `${auditedPagesCount} of ${totalPages}` : (site.lastAuditTimestamp ? site.lastAuditTimestamp : 'Never')
+  let auditedVariant = totalPages > 0 ? (auditedPagesCount === totalPages ? 'green' : (auditedPagesCount > 0 ? 'amber' : 'grey')) : (site.lastAuditTimestamp ? 'green' : 'grey')
 
   // 3. Calculate live outstanding tasks (0 when none exist)
   const taskCount = site.taskCount || 0
