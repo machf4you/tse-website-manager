@@ -29,7 +29,7 @@ function getCleanPathname(fullUrl, siteBaseUrl) {
   }
 }
 
-export default function PageAuditResultsPage({ site, page, pagesList = [], onBack }) {
+export default function PageAuditResultsPage({ site, page, pagesList = [], onBack, onNavigateToInternalLinking }) {
   const selectedUrlStorageKey = site?.id ? `tse_audit_selected_url_${site.id}` : 'tse_audit_selected_url_default'
 
   // Allow selecting any page from the dropdown, with localStorage persistence
@@ -781,7 +781,17 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
                   <button
                     type="button"
                     className="w4-btn-fix-issue"
-                    onClick={() => alert(`Redirecting to WordPress Editor to fix: ${issue.name}`)}
+                    onClick={() => {
+                      if (issue.name?.toLowerCase().includes('internal link') || issue.id === 'internal_links') {
+                        if (onNavigateToInternalLinking) {
+                          onNavigateToInternalLinking(currentPage.url)
+                        } else {
+                          alert(`Navigating to W4 Internal Linking for page: ${currentPage.url}`)
+                        }
+                      } else {
+                        alert(`Redirecting to WordPress Editor to fix: ${issue.name}`)
+                      }
+                    }}
                   >
                     Fix Issue ▷
                   </button>

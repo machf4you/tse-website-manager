@@ -4,6 +4,7 @@ import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packa
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import PageManagementPage from './PageManagementPage'
 import PageAuditResultsPage from './PageAuditResultsPage'
+import InternalLinkingPage from './InternalLinkingPage'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -285,6 +286,22 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     }, 500)
   }
 
+  if (activeTab === 'w4_internal_linking' || activeTab === 'w4-internal-linking' || activeTab === 'w5_review_links') {
+    return (
+      <InternalLinkingPage
+        site={site}
+        pagesList={exportedPages}
+        initialSelectedUrl={selectedPageForAudit?.url}
+        onNavigateBack={() => setActiveTab('w2')}
+        onNavigateTab={(tab) => {
+          if (tab === 'w3-manage-pages') setActiveTab('w3')
+          else if (tab === 'w4-internal-linking') setActiveTab('w4_internal_linking')
+          else setActiveTab('w2')
+        }}
+      />
+    )
+  }
+
   if (activeTab === 'w3_audit_results' || activeTab === 'w4') {
     return (
       <PageAuditResultsPage
@@ -292,6 +309,13 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         page={selectedPageForAudit || exportedPages[0]}
         pagesList={exportedPages}
         onBack={() => setActiveTab('w3')}
+        onNavigateToInternalLinking={(url) => {
+          if (url) {
+            const matched = exportedPages.find(p => p.url === url)
+            if (matched) setSelectedPageForAudit(matched)
+          }
+          setActiveTab('w4_internal_linking')
+        }}
       />
     )
   }
@@ -503,7 +527,12 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
             <li><span className="chk-icon">✓</span> AI link recommendations</li>
             <li><span className="chk-icon">✓</span> Link opportunities report</li>
           </ul>
-          <button type="button" className="w2-fc-btn btn-open-purple" id="btn-open-links">
+          <button
+            type="button"
+            className="w2-fc-btn btn-open-purple"
+            id="btn-open-links"
+            onClick={() => setActiveTab('w4_internal_linking')}
+          >
             Open Links ›
           </button>
           <span className="w2-fc-tag">W5 | REVIEW LINKS</span>

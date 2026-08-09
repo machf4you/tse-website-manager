@@ -1,0 +1,467 @@
+/* W4 | Internal Linking (Review Links Page) Styles */
+
+.il-page-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: #f8fafc;
+  font-family: inherit;
+}
+
+/* Header Section */
+.il-header-top {
+  margin-bottom: 16px;
+}
+
+.il-back-btn {
+  background: transparent;
+  border: none;
+  color: #10b981;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+
+.il-back-btn:hover {
+  color: #34d399;
+}
+
+.il-title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 24px;
+}
+
+.il-pill-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.il-site-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+  color: #ffffff;
+}
+
+.il-site-url {
+  color: #60a5fa;
+  font-size: 0.88rem;
+  text-decoration: none;
+}
+
+.il-site-url:hover {
+  text-decoration: underline;
+}
+
+.il-rebuild-btn {
+  background: #10b981;
+  color: #0f172a;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.il-rebuild-btn:hover {
+  background: #34d399;
+}
+
+/* Sub-Nav Tab Bar */
+.il-tab-bar {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px solid #1e293b;
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+}
+
+.il-tab-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.il-tab-btn:hover {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.il-tab-btn-active {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.1);
+  border-bottom: 2px solid #10b981;
+}
+
+/* Accordion Pages List */
+.il-pages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.il-page-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.il-page-card:hover {
+  border-color: #334155;
+}
+
+.il-page-card-expanded {
+  border-color: #10b981;
+}
+
+/* Accordion Header */
+.il-card-header {
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+  background: #0f172a;
+}
+
+.il-card-slug {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-bottom: 12px;
+}
+
+.il-card-meta {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.il-meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.il-meta-col-right {
+  align-items: flex-end;
+}
+
+.il-meta-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.il-meta-val {
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.il-links-val {
+  color: #38bdf8;
+}
+
+.il-btn-add-links {
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.il-btn-add-links:hover {
+  background: #dc2626;
+}
+
+.il-badge-no-action {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Expanded Card Content */
+.il-card-details {
+  border-top: 1px solid #1e293b;
+  padding: 24px;
+  background: #020617;
+}
+
+.il-detail-subheader {
+  margin-bottom: 24px;
+}
+
+.il-detail-slug-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.il-link-icon {
+  color: #60a5fa;
+  font-size: 1.1rem;
+}
+
+.il-detail-slug {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+}
+
+.il-detail-subtitle {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.il-detail-badges {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+}
+
+.il-badge-priority {
+  background: #1e293b;
+  color: #94a3b8;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.il-badge-type {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.il-target-phrase-text {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+/* Stats Row */
+.il-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.il-stat-box {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.il-stat-icon {
+  font-size: 1.4rem;
+}
+
+.il-stat-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.il-stat-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.il-stat-val-status {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.il-stat-subtext {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Sections & Tables */
+.il-section-block {
+  margin-bottom: 28px;
+}
+
+.il-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.il-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+}
+
+.il-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.84rem;
+}
+
+.il-table th {
+  background: #0f172a;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-bottom: 1px solid #1e293b;
+}
+
+.il-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1e293b;
+  color: #cbd5e1;
+  vertical-align: middle;
+}
+
+.il-table tr:last-child td {
+  border-bottom: none;
+}
+
+.col-url {
+  color: #60a5fa;
+  font-family: monospace;
+  font-size: 0.8rem;
+}
+
+.col-context {
+  color: #94a3b8;
+  font-style: italic;
+  max-width: 350px;
+}
+
+.col-sentence {
+  color: #94a3b8;
+  font-style: italic;
+  max-width: 320px;
+}
+
+.il-anchor-chip {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.il-anchor-text-edit {
+  color: #60a5fa;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.il-edit-icon {
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
+.il-source-page-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.il-doc-icon {
+  font-size: 1.1rem;
+}
+
+.il-source-title {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.il-source-url {
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-family: monospace;
+}
+
+.il-btn-generate {
+  background: #1e293b;
+  color: #60a5fa;
+  border: 1px solid #3b82f6;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.il-btn-generate:hover {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.il-warning-banner {
+  margin-top: 14px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.il-empty-msg {
+  color: #64748b;
+  font-size: 0.88rem;
+  font-style: italic;
+  padding: 12px 0;
+}
