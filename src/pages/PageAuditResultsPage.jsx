@@ -452,9 +452,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       })
     }
     console.log("W4 DISPLAY incomingLinkCount =", incomingLinkCount)
-    const linkCheck = getCheck('Internal Link Count') || getCheck('Internal Links')
-    const displayIncomingLinks = snap.internal_link_count !== undefined ? snap.internal_link_count : incomingLinkCount
-    const finalLinkStatus = linkCheck ? (linkCheck.status === 'fail' ? 'Fail' : 'Pass') : (displayIncomingLinks >= 3 ? 'Pass' : 'Fail')
+    const displayIncomingLinks = incomingLinkCount
+    const finalLinkStatus = displayIncomingLinks >= 3 ? 'Pass' : 'Fail'
 
     auditElements = [
       {
