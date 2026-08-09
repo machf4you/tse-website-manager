@@ -143,15 +143,20 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       })
     )
 
+    const hasTitleTarget = breakdown.title === 'Yes' || (
+      snap.title && targetPhrase && snap.title.toLowerCase().includes(targetPhrase.toLowerCase())
+    )
+    const titleStatus = (!hasTitleTarget || titleCheck?.status === 'fail') ? 'Fail' : 'Pass'
+
     auditElements = [
       {
         id: 'meta_title',
         name: 'Meta Title',
         currentValue: snap.title || displayTitle,
-        hasTargetPhrase: breakdown.title === 'Yes',
-        status: getStatusText(titleCheck),
-        recommendation: titleCheck?.detail || '—',
-        recommendationType: titleCheck?.status === 'fail' ? 'fail' : (titleCheck?.status === 'warn' ? 'warning' : 'default'),
+        hasTargetPhrase: hasTitleTarget,
+        status: titleStatus,
+        recommendation: titleStatus === 'Pass' ? '—' : (titleCheck?.detail || `Add target phrase "${targetPhrase}" to Meta Title`),
+        recommendationType: titleStatus === 'Pass' ? 'default' : 'fail',
       },
       {
         id: 'meta_description',
