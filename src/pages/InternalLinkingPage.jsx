@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { getPathSlugForMatching } from '../utils/urlUtils'
-import { getExistingInternalLinks, getRecommendedInternalLinks } from '../utils/internalLinkingHelper'
+import { getExistingInternalLinks, getRecommendedInternalLinks, generateContextualReplacement } from '../utils/internalLinkingHelper'
 import './InternalLinkingPage.css'
 
 export function renderHighlightedText(text, anchorText) {
@@ -109,15 +109,17 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     setExpandedUrl(prev => (prev === url ? null : url))
   }
 
-  const handleGenerateSentence = (recId, anchorText, sourceTitle) => {
+  const handleGenerateSentence = (recId, anchorText, sourceUrl) => {
     setGeneratingIds(prev => ({ ...prev, [recId]: true }))
     setTimeout(() => {
+      const sourcePage = activePages.find(p => p.url === sourceUrl || getPathSlugForMatching(p.url) === sourceUrl || p.title === sourceUrl)
+      const result = generateContextualReplacement(sourcePage, anchorText)
       setAiSentences(prev => ({
         ...prev,
-        [recId]: `"...Our expert team provides high quality ${anchorText} tailored to scale business growth..."`
+        [recId]: result
       }))
       setGeneratingIds(prev => ({ ...prev, [recId]: false }))
-    }, 600)
+    }, 400)
   }
 
   return (
@@ -340,13 +342,30 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                                   </div>
                                 </td>
                                 <td className="col-sentence">
-                                  {renderHighlightedText(aiSentences[rec.id] || rec.suggestedSentence, rec.anchorText)}
+                                  {aiSentences[rec.id] ? (
+                                    <div className="il-gen-block">
+                                      <div className="il-gen-item">
+                                        <span className="il-gen-heading">CURRENT SOURCE TEXT:</span>
+                                        <div className="il-gen-source">"{aiSentences[rec.id].currentSourceText}"</div>
+                                      </div>
+                                      <div className="il-gen-item">
+                                        <span className="il-gen-heading il-gen-heading-replacement">SUGGESTED REPLACEMENT:</span>
+                                        <div className="il-gen-replacement">
+                                          "{renderHighlightedText(aiSentences[rec.id].suggestedReplacement, rec.anchorText)}"
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="il-gen-placeholder">
+                                      Click ✨ Generate to analyze source page content and preview suggested replacement.
+                                    </span>
+                                  )}
                                 </td>
                                 <td>
                                   <button
                                     type="button"
                                     className="il-btn-generate"
-                                    onClick={() => handleGenerateSentence(rec.id, rec.anchorText, rec.suggestedSourceTitle)}
+                                    onClick={() => handleGenerateSentence(rec.id, rec.anchorText, rec.suggestedSourceUrl)}
                                     disabled={generatingIds[rec.id]}
                                   >
                                     {generatingIds[rec.id] ? 'Generating...' : '✨ Generate'}

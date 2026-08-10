@@ -439,8 +439,55 @@
   color: #cbd5e1;
   font-size: 0.82rem;
   font-style: normal;
-  max-width: 400px;
+  max-width: 440px;
   line-height: 1.5;
+}
+
+.il-gen-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #1e293b;
+}
+
+.il-gen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.il-gen-heading {
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.05em;
+}
+
+.il-gen-heading-replacement {
+  color: #34d399;
+}
+
+.il-gen-source {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.il-gen-replacement {
+  color: #f8fafc;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.il-gen-placeholder {
+  color: #64748b;
+  font-size: 0.78rem;
+  font-style: italic;
 }
 
 .il-anchor-highlight {

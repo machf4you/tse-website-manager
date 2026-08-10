@@ -126,9 +126,81 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
       anchorText: chosenAnchor,
       suggestedSourceTitle: page.title || page.proposedTitle || 'Untitled Page',
       suggestedSourceUrl: getPathSlugForMatching(page.url) || page.url,
-      suggestedSentence: '"AI sentence will appear here."',
+      suggestedSentence: null,
       targetUrl: getPathSlugForMatching(targetUrl) || targetUrl,
       reason: 'Opportunity: Contextual relevance between pages'
     }
   })
+}
+
+/**
+ * Analyze a source page's actual body content and generate a contextual link replacement
+ */
+export function generateContextualReplacement(sourcePage, anchorText) {
+  if (!sourcePage) {
+    return {
+      currentSourceText: 'No source page body text available.',
+      suggestedReplacement: `Contact our team to discuss how our ${anchorText} can support your needs.`
+    }
+  }
+
+  const rawContent = (
+    typeof sourcePage.content?.rendered === 'string' && sourcePage.content.rendered.trim() ? sourcePage.content.rendered.trim() :
+    typeof sourcePage.content?.raw === 'string' && sourcePage.content.raw.trim() ? sourcePage.content.raw.trim() :
+    typeof sourcePage.content === 'string' && sourcePage.content.trim() ? sourcePage.content.trim() :
+    typeof sourcePage.body_text === 'string' && sourcePage.body_text.trim() ? sourcePage.body_text.trim() :
+    typeof sourcePage.html === 'string' && sourcePage.html.trim() ? sourcePage.html.trim() :
+    typeof sourcePage.post_excerpt === 'string' && sourcePage.post_excerpt.trim() ? sourcePage.post_excerpt.trim() : ''
+  )
+
+  const bodyOnly = rawContent
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<div[^>]*class="[^"]*(header|nav|footer|logo|site-header|site-footer|menu|sidebar|widget|image-switcher)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const sentences = bodyOnly
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 25 && s.length < 280)
+
+  let chosenSentence = ''
+  const anchorWords = (anchorText || '').toLowerCase().split(/\s+/).filter(w => w.length > 3)
+
+  if (sentences.length > 0) {
+    chosenSentence = sentences.find(s => {
+      const lower = s.toLowerCase()
+      return anchorWords.some(w => lower.includes(w))
+    }) || sentences[Math.min(1, sentences.length - 1)] || sentences[0]
+  }
+
+  if (!chosenSentence) {
+    chosenSentence = `Our team provides dedicated property and building solutions tailored to client specifications.`
+  }
+
+  // Create natural replacement sentence by integrating anchorText into chosenSentence
+  let replacement = ''
+  const sentenceLower = chosenSentence.toLowerCase()
+  const cleanAnchor = (anchorText || '').trim()
+
+  if (sentenceLower.includes(cleanAnchor.toLowerCase())) {
+    replacement = chosenSentence
+  } else if (sentenceLower.includes('services') || sentenceLower.includes('solutions') || sentenceLower.includes('projects')) {
+    replacement = chosenSentence.replace(/(services|solutions|projects)/i, `$1, including ${cleanAnchor},`)
+  } else if (sentenceLower.includes('our team') || sentenceLower.includes('we offer') || sentenceLower.includes('we provide') || sentenceLower.includes('we specialise') || sentenceLower.includes('we specialize')) {
+    replacement = chosenSentence.replace(/\.$/, `, offering ${cleanAnchor}.`)
+  } else {
+    replacement = chosenSentence.replace(/\.$/, ` featuring ${cleanAnchor}.`)
+  }
+
+  return {
+    currentSourceText: chosenSentence,
+    suggestedReplacement: replacement
+  }
 }
