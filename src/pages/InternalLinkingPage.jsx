@@ -3,6 +3,31 @@ import { getPathSlugForMatching } from '../utils/urlUtils'
 import { getExistingInternalLinks, getRecommendedInternalLinks } from '../utils/internalLinkingHelper'
 import './InternalLinkingPage.css'
 
+export function renderHighlightedText(text, anchorText) {
+  if (!text) return ''
+  if (!anchorText || !anchorText.trim()) return text
+
+  const lowerText = text.toLowerCase()
+  const lowerAnchor = anchorText.trim().toLowerCase()
+  const matchIndex = lowerText.indexOf(lowerAnchor)
+
+  if (matchIndex === -1) {
+    return text
+  }
+
+  const before = text.slice(0, matchIndex)
+  const matched = text.slice(matchIndex, matchIndex + lowerAnchor.length)
+  const after = text.slice(matchIndex + lowerAnchor.length)
+
+  return (
+    <>
+      {before}
+      <span className="il-anchor-highlight">{matched}</span>
+      {after}
+    </>
+  )
+}
+
 export default function InternalLinkingPage({ site, pagesList, initialSelectedUrl, onNavigateTab, onNavigateBack }) {
   const [expandedUrl, setExpandedUrl] = useState(() => {
     if (initialSelectedUrl) {
@@ -262,7 +287,6 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                             <tr>
                               <th>Source Page Title</th>
                               <th>Source Page URL</th>
-                              <th>Anchor Text (Contextual)</th>
                               <th>Link Context</th>
                               <th>Destination URL</th>
                             </tr>
@@ -272,8 +296,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                               <tr key={link.id}>
                                 <td className="font-bold">{link.sourceTitle}</td>
                                 <td className="col-url">{link.sourceUrl}</td>
-                                <td><span className="il-anchor-chip">{link.anchorText}</span></td>
-                                <td className="col-context">{link.linkContext}</td>
+                                <td className="col-context">{renderHighlightedText(link.linkContext, link.anchorText)}</td>
                                 <td className="col-url">{link.destinationUrl}</td>
                               </tr>
                             ))}
@@ -317,7 +340,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                                   </div>
                                 </td>
                                 <td className="col-sentence">
-                                  {aiSentences[rec.id] || rec.suggestedSentence}
+                                  {renderHighlightedText(aiSentences[rec.id] || rec.suggestedSentence, rec.anchorText)}
                                 </td>
                                 <td>
                                   <button
