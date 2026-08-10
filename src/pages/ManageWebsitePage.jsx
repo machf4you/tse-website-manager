@@ -573,13 +573,13 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           </span>
         </div>
 
-        {/* Card 2: Review Links */}
+        {/* Card 2: All Internal Links */}
         <div className="w2-feature-card theme-purple">
           <div className="w2-fc-header">
             <div className="w2-fc-icon-bg">
               <LinkIcon />
             </div>
-            <h3 className="w2-fc-title">Review Links</h3>
+            <h3 className="w2-fc-title">All Internal Links</h3>
           </div>
           <p className="w2-fc-desc">
             Review internal linking, orphan pages and AI recommendations.
@@ -596,9 +596,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
             id="btn-open-links"
             onClick={() => setActiveTab('w4_internal_linking')}
           >
-            Open Links ›
+            View All Internal Links ›
           </button>
-          <span className="w2-fc-tag">W5 | REVIEW LINKS</span>
+          <span className="w2-fc-tag">W5 | ALL INTERNAL LINKS</span>
         </div>
 
         {/* Card 3: Site Analysis */}
