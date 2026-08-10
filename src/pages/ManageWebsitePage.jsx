@@ -222,7 +222,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       getWpPackageApi(site.id).then(pkgRes => {
         if (!isMounted) return
         if (pkgRes && pkgRes.packageData) {
-          setIsSynced(true)
+          setHasSyncHeader(true)
           if (pkgRes.lastSyncTimestamp) setLastSyncDate(pkgRes.lastSyncTimestamp)
           setStoredPackageData(pkgRes.packageData)
         }
@@ -351,17 +351,17 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           }
 
           setTimeout(() => {
-            setIsSynced(true)
+            setHasSyncHeader(true)
             setIsSyncing(false)
           }, 500)
         } else if (result.success && result.packageData && resPages.length === 0) {
           setIsSyncing(false)
-          setIsSynced(false)
+          setHasSyncHeader(false)
           setSyncError('WordPress connected, but the TSE Exporter returned 0 pages. Please verify the TSE Site Exporter plugin is activated in WP Admin.')
         } else {
           // If exporter call fails: Keep banner visible and show error
           setIsSyncing(false)
-          setIsSynced(false)
+          setHasSyncHeader(false)
           setSyncError(result.message || 'Failed to connect to TSE WordPress Exporter endpoint.')
         }
       }
