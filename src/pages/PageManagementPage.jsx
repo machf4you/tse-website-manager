@@ -131,7 +131,8 @@ export default function PageManagementPage({
     }
 
     const isExcluded = newType === 'Excluded'
-    const wasConfigured = Boolean(existingConfig.isConfigured || page.isConfigured)
+    const hasTargetPhrase = Boolean(existingConfig.targetPhrase && existingConfig.targetPhrase.trim().length > 0)
+    const wasConfigured = Boolean((existingConfig.isConfigured !== undefined ? existingConfig.isConfigured : page.isConfigured) && (hasTargetPhrase || Boolean(page.isConfigured)))
 
     const updatedConfig = {
       ...existingConfig,
@@ -210,7 +211,11 @@ export default function PageManagementPage({
         seoPageType: effectiveType,
         priority: effectivePriority,
         isManualOverride,
-        isConfigured: override.isConfigured !== undefined ? Boolean(override.isConfigured) : Boolean(page.isConfigured),
+        isConfigured: (() => {
+          const hasTarget = Boolean(override.targetPhrase && override.targetPhrase.trim().length > 0)
+          if (override.isConfigured !== undefined) return Boolean(override.isConfigured)
+          return hasTarget || Boolean(page.isConfigured)
+        })(),
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : (effectiveType === 'Excluded' || page.isExcluded),
         isAudited,
         isStale,

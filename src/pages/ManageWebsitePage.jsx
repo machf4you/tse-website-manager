@@ -201,6 +201,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     const pageKey = page.id || page.url
     const override = savedConfigs[pageKey] || (page.url ? savedConfigs[page.url] : null)
     if (override) {
+      const hasTargetPhrase = Boolean(override.targetPhrase && override.targetPhrase.trim().length > 0)
+      const isConfigured = Boolean(override.isConfigured || hasTargetPhrase || page.isConfigured)
+
       return {
         ...page,
         title: override.proposedTitle || page.title,
@@ -210,7 +213,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         type: override.type || page.type,
         seoPageType: override.type || page.type,
         priority: override.priority !== undefined ? override.priority : page.priority,
-        isConfigured: override.isConfigured !== undefined ? override.isConfigured : true,
+        isConfigured,
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
       }
     }
