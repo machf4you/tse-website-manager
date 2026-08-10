@@ -40,9 +40,6 @@ const INDICATOR = {
 }
 
 export default function WebsiteTile({ site, onManage, onEdit }) {
-  const isConnected = Boolean(site.isSynchronised || site.topIndicator === 'connected')
-  const ind = isConnected ? INDICATOR.connected : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
-
   // 1. Calculate live pages & configured metrics
   const packageStorageKey = site.id ? `tse_wp_package_${site.id}` : 'tse_wp_package_default'
   let pkg = site.storedPackageData
@@ -52,6 +49,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
       if (savedPkg) {
         const parsed = JSON.parse(savedPkg)
         if (parsed && parsed.packageData) pkg = parsed.packageData
+        else if (parsed) pkg = parsed
       }
     } catch (e) {
       // ignore
@@ -60,6 +58,17 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
 
   const rawPages = extractPagesFromPackage(pkg)
   const totalPages = rawPages.length
+
+  const hasValidPackage = totalPages > 0 || Boolean(pkg && (pkg.pages?.length > 0 || pkg.posts?.length > 0 || pkg.data?.pages?.length > 0))
+
+  const isConnected = Boolean(
+    site.syncStatus === 'Synced' ||
+    site.syncStatus === 'Connected' ||
+    site.isSynchronised === true ||
+    site.topIndicator === 'connected' ||
+    hasValidPackage
+  )
+  const ind = isConnected ? INDICATOR.connected : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
 
   const siteIdKey = site.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
   let savedConfigs = {}
