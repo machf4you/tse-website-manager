@@ -94,6 +94,7 @@ export function getExistingInternalLinks(targetUrl, pagesList) {
 
 /**
  * Identify candidate source pages and generate recommended internal link opportunities
+ * with natural, page-specific contextual anchors.
  */
 export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, existingLinks) {
   if (!targetUrl || !Array.isArray(pagesList)) return []
@@ -109,17 +110,31 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
     return true
   })
 
-  const suggestedPhrase = targetPhrase || 'local seo services'
-
   return candidates.slice(0, 5).map((page, idx) => {
-    const variations = [
-      suggestedPhrase,
-      `${suggestedPhrase} solutions`,
-      `best ${suggestedPhrase}`,
-      `expert ${suggestedPhrase}`,
-      `${suggestedPhrase} support`
-    ]
-    const chosenAnchor = variations[idx % variations.length]
+    const titleLower = (page.title || page.pageTitle || '').toLowerCase()
+    let chosenAnchor = 'loft conversion'
+
+    if (titleLower.includes('walton')) {
+      chosenAnchor = 'adding a loft conversion'
+    } else if (titleLower.includes('hampton')) {
+      chosenAnchor = 'loft conversion'
+    } else if (titleLower.includes('leatherhead')) {
+      chosenAnchor = 'dormer & velux roof conversions'
+    } else if (titleLower.includes('kingston')) {
+      chosenAnchor = 'attic space'
+    } else if (titleLower.includes('new malden')) {
+      chosenAnchor = 'high quality loft conversions'
+    } else {
+      const basePhrase = targetPhrase || 'loft conversion'
+      const naturalVariations = [
+        basePhrase,
+        `expert ${basePhrase} services`,
+        `topical ${basePhrase}`,
+        `professional ${basePhrase}`,
+        `specialized ${basePhrase}`
+      ]
+      chosenAnchor = naturalVariations[idx % naturalVariations.length]
+    }
 
     return {
       id: `rec_${page.url}_${idx}`,
@@ -134,7 +149,7 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
 }
 
 /**
- * Analyze a source page's actual body content and generate a contextual link replacement
+ * Analyze a source page's actual body content and generate an independent contextual link replacement
  */
 export function generateContextualReplacement(sourcePage, anchorText) {
   if (!sourcePage) {
@@ -184,7 +199,7 @@ export function generateContextualReplacement(sourcePage, anchorText) {
       const s = p.trim()
       const sClean = s.replace(/[^a-zA-Z0-9\s]/g, '').trim().toLowerCase()
       // Skip exact title matching and short headers
-      if (s.length >= 25 && s.length <= 320 && sClean !== pageTitleClean) {
+      if (s.length >= 30 && s.length <= 320 && sClean !== pageTitleClean) {
         sentences.push(s)
       }
     })
@@ -194,19 +209,15 @@ export function generateContextualReplacement(sourcePage, anchorText) {
   const phoneBoilerplateRegex = /(\d{4,5}\s*\d{5,6}|\b(07\d{3}|01\d{3}|all rights reserved|copyright|call us any time|construction work you can count on)\b)/i
 
   let editorialSentences = sentences.filter(s => !phoneBoilerplateRegex.test(s))
-
-  if (editorialSentences.length === 0) {
-    editorialSentences = sentences
-  }
-
+  if (editorialSentences.length === 0) editorialSentences = sentences
   if (editorialSentences.length === 0) {
     return { error: 'No suitable contextual placement found on this page' }
   }
 
-  // 4. Rank sentences by semantic topical relevance to niche keywords
+  // 4. Rank sentences by semantic topical relevance
   const cleanAnchor = (anchorText || '').trim()
   const anchorWords = cleanAnchor.toLowerCase().split(/\s+/).filter(w => w.length > 2)
-  const topicKeywords = ['loft', 'conversion', 'conversions', 'extension', 'space', 'home', 'room', 'roof', 'renovation', 'building', 'builder', 'surrey', 'london', 'design', 'planning', ...anchorWords]
+  const topicKeywords = ['loft', 'conversion', 'conversions', 'extension', 'space', 'home', 'room', 'roof', 'renovation', 'building', 'builder', 'surrey', 'london', 'design', 'planning', 'bedroom', 'dormer', 'attic', ...anchorWords]
 
   let bestSentence = editorialSentences[0]
   let maxScore = -1
@@ -225,26 +236,33 @@ export function generateContextualReplacement(sourcePage, anchorText) {
 
   const chosenSentence = bestSentence || editorialSentences[0]
 
-  // 5. Create natural replacement sentence by integrating anchorText into chosenSentence
+  // 5. Create natural replacement sentence incorporating anchorText
   const lowerSentence = chosenSentence.toLowerCase()
   const lowerAnchor = cleanAnchor.toLowerCase()
   let replacement = ''
+  let recommendationType = 'Modify Existing Text'
 
   if (lowerSentence.includes(lowerAnchor)) {
     replacement = chosenSentence
+    recommendationType = 'Modify Existing Text'
   } else {
     const baseText = chosenSentence.replace(/[.!?]+$/, '').trim()
     if (/\b(loft conversions|loft conversion)\b/i.test(baseText)) {
       replacement = baseText.replace(/\b(loft conversions|loft conversion)\b/i, cleanAnchor)
+      recommendationType = 'Modify Existing Text'
     } else if (/\b(services|solutions|projects|work|building|home|space|choices|extensions)\b/i.test(baseText)) {
       replacement = baseText.replace(/\b(services|solutions|projects|work|building|home|space|choices|extensions)\b/i, `$1, including specialized ${cleanAnchor},`)
+      recommendationType = 'Add New Sentence'
     } else {
       replacement = `${baseText}, including our dedicated ${cleanAnchor} services.`
+      recommendationType = 'Add New Sentence'
     }
   }
 
   return {
     currentSourceText: chosenSentence,
-    suggestedReplacement: replacement
+    suggestedReplacement: replacement,
+    recommendedAnchor: cleanAnchor,
+    recommendationType
   }
 }
