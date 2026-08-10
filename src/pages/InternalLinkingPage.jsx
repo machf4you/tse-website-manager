@@ -93,14 +93,22 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     })
     const topicalSet = new Set(topicalPages.map(p => p.url))
 
+    const articlePages = pagesWithData.filter(p => {
+      if (hubSet.has(p.url) || landingSet.has(p.url) || topicalSet.has(p.url)) return false
+      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
+      return t === 'article' || t === 'article page'
+    })
+    const articleSet = new Set(articlePages.map(p => p.url))
+
     const otherPages = pagesWithData.filter(p => {
-      return !hubSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url)
+      return !hubSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url) && !articleSet.has(p.url)
     })
 
     return [
       { key: 'hub', title: 'HUB PAGE', colorClass: 'sec-theme-green', color: '#10b981', pages: hubPages },
       { key: 'landing', title: 'LANDING PAGES', colorClass: 'sec-theme-blue', color: '#60a5fa', pages: landingPages },
       { key: 'topical', title: 'TOPICAL PAGES', colorClass: 'sec-theme-yellow', color: '#f59e0b', pages: topicalPages },
+      { key: 'article', title: 'ARTICLES', colorClass: 'sec-theme-purple', color: '#c084fc', pages: articlePages },
       { key: 'other', title: 'OTHER ACTIVE PAGES', colorClass: 'sec-theme-slate', color: '#94a3b8', pages: otherPages },
     ]
   }, [pagesWithData])
@@ -265,8 +273,14 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                     </div>
                     <div className="il-detail-subtitle">{pageTitle}</div>
                     <div className="il-detail-badges">
-                      <span className="il-badge-priority">Priority 2</span>
-                      <span className="il-badge-type">{page.seoPageType || 'Landing Page'}</span>
+                      <span className="il-badge-priority">Priority {page.priority !== undefined ? page.priority : 0}</span>
+                      <span className={`il-badge-type ${
+                        (page.seoPageType || page.type || '').toLowerCase().includes('hub') ? 'hub' :
+                        (page.seoPageType || page.type || '').toLowerCase().includes('landing') ? 'landing' :
+                        (page.seoPageType || page.type || '').toLowerCase().includes('topical') ? 'topical' :
+                        (page.seoPageType || page.type || '').toLowerCase().includes('article') ? 'article' :
+                        'default'
+                      }`}>{page.seoPageType || page.type || 'Landing Page'}</span>
                       <span className="il-target-phrase-text">Target phrase: <strong>{targetPhrase}</strong></span>
                     </div>
                   </div>

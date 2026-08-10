@@ -406,6 +406,7 @@ export default function PageManagementPage({
                       page.type === 'Hub' ? 'type-hub' :
                       page.type === 'Landing' ? 'type-landing' :
                       page.type === 'Topical' ? 'type-topical' :
+                      page.type === 'Article' ? 'type-article' :
                       page.type === 'Excluded' ? 'type-excluded' :
                       'type-unclassified'
                     }>

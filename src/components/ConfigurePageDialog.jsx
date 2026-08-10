@@ -10,6 +10,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
     if (typeVal === 'Hub' || typeVal === 'Hub Page') return 1
     if (typeVal === 'Landing' || typeVal === 'Landing Page') return 2
     if (typeVal === 'Topical' || typeVal === 'Topical Page') return 3
+    if (typeVal === 'Article' || typeVal === 'Article Page') return 4
     return 0
   }
 
@@ -151,6 +152,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
               <option value="Hub">Hub Page</option>
               <option value="Landing">Landing Page</option>
               <option value="Topical">Topical Page</option>
+              <option value="Article">Article</option>
               <option value="Excluded">Excluded Page</option>
               <option value="Unclassified">Unclassified</option>
             </select>

@@ -733,7 +733,8 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
               <span className={`w4-badge-type ${
                 pageType === 'Hub' || pageType === 'Hub Page' ? 'hub' :
                 pageType === 'Landing' || pageType === 'Landing Page' ? 'landing' :
-                pageType === 'Topical' || pageType === 'Topical Page' ? 'topical' : 'unclassified'
+                pageType === 'Topical' || pageType === 'Topical Page' ? 'topical' :
+                pageType === 'Article' || pageType === 'Article Page' ? 'article' : 'unclassified'
               }`}>
                 {pageType.includes('Page') ? pageType : `${pageType} Page`}
               </span>

@@ -318,6 +318,16 @@
   font-size: 0.75rem;
 }
 
+.type-article {
+  color: rgb(192, 132, 252);
+  font-weight: 700;
+  background-color: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
 .type-unclassified {
   color: rgb(148, 163, 184);
   font-weight: 600;
