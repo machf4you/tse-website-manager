@@ -46,37 +46,37 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     })
   }, [activePages])
 
-  // Group active pages into 4 sections strictly using W3 Type classification
+  // Group active pages into Hub (green), Landing (blue), Topical (yellow), and Other (slate) sections
   const sections = useMemo(() => {
-    const homePages = pagesWithData.filter(p => {
+    const hubPages = pagesWithData.filter(p => {
       const t = (p.type || p.seoPageType || '').trim().toLowerCase()
-      return t === 'home' || t === 'home page'
+      return t === 'hub' || t === 'hub page' || t === 'home' || t === 'home page' || p.slug === '/'
     })
-    const homeSet = new Set(homePages.map(p => p.url))
+    const hubSet = new Set(hubPages.map(p => p.url))
 
     const landingPages = pagesWithData.filter(p => {
-      if (homeSet.has(p.url)) return false
+      if (hubSet.has(p.url)) return false
       const t = (p.type || p.seoPageType || '').trim().toLowerCase()
       return t === 'landing page' || t === 'landing'
     })
     const landingSet = new Set(landingPages.map(p => p.url))
 
     const topicalPages = pagesWithData.filter(p => {
-      if (homeSet.has(p.url) || landingSet.has(p.url)) return false
+      if (hubSet.has(p.url) || landingSet.has(p.url)) return false
       const t = (p.type || p.seoPageType || '').trim().toLowerCase()
       return t === 'topical' || t === 'topical page'
     })
     const topicalSet = new Set(topicalPages.map(p => p.url))
 
     const otherPages = pagesWithData.filter(p => {
-      return !homeSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url)
+      return !hubSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url)
     })
 
     return [
-      { key: 'home', title: 'HOME PAGE', pages: homePages },
-      { key: 'landing', title: 'LANDING PAGES', pages: landingPages },
-      { key: 'topical', title: 'TOPICAL PAGES', pages: topicalPages },
-      { key: 'other', title: 'OTHER ACTIVE PAGES', pages: otherPages },
+      { key: 'hub', title: 'HUB PAGE', colorClass: 'sec-theme-green', color: '#10b981', pages: hubPages },
+      { key: 'landing', title: 'LANDING PAGES', colorClass: 'sec-theme-blue', color: '#60a5fa', pages: landingPages },
+      { key: 'topical', title: 'TOPICAL PAGES', colorClass: 'sec-theme-yellow', color: '#f59e0b', pages: topicalPages },
+      { key: 'other', title: 'OTHER ACTIVE PAGES', colorClass: 'sec-theme-slate', color: '#94a3b8', pages: otherPages },
     ]
   }, [pagesWithData])
 
@@ -141,10 +141,22 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
           if (sec.pages.length === 0) return null
 
           return (
-            <div key={sec.key} className="il-group-section">
+            <div key={sec.key} className={`il-group-section ${sec.colorClass}`}>
               <div className="il-section-header">
-                <h2 className="il-section-title-heading">{sec.title}</h2>
-                <span className="il-section-count-chip">{sec.pages.length} {sec.pages.length === 1 ? 'Page' : 'Pages'}</span>
+                <h2 className="il-section-title-heading" style={{ color: sec.color }}>
+                  <span className="il-header-dot" style={{ backgroundColor: sec.color }} />
+                  {sec.title}
+                </h2>
+                <span
+                  className="il-section-count-chip"
+                  style={{
+                    color: sec.color,
+                    backgroundColor: `${sec.color}20`,
+                    borderColor: `${sec.color}50`
+                  }}
+                >
+                  {sec.pages.length} {sec.pages.length === 1 ? 'Page' : 'Pages'}
+                </span>
               </div>
 
               <div className="il-pages-list">

@@ -140,9 +140,18 @@
 .il-section-title-heading {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #38bdf8;
   letter-spacing: 0.05em;
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.il-header-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .il-section-count-chip {
