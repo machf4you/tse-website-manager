@@ -134,6 +134,22 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     }, 300)
   }
 
+  if (!Array.isArray(activePages) || activePages.length === 0) {
+    return (
+      <div className="il-page-container">
+        <div className="il-header-top">
+          <button type="button" className="il-back-btn" onClick={onNavigateBack}>
+            &larr; Back to W2 | Website Dashboard
+          </button>
+        </div>
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+          <h2>No Pages Available for Internal Linking</h2>
+          <p style={{ marginTop: '8px' }}>Please synchronise the website in W2 Website Dashboard to load pages.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="il-page-container">
       {/* Header Bar */}

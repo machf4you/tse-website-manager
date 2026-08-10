@@ -279,11 +279,11 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
   let auditElements = []
   let failedIssues = []
 
-  if (liveAuditData) {
-    const snap = liveAuditData.page_snapshot || {}
-    const assess = liveAuditData.page_assessment || {}
-    const breakdown = assess.fit_breakdown || {}
+  const snap = liveAuditData?.page_snapshot || {}
+  const assess = liveAuditData?.page_assessment || {}
+  const breakdown = assess?.fit_breakdown || {}
 
+  if (liveAuditData) {
     // Combine all check findings from strengths, weaknesses, recommendations
     const allChecks = [
       ...(liveAuditData.strengths || []),
@@ -581,6 +581,22 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
   const passedCount = auditElements.length > 0 ? auditElements.filter(el => el.status === 'Pass').length : 0
   const totalCount = auditElements.length
+
+  if (!currentPage || !currentPage.url || (Array.isArray(pagesList) && pagesList.length === 0)) {
+    return (
+      <div className="w4-audit-container">
+        <div className="w3-back-row">
+          <button type="button" className="w3-btn-back" onClick={onBack}>
+            ← Back to W2 | Website Dashboard
+          </button>
+        </div>
+        <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
+          <h2>No Pages Available to Audit</h2>
+          <p style={{ marginTop: '8px' }}>Please synchronise the website in W2 Website Dashboard to load pages.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="w4-audit-wrapper">

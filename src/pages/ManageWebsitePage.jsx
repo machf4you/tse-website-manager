@@ -99,9 +99,11 @@ function formatNowDDMMYYYYHHMM() {
 
 
 export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
+  const activeTabStorageKey = site?.id ? `tse_active_tab_${site.id}` : 'tse_active_tab_default'
+
   const [activeTab, setActiveTab] = useState(() => {
     try {
-      const saved = localStorage.getItem('tse_active_tab_v1')
+      const saved = localStorage.getItem(activeTabStorageKey)
       if (saved) return saved
     } catch (e) {
       console.error('Failed to load active tab from localStorage:', e)
@@ -111,11 +113,11 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem('tse_active_tab_v1', activeTab)
+      localStorage.setItem(activeTabStorageKey, activeTab)
     } catch (e) {
       console.error('Failed to save active tab to localStorage:', e)
     }
-  }, [activeTab])
+  }, [activeTab, activeTabStorageKey])
 
   const packageStorageKey = site?.id ? `tse_wp_package_${site.id}` : 'tse_wp_package_default'
 
@@ -132,7 +134,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     return site ? site.storedPackageData || null : null
   })
 
-  const [isSynced, setIsSynced] = useState(() => {
+  const [_hasSyncHeader, setHasSyncHeader] = useState(() => {
     try {
       const saved = localStorage.getItem(packageStorageKey)
       if (saved) {
@@ -200,6 +202,9 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     return page
   })
 
+  // Operational synced state MUST require an actual hydrated package/page inventory
+  const isSynced = Boolean(pkg && exportedPages.length > 0)
+
   // Dynamic calculated metrics from stored package pages matching W3 EXACTLY
   const configuredPagesCount = exportedPages.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
   const actionRequiredCount = exportedPages.filter(p => p.isConfigured !== true && !p.isExcluded && p.type !== 'Excluded').length
@@ -232,6 +237,14 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     }
     return () => { isMounted = false }
   }, [site?.id])
+
+  useEffect(() => {
+    if (!isSynced || exportedPages.length === 0) {
+      if (activeTab !== 'w2') {
+        setActiveTab('w2')
+      }
+    }
+  }, [isSynced, exportedPages.length, activeTab])
 
   useEffect(() => {
     return () => {
