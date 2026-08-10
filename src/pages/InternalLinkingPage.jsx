@@ -169,7 +169,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
             <div key={page.url} className={`il-page-card ${isExpanded ? 'il-page-card-expanded' : ''}`}>
               {/* Closed / Accordion Header */}
               <div className="il-card-header" onClick={() => toggleExpand(page.url)}>
-                <div className="il-card-slug">{page.slug}</div>
+                <div className="il-card-slug" style={{ color: sec.color }}>{page.slug}</div>
                 <div className="il-card-meta">
                   <div className="il-meta-col">
                     <span className="il-meta-label">PAGE TITLE</span>
@@ -181,7 +181,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                   </div>
                   <div className="il-meta-col">
                     <span className="il-meta-label">INCOMING INTERNAL LINKS</span>
-                    <span className="il-meta-val il-links-val">
+                    <span className="il-meta-val il-links-val" style={{ color: sec.color }}>
                       {page.incomingCount} links {isExpanded ? '▲ Hide Details' : '▼ View Details'}
                     </span>
                   </div>
