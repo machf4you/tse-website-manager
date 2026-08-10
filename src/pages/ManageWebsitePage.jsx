@@ -200,16 +200,16 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const exportedPages = rawExportedPages.map(page => {
     const pageKey = page.id || page.url
     const override = savedConfigs[pageKey] || (page.url ? savedConfigs[page.url] : null)
-    if (override) {
-      const hasTargetPhrase = Boolean(override.targetPhrase && override.targetPhrase.trim().length > 0)
-      const isConfigured = Boolean(override.isConfigured || hasTargetPhrase || page.isConfigured)
+    const targetPhraseStr = (override?.targetPhrase || override?.target || page.targetPhrase || page.target || '').trim()
+    const isConfigured = Boolean(targetPhraseStr.length > 0)
 
+    if (override) {
       return {
         ...page,
         title: override.proposedTitle || page.title,
         proposedTitle: override.proposedTitle || page.title,
-        target: override.targetPhrase || page.target || '',
-        targetPhrase: override.targetPhrase || '',
+        target: targetPhraseStr,
+        targetPhrase: targetPhraseStr,
         type: override.type || page.type,
         seoPageType: override.type || page.type,
         priority: override.priority !== undefined ? override.priority : page.priority,
@@ -217,7 +217,12 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
       }
     }
-    return page
+    return {
+      ...page,
+      target: targetPhraseStr,
+      targetPhrase: targetPhraseStr,
+      isConfigured
+    }
   })
 
   // Operational synced state MUST require an actual hydrated package/page inventory

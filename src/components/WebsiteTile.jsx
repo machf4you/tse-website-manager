@@ -84,10 +84,10 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const configuredPagesCount = rawPages.filter(p => {
     const pageKey = p.id || p.url
     const override = savedConfigs[pageKey] || (p.url ? savedConfigs[p.url] : null)
-    if (override) {
-      return override.isConfigured === true && !override.isExcluded && override.type !== 'Excluded'
-    }
-    return Boolean(override && override.isConfigured === true && !override.isExcluded && override.type !== 'Excluded')
+    const targetPhraseStr = (override?.targetPhrase || override?.target || p.targetPhrase || p.target || '').trim()
+    const isConfigured = Boolean(targetPhraseStr.length > 0)
+    const isExcluded = Boolean(override?.isExcluded || override?.type === 'Excluded' || p.isExcluded || p.type === 'Excluded')
+    return isConfigured && !isExcluded
   }).length
 
   let configuredText = totalPages > 0 ? `${configuredPagesCount} of ${totalPages}` : 'Not Configured'

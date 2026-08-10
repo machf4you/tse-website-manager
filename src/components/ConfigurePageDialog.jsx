@@ -60,8 +60,8 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
     else if (pageType.includes('Excluded')) normalizedType = 'Excluded'
 
     const initialAutoType = page.autoType || page.type || 'Unclassified'
-    const hasSeoTargetConfig = Boolean(targetPhrase.trim() || (proposedTitle.trim() && proposedTitle.trim() !== (page.originalTitle || page.title)))
-    const isConfigured = hasSeoTargetConfig || Boolean(page.isConfigured)
+    const targetPhraseStr = targetPhrase.trim()
+    const isConfigured = Boolean(targetPhraseStr.length > 0)
 
     const updatedConfig = {
       pageId: page.id || page.url,

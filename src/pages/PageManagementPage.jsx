@@ -131,23 +131,24 @@ export default function PageManagementPage({
     }
 
     const isExcluded = newType === 'Excluded'
-    const hasTargetPhrase = Boolean(existingConfig.targetPhrase && existingConfig.targetPhrase.trim().length > 0)
-    const wasConfigured = Boolean((existingConfig.isConfigured !== undefined ? existingConfig.isConfigured : page.isConfigured) && (hasTargetPhrase || Boolean(page.isConfigured)))
+    const targetPhraseStr = (existingConfig.targetPhrase || existingConfig.target || page.targetPhrase || page.target || '').trim()
+    const isConfigured = Boolean(targetPhraseStr.length > 0)
 
     const updatedConfig = {
       ...existingConfig,
       pageId: page.id,
       url: urlKey || pageKey,
       proposedTitle: existingConfig.proposedTitle || page.title,
-      targetPhrase: existingConfig.targetPhrase || page.target || '',
+      targetPhrase: targetPhraseStr,
+      target: targetPhraseStr,
       type: newType,
       seoPageType: newType,
       autoType: page.autoType || page.type,
       isManualOverride: true,
       priority: getPriorityForType(newType),
-      isConfigured: wasConfigured,
+      isConfigured: isConfigured,
       isExcluded,
-      status: wasConfigured ? 'configured' : 'unconfigured',
+      status: isConfigured ? 'configured' : 'unconfigured',
     }
 
     handleSavePageConfig(updatedConfig)
@@ -198,6 +199,9 @@ export default function PageManagementPage({
       ? (override?.priority !== undefined ? override.priority : getPriorityForType(effectiveType, 0))
       : (override?.priority !== undefined ? override.priority : getPriorityForType(autoType, page.priority))
 
+    const targetPhraseStr = (override?.targetPhrase || override?.target || page.targetPhrase || page.target || '').trim()
+    const isConfigured = Boolean(targetPhraseStr.length > 0)
+
     if (override) {
       return {
         ...page,
@@ -205,17 +209,13 @@ export default function PageManagementPage({
         originalTitle: page.title,
         title: override.proposedTitle || page.title,
         proposedTitle: override.proposedTitle || page.title,
-        target: override.targetPhrase || page.target || '',
-        targetPhrase: override.targetPhrase || '',
+        target: targetPhraseStr,
+        targetPhrase: targetPhraseStr,
         type: effectiveType,
         seoPageType: effectiveType,
         priority: effectivePriority,
         isManualOverride,
-        isConfigured: (() => {
-          const hasTarget = Boolean(override.targetPhrase && override.targetPhrase.trim().length > 0)
-          if (override.isConfigured !== undefined) return Boolean(override.isConfigured)
-          return hasTarget || Boolean(page.isConfigured)
-        })(),
+        isConfigured,
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : (effectiveType === 'Excluded' || page.isExcluded),
         isAudited,
         isStale,
@@ -229,8 +229,10 @@ export default function PageManagementPage({
       autoType,
       originalTitle: page.title,
       proposedTitle: page.title,
-      targetPhrase: page.target || '',
+      target: targetPhraseStr,
+      targetPhrase: targetPhraseStr,
       isManualOverride: false,
+      isConfigured,
       isAudited,
       isStale,
       staleReason,
