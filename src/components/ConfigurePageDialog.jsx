@@ -60,7 +60,8 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
     else if (pageType.includes('Excluded')) normalizedType = 'Excluded'
 
     const initialAutoType = page.autoType || page.type || 'Unclassified'
-    const isTypeChanged = normalizedType !== initialAutoType
+    const hasSeoTargetConfig = Boolean(targetPhrase.trim() || (proposedTitle.trim() && proposedTitle.trim() !== (page.originalTitle || page.title)))
+    const isConfigured = hasSeoTargetConfig || Boolean(page.isConfigured)
 
     const updatedConfig = {
       pageId: page.id || page.url,
@@ -72,9 +73,9 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
       autoType: initialAutoType,
       isManualOverride: isTypeChanged || Boolean(page.isManualOverride),
       priority: priorityNum,
-      isConfigured: true,
+      isConfigured,
       isExcluded: normalizedType === 'Excluded',
-      status: 'configured',
+      status: isConfigured ? 'configured' : 'unconfigured',
     }
 
     if (onSave) {

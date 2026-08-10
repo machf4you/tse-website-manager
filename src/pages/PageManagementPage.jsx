@@ -131,7 +131,7 @@ export default function PageManagementPage({
     }
 
     const isExcluded = newType === 'Excluded'
-    const autoType = page.autoType || page.type || 'Unclassified'
+    const wasConfigured = Boolean(existingConfig.isConfigured || page.isConfigured)
 
     const updatedConfig = {
       ...existingConfig,
@@ -144,9 +144,9 @@ export default function PageManagementPage({
       autoType: page.autoType || page.type,
       isManualOverride: true,
       priority: getPriorityForType(newType),
-      isConfigured: true,
+      isConfigured: wasConfigured,
       isExcluded,
-      status: 'configured',
+      status: wasConfigured ? 'configured' : 'unconfigured',
     }
 
     handleSavePageConfig(updatedConfig)
@@ -210,7 +210,7 @@ export default function PageManagementPage({
         seoPageType: effectiveType,
         priority: effectivePriority,
         isManualOverride,
-        isConfigured: override.isConfigured !== undefined ? override.isConfigured : true,
+        isConfigured: override.isConfigured !== undefined ? Boolean(override.isConfigured) : Boolean(page.isConfigured),
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : (effectiveType === 'Excluded' || page.isExcluded),
         isAudited,
         isStale,
