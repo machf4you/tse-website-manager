@@ -17,12 +17,18 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
   const websiteTitle = site?.name || 'The Search Equation'
   const websiteUrl = site?.url || 'https://www.thesearchequation.com'
 
-  const pagesWithData = useMemo(() => {
+  // Filter active non-excluded pages only
+  const activePages = useMemo(() => {
     if (!Array.isArray(pagesList)) return []
-    return pagesList.map(page => {
-      const existing = getExistingInternalLinks(page.url, pagesList)
+    return pagesList.filter(p => !p.isExcluded && p.type !== 'Excluded' && p.seoPageType !== 'Excluded')
+  }, [pagesList])
+
+  const pagesWithData = useMemo(() => {
+    if (!Array.isArray(activePages)) return []
+    return activePages.map(page => {
+      const existing = getExistingInternalLinks(page.url, activePages)
       const targetPhrase = page.targetPhrase || page.target || ''
-      const recommended = getRecommendedInternalLinks(page.url, targetPhrase, pagesList, existing)
+      const recommended = getRecommendedInternalLinks(page.url, targetPhrase, activePages, existing)
       const count = existing.length
       const needsLinks = count < 3
 
@@ -35,7 +41,28 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
         needsLinks
       }
     })
-  }, [pagesList])
+  }, [activePages])
+
+  // Group active pages into 4 logical sections
+  const sections = useMemo(() => {
+    const homePages = pagesWithData.filter(p => p.slug === '/' || p.type === 'Home Page' || p.seoPageType === 'Home Page')
+    const homeSet = new Set(homePages.map(p => p.url))
+
+    const landingPages = pagesWithData.filter(p => !homeSet.has(p.url) && (p.type === 'Landing Page' || p.seoPageType === 'Landing Page'))
+    const landingSet = new Set(landingPages.map(p => p.url))
+
+    const topicalPages = pagesWithData.filter(p => !homeSet.has(p.url) && !landingSet.has(p.url) && (p.type === 'Topical Page' || p.seoPageType === 'Topical Page'))
+    const topicalSet = new Set(topicalPages.map(p => p.url))
+
+    const otherPages = pagesWithData.filter(p => !homeSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url))
+
+    return [
+      { key: 'home', title: 'HOME PAGE', pages: homePages },
+      { key: 'landing', title: 'LANDING PAGES', pages: landingPages },
+      { key: 'topical', title: 'TOPICAL PAGES', pages: topicalPages },
+      { key: 'other', title: 'OTHER ACTIVE PAGES', pages: otherPages },
+    ]
+  }, [pagesWithData])
 
   const toggleExpand = (url) => {
     setExpandedUrl(prev => (prev === url ? null : url))
@@ -92,12 +119,23 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
         </button>
       </div>
 
-      {/* Pages List Accordions */}
-      <div className="il-pages-list">
-        {pagesWithData.map(page => {
-          const isExpanded = expandedUrl === page.url
-          const targetPhrase = page.targetPhrase || page.target || 'Not set'
-          const pageTitle = page.title || page.proposedTitle || 'Untitled Page'
+      {/* Grouped Page Sections */}
+      <div className="il-sections-container">
+        {sections.map(sec => {
+          if (sec.pages.length === 0) return null
+
+          return (
+            <div key={sec.key} className="il-group-section">
+              <div className="il-section-header">
+                <h2 className="il-section-title-heading">{sec.title}</h2>
+                <span className="il-section-count-chip">{sec.pages.length} {sec.pages.length === 1 ? 'Page' : 'Pages'}</span>
+              </div>
+
+              <div className="il-pages-list">
+                {sec.pages.map(page => {
+                  const isExpanded = expandedUrl === page.url
+                  const targetPhrase = page.targetPhrase || page.target || 'Not set'
+                  const pageTitle = page.title || page.proposedTitle || 'Untitled Page'
 
           return (
             <div key={page.url} className={`il-page-card ${isExpanded ? 'il-page-card-expanded' : ''}`}>
@@ -276,6 +314,10 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                   </div>
                 </div>
               )}
+            </div>
+          )
+        })}
+              </div>
             </div>
           )
         })}
