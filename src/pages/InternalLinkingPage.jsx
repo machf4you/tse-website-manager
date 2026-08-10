@@ -109,17 +109,29 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     setExpandedUrl(prev => (prev === url ? null : url))
   }
 
-  const handleGenerateSentence = (recId, anchorText, sourceUrl) => {
+  const handleGenerateSentence = (recId, anchorText, sourcePageInput) => {
     setGeneratingIds(prev => ({ ...prev, [recId]: true }))
     setTimeout(() => {
-      const sourcePage = activePages.find(p => p.url === sourceUrl || getPathSlugForMatching(p.url) === sourceUrl || p.title === sourceUrl)
+      let sourcePage = typeof sourcePageInput === 'object' && sourcePageInput !== null ? sourcePageInput : null
+
+      if (!sourcePage && typeof sourcePageInput === 'string') {
+        const normInput = normalizeUrlForMatching(sourcePageInput)
+        const slugInput = getPathSlugForMatching(sourcePageInput)
+        sourcePage = activePages.find(p => {
+          if (!p) return false
+          const pNorm = normalizeUrlForMatching(p.url)
+          const pSlug = getPathSlugForMatching(p.url)
+          return (pNorm && pNorm === normInput) || (pSlug && pSlug === slugInput) || p.title === sourcePageInput || p.url === sourcePageInput
+        })
+      }
+
       const result = generateContextualReplacement(sourcePage, anchorText)
       setAiSentences(prev => ({
         ...prev,
         [recId]: result
       }))
       setGeneratingIds(prev => ({ ...prev, [recId]: false }))
-    }, 400)
+    }, 300)
   }
 
   return (
@@ -371,7 +383,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                                   <button
                                     type="button"
                                     className="il-btn-generate"
-                                    onClick={() => handleGenerateSentence(rec.id, rec.anchorText, rec.suggestedSourceUrl)}
+                                    onClick={() => handleGenerateSentence(rec.id, rec.anchorText, rec.sourcePageObj || rec.suggestedSourceUrl)}
                                     disabled={generatingIds[rec.id]}
                                   >
                                     {generatingIds[rec.id] ? 'Generating...' : '✨ Generate'}

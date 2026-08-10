@@ -141,6 +141,7 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
       anchorText: chosenAnchor,
       suggestedSourceTitle: page.title || page.proposedTitle || 'Untitled Page',
       suggestedSourceUrl: getPathSlugForMatching(page.url) || page.url,
+      sourcePageObj: page,
       suggestedSentence: null,
       targetUrl: getPathSlugForMatching(targetUrl) || targetUrl,
       reason: 'Opportunity: Contextual relevance between pages'
