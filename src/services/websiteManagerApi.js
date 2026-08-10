@@ -5,7 +5,7 @@
 
 const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBSITE_MANAGER_API_URL)
   ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
-  : 'http://localhost:3005/api'
+  : 'https://api-website-manager.thesearchequation.co.uk/api'
 
 async function fetchJson(url, options = {}) {
   try {
