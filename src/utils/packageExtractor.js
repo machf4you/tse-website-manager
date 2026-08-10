@@ -10,6 +10,9 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage) {
   // 2. Homepage -> Hub
   if (isHomePage) return 'Hub'
 
+  // 3. WordPress Post -> Article
+  if (p && p.post_type === 'post') return 'Article'
+
   const lowerTitle = title.toLowerCase()
   const lowerUrl = url.toLowerCase()
   const cleanSlug = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '').replace(/^\/+/, '').toLowerCase()
@@ -208,6 +211,7 @@ export function normalizeImportedPage(p, siteUrl = '') {
   // Hub -> Priority 1
   // Landing -> Priority 2
   // Topical -> Priority 3
+  // Article -> Priority 4
   // Unclassified / Excluded -> Priority 0
   let priority = 0
   if (seoPageType === 'Hub') {
@@ -216,6 +220,8 @@ export function normalizeImportedPage(p, siteUrl = '') {
     priority = 2
   } else if (seoPageType === 'Topical') {
     priority = 3
+  } else if (seoPageType === 'Article') {
+    priority = 4
   } else {
     priority = 0
   }
@@ -307,7 +313,24 @@ function extractRawPagesFromPackage(pkg) {
 
 export function extractPagesFromPackage(pkg, siteUrl = '') {
   const rawPages = extractRawPagesFromPackage(pkg)
-  return rawPages.map(page => normalizeImportedPage(page, siteUrl))
+  const rawPosts = extractPostsFromPackage(pkg)
+  const combined = [...rawPages, ...rawPosts]
+
+  const seenUrls = new Set()
+  const uniqueItems = []
+
+  for (const item of combined) {
+    const rawUrl = (item.link || item.url || item.guid?.rendered || (typeof item.guid === 'string' ? item.guid : '') || '').trim().toLowerCase()
+    if (rawUrl && seenUrls.has(rawUrl)) {
+      continue
+    }
+    if (rawUrl) {
+      seenUrls.add(rawUrl)
+    }
+    uniqueItems.push(item)
+  }
+
+  return uniqueItems.map(page => normalizeImportedPage(page, siteUrl))
 }
 
 export function extractPostsFromPackage(pkg) {
