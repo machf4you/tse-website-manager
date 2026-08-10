@@ -99,6 +99,7 @@ function formatNowDDMMYYYYHHMM() {
 
 
 export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
+  const [apiConfigs, setApiConfigs] = useState({})
   const activeTabStorageKey = site?.id ? `tse_active_tab_${site.id}` : 'tse_active_tab_default'
 
   const [activeTab, setActiveTab] = useState(() => {
@@ -212,8 +213,6 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const unconfiguredPagesCount = actionRequiredCount
 
   const timerRef = useRef(null)
-
-  const [apiConfigs, setApiConfigs] = useState({})
 
   useEffect(() => {
     let isMounted = true

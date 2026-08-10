@@ -39,11 +39,17 @@ export async function getWebsitesApi() {
 }
 
 export async function saveWebsiteApi(siteRecord) {
+  const statusVal = typeof siteRecord.status === 'object' ? JSON.stringify(siteRecord.status) : siteRecord.status
+  const payload = {
+    ...siteRecord,
+    status: statusVal
+  }
+
   // Save to SQLite API
   try {
     await fetchJson(`${API_BASE_URL}/websites`, {
       method: 'POST',
-      body: JSON.stringify(siteRecord)
+      body: JSON.stringify(payload)
     })
   } catch (e) {
     console.warn('Backend API save failed, updating localStorage fallback')
@@ -64,10 +70,15 @@ export async function saveWebsiteApi(siteRecord) {
 }
 
 export async function saveWebsitesBatchApi(sitesList) {
+  const sanitizedList = Array.isArray(sitesList) ? sitesList.map(s => ({
+    ...s,
+    status: typeof s.status === 'object' ? JSON.stringify(s.status) : s.status
+  })) : []
+
   try {
     await fetchJson(`${API_BASE_URL}/websites/batch`, {
       method: 'POST',
-      body: JSON.stringify(sitesList)
+      body: JSON.stringify(sanitizedList)
     })
   } catch (e) {}
   try {
@@ -147,9 +158,9 @@ export async function getPageAuditsApi(siteId) {
 
 export async function savePageAuditApi(siteId, pageKey, auditRecord) {
   try {
-    await fetchJson(`${API_BASE_URL}/websites/${siteId}/audits`, {
+    await fetchJson(`${API_BASE_URL}/websites/${siteId}/audits/${encodeURIComponent(pageKey)}`, {
       method: 'POST',
-      body: JSON.stringify({ pageKey, auditRecord })
+      body: JSON.stringify(auditRecord)
     })
   } catch (e) {}
   try {
@@ -173,10 +184,14 @@ export async function savePageAuditsBatchApi(siteId, auditsMap) {
 }
 
 // 5. ONE-TIME MIGRATION UTILITY FROM LOCALSTORAGE
-export async function triggerLocalStorageMigrationApi() {
+export async function migrateLocalStorageApi() {
   try {
-    const rawSites = localStorage.getItem('tse_website_dashboard_sites')
-    const sites = rawSites ? JSON.parse(rawSites) : []
+    const sitesRaw = localStorage.getItem('tse_website_dashboard_sites')
+    const rawSitesList = sitesRaw ? JSON.parse(sitesRaw) : []
+    const sites = rawSitesList.map(s => ({
+      ...s,
+      status: typeof s.status === 'object' ? JSON.stringify(s.status) : s.status
+    }))
 
     const packages = {}
     const pageConfigs = {}
@@ -197,10 +212,6 @@ export async function triggerLocalStorageMigrationApi() {
       }
     }
 
-    if (sites.length === 0 && Object.keys(packages).length === 0 && Object.keys(pageConfigs).length === 0) {
-      return { migrated: { sites: 0, packages: 0, configs: 0, audits: 0 } }
-    }
-
     const res = await fetchJson(`${API_BASE_URL}/migrate-localstorage`, {
       method: 'POST',
       body: JSON.stringify({ sites, packages, pageConfigs, pageAudits })
@@ -211,4 +222,8 @@ export async function triggerLocalStorageMigrationApi() {
     console.error('Migration failed:', e)
     return null
   }
+}
+
+export async function triggerLocalStorageMigrationApi() {
+  return migrateLocalStorageApi()
 }

@@ -62,13 +62,15 @@ app.post('/api/websites', (req, res) => {
         updated_at = excluded.updated_at
     `)
 
+    const statusVal = typeof site.status === 'object' ? JSON.stringify(site.status) : (site.status || 'Active')
+
     stmt.run({
       id: String(site.id),
       name: site.name || 'Untitled Website',
       url: site.url || '',
       platform: site.platform || 'WordPress',
       portfolio: site.portfolio || 'Primary Portfolio',
-      status: site.status || 'Active',
+      status: statusVal,
       is_audited: site.isAudited ? 1 : 0,
       last_audit_timestamp: site.lastAuditTimestamp || null,
       sync_status: site.syncStatus || 'Synced',
@@ -115,13 +117,14 @@ app.post('/api/websites/batch', (req, res) => {
 
     const insertMany = db.transaction((list) => {
       for (const site of list) {
+        const statusVal = typeof site.status === 'object' ? JSON.stringify(site.status) : (site.status || 'Active')
         stmt.run({
           id: String(site.id),
           name: site.name || 'Untitled Website',
           url: site.url || '',
           platform: site.platform || 'WordPress',
           portfolio: site.portfolio || 'Primary Portfolio',
-          status: site.status || 'Active',
+          status: statusVal,
           is_audited: site.isAudited ? 1 : 0,
           last_audit_timestamp: site.lastAuditTimestamp || null,
           sync_status: site.syncStatus || 'Synced',
@@ -435,13 +438,14 @@ app.post('/api/migrate-localstorage', (req, res) => {
 
       const insertSites = db.transaction((list) => {
         for (const site of list) {
+          const statusVal = typeof site.status === 'object' ? JSON.stringify(site.status) : (site.status || 'Active')
           stmtSite.run({
             id: String(site.id),
             name: site.name || 'Untitled Website',
             url: site.url || '',
             platform: site.platform || 'WordPress',
             portfolio: site.portfolio || 'Primary Portfolio',
-            status: site.status || 'Active',
+            status: statusVal,
             is_audited: site.isAudited ? 1 : 0,
             last_audit_timestamp: site.lastAuditTimestamp || null,
             sync_status: site.syncStatus || 'Synced',
