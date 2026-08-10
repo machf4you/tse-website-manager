@@ -193,11 +193,11 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     return page
   })
 
-  // Dynamic calculated metrics from stored package pages
-  const configuredPagesCount = exportedPages.filter(p => p.isConfigured === true).length
-  const excludedPagesCount = exportedPages.filter(p => p.isExcluded === true).length
-  const unconfiguredPagesCount = exportedPages.filter(p => !p.isConfigured && !p.isExcluded).length
-  const actionRequiredCount = unconfiguredPagesCount
+  // Dynamic calculated metrics from stored package pages matching W3 EXACTLY
+  const configuredPagesCount = exportedPages.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
+  const actionRequiredCount = exportedPages.filter(p => p.isConfigured !== true && !p.isExcluded && p.type !== 'Excluded').length
+  const excludedPagesCount = exportedPages.filter(p => p.isExcluded === true || p.type === 'Excluded').length
+  const unconfiguredPagesCount = actionRequiredCount
 
   const timerRef = useRef(null)
 

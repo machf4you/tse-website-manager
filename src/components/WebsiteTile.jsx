@@ -76,7 +76,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
     if (override) {
       return override.isConfigured === true && !override.isExcluded && override.type !== 'Excluded'
     }
-    return Boolean(p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded')
+    return Boolean(override && override.isConfigured === true && !override.isExcluded && override.type !== 'Excluded')
   }).length
 
   let configuredText = totalPages > 0 ? `${configuredPagesCount} of ${totalPages}` : 'Not Configured'
