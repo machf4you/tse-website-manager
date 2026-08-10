@@ -17,10 +17,13 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
   const websiteTitle = site?.name || 'The Search Equation'
   const websiteUrl = site?.url || 'https://www.thesearchequation.com'
 
-  // Filter active non-excluded pages only
+  // Filter active non-excluded pages strictly by W3 Type configuration
   const activePages = useMemo(() => {
     if (!Array.isArray(pagesList)) return []
-    return pagesList.filter(p => !p.isExcluded && p.type !== 'Excluded' && p.seoPageType !== 'Excluded')
+    return pagesList.filter(p => {
+      const typeStr = (p.type || p.seoPageType || '').trim().toLowerCase()
+      return !p.isExcluded && typeStr !== 'excluded' && typeStr !== 'unclassified / excluded'
+    })
   }, [pagesList])
 
   const pagesWithData = useMemo(() => {
@@ -43,18 +46,31 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     })
   }, [activePages])
 
-  // Group active pages into 4 logical sections
+  // Group active pages into 4 sections strictly using W3 Type classification
   const sections = useMemo(() => {
-    const homePages = pagesWithData.filter(p => p.slug === '/' || p.type === 'Home Page' || p.seoPageType === 'Home Page')
+    const homePages = pagesWithData.filter(p => {
+      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
+      return t === 'home' || t === 'home page'
+    })
     const homeSet = new Set(homePages.map(p => p.url))
 
-    const landingPages = pagesWithData.filter(p => !homeSet.has(p.url) && (p.type === 'Landing Page' || p.seoPageType === 'Landing Page'))
+    const landingPages = pagesWithData.filter(p => {
+      if (homeSet.has(p.url)) return false
+      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
+      return t === 'landing page' || t === 'landing'
+    })
     const landingSet = new Set(landingPages.map(p => p.url))
 
-    const topicalPages = pagesWithData.filter(p => !homeSet.has(p.url) && !landingSet.has(p.url) && (p.type === 'Topical Page' || p.seoPageType === 'Topical Page'))
+    const topicalPages = pagesWithData.filter(p => {
+      if (homeSet.has(p.url) || landingSet.has(p.url)) return false
+      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
+      return t === 'topical' || t === 'topical page'
+    })
     const topicalSet = new Set(topicalPages.map(p => p.url))
 
-    const otherPages = pagesWithData.filter(p => !homeSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url))
+    const otherPages = pagesWithData.filter(p => {
+      return !homeSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url)
+    })
 
     return [
       { key: 'home', title: 'HOME PAGE', pages: homePages },
