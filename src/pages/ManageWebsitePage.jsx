@@ -348,7 +348,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     }, 500)
   }
 
-  if (activeTab === 'w4_internal_linking' || activeTab === 'w4-internal-linking' || activeTab === 'w5_review_links') {
+  if (activeTab === 'w5' || activeTab === 'w5_all_internal_links' || activeTab === 'w4_internal_linking' || activeTab === 'w4-internal-linking' || activeTab === 'w5_review_links') {
     return (
       <InternalLinkingPage
         site={site}

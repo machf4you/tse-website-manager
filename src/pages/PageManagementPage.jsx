@@ -290,9 +290,9 @@ export default function PageManagementPage({
           type="button"
           className="w3-tab"
           onClick={() => onTabChange && onTabChange('w5')}
-          id="tab-w3-review-links"
+          id="tab-w3-all-internal-links"
         >
-          W5 | Review Links
+          W5 | All Internal Links
         </button>
         <button
           type="button"
