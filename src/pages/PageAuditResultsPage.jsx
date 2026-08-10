@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
+import { savePageAuditApi, getPageAuditsApi } from '../services/websiteManagerApi'
 import './PageAuditResultsPage.css'
 
 function getCleanPathname(fullUrl, siteBaseUrl) {
@@ -161,7 +162,15 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
       if (!isRerunRequested) {
         try {
           const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-          const record = storedAudits[pageKey] || (currentPage.url ? storedAudits[currentPage.url] : null)
+          let record = storedAudits[pageKey] || (currentPage.url ? storedAudits[currentPage.url] : null)
+
+          if (!record && site?.id) {
+            try {
+              const apiAudits = await getPageAuditsApi(site.id)
+              record = apiAudits[pageKey] || (currentPage.url ? apiAudits[currentPage.url] : null)
+            } catch (err) {}
+          }
+
           if (record && record.isAudited && record.auditResult) {
             cachedAudit = record.auditResult
             isStaleRecord = Boolean(record.isStale)
@@ -211,7 +220,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
 
           try {
             const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-            storedAudits[pageKey] = {
+            const auditRecord = {
               isAudited: true,
               isStale: false,
               staleReason: null,
@@ -219,10 +228,15 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
               fingerprint: currentFingerprint,
               auditResult: result,
             }
+            storedAudits[pageKey] = auditRecord
             if (currentPage.url && currentPage.url !== pageKey) {
-              storedAudits[currentPage.url] = storedAudits[pageKey]
+              storedAudits[currentPage.url] = auditRecord
             }
             localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
+
+            if (site?.id) {
+              savePageAuditApi(site.id, pageKey, auditRecord)
+            }
           } catch (e) {
             console.error('Failed to save page audit result:', e)
           }

@@ -1,10 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
-import { fetchTseWordPressExportPackage } from '../services/exporterApi'
-import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
-import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import PageManagementPage from './PageManagementPage'
 import PageAuditResultsPage from './PageAuditResultsPage'
 import InternalLinkingPage from './InternalLinkingPage'
+import GlobalSettings from './GlobalSettings'
+import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
+import { fetchTseWordPressExportPackage } from '../services/exporterApi'
+import {
+  getWpPackageApi,
+  saveWpPackageApi,
+  getPageConfigsApi,
+  savePageConfigsApi
+} from '../services/websiteManagerApi'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -167,9 +173,10 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const savedConfigs = (() => {
     try {
       const saved = localStorage.getItem(siteIdKey)
-      return saved ? JSON.parse(saved) : {}
+      const localMap = saved ? JSON.parse(saved) : {}
+      return { ...localMap, ...(apiConfigs || {}) }
     } catch (e) {
-      return {}
+      return apiConfigs || {}
     }
   })()
 
@@ -201,30 +208,30 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   const timerRef = useRef(null)
 
-  useEffect(() => {
-    if (site) {
-      try {
-        const saved = localStorage.getItem(packageStorageKey)
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (parsed && parsed.isSynchronised && parsed.packageData) {
-            setIsSynced(true)
-            if (parsed.lastSyncTimestamp) setLastSyncDate(parsed.lastSyncTimestamp)
-            setStoredPackageData(parsed.packageData)
-            return
-          }
-        }
-      } catch (e) {
-        // ignore
-      }
+  const [apiConfigs, setApiConfigs] = useState({})
 
-      if (site.isSynchronised && site.lastSyncTimestamp) {
-        setIsSynced(true)
-        setLastSyncDate(site.lastSyncTimestamp)
-        if (site.storedPackageData) setStoredPackageData(site.storedPackageData)
-      }
+  useEffect(() => {
+    let isMounted = true
+    if (site?.id) {
+      // 1. Fetch package data from SQLite API
+      getWpPackageApi(site.id).then(pkgRes => {
+        if (!isMounted) return
+        if (pkgRes && pkgRes.packageData) {
+          setIsSynced(true)
+          if (pkgRes.lastSyncTimestamp) setLastSyncDate(pkgRes.lastSyncTimestamp)
+          setStoredPackageData(pkgRes.packageData)
+        }
+      }).catch(() => {})
+
+      // 2. Fetch page configurations from SQLite API
+      getPageConfigsApi(site.id).then(configs => {
+        if (isMounted && configs) {
+          setApiConfigs(configs)
+        }
+      }).catch(() => {})
     }
-  }, [site, packageStorageKey])
+    return () => { isMounted = false }
+  }, [site?.id])
 
   useEffect(() => {
     return () => {

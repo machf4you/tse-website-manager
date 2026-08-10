@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import ConfigurePageDialog from '../components/ConfigurePageDialog'
+import { getPageConfigsApi, savePageConfigsApi } from '../services/websiteManagerApi'
 import './PageManagementPage.css'
 
 export default function PageManagementPage({
@@ -28,6 +29,18 @@ export default function PageManagementPage({
     return {}
   })
 
+  useEffect(() => {
+    let isMounted = true
+    if (site?.id) {
+      getPageConfigsApi(site.id).then(apiConfigs => {
+        if (isMounted && apiConfigs && Object.keys(apiConfigs).length > 0) {
+          setConfigurations(prev => ({ ...prev, ...apiConfigs }))
+        }
+      }).catch(() => {})
+    }
+    return () => { isMounted = false }
+  }, [site?.id])
+
   const handleSort = (col) => {
     if (sortColumn === col) {
       setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))
@@ -44,12 +57,16 @@ export default function PageManagementPage({
       [pageKey]: config,
     }
     setConfigurations(updatedMap)
+    if (site?.id) {
+      savePageConfigsApi(site.id, updatedMap)
+    }
     try {
       const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
       localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
     } catch (e) {
       console.error('Failed to save page configuration:', e)
     }
+    setEditingPage(null)
   }
 
   const handleExcludePage = (page) => {

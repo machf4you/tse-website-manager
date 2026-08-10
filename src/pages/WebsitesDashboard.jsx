@@ -3,6 +3,13 @@ import WebsiteTile from '../components/WebsiteTile'
 import AddWebsiteDialog from '../components/AddWebsiteDialog'
 import ManageWebsitePage from './ManageWebsitePage'
 import { mockSiteTile } from '../data/mockData'
+import {
+  getWebsitesApi,
+  saveWebsiteApi,
+  saveWebsitesBatchApi,
+  deleteWebsiteApi,
+  triggerLocalStorageMigrationApi
+} from '../services/websiteManagerApi'
 import './WebsitesDashboard.css'
 
 const STORAGE_KEY = 'tse_connected_websites_v1'
@@ -12,27 +19,37 @@ export default function WebsitesDashboard() {
   const [editingSite, setEditingSite] = useState(null)
   const [sites, setSites] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('tse_website_dashboard_sites')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.map(s => {
-            return {
-              ...s,
-              isSynchronised: s.isSynchronised !== undefined ? s.isSynchronised : false,
-              lastSyncTimestamp: s.lastSyncTimestamp || null,
-              lastAuditTimestamp: s.lastAuditTimestamp || null,
-              taskCount: s.taskCount && s.taskCount !== 3 ? s.taskCount : 0,
-            }
-          })
-          return cleaned
+          return parsed
         }
       }
-    } catch (e) {
-      console.error('Failed to load websites from localStorage:', e)
-    }
+    } catch (e) {}
     return [mockSiteTile]
   })
+
+  // One-time localStorage migration & SQLite initial load on mount
+  useEffect(() => {
+    let isMounted = true
+    async function initData() {
+      // 1. Run one-time migration if localStorage has data
+      try {
+        await triggerLocalStorageMigrationApi()
+      } catch (err) {}
+
+      // 2. Fetch latest websites from SQLite API
+      try {
+        const apiSites = await getWebsitesApi()
+        if (isMounted && Array.isArray(apiSites) && apiSites.length > 0) {
+          setSites(apiSites)
+        }
+      } catch (err) {}
+    }
+    initData()
+    return () => { isMounted = false }
+  }, [])
 
   const [managedSite, setManagedSiteState] = useState(() => {
     try {
@@ -40,18 +57,10 @@ export default function WebsitesDashboard() {
       if (savedObj) {
         const parsed = JSON.parse(savedObj)
         if (parsed && typeof parsed === 'object' && parsed.name) {
-          return {
-            ...parsed,
-            isSynchronised: parsed.isSynchronised !== undefined ? parsed.isSynchronised : false,
-            lastSyncTimestamp: parsed.lastSyncTimestamp || null,
-            lastAuditTimestamp: parsed.lastAuditTimestamp || null,
-            taskCount: parsed.taskCount && parsed.taskCount !== 3 ? parsed.taskCount : 0,
-          }
+          return parsed
         }
       }
-    } catch (e) {
-      console.error('Failed to load managed site from localStorage:', e)
-    }
+    } catch (e) {}
     return null
   })
 
@@ -68,30 +77,31 @@ export default function WebsitesDashboard() {
         localStorage.removeItem('tse_managed_site_id_v1')
         localStorage.removeItem('tse_active_tab_v1')
       }
-    } catch (e) {
-      console.error('Failed to save managed site to localStorage:', e)
-    }
+    } catch (e) {}
   }
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sites))
-    } catch (e) {
-      console.error('Failed to save websites to localStorage:', e)
-    }
+      localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(sites))
+      saveWebsitesBatchApi(sites)
+    } catch (e) {}
   }, [sites])
 
   const handleAddWebsite = (newSite) => {
     setSites(prev => [newSite, ...prev])
+    saveWebsiteApi(newSite)
   }
 
   const handleUpdateWebsite = (updatedSite) => {
     setSites(prev => prev.map(s => s.id === updatedSite.id ? updatedSite : s))
+    saveWebsiteApi(updatedSite)
     setEditingSite(null)
   }
 
   const handleDeleteWebsite = (siteId) => {
     setSites(prev => prev.filter(s => s.id !== siteId))
+    deleteWebsiteApi(siteId)
     setEditingSite(null)
     if (managedSite && managedSite.id === siteId) {
       setManagedSite(null)
