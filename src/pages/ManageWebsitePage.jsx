@@ -136,6 +136,19 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     return site ? site.storedPackageData || null : null
   })
 
+  const [isPackageHydrated, setIsPackageHydrated] = useState(() => {
+    try {
+      const saved = localStorage.getItem(packageStorageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && (parsed.packageData || (Array.isArray(parsed.pages) && parsed.pages.length > 0) || (Array.isArray(parsed.posts) && parsed.posts.length > 0))) {
+          return true
+        }
+      }
+    } catch (e) {}
+    return Boolean(site && site.storedPackageData)
+  })
+
   const [_hasSyncHeader, setHasSyncHeader] = useState(() => {
     try {
       const saved = localStorage.getItem(packageStorageKey)
@@ -226,7 +239,10 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           if (pkgRes.lastSyncTimestamp) setLastSyncDate(pkgRes.lastSyncTimestamp)
           setStoredPackageData(pkgRes.packageData)
         }
-      }).catch(() => {})
+        setIsPackageHydrated(true)
+      }).catch(() => {
+        if (isMounted) setIsPackageHydrated(true)
+      })
 
       // 2. Fetch page configurations from SQLite API
       getPageConfigsApi(site.id).then(configs => {
@@ -234,17 +250,21 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
           setApiConfigs(configs)
         }
       }).catch(() => {})
+    } else {
+      setIsPackageHydrated(true)
     }
     return () => { isMounted = false }
   }, [site?.id])
 
   useEffect(() => {
-    if (!storedPackageData && (!isSynced || exportedPages.length === 0)) {
+    if (!isPackageHydrated) return
+
+    if (!isSynced || exportedPages.length === 0) {
       if (activeTab !== 'w2') {
         setActiveTab('w2')
       }
     }
-  }, [isSynced, exportedPages.length, activeTab, storedPackageData])
+  }, [isPackageHydrated, isSynced, exportedPages.length, activeTab])
 
   useEffect(() => {
     return () => {
@@ -445,7 +465,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       </div>
 
       {/* ── Stage 3: Unsynchronised Prominent Banner ── */}
-      {(!isSynced || exportedPages.length === 0) && (
+      {isPackageHydrated && (!isSynced || exportedPages.length === 0) && (
         <div className={`w2-unsynced-banner ${syncError ? 'banner-error' : ''}`} role="alert" id="banner-unsynchronised">
           {!isSyncing ? (
             <>
