@@ -287,13 +287,6 @@ export default function PageManagementPage({
     }
 
     // Default sorting (sortColumn === 'priority')
-    const isConfigA = Boolean(a.isConfigured && !a.isExcluded && a.type !== 'Excluded')
-    const isConfigB = Boolean(b.isConfigured && !b.isExcluded && b.type !== 'Excluded')
-
-    if (isConfigA !== isConfigB) {
-      return isConfigA ? -1 : 1
-    }
-
     const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
     const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
     if (pA !== pB) {
