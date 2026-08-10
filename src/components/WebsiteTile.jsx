@@ -63,7 +63,9 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
 
   const isConnected = Boolean(
     site.syncStatus === 'Synced' ||
+    site.sync_status === 'Synced' ||
     site.syncStatus === 'Connected' ||
+    site.sync_status === 'Connected' ||
     site.isSynchronised === true ||
     site.topIndicator === 'connected' ||
     hasValidPackage

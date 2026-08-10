@@ -23,6 +23,8 @@ app.get('/api/websites', (req, res) => {
     const rows = db.prepare(`SELECT * FROM websites ORDER BY created_at DESC`).all()
     const websites = rows.map(r => ({
       ...r,
+      syncStatus: r.sync_status || r.syncStatus || 'Synced',
+      lastSyncTimestamp: r.last_sync_timestamp || r.lastSyncTimestamp || null,
       isAudited: Boolean(r.is_audited),
       lastAuditTimestamp: r.last_audit_timestamp,
       configData: r.config_data ? JSON.parse(r.config_data) : null

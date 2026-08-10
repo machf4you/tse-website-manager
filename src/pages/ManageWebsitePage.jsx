@@ -128,6 +128,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed && parsed.packageData) return parsed.packageData
+        else if (parsed) return parsed
       }
     } catch (e) {
       console.error('Failed to load saved WP package from localStorage:', e)
@@ -238,12 +239,12 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   }, [site?.id])
 
   useEffect(() => {
-    if (!isSynced || exportedPages.length === 0) {
+    if (!storedPackageData && (!isSynced || exportedPages.length === 0)) {
       if (activeTab !== 'w2') {
         setActiveTab('w2')
       }
     }
-  }, [isSynced, exportedPages.length, activeTab])
+  }, [isSynced, exportedPages.length, activeTab, storedPackageData])
 
   useEffect(() => {
     return () => {
