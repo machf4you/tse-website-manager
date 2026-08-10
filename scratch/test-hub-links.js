@@ -1,15 +1,6 @@
-/**
- * Helper utility to extract existing incoming internal links and generate candidate recommended links
- * for W5 | Internal Linking module using pagesList and site data.
- * Reuses the exact contextual link algorithm as Page Auditor / W4.
- */
+import { normalizeUrlForMatching, getPathSlugForMatching } from '../src/utils/urlUtils.js'
 
-import { normalizeUrlForMatching, getPathSlugForMatching } from './urlUtils.js'
-
-/**
- * Extract existing incoming internal links for a target URL from pagesList
- */
-export function getExistingInternalLinks(targetUrl, pagesList) {
+function getExistingInternalLinks(targetUrl, pagesList) {
   if (!targetUrl || !Array.isArray(pagesList)) return []
 
   const targetNormUrl = normalizeUrlForMatching(targetUrl)
@@ -21,7 +12,7 @@ export function getExistingInternalLinks(targetUrl, pagesList) {
     if (!page || !page.url) return
     const pageNormUrl = normalizeUrlForMatching(page.url)
 
-    // Exclude self-referential links on the target page itself
+    // Exclude self links
     if (targetNormUrl && pageNormUrl && targetNormUrl === pageNormUrl) return
 
     const rawContent = (
@@ -92,43 +83,16 @@ export function getExistingInternalLinks(targetUrl, pagesList) {
   return results
 }
 
-/**
- * Identify candidate source pages and generate recommended internal link opportunities
- */
-export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, existingLinks) {
-  if (!targetUrl || !Array.isArray(pagesList)) return []
+import fs from 'fs'
+const raw = fs.readFileSync('c:/Antigravity/tse-audit-engine/src/exporter-data.json', 'utf8')
+const data = JSON.parse(raw)
+const siteKey = Object.keys(data)[0]
+const pages = data[siteKey].pages.map(p => ({
+  url: p.pageUrl || p.url,
+  title: p.pageTitle || p.title,
+  content: p.crawlData?.plainText || p.content || ''
+}))
 
-  const targetNormUrl = normalizeUrlForMatching(targetUrl)
-  const existingSourceNorms = new Set((existingLinks || []).map(l => normalizeUrlForMatching(l.sourceUrl)))
-
-  const candidates = pagesList.filter(p => {
-    if (!p || !p.url) return false
-    const pNorm = normalizeUrlForMatching(p.url)
-    if (pNorm === targetNormUrl) return false
-    if (existingSourceNorms.has(pNorm)) return false
-    return true
-  })
-
-  const suggestedPhrase = targetPhrase || 'local seo services'
-
-  return candidates.slice(0, 5).map((page, idx) => {
-    const variations = [
-      suggestedPhrase,
-      `${suggestedPhrase} solutions`,
-      `best ${suggestedPhrase}`,
-      `expert ${suggestedPhrase}`,
-      `${suggestedPhrase} support`
-    ]
-    const chosenAnchor = variations[idx % variations.length]
-
-    return {
-      id: `rec_${page.url}_${idx}`,
-      anchorText: chosenAnchor,
-      suggestedSourceTitle: page.title || page.proposedTitle || 'Untitled Page',
-      suggestedSourceUrl: getPathSlugForMatching(page.url) || page.url,
-      suggestedSentence: '"AI sentence will appear here."',
-      targetUrl: getPathSlugForMatching(targetUrl) || targetUrl,
-      reason: 'Opportunity: Contextual relevance between pages'
-    }
-  })
-}
+const homeLinks = getExistingInternalLinks('/', pages)
+console.log('Hub Page ("/") Contextual Incoming Links Count:', homeLinks.length)
+console.log('Sample links:', JSON.stringify(homeLinks.slice(0, 3), null, 2))
