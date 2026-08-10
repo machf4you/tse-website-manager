@@ -51,12 +51,16 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    // Determine normalized type string ('Hub', 'Landing', 'Topical', 'Excluded', 'Unclassified')
+    // Determine normalized type string ('Hub', 'Landing', 'Topical', 'Article', 'Excluded', 'Unclassified')
     let normalizedType = 'Unclassified'
     if (pageType.includes('Hub')) normalizedType = 'Hub'
     else if (pageType.includes('Landing')) normalizedType = 'Landing'
     else if (pageType.includes('Topical')) normalizedType = 'Topical'
+    else if (pageType.includes('Article')) normalizedType = 'Article'
     else if (pageType.includes('Excluded')) normalizedType = 'Excluded'
+
+    const initialAutoType = page.autoType || page.type || 'Unclassified'
+    const isTypeChanged = normalizedType !== initialAutoType
 
     const updatedConfig = {
       pageId: page.id || page.url,
@@ -64,9 +68,13 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
       proposedTitle: proposedTitle.trim(),
       targetPhrase: targetPhrase.trim(),
       type: normalizedType,
+      seoPageType: normalizedType,
+      autoType: initialAutoType,
+      isManualOverride: isTypeChanged || Boolean(page.isManualOverride),
       priority: priorityNum,
       isConfigured: true,
       isExcluded: normalizedType === 'Excluded',
+      status: 'configured',
     }
 
     if (onSave) {

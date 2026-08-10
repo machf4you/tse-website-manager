@@ -117,6 +117,41 @@ export default function PageManagementPage({
     })
   }
 
+  const handleInlineTypeChange = (page, newType) => {
+    const pageKey = page.id || page.url || page.pageUrl
+    const urlKey = page.url || page.pageUrl || ''
+    const existingConfig = configurations[pageKey] || (urlKey ? configurations[urlKey] : {}) || {}
+
+    const getPriorityForType = (t) => {
+      if (t === 'Hub') return 1
+      if (t === 'Landing') return 2
+      if (t === 'Topical') return 3
+      if (t === 'Article') return 4
+      return 0
+    }
+
+    const isExcluded = newType === 'Excluded'
+    const autoType = page.autoType || page.type || 'Unclassified'
+
+    const updatedConfig = {
+      ...existingConfig,
+      pageId: page.id,
+      url: urlKey || pageKey,
+      proposedTitle: existingConfig.proposedTitle || page.title,
+      targetPhrase: existingConfig.targetPhrase || page.target || '',
+      type: newType,
+      seoPageType: newType,
+      autoType: page.autoType || page.type,
+      isManualOverride: true,
+      priority: getPriorityForType(newType),
+      isConfigured: true,
+      isExcluded,
+      status: 'configured',
+    }
+
+    handleSavePageConfig(updatedConfig)
+  }
+
   // Load stored page audit completions
   const auditStorageKey = site?.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
   const pageAudits = (() => {
@@ -145,19 +180,38 @@ export default function PageManagementPage({
     const staleReason = auditRecord?.staleReason || null
     const lastAuditDate = isAudited ? auditRecord.lastAuditTimestamp : (override?.lastAuditDate || page.lastAuditDate || 'Never')
 
+    const autoType = override?.autoType || page.type || page.seoPageType || 'Unclassified'
+    const isManualOverride = Boolean(override && override.isManualOverride === true)
+    const effectiveType = isManualOverride ? (override.type || override.seoPageType) : autoType
+
+    const getPriorityForType = (t, fallback) => {
+      if (t === 'Hub') return 1
+      if (t === 'Landing') return 2
+      if (t === 'Topical') return 3
+      if (t === 'Article') return 4
+      if (t === 'Excluded') return 0
+      return fallback !== undefined ? fallback : 0
+    }
+
+    const effectivePriority = isManualOverride
+      ? (override?.priority !== undefined ? override.priority : getPriorityForType(effectiveType, 0))
+      : (override?.priority !== undefined ? override.priority : getPriorityForType(autoType, page.priority))
+
     if (override) {
       return {
         ...page,
+        autoType,
         originalTitle: page.title,
         title: override.proposedTitle || page.title,
         proposedTitle: override.proposedTitle || page.title,
         target: override.targetPhrase || page.target || '',
         targetPhrase: override.targetPhrase || '',
-        type: override.type || page.type,
-        seoPageType: override.type || page.type,
-        priority: override.priority !== undefined ? override.priority : page.priority,
+        type: effectiveType,
+        seoPageType: effectiveType,
+        priority: effectivePriority,
+        isManualOverride,
         isConfigured: override.isConfigured !== undefined ? override.isConfigured : true,
-        isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
+        isExcluded: override.isExcluded !== undefined ? override.isExcluded : (effectiveType === 'Excluded' || page.isExcluded),
         isAudited,
         isStale,
         staleReason,
@@ -167,9 +221,11 @@ export default function PageManagementPage({
     }
     return {
       ...page,
+      autoType,
       originalTitle: page.title,
       proposedTitle: page.title,
       targetPhrase: page.target || '',
+      isManualOverride: false,
       isAudited,
       isStale,
       staleReason,
@@ -402,16 +458,24 @@ export default function PageManagementPage({
                     <div className="w3-page-slug">{page.url || ''}</div>
                   </td>
                   <td className="col-type">
-                    <span className={
-                      page.type === 'Hub' ? 'type-hub' :
-                      page.type === 'Landing' ? 'type-landing' :
-                      page.type === 'Topical' ? 'type-topical' :
-                      page.type === 'Article' ? 'type-article' :
-                      page.type === 'Excluded' ? 'type-excluded' :
-                      'type-unclassified'
-                    }>
-                      {page.type || 'Unclassified'}
-                    </span>
+                    <div className="type-select-wrapper">
+                      <select
+                        className={`type-select type-${(page.type || 'unclassified').toLowerCase()}`}
+                        value={page.type || 'Unclassified'}
+                        onChange={(e) => handleInlineTypeChange(page, e.target.value)}
+                      >
+                        <option value="Hub">Hub</option>
+                        <option value="Landing">Landing</option>
+                        <option value="Topical">Topical</option>
+                        <option value="Article">Article</option>
+                        <option value="Excluded">Excluded</option>
+                      </select>
+                      {page.isManualOverride && (
+                        <span className="manual-override-indicator" title="Manual Override Active (Preserved across resyncs)">
+                          🔧
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="col-priority">{page.priority !== undefined ? page.priority : 0}</td>
                   <td className="col-target">
