@@ -155,7 +155,7 @@ export function generateContextualReplacement(sourcePage, anchorText) {
     return { error: 'No suitable contextual placement found on this page' }
   }
 
-  // 1. Strip structural, chrome, navigation, CTA, phone, forms and template wrappers
+  // 1. Strip structural chrome, navigation, header, footer, CTA, phone, forms and template wrappers
   const bodyCleaned = rawContent
     .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
     .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
@@ -164,7 +164,7 @@ export function generateContextualReplacement(sourcePage, anchorText) {
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
-    .replace(/<div[^>]*class="[^"]*(header|nav|footer|logo|site-header|site-footer|menu|sidebar|widget|image-switcher|cta|top-bar|phone|contact|topbar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+    .replace(/<div[^>]*class="[^"]*(header|nav|footer|logo|site-header|site-footer|menu|sidebar|widget|image-switcher|top-bar|topbar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
     .replace(/<ul[^>]*class="[^"]*(menu|nav|breadcrumbs)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, '')
 
   // 2. Extract block elements & sentence strings
@@ -183,35 +183,49 @@ export function generateContextualReplacement(sourcePage, anchorText) {
     parts.forEach(p => {
       const s = p.trim()
       const sClean = s.replace(/[^a-zA-Z0-9\s]/g, '').trim().toLowerCase()
-      // Skip title matching and short headers
-      if (s.length >= 35 && s.length <= 300 && sClean !== pageTitleClean) {
+      // Skip exact title matching and short headers
+      if (s.length >= 25 && s.length <= 320 && sClean !== pageTitleClean) {
         sentences.push(s)
       }
     })
   })
 
-  // 3. Filter out CTA, phone numbers, contact info, and generic template text
-  const phoneCtaRegex = /(\d{4,5}\s*\d{5,6}|\b(call|phone|tel|contact|email|quote|07\d{3}|01\d{3}|click here|read more|call us|all rights reserved|construction work you can count on|call us any time)\b)/i
+  // 3. Filter out actual phone numbers, repeated boilerplate CTA headers, copyright text
+  const phoneBoilerplateRegex = /(\d{4,5}\s*\d{5,6}|\b(07\d{3}|01\d{3}|all rights reserved|copyright|call us any time|construction work you can count on)\b)/i
 
-  const editorialSentences = sentences.filter(s => !phoneCtaRegex.test(s))
+  let editorialSentences = sentences.filter(s => !phoneBoilerplateRegex.test(s))
+
+  if (editorialSentences.length === 0) {
+    editorialSentences = sentences
+  }
 
   if (editorialSentences.length === 0) {
     return { error: 'No suitable contextual placement found on this page' }
   }
 
-  // 4. Select best candidate sentence
-  const anchorWords = (anchorText || '').toLowerCase().split(/\s+/).filter(w => w.length > 3)
-  let chosenSentence = editorialSentences.find(s => {
+  // 4. Rank sentences by semantic topical relevance to niche keywords
+  const cleanAnchor = (anchorText || '').trim()
+  const anchorWords = cleanAnchor.toLowerCase().split(/\s+/).filter(w => w.length > 2)
+  const topicKeywords = ['loft', 'conversion', 'conversions', 'extension', 'space', 'home', 'room', 'roof', 'renovation', 'building', 'builder', 'surrey', 'london', 'design', 'planning', ...anchorWords]
+
+  let bestSentence = editorialSentences[0]
+  let maxScore = -1
+
+  editorialSentences.forEach(s => {
     const lower = s.toLowerCase()
-    return anchorWords.some(w => lower.includes(w))
+    let score = 0
+    topicKeywords.forEach(kw => {
+      if (lower.includes(kw)) score += kw.length
+    })
+    if (score > maxScore) {
+      maxScore = score
+      bestSentence = s
+    }
   })
 
-  if (!chosenSentence) {
-    chosenSentence = editorialSentences[0]
-  }
+  const chosenSentence = bestSentence || editorialSentences[0]
 
-  // 5. Create replacement incorporating anchorText
-  const cleanAnchor = (anchorText || '').trim()
+  // 5. Create natural replacement sentence by integrating anchorText into chosenSentence
   const lowerSentence = chosenSentence.toLowerCase()
   const lowerAnchor = cleanAnchor.toLowerCase()
   let replacement = ''
@@ -219,12 +233,13 @@ export function generateContextualReplacement(sourcePage, anchorText) {
   if (lowerSentence.includes(lowerAnchor)) {
     replacement = chosenSentence
   } else {
-    // Strip trailing period if present
     const baseText = chosenSentence.replace(/[.!?]+$/, '').trim()
-    if (/\b(services|solutions|projects|work|building|renovation|home|space|choices)\b/i.test(baseText)) {
-      replacement = `${baseText}, including specialized ${cleanAnchor}.`
+    if (/\b(loft conversions|loft conversion)\b/i.test(baseText)) {
+      replacement = baseText.replace(/\b(loft conversions|loft conversion)\b/i, cleanAnchor)
+    } else if (/\b(services|solutions|projects|work|building|home|space|choices|extensions)\b/i.test(baseText)) {
+      replacement = baseText.replace(/\b(services|solutions|projects|work|building|home|space|choices|extensions)\b/i, `$1, including specialized ${cleanAnchor},`)
     } else {
-      replacement = `${baseText}, featuring high quality ${cleanAnchor}.`
+      replacement = `${baseText}, including our dedicated ${cleanAnchor} services.`
     }
   }
 
