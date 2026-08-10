@@ -51,7 +51,18 @@ export default function WebsitesDashboard() {
     return () => { isMounted = false }
   }, [])
 
-  const [managedSite, setManagedSiteState] = useState(null)
+  const [managedSite, setManagedSiteState] = useState(() => {
+    try {
+      const savedObj = localStorage.getItem('tse_managed_site_object_v1')
+      if (savedObj) {
+        const parsed = JSON.parse(savedObj)
+        if (parsed && typeof parsed === 'object' && parsed.id !== undefined) {
+          return parsed
+        }
+      }
+    } catch (e) {}
+    return null
+  })
 
   const setManagedSite = (site) => {
     setManagedSiteState(site)
