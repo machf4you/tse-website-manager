@@ -343,18 +343,24 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                                 </td>
                                 <td className="col-sentence">
                                   {aiSentences[rec.id] ? (
-                                    <div className="il-gen-block">
-                                      <div className="il-gen-item">
-                                        <span className="il-gen-heading">CURRENT SOURCE TEXT:</span>
-                                        <div className="il-gen-source">"{aiSentences[rec.id].currentSourceText}"</div>
+                                    aiSentences[rec.id].error ? (
+                                      <div className="il-gen-error-banner">
+                                        ⚠️ {aiSentences[rec.id].error}
                                       </div>
-                                      <div className="il-gen-item">
-                                        <span className="il-gen-heading il-gen-heading-replacement">SUGGESTED REPLACEMENT:</span>
-                                        <div className="il-gen-replacement">
-                                          "{renderHighlightedText(aiSentences[rec.id].suggestedReplacement, rec.anchorText)}"
+                                    ) : (
+                                      <div className="il-gen-block">
+                                        <div className="il-gen-item">
+                                          <span className="il-gen-heading">CURRENT SOURCE TEXT:</span>
+                                          <div className="il-gen-source">"{aiSentences[rec.id].currentSourceText}"</div>
+                                        </div>
+                                        <div className="il-gen-item">
+                                          <span className="il-gen-heading il-gen-heading-replacement">SUGGESTED REPLACEMENT:</span>
+                                          <div className="il-gen-replacement">
+                                            "{renderHighlightedText(aiSentences[rec.id].suggestedReplacement, rec.anchorText)}"
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
+                                    )
                                   ) : (
                                     <span className="il-gen-placeholder">
                                       Click ✨ Generate to analyze source page content and preview suggested replacement.
