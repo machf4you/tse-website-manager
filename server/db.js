@@ -4,7 +4,11 @@ import { fileURLToPath } from 'url'
 import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const dbPath = path.join(__dirname, 'website_manager.db')
+const dbDir = process.env.PERSISTENT_STORAGE_DIR || __dirname
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true })
+}
+const dbPath = path.join(dbDir, 'website_manager.db')
 
 const db = new Database(dbPath)
 
