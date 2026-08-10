@@ -243,9 +243,50 @@ export default function PageManagementPage({
     return !p.isExcluded && p.type !== 'Excluded'
   })
 
-  // Sort filtered pages: Configured pages list first, ordered by priority (1, 2, 3...)
+  // Sort filtered pages
   const sortedPages = [...filteredPages].sort((a, b) => {
-    // 1. Primary ordering: Configured pages list first before unconfigured pages
+    if (sortColumn === 'type') {
+      const valA = (a.type || a.seoPageType || '').toLowerCase()
+      const valB = (b.type || b.seoPageType || '').toLowerCase()
+      if (valA !== valB) {
+        return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+      }
+      const titleA = (a.title || '').toLowerCase()
+      const titleB = (b.title || '').toLowerCase()
+      return titleA.localeCompare(titleB)
+    }
+
+    if (sortColumn === 'page') {
+      const valA = (a.title || '').toLowerCase()
+      const valB = (b.title || '').toLowerCase()
+      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    }
+
+    if (sortColumn === 'target') {
+      const valA = (a.target || a.targetPhrase || '').toLowerCase()
+      const valB = (b.target || b.targetPhrase || '').toLowerCase()
+      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    }
+
+    if (sortColumn === 'lastAudit') {
+      const valA = (a.lastAuditDate || 'Never').toLowerCase()
+      const valB = (b.lastAuditDate || 'Never').toLowerCase()
+      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    }
+
+    if (sortColumn === 'auditPage') {
+      const valA = (a.isAudited ? 'Audited' : (a.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
+      const valB = (b.isAudited ? 'Audited' : (b.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
+      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    }
+
+    if (sortColumn === 'actions') {
+      const valA = String(a.id || '').toLowerCase()
+      const valB = String(b.id || '').toLowerCase()
+      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    }
+
+    // Default sorting (sortColumn === 'priority')
     const isConfigA = Boolean(a.isConfigured && !a.isExcluded && a.type !== 'Excluded')
     const isConfigB = Boolean(b.isConfigured && !b.isExcluded && b.type !== 'Excluded')
 
@@ -253,44 +294,14 @@ export default function PageManagementPage({
       return isConfigA ? -1 : 1
     }
 
-    // 2. Priority order for configured pages (Priority 1 -> Priority 2 -> Priority 3...)
-    if (sortColumn === 'priority') {
-      const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
-      const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
-      if (pA !== pB) {
-        return sortDirection === 'asc' ? pA - pB : pB - pA
-      }
-      const tA = (a.title || '').toLowerCase()
-      const tB = (b.title || '').toLowerCase()
-      return tA.localeCompare(tB)
+    const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
+    const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
+    if (pA !== pB) {
+      return sortDirection === 'asc' ? pA - pB : pB - pA
     }
-
-    let valA = ''
-    let valB = ''
-
-    if (sortColumn === 'page') {
-      valA = (a.title || '').toLowerCase()
-      valB = (b.title || '').toLowerCase()
-    } else if (sortColumn === 'type') {
-      valA = (a.type || '').toLowerCase()
-      valB = (b.type || '').toLowerCase()
-    } else if (sortColumn === 'target') {
-      valA = (a.target || a.targetPhrase || '').toLowerCase()
-      valB = (b.target || b.targetPhrase || '').toLowerCase()
-    } else if (sortColumn === 'lastAudit') {
-      valA = (a.lastAuditDate || 'Never').toLowerCase()
-      valB = (b.lastAuditDate || 'Never').toLowerCase()
-    } else if (sortColumn === 'auditPage') {
-      valA = (a.isAudited ? 'Audited' : (a.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
-      valB = (b.isAudited ? 'Audited' : (b.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
-    } else if (sortColumn === 'actions') {
-      valA = String(a.id || '').toLowerCase()
-      valB = String(b.id || '').toLowerCase()
-    }
-
-    if (valA < valB) return sortDirection === 'asc' ? -1 : 1
-    if (valA > valB) return sortDirection === 'asc' ? 1 : -1
-    return 0
+    const tA = (a.title || '').toLowerCase()
+    const tB = (b.title || '').toLowerCase()
+    return tA.localeCompare(tB)
   })
 
   // Calculate filter tab counts (All = Excluded + Configured + Action Required)
