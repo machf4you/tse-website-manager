@@ -32,13 +32,20 @@ export default function W4FixIssueDialog({
   const [syncCompleted, setSyncCompleted] = useState(false)
   const [auditCompleted, setAuditCompleted] = useState(false)
 
+  // Reset workflow state ONLY when opening dialog
+  useEffect(() => {
+    if (isOpen) {
+      setIsSaving(false)
+      setIsSavedReady(false)
+      setSyncStarted(false)
+      setSyncCompleted(false)
+      setAuditCompleted(false)
+    }
+  }, [isOpen])
+
+  // Populate initial field values when dialog opens
   useEffect(() => {
     if (!isOpen || !page) return
-    setIsSaving(false)
-    setIsSavedReady(false)
-    setSyncStarted(false)
-    setSyncCompleted(false)
-    setAuditCompleted(false)
 
     // Extract values directly from audit table elements if present
     const metaDescFromAudit = auditElements?.find(el => (el.id === 'meta_description' || el.name === 'Meta Description'))?.currentValue
@@ -67,7 +74,7 @@ export default function W4FixIssueDialog({
 
     setH1Val(initH)
     setInitialH1(initH)
-  }, [isOpen, page, auditElements, liveAuditData])
+  }, [isOpen, page?.url, page?.id])
 
   // Track global isSyncing prop completion
   useEffect(() => {
