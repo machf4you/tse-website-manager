@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
-import { savePageAuditApi, getPageAuditsApi } from '../services/websiteManagerApi'
-import { getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
+import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi } from '../services/websiteManagerApi'
+import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import './PageAuditResultsPage.css'
 
@@ -68,6 +68,7 @@ export default function PageAuditResultsPage({
   const [isLoadingAudit, setIsLoadingAudit] = useState(false)
   const [auditError, setAuditError] = useState(null)
   const [activeFixIssue, setActiveFixIssue] = useState(null)
+  const [localOverrides, setLocalOverrides] = useState({})
 
   // Active page selection precedence:
   // 1. Configured page (passed via the page prop)
@@ -76,7 +77,7 @@ export default function PageAuditResultsPage({
   // 4. Fallback
   const matchedFromList = pagesList.find(p => p.url === selectedUrl)
 
-  const currentPage = (() => {
+  const rawCurrentPage = (() => {
     if (page && (page.url === selectedUrl || !selectedUrl) && (page.isConfigured || page.targetPhrase)) {
       return page
     }
@@ -88,6 +89,79 @@ export default function PageAuditResultsPage({
     }
     return page || pagesList[0] || {}
   })()
+
+  const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
+  const currentPage = {
+    ...rawCurrentPage,
+    ...overrideObj,
+    title: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.title,
+    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.title,
+    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.title,
+    metaDescription: overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : rawCurrentPage.metaDescription,
+    h1: overrideObj.h1 !== undefined ? overrideObj.h1 : rawCurrentPage.h1,
+  }
+
+  const handleSaveFix = async ({ page: targetPage, seoType, fieldValue }) => {
+    if (!targetPage) return
+    const siteIdKey = getSiteConfigsStorageKey(site)
+    const pageKey = targetPage.id || targetPage.url
+
+    let savedConfigs = {}
+    try {
+      savedConfigs = JSON.parse(localStorage.getItem(siteIdKey) || '{}')
+    } catch (e) {
+      console.error('Failed to parse saved configs:', e)
+    }
+
+    const existingConfig = savedConfigs[pageKey] || (targetPage.url ? savedConfigs[targetPage.url] : {}) || {}
+
+    const updatedConfig = {
+      ...existingConfig,
+      pageId: pageKey,
+      url: targetPage.url,
+      isConfigured: true,
+      isManualOverride: true,
+    }
+
+    if (seoType === 'meta_title') {
+      updatedConfig.proposedTitle = fieldValue
+      updatedConfig.metaTitle = fieldValue
+    } else if (seoType === 'meta_desc') {
+      updatedConfig.metaDescription = fieldValue
+    } else if (seoType === 'h1') {
+      updatedConfig.h1 = fieldValue
+    }
+
+    savedConfigs[pageKey] = updatedConfig
+    if (targetPage.url && targetPage.url !== pageKey) {
+      savedConfigs[targetPage.url] = updatedConfig
+    }
+    localStorage.setItem(siteIdKey, JSON.stringify(savedConfigs))
+
+    if (site?.id) {
+      try {
+        await savePageConfigsApi(site.id, savedConfigs)
+      } catch (e) {
+        console.error('Failed to save page configs to API:', e)
+      }
+    }
+
+    try {
+      const auditStorageKey = getSiteAuditsStorageKey(site)
+      const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+      delete storedAudits[pageKey]
+      if (targetPage.url) delete storedAudits[targetPage.url]
+      localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
+    } catch (e) {
+      console.error('Failed to clear cached audit:', e)
+    }
+
+    setLocalOverrides(prev => ({
+      ...prev,
+      [pageKey]: updatedConfig,
+      [targetPage.url]: updatedConfig,
+    }))
+  }
 
   const targetPhrase = currentPage.target || currentPage.targetPhrase || ''
   const pageType = currentPage.type || currentPage.seoPageType || 'Landing Page'
@@ -764,6 +838,7 @@ export default function PageAuditResultsPage({
           page={currentPage}
           site={site}
           onClose={() => setActiveFixIssue(null)}
+          onSaveFix={handleSaveFix}
           onSyncWebsiteData={onSyncFromWordPress}
           onRerunAudit={() => setIsRerunRequested(true)}
         />

@@ -7,6 +7,7 @@ export default function W4FixIssueDialog({
   page,
   site,
   onClose,
+  onSaveFix,
   onSyncWebsiteData,
   isSyncing = false,
   onRerunAudit,
@@ -105,12 +106,17 @@ export default function W4FixIssueDialog({
     lengthBadgeText = `${charCount} characters`
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true)
-    setTimeout(() => {
-      setIsSaving(false)
-      setStep('saved_confirmation')
-    }, 300)
+    if (onSaveFix) {
+      try {
+        await onSaveFix({ page, seoType, fieldValue })
+      } catch (err) {
+        console.error('Failed to save fix:', err)
+      }
+    }
+    setIsSaving(false)
+    setStep('saved_confirmation')
   }
 
   const handleSyncClick = async () => {
