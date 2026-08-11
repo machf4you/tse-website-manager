@@ -151,14 +151,31 @@ export default function W4FixIssueDialog({
       const targetWebsiteUrl = site?.url || page?.websiteUrl || ''
       const targetUser = site?.wpUser || site?.connectedUser || ''
       const targetPass = site?.wpPass || ''
-      const targetPageId = page?.id || page?.ID
+
+      // Extract numeric page ID (reject URL strings)
+      let targetPageId = null
+      if (typeof page?.id === 'number' && page.id > 0) {
+        targetPageId = page.id
+      } else if (typeof page?.ID === 'number' && page.ID > 0) {
+        targetPageId = page.ID
+      } else if (typeof page?.page_id === 'number' && page.page_id > 0) {
+        targetPageId = page.page_id
+      } else if (typeof page?.wp_id === 'number' && page.wp_id > 0) {
+        targetPageId = page.wp_id
+      } else if (typeof page?.id === 'string' && /^\d+$/.test(page.id.trim())) {
+        targetPageId = parseInt(page.id.trim(), 10)
+      } else if (typeof page?.ID === 'string' && /^\d+$/.test(page.ID.trim())) {
+        targetPageId = parseInt(page.ID.trim(), 10)
+      }
+
+      const pType = page?.post_type || page?.type || 'pages'
 
       const res = await updateWordPressSEOFields({
         websiteUrl: targetWebsiteUrl,
         username: targetUser,
         applicationPassword: targetPass,
         pageId: targetPageId,
-        postType: page?.post_type || page?.type || 'pages',
+        postType: pType,
         metaTitle: metaTitleVal,
         metaDescription: metaDescVal,
       })
@@ -166,7 +183,7 @@ export default function W4FixIssueDialog({
       if (res && res.success) {
         setWpPushedReady(true)
       } else {
-        const errorDetail = res?.responseData?.message || res?.error || (res?.status === 401 ? 'Authentication failed (HTTP 401). Please verify Application Password on W1 Site Tile.' : 'WordPress REST update failed.')
+        const errorDetail = res?.message || res?.responseData?.message || res?.error || 'WordPress REST update failed.'
         setWpPushError(errorDetail)
       }
     } catch (err) {

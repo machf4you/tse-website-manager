@@ -81,8 +81,24 @@ export async function updateWordPressSEOFields({
   metaTitle,
   metaDescription,
 }) {
-  if (!websiteUrl || !pageId) {
-    return { success: false, error: 'MISSING_PARAMS', message: 'Website URL and Page ID are required.' }
+  if (!websiteUrl) {
+    return { success: false, error: 'MISSING_PARAMS', message: 'Website URL is required.' }
+  }
+
+  // Sanitize and validate numeric pageId (reject URL strings)
+  let numericPageId = null
+  if (typeof pageId === 'number' && Number.isInteger(pageId) && pageId > 0) {
+    numericPageId = pageId
+  } else if (typeof pageId === 'string' && /^\d+$/.test(pageId.trim())) {
+    numericPageId = parseInt(pageId.trim(), 10)
+  }
+
+  if (!numericPageId) {
+    return {
+      success: false,
+      error: 'INVALID_PAGE_ID',
+      message: `Invalid Page ID "${pageId}". A numeric WordPress Post/Page ID is required for write-back. Please synchronise site package data.`
+    }
   }
 
   let base = websiteUrl.trim().replace(/\/+$/, '')
@@ -90,8 +106,10 @@ export async function updateWordPressSEOFields({
     base = 'https://' + base
   }
 
-  const endpointType = (postType === 'post' || postType === 'posts') ? 'posts' : 'pages'
-  const endpoint = `${base}/wp-json/wp/v2/${endpointType}/${pageId}`
+  // Post type mapping: Articles -> posts, Landing/Hub/Topical/Pages -> pages
+  const pTypeLower = String(postType || '').toLowerCase().trim()
+  const endpointType = (pTypeLower === 'post' || pTypeLower === 'posts' || pTypeLower === 'article') ? 'posts' : 'pages'
+  const endpoint = `${base}/wp-json/wp/v2/${endpointType}/${numericPageId}`
 
   const cleanUser = username ? username.trim() : ''
   const cleanPass = applicationPassword ? applicationPassword.trim().replace(/\s/g, '') : ''
@@ -106,12 +124,18 @@ export async function updateWordPressSEOFields({
   }
 
   console.log('=== [WP_WRITEBACK_LOG] Initiating WordPress SEO Update ===')
-  console.log('  - Page ID:', pageId)
+  console.log('  - Page ID:', numericPageId)
   console.log('  - Post Type:', endpointType)
   console.log('  - Endpoint Used:', endpoint)
   console.log('  - Fields Being Updated:', fieldsToUpdate)
 
-  // Construct meta payload for common WordPress SEO plugins (Yoast, RankMath, AIOSEO)
+  // Construct request payload with root title + meta plugin compatibility fields
+  const requestBody = {}
+
+  if (metaTitle !== undefined && metaTitle !== null && String(metaTitle).trim()) {
+    requestBody.title = String(metaTitle).trim()
+  }
+
   const metaPayload = {}
   if (metaTitle) {
     metaPayload._yoast_wpseo_title = metaTitle
@@ -124,6 +148,10 @@ export async function updateWordPressSEOFields({
     metaPayload._aioseop_description = metaDescription
   }
 
+  if (Object.keys(metaPayload).length > 0) {
+    requestBody.meta = metaPayload
+  }
+
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -132,9 +160,7 @@ export async function updateWordPressSEOFields({
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({
-        meta: metaPayload,
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     const responseData = await res.json().catch(() => ({}))
@@ -146,7 +172,7 @@ export async function updateWordPressSEOFields({
       console.log('  - RESULT: SUCCESS (Updated via WP REST API)')
       return {
         success: true,
-        pageId,
+        pageId: numericPageId,
         endpoint,
         status: res.status,
         fieldsUpdated: fieldsToUpdate,
@@ -166,8 +192,9 @@ export async function updateWordPressSEOFields({
         'Accept': 'application/json',
       },
       body: JSON.stringify({
-        page_id: pageId,
+        page_id: numericPageId,
         post_type: endpointType,
+        title: metaTitle,
         meta_title: metaTitle,
         meta_description: metaDescription,
       }),
@@ -181,7 +208,7 @@ export async function updateWordPressSEOFields({
       console.log('  - RESULT: SUCCESS (Updated via TSE Exporter route)')
       return {
         success: true,
-        pageId,
+        pageId: numericPageId,
         endpoint: customEndpoint,
         status: customRes.status,
         fieldsUpdated: fieldsToUpdate,
@@ -192,7 +219,7 @@ export async function updateWordPressSEOFields({
     console.log('  - RESULT: FAILURE')
     return {
       success: false,
-      pageId,
+      pageId: numericPageId,
       endpoint,
       status: res.status,
       error: responseData.code || `HTTP_${res.status}`,
