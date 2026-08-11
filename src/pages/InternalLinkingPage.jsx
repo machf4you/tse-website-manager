@@ -150,15 +150,25 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
   }, [pagesWithData])
 
   const typeCounts = useMemo(() => {
-    const counts = { hub: 0, landing: 0, topical: 0, article: 0 }
+    const counts = { total: 0, hub: 0, landing: 0, topical: 0, article: 0, excluded: 0 }
     sections.forEach(sec => {
       if (sec.key === 'hub') counts.hub = sec.pages.length
       if (sec.key === 'landing') counts.landing = sec.pages.length
       if (sec.key === 'topical') counts.topical = sec.pages.length
       if (sec.key === 'article') counts.article = sec.pages.length
     })
+
+    if (Array.isArray(pagesList)) {
+      counts.excluded = pagesList.filter(p => {
+        const t = (p.type || p.seoPageType || '').trim().toLowerCase()
+        return p.isExcluded || t === 'excluded' || t === 'unclassified / excluded'
+      }).length
+      counts.total = pagesList.length
+    } else {
+      counts.total = counts.hub + counts.landing + counts.topical + counts.article
+    }
     return counts
-  }, [sections])
+  }, [sections, pagesList])
 
   const toggleExpand = (url) => {
     setExpandedUrl(prev => (prev === url ? null : url))
@@ -382,6 +392,11 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
 
       {/* Page Type Summary Bar */}
       <div className="il-type-summary-bar">
+        <div className="il-summary-chip total">
+          <span className="il-summary-dot" />
+          <span className="il-summary-label">Total Pages:</span>
+          <span className="il-summary-count">{typeCounts.total}</span>
+        </div>
         <div className="il-summary-chip hub">
           <span className="il-summary-dot" />
           <span className="il-summary-label">Hub Pages:</span>
@@ -401,6 +416,11 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
           <span className="il-summary-dot" />
           <span className="il-summary-label">Article Pages:</span>
           <span className="il-summary-count">{typeCounts.article}</span>
+        </div>
+        <div className="il-summary-chip excluded">
+          <span className="il-summary-dot" />
+          <span className="il-summary-label">Excluded Pages:</span>
+          <span className="il-summary-count">{typeCounts.excluded}</span>
         </div>
       </div>
 

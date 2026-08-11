@@ -804,6 +804,17 @@
   color: #e2e8f0;
 }
 
+.il-summary-chip.total {
+  border-color: rgba(226, 232, 240, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+.il-summary-chip.total .il-summary-dot {
+  background: #e2e8f0;
+}
+.il-summary-chip.total .il-summary-count {
+  color: #f8fafc;
+}
+
 .il-summary-chip.hub {
   border-color: rgba(16, 185, 129, 0.4);
 }
@@ -842,6 +853,16 @@
 }
 .il-summary-chip.article .il-summary-count {
   color: #c084fc;
+}
+
+.il-summary-chip.excluded {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.il-summary-chip.excluded .il-summary-dot {
+  background: #ef4444;
+}
+.il-summary-chip.excluded .il-summary-count {
+  color: #f87171;
 }
 
 .il-summary-dot {
