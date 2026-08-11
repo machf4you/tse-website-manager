@@ -60,6 +60,8 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
     else if (pageType.includes('Excluded')) normalizedType = 'Excluded'
 
     const initialAutoType = page.autoType || page.type || 'Unclassified'
+    const initialType = page.type || page.seoPageType || ''
+    const isTypeChanged = Boolean(initialType && normalizedType !== initialType)
     const targetPhraseStr = targetPhrase.trim()
     const isConfigured = Boolean(targetPhraseStr.length > 0)
 
@@ -67,7 +69,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
       pageId: page.id || page.url,
       url: page.url,
       proposedTitle: proposedTitle.trim(),
-      targetPhrase: targetPhrase.trim(),
+      targetPhrase: targetPhraseStr,
       type: normalizedType,
       seoPageType: normalizedType,
       autoType: initialAutoType,
