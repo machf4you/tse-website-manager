@@ -776,3 +776,84 @@
   background: #475569;
   color: #f8fafc;
 }
+
+/* Page Type Summary Bar for W5 */
+.il-type-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.il-summary-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.il-summary-chip.hub {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+.il-summary-chip.hub .il-summary-dot {
+  background: #10b981;
+}
+.il-summary-chip.hub .il-summary-count {
+  color: #10b981;
+}
+
+.il-summary-chip.landing {
+  border-color: rgba(96, 165, 250, 0.4);
+}
+.il-summary-chip.landing .il-summary-dot {
+  background: #60a5fa;
+}
+.il-summary-chip.landing .il-summary-count {
+  color: #60a5fa;
+}
+
+.il-summary-chip.topical {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+.il-summary-chip.topical .il-summary-dot {
+  background: #f59e0b;
+}
+.il-summary-chip.topical .il-summary-count {
+  color: #f59e0b;
+}
+
+.il-summary-chip.article {
+  border-color: rgba(192, 132, 252, 0.4);
+}
+.il-summary-chip.article .il-summary-dot {
+  background: #c084fc;
+}
+.il-summary-chip.article .il-summary-count {
+  color: #c084fc;
+}
+
+.il-summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.il-summary-label {
+  color: #94a3b8;
+}
+
+.il-summary-count {
+  font-weight: 800;
+}

@@ -149,6 +149,17 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     ]
   }, [pagesWithData])
 
+  const typeCounts = useMemo(() => {
+    const counts = { hub: 0, landing: 0, topical: 0, article: 0 }
+    sections.forEach(sec => {
+      if (sec.key === 'hub') counts.hub = sec.pages.length
+      if (sec.key === 'landing') counts.landing = sec.pages.length
+      if (sec.key === 'topical') counts.topical = sec.pages.length
+      if (sec.key === 'article') counts.article = sec.pages.length
+    })
+    return counts
+  }, [sections])
+
   const toggleExpand = (url) => {
     setExpandedUrl(prev => (prev === url ? null : url))
   }
@@ -367,6 +378,30 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
         <button type="button" className="il-tab-btn" onClick={() => onNavigateTab?.('w6-settings')}>
           W6 | Website Settings
         </button>
+      </div>
+
+      {/* Page Type Summary Bar */}
+      <div className="il-type-summary-bar">
+        <div className="il-summary-chip hub">
+          <span className="il-summary-dot" />
+          <span className="il-summary-label">Hub Pages:</span>
+          <span className="il-summary-count">{typeCounts.hub}</span>
+        </div>
+        <div className="il-summary-chip landing">
+          <span className="il-summary-dot" />
+          <span className="il-summary-label">Landing Pages:</span>
+          <span className="il-summary-count">{typeCounts.landing}</span>
+        </div>
+        <div className="il-summary-chip topical">
+          <span className="il-summary-dot" />
+          <span className="il-summary-label">Topical Pages:</span>
+          <span className="il-summary-count">{typeCounts.topical}</span>
+        </div>
+        <div className="il-summary-chip article">
+          <span className="il-summary-dot" />
+          <span className="il-summary-label">Article Pages:</span>
+          <span className="il-summary-count">{typeCounts.article}</span>
+        </div>
       </div>
 
       {/* Grouped Page Sections */}
