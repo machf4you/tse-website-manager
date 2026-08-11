@@ -420,6 +420,8 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         page={selectedPageForAudit || exportedPages[0]}
         pagesList={exportedPages}
         onBack={() => setActiveTab('w3')}
+        onSyncFromWordPress={handleSyncFromWordPress}
+        isSyncing={isSyncing}
         onNavigateToInternalLinking={(url) => {
           if (url) {
             const matched = exportedPages.find(p => p.url === url)

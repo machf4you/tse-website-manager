@@ -30,7 +30,15 @@ function getCleanPathname(fullUrl, siteBaseUrl) {
   }
 }
 
-export default function PageAuditResultsPage({ site, page, pagesList = [], onBack, onNavigateToInternalLinking }) {
+export default function PageAuditResultsPage({
+  site,
+  page,
+  pagesList = [],
+  onBack,
+  onNavigateToInternalLinking,
+  onSyncFromWordPress,
+  isSyncing = false,
+}) {
   const selectedUrlStorageKey = site?.id ? `tse_audit_selected_url_${site.id}` : 'tse_audit_selected_url_default'
 
   // Allow selecting any page from the dropdown, with localStorage persistence
@@ -499,16 +507,49 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
           >
             ← Back to Website Management
           </button>
-          <button
-            type="button"
-            className="w3-btn-emerald"
-            onClick={() => setIsRerunRequested(true)}
-            disabled={isLoadingAudit}
-            id="btn-rerun-live-audit"
-            title="Re-run live audit for this page"
-          >
-            {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="w3-btn-secondary"
+              onClick={onSyncFromWordPress}
+              disabled={isSyncing}
+              id="btn-w4-sync-wp"
+              title="Pull the latest changes from WordPress"
+            >
+              {isSyncing ? 'Syncing...' : 'Sync Website Data'}
+            </button>
+            <button
+              type="button"
+              className="w3-btn-emerald"
+              onClick={() => setIsRerunRequested(true)}
+              disabled={isLoadingAudit}
+              id="btn-rerun-live-audit"
+              title="Re-run live audit for this page"
+            >
+              {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
+            </button>
+          </div>
+        </div>
+
+        {/* Workflow Guidance Card */}
+        <div className="w4-workflow-guidance-card">
+          <h3 className="w4-guidance-title">WordPress Changes Detected?</h3>
+          <div className="w4-guidance-steps">
+            <div className="w4-guidance-step">
+              <span className="w4-step-num">1</span>
+              <div className="w4-step-content">
+                <strong>Sync Website Data</strong>
+                <p>Pull the latest changes from WordPress.</p>
+              </div>
+            </div>
+            <div className="w4-guidance-step">
+              <span className="w4-step-num">2</span>
+              <div className="w4-step-content">
+                <strong>Re-run Audit</strong>
+                <p>Analyse the updated page data.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Audit Stale Banner */}

@@ -434,3 +434,72 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(16, 185, 129, 0.3);
 }
+
+/* Workflow Guidance Block for W4 */
+.w4-workflow-guidance-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.w4-guidance-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.w4-guidance-steps {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.w4-guidance-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.w4-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.w4-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.w4-step-content strong {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+}
+
+.w4-step-content p {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 0;
+}
