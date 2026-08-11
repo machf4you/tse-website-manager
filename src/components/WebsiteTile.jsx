@@ -1,4 +1,5 @@
 import { extractPagesFromPackage } from '../utils/packageExtractor'
+import { getSiteConfigsStorageKey, getSiteAuditsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
 import './WebsiteTile.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -41,7 +42,7 @@ const INDICATOR = {
 
 export default function WebsiteTile({ site, onManage, onEdit }) {
   // 1. Calculate live pages & configured metrics
-  const packageStorageKey = site.id ? `tse_wp_package_${site.id}` : 'tse_wp_package_default'
+  const packageStorageKey = getSitePackageStorageKey(site)
   let pkg = site.storedPackageData
   if (!pkg) {
     try {
@@ -72,7 +73,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   )
   const ind = isConnected ? INDICATOR.connected : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
 
-  const siteIdKey = site.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+  const siteIdKey = getSiteConfigsStorageKey(site)
   let savedConfigs = {}
   try {
     const saved = localStorage.getItem(siteIdKey)
@@ -94,7 +95,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   let configuredVariant = totalPages > 0 ? (configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')) : 'grey'
 
   // 2. Calculate live audited pages count (e.g. 1 of 60)
-  const auditStorageKey = site.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
+  const auditStorageKey = getSiteAuditsStorageKey(site)
   let storedAudits = {}
   try {
     const savedAudits = localStorage.getItem(auditStorageKey)

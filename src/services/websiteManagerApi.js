@@ -3,6 +3,8 @@
  * Replaces pure localStorage operations with persistent REST API calls to Website Manager server.
  */
 
+import { normalizeSiteId } from '../utils/siteKeyHelper'
+
 const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBSITE_MANAGER_API_URL)
   ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
   : 'https://api-website-manager.thesearchequation.co.uk/api'
@@ -125,7 +127,8 @@ export async function saveWpPackageApi(siteId, packageData) {
 }
 
 // 3. PAGE CONFIGURATIONS
-export async function getPageConfigsApi(siteId) {
+export async function getPageConfigsApi(rawSiteId) {
+  const siteId = normalizeSiteId(rawSiteId)
   try {
     return await fetchJson(`${API_BASE_URL}/websites/${siteId}/page-configs`)
   } catch (e) {
@@ -134,7 +137,8 @@ export async function getPageConfigsApi(siteId) {
   }
 }
 
-export async function savePageConfigsApi(siteId, configsMap) {
+export async function savePageConfigsApi(rawSiteId, configsMap) {
+  const siteId = normalizeSiteId(rawSiteId)
   try {
     await fetchJson(`${API_BASE_URL}/websites/${siteId}/page-configs`, {
       method: 'POST',
@@ -147,7 +151,8 @@ export async function savePageConfigsApi(siteId, configsMap) {
 }
 
 // 4. PAGE AUDITS
-export async function getPageAuditsApi(siteId) {
+export async function getPageAuditsApi(rawSiteId) {
+  const siteId = normalizeSiteId(rawSiteId)
   try {
     return await fetchJson(`${API_BASE_URL}/websites/${siteId}/audits`)
   } catch (e) {
@@ -156,7 +161,8 @@ export async function getPageAuditsApi(siteId) {
   }
 }
 
-export async function savePageAuditApi(siteId, pageKey, auditRecord) {
+export async function savePageAuditApi(rawSiteId, pageKey, auditRecord) {
+  const siteId = normalizeSiteId(rawSiteId)
   try {
     await fetchJson(`${API_BASE_URL}/websites/${siteId}/audits/${encodeURIComponent(pageKey)}`, {
       method: 'POST',
@@ -171,7 +177,8 @@ export async function savePageAuditApi(siteId, pageKey, auditRecord) {
   } catch (err) {}
 }
 
-export async function savePageAuditsBatchApi(siteId, auditsMap) {
+export async function savePageAuditsBatchApi(rawSiteId, auditsMap) {
+  const siteId = normalizeSiteId(rawSiteId)
   try {
     await fetchJson(`${API_BASE_URL}/websites/${siteId}/audits/batch`, {
       method: 'POST',

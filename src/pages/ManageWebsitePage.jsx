@@ -11,6 +11,7 @@ import {
   getPageConfigsApi,
   savePageConfigsApi
 } from '../services/websiteManagerApi'
+import { getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -186,12 +187,22 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   const _exportedPosts = extractPostsFromPackage(pkg)
 
   // Merge localStorage page configurations so targetPhrase, priority, and type are preserved globally
-  const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+  const siteIdKey = getSiteConfigsStorageKey(site)
   const savedConfigs = (() => {
     try {
       const saved = localStorage.getItem(siteIdKey)
       const localMap = saved ? JSON.parse(saved) : {}
-      return { ...localMap, ...(apiConfigs || {}) }
+      const apiMap = apiConfigs || {}
+
+      const merged = { ...apiMap }
+      Object.keys(localMap).forEach(key => {
+        const localItem = localMap[key]
+        const apiItem = merged[key]
+        if (localItem && (localItem.targetPhrase || localItem.isConfigured || !apiItem || !apiItem.targetPhrase)) {
+          merged[key] = { ...(apiItem || {}), ...localItem }
+        }
+      })
+      return merged
     } catch (e) {
       return apiConfigs || {}
     }
@@ -213,6 +224,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         type: override.type || page.type,
         seoPageType: override.type || page.type,
         priority: override.priority !== undefined ? override.priority : page.priority,
+        isManualOverride: override.isManualOverride !== undefined ? override.isManualOverride : page.isManualOverride,
         isConfigured,
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
       }

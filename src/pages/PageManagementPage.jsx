@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import ConfigurePageDialog from '../components/ConfigurePageDialog'
 import { getPageConfigsApi, savePageConfigsApi } from '../services/websiteManagerApi'
+import { getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import './PageManagementPage.css'
 
 export default function PageManagementPage({
@@ -20,7 +21,7 @@ export default function PageManagementPage({
 
   const [configurations, setConfigurations] = useState(() => {
     try {
-      const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+      const siteIdKey = getSiteConfigsStorageKey(site)
       const saved = localStorage.getItem(siteIdKey)
       if (saved) return JSON.parse(saved)
     } catch (e) {
@@ -34,7 +35,15 @@ export default function PageManagementPage({
     if (site?.id) {
       getPageConfigsApi(site.id).then(apiConfigs => {
         if (isMounted && apiConfigs && Object.keys(apiConfigs).length > 0) {
-          setConfigurations(prev => ({ ...prev, ...apiConfigs }))
+          setConfigurations(prev => {
+            const merged = { ...prev }
+            Object.keys(apiConfigs).forEach(k => {
+              if (!merged[k] || !merged[k].targetPhrase) {
+                merged[k] = apiConfigs[k]
+              }
+            })
+            return merged
+          })
         }
       }).catch(() => {})
     }
@@ -61,7 +70,7 @@ export default function PageManagementPage({
       savePageConfigsApi(site.id, updatedMap)
     }
     try {
-      const siteIdKey = site?.id ? `tse_page_configs_${site.id}` : 'tse_page_configs_default'
+      const siteIdKey = getSiteConfigsStorageKey(site)
       localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
     } catch (e) {
       console.error('Failed to save page configuration:', e)

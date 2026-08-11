@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { savePageAuditApi, getPageAuditsApi } from '../services/websiteManagerApi'
+import { getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
 import './PageAuditResultsPage.css'
 
 function getCleanPathname(fullUrl, siteBaseUrl) {
@@ -95,7 +96,7 @@ export default function PageAuditResultsPage({
   const cleanPath = getCleanPathname(fullUrl, site?.url)
 
   // Storage key for page audit persistence
-  const auditStorageKey = site?.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
+  const auditStorageKey = getSiteAuditsStorageKey(site)
   const [isRerunRequested, setIsRerunRequested] = useState(false)
   const [isCurrentPageStale, setIsCurrentPageStale] = useState(false)
   const [staleReasonText, setStaleReasonText] = useState(null)
@@ -170,12 +171,16 @@ export default function PageAuditResultsPage({
       if (!isRerunRequested) {
         try {
           const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-          let record = storedAudits[pageKey] || (currentPage.url ? storedAudits[currentPage.url] : null)
+          let record = storedAudits[pageKey] ||
+                       (currentPage.url ? storedAudits[currentPage.url] : null) ||
+                       (currentPage.id ? storedAudits[currentPage.id] : null)
 
           if (!record && site?.id) {
             try {
               const apiAudits = await getPageAuditsApi(site.id)
-              record = apiAudits[pageKey] || (currentPage.url ? apiAudits[currentPage.url] : null)
+              record = apiAudits[pageKey] ||
+                       (currentPage.url ? apiAudits[currentPage.url] : null) ||
+                       (currentPage.id ? apiAudits[currentPage.id] : null)
             } catch (err) {}
           }
 
