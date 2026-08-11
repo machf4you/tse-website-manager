@@ -410,6 +410,19 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                     <span className="il-meta-val">{pageTitle}</span>
                   </div>
                   <div className="il-meta-col">
+                    <span className="il-meta-label">TYPE & PRIORITY</span>
+                    <span className="il-meta-val" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className={`il-badge-type ${
+                        (page.seoPageType || page.type || '').toLowerCase().includes('hub') ? 'hub' :
+                        (page.seoPageType || page.type || '').toLowerCase().includes('landing') ? 'landing' :
+                        (page.seoPageType || page.type || '').toLowerCase().includes('topical') ? 'topical' :
+                        (page.seoPageType || page.type || '').toLowerCase().includes('article') ? 'article' :
+                        'default'
+                      }`}>{page.seoPageType || page.type || 'Landing Page'}</span>
+                      <span className="il-badge-priority">Prio {page.priority !== undefined ? page.priority : 0}</span>
+                    </span>
+                  </div>
+                  <div className="il-meta-col">
                     <span className="il-meta-label">TARGET PHRASE</span>
                     <span className="il-meta-val">{targetPhrase}</span>
                   </div>
@@ -418,17 +431,6 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                     <span className="il-meta-val il-links-val" style={{ color: sec.color }}>
                       {page.incomingCount} links {isExpanded ? '▲ Hide Details' : '▼ View Details'}
                     </span>
-                  </div>
-                  <div className="il-meta-col il-meta-col-right">
-                    {page.needsLinks ? (
-                      <button type="button" className="il-btn-add-links">
-                        Add Links
-                      </button>
-                    ) : (
-                      <span className="il-badge-no-action">
-                        No Action Required
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -441,18 +443,6 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                     <div className="il-detail-slug-row">
                       <span className="il-link-icon">&#x1F517;</span>
                       <h2 className="il-detail-slug">{page.slug}</h2>
-                    </div>
-                    <div className="il-detail-subtitle">{pageTitle}</div>
-                    <div className="il-detail-badges">
-                      <span className="il-badge-priority">Priority {page.priority !== undefined ? page.priority : 0}</span>
-                      <span className={`il-badge-type ${
-                        (page.seoPageType || page.type || '').toLowerCase().includes('hub') ? 'hub' :
-                        (page.seoPageType || page.type || '').toLowerCase().includes('landing') ? 'landing' :
-                        (page.seoPageType || page.type || '').toLowerCase().includes('topical') ? 'topical' :
-                        (page.seoPageType || page.type || '').toLowerCase().includes('article') ? 'article' :
-                        'default'
-                      }`}>{page.seoPageType || page.type || 'Landing Page'}</span>
-                      <span className="il-target-phrase-text">Target phrase: <strong>{targetPhrase}</strong></span>
                     </div>
                   </div>
 
@@ -469,8 +459,8 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                     <div className="il-stat-box">
                       <span className="il-stat-icon">&#x1F3AF;</span>
                       <div>
-                        <span className="il-stat-label">TARGET LINKS</span>
-                        <div className="il-stat-val">10 links</div>
+                        <span className="il-stat-label">RECOMMENDATIONS</span>
+                        <div className="il-stat-val">{page.recommended.length} suggested</div>
                       </div>
                     </div>
 
@@ -523,7 +513,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
 
                   {/* Recommended Links Section */}
                   <div className="il-section-block">
-                    <h3 className="il-section-title">Recommended Links (Target: 10)</h3>
+                    <h3 className="il-section-title">Recommended Links</h3>
                     {page.recommended.length === 0 ? (
                       <div className="il-empty-msg">All available source pages are already linking to this page.</div>
                     ) : (
