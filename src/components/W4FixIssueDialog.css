@@ -15,7 +15,7 @@
   border: 1px solid #334155;
   border-radius: 12px;
   width: 100%;
-  max-width: 1060px;
+  max-width: 1240px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
   overflow: hidden;
   display: flex;
@@ -70,9 +70,10 @@
 }
 
 .w4-panel-left {
-  flex: 1;
+  flex: 0.85;
+  max-width: 380px;
   background: #0b1329;
-  padding: 22px 24px;
+  padding: 24px;
   border-right: 1px solid #1e293b;
   display: flex;
   flex-direction: column;
@@ -80,9 +81,9 @@
 }
 
 .w4-panel-right {
-  flex: 1.2;
+  flex: 1.85;
   background: #0f172a;
-  padding: 22px 24px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
