@@ -26,7 +26,7 @@ export default function W4FixIssueDialog({
   const [initialDesc, setInitialDesc] = useState('')
   const [initialH1, setInitialH1] = useState('')
 
-  // Single modal workflow state transitions
+  // Workflow state transitions
   const [isSavedReady, setIsSavedReady] = useState(false)
   const [syncStarted, setSyncStarted] = useState(false)
   const [syncCompleted, setSyncCompleted] = useState(false)
@@ -182,7 +182,7 @@ export default function W4FixIssueDialog({
               <span className="w4-summary-icon">{isSavedReady ? '🟢' : (pendingFields.length > 0 ? '⚡' : 'ⓘ')}</span>
               <span className="w4-summary-text">
                 {isSavedReady
-                  ? 'Changes Saved & Ready (Proceed to Sync & Audit below)'
+                  ? '✓ Changes Saved — Proceed to Sync & Audit below'
                   : (pendingFields.length > 0
                     ? `Pending Changes (${pendingFields.length}): ${pendingFields.join(', ')}`
                     : 'Pending Changes: None (Edit fields below to stage optimizations)')}
@@ -306,54 +306,64 @@ export default function W4FixIssueDialog({
 
           </div>
 
-          {/* SINGLE VIEW WORKFLOW FOOTER */}
+          {/* WORKFLOW ACTIONS FOOTER */}
           <div className="w4-modal-workflow-footer">
-            <div className="w4-workflow-status-bar">
-              {auditCompleted ? (
-                <span className="w4-status-msg success">🎉 Audit Complete ✓ — All page optimisations verified!</span>
-              ) : syncCompleted ? (
-                <span className="w4-status-msg info">🟢 Sync Complete ✓ — Ready to re-run audit</span>
-              ) : isSavedReady ? (
-                <span className="w4-status-msg ready">🟢 Changes Saved & Ready — Ready to sync website data</span>
-              ) : (
-                <span className="w4-status-msg initial">ⓘ Stage changes above, then click Save & Stage Page Optimisations</span>
-              )}
-            </div>
-
-            <div className="w4-workflow-actions-bar">
+            
+            {/* Primary Save Changes Row */}
+            <div className="w4-workflow-save-row">
               <button type="button" className="w3-btn-secondary" onClick={onClose}>
                 {auditCompleted ? 'Done / Close' : 'Cancel'}
               </button>
 
-              <button
-                type="button"
-                className={isSavedReady ? 'w3-btn-secondary' : 'w3-btn-emerald'}
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : (isSavedReady ? 'Changes Saved ✓' : 'Save & Stage Page Optimisations')}
-              </button>
-
-              <button
-                type="button"
-                className={syncCompleted ? 'w3-btn-secondary' : 'w3-btn-primary'}
-                onClick={handleSyncClick}
-                disabled={!isSavedReady || isSyncing || syncCompleted}
-                title={!isSavedReady ? 'Save & Stage Page Optimisations first' : ''}
-              >
-                {syncCompleted ? '🟢 Sync Complete ✓' : (isSyncing ? 'Syncing...' : 'Sync Website Data')}
-              </button>
-
-              <button
-                type="button"
-                className="w3-btn-emerald"
-                onClick={handleAuditClick}
-                disabled={!syncCompleted || auditCompleted}
-                title={!syncCompleted ? 'Sync Website Data first' : ''}
-              >
-                {auditCompleted ? '🟢 Audit Complete ✓' : 'Re-run Audit ▷'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {isSavedReady && (
+                  <span className="w4-saved-indicator">✓ Changes Saved</span>
+                )}
+                <button
+                  type="button"
+                  className="w3-btn-emerald"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
             </div>
+
+            {/* Next Actions Container (Muted/Disabled until previous step completes) */}
+            <div className="w4-workflow-next-actions-container">
+              <div className="w4-next-actions-header">
+                <span className="w4-next-actions-title">Next Workflow Actions:</span>
+                {!isSavedReady && (
+                  <span className="w4-next-actions-hint">(Save Changes above to enable Sync)</span>
+                )}
+              </div>
+
+              <div className="w4-next-actions-grid">
+                
+                {/* 1. SYNC WEBSITE DATA */}
+                <button
+                  type="button"
+                  className={`w4-action-flow-btn ${syncCompleted ? 'completed' : (isSavedReady ? 'active' : 'disabled')}`}
+                  onClick={handleSyncClick}
+                  disabled={!isSavedReady || isSyncing || syncCompleted}
+                >
+                  {syncCompleted ? '🟢 1. Sync Website Data ✓' : (isSyncing ? 'Syncing Website Data...' : '1. Sync Website Data')}
+                </button>
+
+                {/* 2. RE-RUN AUDIT */}
+                <button
+                  type="button"
+                  className={`w4-action-flow-btn ${auditCompleted ? 'completed' : (syncCompleted ? 'active' : 'disabled')}`}
+                  onClick={handleAuditClick}
+                  disabled={!syncCompleted || auditCompleted}
+                >
+                  {auditCompleted ? '🟢 2. Re-run Audit ✓' : '2. Re-run Audit ▷'}
+                </button>
+
+              </div>
+            </div>
+
           </div>
 
         </div>
