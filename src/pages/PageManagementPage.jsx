@@ -364,9 +364,6 @@ export default function PageManagementPage({
           >
             {isSyncing ? 'Syncing...' : 'Sync from WordPress'}
           </button>
-          <button type="button" className="w3-btn-emerald" id="btn-w3-run-audit">
-            Run Audit ▷
-          </button>
         </div>
       </div>
 
