@@ -245,7 +245,7 @@
 }
 
 .col-page {
-  width: 45%;
+  width: 41%;
 }
 
 .w3-page-title {
@@ -283,7 +283,8 @@
 }
 
 .col-priority {
-  width: 6%;
+  width: 10%;
+  white-space: nowrap;
   color: rgb(203, 213, 225);
   font-size: 0.82rem;
 }

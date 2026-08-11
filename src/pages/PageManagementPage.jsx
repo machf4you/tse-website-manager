@@ -449,8 +449,8 @@ export default function PageManagementPage({
               <th className="sortable-th" onClick={() => handleSort('type')}>
                 Type {renderSortIndicator('type')}
               </th>
-              <th className="sortable-th" onClick={() => handleSort('priority')}>
-                Prio {renderSortIndicator('priority')}
+              <th className="sortable-th col-priority" onClick={() => handleSort('priority')}>
+                Priority {renderSortIndicator('priority')}
               </th>
               <th className="sortable-th" onClick={() => handleSort('target')}>
                 Target {renderSortIndicator('target')}
