@@ -430,16 +430,20 @@ export function generateSimpleInternalLinkRecommendations(pagesList) {
 
     // Take top targets for this source page
     sortedTargets.slice(0, 3).forEach((target, idx) => {
+      const anchorText = (target.targetPhrase || target.target || target.title || 'loft conversion').trim()
       recommendations.push({
         id: `rec_${source.url || source.id}_${target.url || target.id}_${idx}`,
+        anchorText: anchorText,
         sourceTitle: source.title || source.proposedTitle || 'Untitled Page',
         sourceUrl: source.url,
         sourceType: sourceType,
         sourcePriority: source.priority !== undefined ? source.priority : 0,
+        sourcePageObj: source,
         targetTitle: target.title || target.proposedTitle || 'Untitled Page',
         targetUrl: target.url,
         targetType: target.type || target.seoPageType || 'Unclassified',
         targetPriority: target.priority !== undefined ? target.priority : 0,
+        targetPageObj: target,
         reason: reasonText
       })
     })

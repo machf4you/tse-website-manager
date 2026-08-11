@@ -270,9 +270,10 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
             <table className="il-table">
               <thead>
                 <tr>
-                  <th style={{ width: '38%' }}>Source Page</th>
-                  <th style={{ width: '38%' }}>Suggested Target Page</th>
-                  <th style={{ width: '24%' }}>Reason</th>
+                  <th style={{ width: '28%' }}>Source Page</th>
+                  <th style={{ width: '28%' }}>Suggested Target Page</th>
+                  <th style={{ width: '18%' }}>Reason</th>
+                  <th style={{ width: '26%' }}>Generated Sentence</th>
                 </tr>
               </thead>
               <tbody>
@@ -306,6 +307,31 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                     </td>
                     <td>
                       <span className="il-reason-badge">{rec.reason}</span>
+                    </td>
+                    <td className="col-sentence">
+                      {aiSentences[rec.id] ? (
+                        aiSentences[rec.id].error ? (
+                          <div className="il-gen-error-banner">⚠️ {aiSentences[rec.id].error}</div>
+                        ) : (
+                          <div className="il-gen-block">
+                            <div className="il-gen-item">
+                              <span className="il-gen-heading">SUGGESTED REPLACEMENT:</span>
+                              <div className="il-gen-replacement">
+                                "{renderHighlightedText(aiSentences[rec.id].suggestedReplacement, rec.anchorText || rec.targetTitle)}"
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <button
+                          type="button"
+                          className="il-btn-generate"
+                          onClick={() => handleGenerateSentence(rec.id, rec.anchorText || rec.targetTitle, rec.sourcePageObj || rec.sourceUrl)}
+                          disabled={generatingIds[rec.id]}
+                        >
+                          {generatingIds[rec.id] ? 'Generating...' : '✨ Generate'}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
