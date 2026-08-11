@@ -183,6 +183,27 @@ export async function savePageAuditsBatchApi(siteId, auditsMap) {
   } catch (err) {}
 }
 
+export async function getInternalLinkRecommendationsApi(siteId) {
+  try {
+    return await fetchJson(`${API_BASE_URL}/websites/${siteId}/link-recommendations`)
+  } catch (e) {
+    const raw = localStorage.getItem(`tse_w5_recommendations_${siteId}`)
+    return raw ? JSON.parse(raw) : {}
+  }
+}
+
+export async function saveInternalLinkRecommendationsApi(siteId, recsMap) {
+  try {
+    await fetchJson(`${API_BASE_URL}/websites/${siteId}/link-recommendations`, {
+      method: 'POST',
+      body: JSON.stringify(recsMap)
+    })
+  } catch (e) {}
+  try {
+    localStorage.setItem(`tse_w5_recommendations_${siteId}`, JSON.stringify(recsMap))
+  } catch (err) {}
+}
+
 // 5. ONE-TIME MIGRATION UTILITY FROM LOCALSTORAGE
 export async function migrateLocalStorageApi() {
   try {

@@ -72,6 +72,19 @@ db.exec(`
     value_json TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS link_recommendations (
+    site_id TEXT NOT NULL,
+    rec_key TEXT NOT NULL,
+    source_url TEXT,
+    target_url TEXT,
+    anchor_text TEXT,
+    saved_sentence TEXT,
+    is_saved INTEGER DEFAULT 1,
+    rec_json TEXT,
+    updated_at TEXT,
+    PRIMARY KEY(site_id, rec_key)
+  );
 `)
 
 export default db

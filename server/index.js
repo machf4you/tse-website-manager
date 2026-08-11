@@ -403,6 +403,83 @@ app.post('/api/websites/:id/audits/batch', (req, res) => {
 })
 
 // ==========================================
+// 5. W5 LINK RECOMMENDATIONS ENDPOINTS
+// ==========================================
+
+app.get('/api/websites/:id/link-recommendations', (req, res) => {
+  try {
+    const { id } = req.params
+    const rows = db.prepare(`SELECT * FROM link_recommendations WHERE site_id = ?`).all(id)
+    const result = {}
+    rows.forEach(r => {
+      const parsed = r.rec_json ? JSON.parse(r.rec_json) : {}
+      result[r.rec_key] = {
+        ...parsed,
+        id: r.rec_key,
+        sourceUrl: r.source_url || parsed.sourceUrl,
+        targetUrl: r.target_url || parsed.targetUrl,
+        anchorText: r.anchor_text || parsed.anchorText,
+        savedSentence: r.saved_sentence || parsed.savedSentence,
+        isSaved: Boolean(r.is_saved),
+        updatedAt: r.updated_at
+      }
+    })
+    res.json(result)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.post('/api/websites/:id/link-recommendations', (req, res) => {
+  try {
+    const { id } = req.params
+    const recsMap = req.body
+    if (!recsMap || typeof recsMap !== 'object') {
+      return res.status(400).json({ error: 'Recommendations map object required' })
+    }
+
+    const now = new Date().toISOString()
+    const stmt = db.prepare(`
+      INSERT INTO link_recommendations (
+        site_id, rec_key, source_url, target_url, anchor_text, saved_sentence, is_saved, rec_json, updated_at
+      ) VALUES (
+        @site_id, @rec_key, @source_url, @target_url, @anchor_text, @saved_sentence, @is_saved, @rec_json, @updated_at
+      )
+      ON CONFLICT(site_id, rec_key) DO UPDATE SET
+        source_url = excluded.source_url,
+        target_url = excluded.target_url,
+        anchor_text = excluded.anchor_text,
+        saved_sentence = excluded.saved_sentence,
+        is_saved = excluded.is_saved,
+        rec_json = excluded.rec_json,
+        updated_at = excluded.updated_at
+    `)
+
+    const insertMany = db.transaction((map) => {
+      for (const [recKey, conf] of Object.entries(map)) {
+        if (!conf) continue
+        stmt.run({
+          site_id: id,
+          rec_key: recKey,
+          source_url: conf.sourceUrl || '',
+          target_url: conf.targetUrl || '',
+          anchor_text: conf.anchorText || '',
+          saved_sentence: conf.savedSentence || '',
+          is_saved: conf.isSaved !== false ? 1 : 0,
+          rec_json: JSON.stringify(conf),
+          updated_at: now
+        })
+      }
+    })
+
+    insertMany(recsMap)
+    res.json({ success: true, siteId: id, count: Object.keys(recsMap).length })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// ==========================================
 // 5. ONE-TIME MIGRATION MECHANISM FROM LOCALSTORAGE
 // ==========================================
 

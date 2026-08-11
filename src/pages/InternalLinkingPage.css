@@ -688,3 +688,91 @@
   color: #c084fc;
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
+
+/* Editable & Saved Recommendation UI */
+.il-gen-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.il-btn-icon-edit {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.il-btn-icon-edit:hover {
+  background: rgba(96, 165, 250, 0.15);
+  color: #93c5fd;
+}
+
+.il-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.il-edit-textarea {
+  width: 100%;
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  line-height: 1.4;
+  resize: vertical;
+  outline: none;
+}
+
+.il-edit-textarea:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.il-edit-btn-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.il-btn-save-rec {
+  background: #10b981;
+  color: #0f172a;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.il-btn-save-rec:hover {
+  background: #34d399;
+}
+
+.il-btn-cancel-rec {
+  background: #334155;
+  color: #94a3b8;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.il-btn-cancel-rec:hover {
+  background: #475569;
+  color: #f8fafc;
+}

@@ -1,11 +1,15 @@
-import { useState, useMemo } from 'react'
-import { getPathSlugForMatching } from '../utils/urlUtils'
+import { useState, useMemo, useEffect } from 'react'
+import { getPathSlugForMatching, normalizeUrlForMatching } from '../utils/urlUtils'
 import {
   getExistingInternalLinks,
   getRecommendedInternalLinks,
   generateContextualReplacement,
   generateSimpleInternalLinkRecommendations
 } from '../utils/internalLinkingHelper'
+import {
+  getInternalLinkRecommendationsApi,
+  saveInternalLinkRecommendationsApi
+} from '../services/websiteManagerApi'
 import './InternalLinkingPage.css'
 
 export function renderHighlightedText(text, anchorText) {
@@ -40,6 +44,33 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     }
     return pagesList?.[0]?.url || ''
   })
+
+  const storageKey = site?.id ? `tse_w5_recommendations_${site.id}` : 'tse_w5_recommendations_default'
+
+  const [savedRecs, setSavedRecs] = useState(() => {
+    try {
+      const stored = localStorage.getItem(storageKey)
+      return stored ? JSON.parse(stored) : {}
+    } catch (e) {
+      console.error('Failed to read saved link recommendations:', e)
+      return {}
+    }
+  })
+
+  const [editingRecs, setEditingRecs] = useState({})
+  const [editTextMap, setEditTextMap] = useState({})
+
+  // Hydrate saved recommendations from backend API if available
+  useEffect(() => {
+    if (!site?.id) return
+    let isMounted = true
+    getInternalLinkRecommendationsApi(site.id).then(res => {
+      if (isMounted && res && typeof res === 'object') {
+        setSavedRecs(prev => ({ ...prev, ...res }))
+      }
+    }).catch(() => {})
+    return () => { isMounted = false }
+  }, [site?.id])
 
   const [aiSentences, setAiSentences] = useState({})
   const [generatingIds, setGeneratingIds] = useState({})
@@ -154,8 +185,143 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
         ...prev,
         [recId]: result
       }))
+      setEditTextMap(prev => ({
+        ...prev,
+        [recId]: result?.suggestedReplacement || ''
+      }))
       setGeneratingIds(prev => ({ ...prev, [recId]: false }))
-    }, 300)
+    }, 150)
+  }
+
+  const handleStartEdit = (recId, currentText) => {
+    setEditingRecs(prev => ({ ...prev, [recId]: true }))
+    setEditTextMap(prev => ({
+      ...prev,
+      [recId]: prev[recId] !== undefined ? prev[recId] : currentText
+    }))
+  }
+
+  const handleCancelEdit = (recId) => {
+    setEditingRecs(prev => ({ ...prev, [recId]: false }))
+  }
+
+  const handleSaveRecommendation = (rec, sentenceText) => {
+    const textToSave = (sentenceText || '').trim()
+    if (!textToSave) return
+
+    const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
+    const payload = {
+      id: rec.id,
+      sourceUrl: rec.sourceUrl || rec.suggestedSourceUrl,
+      targetUrl: rec.targetUrl,
+      anchorText: rec.anchorText || rec.targetTitle,
+      savedSentence: textToSave,
+      isSaved: true,
+      updatedAt: new Date().toISOString()
+    }
+
+    const updated = {
+      ...savedRecs,
+      [recKey]: payload
+    }
+
+    setSavedRecs(updated)
+    setEditingRecs(prev => ({ ...prev, [recKey]: false }))
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(updated))
+    } catch (e) {
+      console.error('Failed to save recommendation to localStorage:', e)
+    }
+
+    if (site?.id) {
+      saveInternalLinkRecommendationsApi(site.id, updated)
+    }
+  }
+
+  const renderSentenceCell = (rec) => {
+    const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
+    const savedRecord = savedRecs[recKey]
+    const aiResult = aiSentences[recKey]
+    const isEditing = Boolean(editingRecs[recKey])
+
+    const currentDisplaySentence = savedRecord
+      ? savedRecord.savedSentence
+      : (aiResult ? aiResult.suggestedReplacement : null)
+    const isSaved = Boolean(savedRecord && savedRecord.isSaved)
+
+    if (isEditing) {
+      return (
+        <div className="il-edit-container">
+          <textarea
+            className="il-edit-textarea"
+            value={editTextMap[recKey] !== undefined ? editTextMap[recKey] : (currentDisplaySentence || '')}
+            onChange={(e) => setEditTextMap(prev => ({ ...prev, [recKey]: e.target.value }))}
+            rows={3}
+            placeholder="Edit suggested sentence..."
+          />
+          <div className="il-edit-btn-group">
+            <button
+              type="button"
+              className="il-btn-save-rec"
+              onClick={() => handleSaveRecommendation(rec, editTextMap[recKey])}
+            >
+              💾 Save Recommendation
+            </button>
+            <button
+              type="button"
+              className="il-btn-cancel-rec"
+              onClick={() => handleCancelEdit(recKey)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    if (currentDisplaySentence) {
+      return (
+        <div className="il-gen-block">
+          <div className="il-gen-header-row">
+            <span className="il-gen-heading" style={{ color: isSaved ? '#34d399' : '#60a5fa' }}>
+              {isSaved ? 'SAVED RECOMMENDATION ✓' : 'SUGGESTED REPLACEMENT:'}
+            </span>
+            <button
+              type="button"
+              className="il-btn-icon-edit"
+              onClick={() => handleStartEdit(recKey, currentDisplaySentence)}
+              title="Edit sentence inline"
+            >
+              ✏️ Edit
+            </button>
+          </div>
+          <div className="il-gen-replacement">
+            "{renderHighlightedText(currentDisplaySentence, rec.anchorText || rec.targetTitle)}"
+          </div>
+          <div style={{ marginTop: '8px' }}>
+            <button
+              type="button"
+              className="il-btn-save-rec"
+              onClick={() => handleSaveRecommendation(rec, currentDisplaySentence)}
+            >
+              {isSaved ? '💾 Update Saved' : '💾 Save Recommendation'}
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <button
+        type="button"
+        className="il-btn-generate"
+        onClick={() => handleGenerateSentence(recKey, rec.anchorText || rec.targetTitle, rec.sourcePageObj || rec.sourceUrl || rec.suggestedSourceUrl)}
+        disabled={generatingIds[recKey]}
+      >
+        {generatingIds[recKey] ? 'Generating...' : '✨ Generate'}
+      </button>
+    )
   }
 
   if (!Array.isArray(activePages) || activePages.length === 0) {
@@ -309,29 +475,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                       <span className="il-reason-badge">{rec.reason}</span>
                     </td>
                     <td className="col-sentence">
-                      {aiSentences[rec.id] ? (
-                        aiSentences[rec.id].error ? (
-                          <div className="il-gen-error-banner">⚠️ {aiSentences[rec.id].error}</div>
-                        ) : (
-                          <div className="il-gen-block">
-                            <div className="il-gen-item">
-                              <span className="il-gen-heading">SUGGESTED REPLACEMENT:</span>
-                              <div className="il-gen-replacement">
-                                "{renderHighlightedText(aiSentences[rec.id].suggestedReplacement, rec.anchorText || rec.targetTitle)}"
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      ) : (
-                        <button
-                          type="button"
-                          className="il-btn-generate"
-                          onClick={() => handleGenerateSentence(rec.id, rec.anchorText || rec.targetTitle, rec.sourcePageObj || rec.sourceUrl)}
-                          disabled={generatingIds[rec.id]}
-                        >
-                          {generatingIds[rec.id] ? 'Generating...' : '✨ Generate'}
-                        </button>
-                      )}
+                      {renderSentenceCell(rec)}
                     </td>
                   </tr>
                 ))}
@@ -526,41 +670,13 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
                                     </div>
                                   </div>
                                 </td>
-                                <td className="col-sentence">
-                                  {aiSentences[rec.id] ? (
-                                    aiSentences[rec.id].error ? (
-                                      <div className="il-gen-error-banner">
-                                        ⚠️ {aiSentences[rec.id].error}
-                                      </div>
-                                    ) : (
-                                      <div className="il-gen-block">
-                                        <div className="il-gen-item">
-                                          <span className="il-gen-heading">CURRENT SOURCE TEXT:</span>
-                                          <div className="il-gen-source">"{aiSentences[rec.id].currentSourceText}"</div>
-                                        </div>
-                                        <div className="il-gen-item">
-                                          <span className="il-gen-heading il-gen-heading-replacement">SUGGESTED REPLACEMENT:</span>
-                                          <div className="il-gen-replacement">
-                                            "{renderHighlightedText(aiSentences[rec.id].suggestedReplacement, rec.anchorText)}"
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )
-                                  ) : (
-                                    <span className="il-gen-placeholder">
-                                      Click ✨ Generate to analyze source page content and preview suggested replacement.
-                                    </span>
-                                  )}
-                                </td>
-                                <td>
-                                  <button
-                                    type="button"
-                                    className="il-btn-generate"
-                                    onClick={() => handleGenerateSentence(rec.id, rec.anchorText, rec.sourcePageObj || rec.suggestedSourceUrl)}
-                                    disabled={generatingIds[rec.id]}
-                                  >
-                                    {generatingIds[rec.id] ? 'Generating...' : '✨ Generate'}
-                                  </button>
+                                <td className="col-sentence" colSpan={2}>
+                                  {renderSentenceCell({
+                                    ...rec,
+                                    sourceUrl: rec.suggestedSourceUrl,
+                                    targetUrl: page.url,
+                                    sourcePageObj: rec.sourcePageObj
+                                  })}
                                 </td>
                               </tr>
                             ))}
