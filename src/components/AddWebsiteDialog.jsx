@@ -205,7 +205,10 @@ export default function AddWebsiteDialog({
     if (isConnecting) return
     setErrorMsg(null)
 
-    // Validation
+    // Validation & Password preservation for editing
+    const finalWpUser = wpUser.trim() || (editingSite ? (editingSite.wpUser || editingSite.connectedUser || '') : '')
+    const finalWpPass = wpPass.trim() || (editingSite ? (editingSite.wpPass || editingSite.configData?.wpPass || '') : '')
+
     if (!wpName.trim()) {
       setErrorMsg('Please enter a Website Name.')
       return
@@ -214,11 +217,11 @@ export default function AddWebsiteDialog({
       setErrorMsg('Please enter a Website URL.')
       return
     }
-    if (!wpUser.trim()) {
+    if (!finalWpUser) {
       setErrorMsg('Please enter a WordPress Username.')
       return
     }
-    if (!wpPass.trim()) {
+    if (!finalWpPass) {
       setErrorMsg('Please enter a WordPress Application Password.')
       return
     }
@@ -234,7 +237,7 @@ export default function AddWebsiteDialog({
     let res
     try {
       res = await connectWordPress(
-        { url: wpUrl, username: wpUser, password: wpPass },
+        { url: wpUrl, username: finalWpUser, password: finalWpPass },
         updateStep
       )
     } catch (err) {
@@ -252,9 +255,14 @@ export default function AddWebsiteDialog({
           url: wpUrl.trim(),
           portfolio,
           elementorEnabled,
-          wpUser: wpUser.trim(),
-          wpPass: wpPass.trim(),
-          connectedUser: res.user ? res.user.name : wpUser.trim(),
+          wpUser: finalWpUser,
+          wpPass: finalWpPass,
+          connectedUser: res.user ? res.user.name : finalWpUser,
+          configData: {
+            ...(editingSite.configData || {}),
+            wpUser: finalWpUser,
+            wpPass: finalWpPass,
+          }
         }
         onUpdateWebsite(updatedTile)
       } else {
@@ -265,12 +273,19 @@ export default function AddWebsiteDialog({
           portfolio,
           elementorEnabled,
           user: res.user,
-          wpUser: wpUser.trim(),
-          wpPass: wpPass.trim(),
+          wpUser: finalWpUser,
+          wpPass: finalWpPass,
         })
 
         if (onAddWebsite) {
-          onAddWebsite(newTile)
+          onAddWebsite({
+            ...newTile,
+            configData: {
+              ...(newTile.configData || {}),
+              wpUser: finalWpUser,
+              wpPass: finalWpPass,
+            }
+          })
         }
       }
 
