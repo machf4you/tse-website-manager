@@ -270,7 +270,7 @@
   display: flex;
   gap: 16px;
   width: 100%;
-  max-width: 720px;
+  max-width: 740px;
   margin-bottom: 24px;
 }
 
@@ -281,39 +281,75 @@
   border-radius: 8px;
   padding: 16px;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   text-align: left;
+  transition: all 0.2s ease;
 }
 
-.w4-step-badge {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #3b82f6;
-  color: #ffffff;
-  font-weight: 800;
+.w4-confirm-step-card.step-pending {
+  border-color: #334155;
+  background: #0f172a;
+  opacity: 0.85;
+}
+
+.w4-confirm-step-card.step-active {
+  border-color: #3b82f6;
+  background: #1e293b;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.15);
+}
+
+.w4-confirm-step-card.step-completed {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.w4-step-status-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  flex-shrink: 0;
+  gap: 8px;
+}
+
+.w4-step-status-icon {
+  font-size: 0.95rem;
+}
+
+.w4-step-status-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f8fafc;
 }
 
 .w4-step-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.w4-step-body strong {
-  font-size: 0.9rem;
-  color: #f8fafc;
+  gap: 8px;
 }
 
 .w4-step-body p {
   font-size: 0.78rem;
   color: #94a3b8;
-  margin: 0 0 10px 0;
+  margin: 0;
+}
+
+.w4-step-done-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.w4-step-lock-note {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-style: italic;
 }
 
 .w4-confirm-footer {

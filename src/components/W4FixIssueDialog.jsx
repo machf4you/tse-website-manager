@@ -8,11 +8,17 @@ export default function W4FixIssueDialog({
   site,
   onClose,
   onSyncWebsiteData,
+  isSyncing = false,
   onRerunAudit,
 }) {
   const [step, setStep] = useState('edit') // 'edit' | 'saved_confirmation'
   const [fieldValue, setFieldValue] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+
+  // Status workflow tracking
+  const [syncStarted, setSyncStarted] = useState(false)
+  const [syncCompleted, setSyncCompleted] = useState(false)
+  const [auditCompleted, setAuditCompleted] = useState(false)
 
   // Determine SEO Element type & pre-fill current text
   const seoType = (() => {
@@ -29,6 +35,9 @@ export default function W4FixIssueDialog({
     if (!isOpen || !page) return
     setStep('edit')
     setIsSaving(false)
+    setSyncStarted(false)
+    setSyncCompleted(false)
+    setAuditCompleted(false)
 
     if (seoType === 'meta_title') {
       setFieldValue(page.proposedTitle || page.metaTitle || page.title || '')
@@ -38,6 +47,13 @@ export default function W4FixIssueDialog({
       setFieldValue(page.h1 || page.h1_text || page.title || '')
     }
   }, [isOpen, page, seoType])
+
+  // Track global isSyncing prop completion
+  useEffect(() => {
+    if (syncStarted && !isSyncing) {
+      setSyncCompleted(true)
+    }
+  }, [syncStarted, isSyncing])
 
   if (!isOpen || !issue) return null
 
@@ -88,11 +104,39 @@ export default function W4FixIssueDialog({
 
   const handleSave = () => {
     setIsSaving(true)
-    // Simulated template workflow step
     setTimeout(() => {
       setIsSaving(false)
       setStep('saved_confirmation')
-    }, 400)
+    }, 300)
+  }
+
+  const handleSyncClick = async () => {
+    setSyncStarted(true)
+    if (onSyncWebsiteData) {
+      try {
+        const res = onSyncWebsiteData()
+        if (res && typeof res.then === 'function') {
+          await res
+        }
+      } catch (err) {
+        console.error('Sync error:', err)
+      }
+    }
+    setSyncCompleted(true)
+  }
+
+  const handleAuditClick = async () => {
+    if (onRerunAudit) {
+      try {
+        const res = onRerunAudit()
+        if (res && typeof res.then === 'function') {
+          await res
+        }
+      } catch (err) {
+        console.error('Audit error:', err)
+      }
+    }
+    setAuditCompleted(true)
   }
 
   return (
@@ -196,59 +240,96 @@ export default function W4FixIssueDialog({
 
           </div>
         ) : (
-          /* STEP 2: Post-Save Confirmation / Instructions */
+          /* STEP 2: Post-Save Confirmation & Workflow Progress */
           <div className="w4-modal-body-confirmation">
             <div className="w4-confirm-icon-box">
-              <span className="w4-confirm-icon">🟢</span>
+              <span className="w4-confirm-icon">{syncCompleted && auditCompleted ? '🎉' : '🟢'}</span>
             </div>
-            <h3 className="w4-confirm-title">WordPress Field Staged Successfully</h3>
+            <h3 className="w4-confirm-title">
+              {syncCompleted && auditCompleted
+                ? 'Fix Workflow Completed Successfully!'
+                : 'WordPress Field Staged Successfully'}
+            </h3>
             <p className="w4-confirm-text">
-              The updated <strong>{elementDetails.label}</strong> has been saved. To complete the workflow and verify that the Page Audit passes, follow these two steps:
+              {syncCompleted && auditCompleted
+                ? `The updated ${elementDetails.label} has been synced from WordPress and the page audit has passed!`
+                : `The updated ${elementDetails.label} has been saved. Complete the steps below to verify your changes pass the Page Audit:`}
             </p>
 
             <div className="w4-confirm-steps-grid">
-              <div className="w4-confirm-step-card">
-                <div className="w4-step-badge">1</div>
+              
+              {/* STEP 1 CARD */}
+              <div className={`w4-confirm-step-card ${syncCompleted ? 'step-completed' : (isSyncing ? 'step-in-progress' : 'step-pending')}`}>
+                <div className="w4-step-status-header">
+                  <span className="w4-step-status-icon">
+                    {syncCompleted ? '🟢' : (isSyncing ? '⏳' : '🔴')}
+                  </span>
+                  <span className="w4-step-status-title">
+                    Step 1: Sync Website Data {syncCompleted ? '— Complete ✓' : (isSyncing ? '— Syncing...' : '— Pending')}
+                  </span>
+                </div>
                 <div className="w4-step-body">
-                  <strong>Sync Website Data</strong>
                   <p>Pull the latest updated content from WordPress.</p>
-                  <button
-                    type="button"
-                    className="w3-btn-secondary"
-                    onClick={() => {
-                      if (onSyncWebsiteData) onSyncWebsiteData()
-                    }}
-                  >
-                    Sync Website Data
-                  </button>
+                  {syncCompleted ? (
+                    <span className="w4-step-done-tag">🟢 Complete ✓</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="w3-btn-secondary"
+                      onClick={handleSyncClick}
+                      disabled={isSyncing}
+                    >
+                      {isSyncing ? 'Syncing...' : 'Sync Website Data'}
+                    </button>
+                  )}
                 </div>
               </div>
 
-              <div className="w4-confirm-step-card">
-                <div className="w4-step-badge">2</div>
+              {/* STEP 2 CARD */}
+              <div className={`w4-confirm-step-card ${auditCompleted ? 'step-completed' : (syncCompleted ? 'step-active' : 'step-pending')}`}>
+                <div className="w4-step-status-header">
+                  <span className="w4-step-status-icon">
+                    {auditCompleted ? '🟢' : '🔴'}
+                  </span>
+                  <span className="w4-step-status-title">
+                    Step 2: Re-run Audit {auditCompleted ? '— Complete ✓' : '— Pending'}
+                  </span>
+                </div>
                 <div className="w4-step-body">
-                  <strong>Re-run Audit</strong>
                   <p>Re-evaluate the page SEO checks to pass the audit.</p>
-                  <button
-                    type="button"
-                    className="w3-btn-emerald"
-                    onClick={() => {
-                      if (onRerunAudit) onRerunAudit()
-                      onClose()
-                    }}
-                  >
-                    Re-run Audit ▷
-                  </button>
+                  {auditCompleted ? (
+                    <span className="w4-step-done-tag">🟢 Complete ✓</span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="w3-btn-emerald"
+                      onClick={handleAuditClick}
+                      disabled={!syncCompleted}
+                      title={!syncCompleted ? 'Complete Step 1 Sync Website Data first' : 'Re-run live page audit'}
+                    >
+                      Re-run Audit ▷
+                    </button>
+                  )}
+                  {!syncCompleted && (
+                    <span className="w4-step-lock-note">(Complete Step 1 sync first)</span>
+                  )}
                 </div>
               </div>
+
             </div>
 
             <div className="w4-confirm-footer">
               <p className="w4-confirm-note">
-                ⓘ Note: The audit will only pass after WordPress data has been synced and the audit re-run.
+                {auditCompleted
+                  ? '✓ All steps completed. Audit is up to date.'
+                  : 'ⓘ Note: The audit will only pass after WordPress data has been synced and the audit re-run.'}
               </p>
-              <button type="button" className="w3-btn-secondary" onClick={onClose}>
-                Done / Close
+              <button
+                type="button"
+                className={auditCompleted ? 'w3-btn-emerald' : 'w3-btn-secondary'}
+                onClick={onClose}
+              >
+                {auditCompleted ? 'Done / Return to Audit' : 'Close Modal'}
               </button>
             </div>
           </div>
