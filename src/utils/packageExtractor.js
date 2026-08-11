@@ -11,7 +11,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage) {
   if (isHomePage) return 'Hub'
 
   // 3. WordPress Post -> Article
-  if (p && p.post_type === 'post') return 'Article'
+  if (p && (p.post_type === 'post' || p.type === 'post')) return 'Article'
 
   const lowerTitle = title.toLowerCase()
   const lowerUrl = url.toLowerCase()
@@ -27,7 +27,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage) {
   ]
 
   const isQuestionOrGuideTitle = informationalStarters.some(starter => lowerTitle.includes(starter) || lowerUrl.includes(starter))
-  const isBlogPostType = p.post_type === 'post' || lowerUrl.includes('/blog/') || lowerUrl.includes('/news/') || lowerUrl.includes('/insights/') || lowerUrl.includes('/articles/')
+  const isBlogPostType = p.post_type === 'post' || p.type === 'post' || lowerUrl.includes('/blog/') || lowerUrl.includes('/news/') || lowerUrl.includes('/insights/') || lowerUrl.includes('/articles/')
   const isArticleAuthority = p.authority?.strategic_type === 'article' || p.classification?.strategic_type === 'article' || p.intent === 'informational'
 
   let informationalScore = 0
@@ -267,7 +267,25 @@ export function normalizeImportedPage(p, siteUrl = '') {
   }
 }
 
-function extractRawPagesFromPackage(pkg) {
+function unwrapPackageData(pkg) {
+  if (!pkg || typeof pkg !== 'object') return pkg
+  let current = pkg
+  let depth = 0
+  while (current && (current.packageData || current.package_data) && depth < 5) {
+    depth++
+    const raw = current.packageData || current.package_data
+    if (!raw) break
+    try {
+      current = typeof raw === 'string' ? JSON.parse(raw) : raw
+    } catch (e) {
+      break
+    }
+  }
+  return current || pkg
+}
+
+function extractRawPagesFromPackage(rawPkg) {
+  const pkg = unwrapPackageData(rawPkg)
   if (!pkg || typeof pkg !== 'object') return []
 
   // 1. Direct array properties
@@ -314,7 +332,7 @@ function extractRawPagesFromPackage(pkg) {
 export function extractPagesFromPackage(pkg, siteUrl = '') {
   const rawPages = extractRawPagesFromPackage(pkg)
   const rawPosts = extractPostsFromPackage(pkg)
-  const combined = [...rawPages, ...rawPosts]
+  const combined = [...rawPosts, ...rawPages]
 
   const seenUrls = new Set()
   const uniqueItems = []
@@ -333,7 +351,8 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
   return uniqueItems.map(page => normalizeImportedPage(page, siteUrl))
 }
 
-export function extractPostsFromPackage(pkg) {
+export function extractPostsFromPackage(rawPkg) {
+  const pkg = unwrapPackageData(rawPkg)
   if (!pkg || typeof pkg !== 'object') return []
 
   if (Array.isArray(pkg.posts)) return pkg.posts

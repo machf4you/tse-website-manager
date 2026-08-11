@@ -439,8 +439,6 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
               {isExpanded && (
                 <div className="il-card-details">
                   {/* Stat Cards Row */}
-
-                  {/* Stat Cards Row */}
                   <div className="il-stats-grid">
                     <div className="il-stat-box">
                       <span className="il-stat-icon">&#x1F517;</span>
