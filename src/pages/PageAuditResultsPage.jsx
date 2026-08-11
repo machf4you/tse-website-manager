@@ -90,15 +90,20 @@ export default function PageAuditResultsPage({
     return page || pagesList[0] || {}
   })()
 
+  const snap = liveAuditData?.page_snapshot || {}
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
   const currentPage = {
     ...rawCurrentPage,
     ...overrideObj,
     title: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.title,
     proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.title,
-    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.title,
-    metaDescription: overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : rawCurrentPage.metaDescription,
-    h1: overrideObj.h1 !== undefined ? overrideObj.h1 : rawCurrentPage.h1,
+    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title,
+    metaDescription: overrideObj.metaDescription !== undefined
+      ? overrideObj.metaDescription
+      : (rawCurrentPage.metaDescription || rawCurrentPage.meta_description || snap.meta_description || rawCurrentPage.description || rawCurrentPage.snippet || ''),
+    h1: overrideObj.h1 !== undefined
+      ? overrideObj.h1
+      : (rawCurrentPage.h1 || rawCurrentPage.h1_text || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.title || ''),
   }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {
@@ -379,7 +384,7 @@ export default function PageAuditResultsPage({
   let auditElements = []
   let failedIssues = []
 
-  const snap = liveAuditData?.page_snapshot || {}
+  const auditSnap = liveAuditData?.page_snapshot || snap
   const assess = liveAuditData?.page_assessment || {}
   const breakdown = assess?.fit_breakdown || {}
 
