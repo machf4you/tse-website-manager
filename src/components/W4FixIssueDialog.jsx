@@ -87,19 +87,22 @@ export default function W4FixIssueDialog({
   const maxLen = elementDetails.idealLengthMax
 
   let lengthBadgeVariant = 'optimal'
-  let lengthBadgeText = 'Optimal Length'
+  let lengthBadgeText = `${charCount} characters — Optimal`
 
   if (seoType !== 'h1') {
     if (charCount < minLen) {
       lengthBadgeVariant = 'warning'
-      lengthBadgeText = `Too Short (${charCount}/${minLen} min)`
+      lengthBadgeText = `${charCount} characters — Below recommended length`
     } else if (charCount > maxLen) {
-      lengthBadgeVariant = 'error'
-      lengthBadgeText = `Too Long (${charCount}/${maxLen} max)`
+      lengthBadgeVariant = 'warning'
+      lengthBadgeText = `${charCount} characters — Longer than recommended`
     } else {
       lengthBadgeVariant = 'optimal'
-      lengthBadgeText = `Optimal (${charCount}/${maxLen} chars)`
+      lengthBadgeText = `${charCount} characters — Optimal`
     }
+  } else {
+    lengthBadgeVariant = 'info'
+    lengthBadgeText = `${charCount} characters`
   }
 
   const handleSave = () => {
@@ -186,11 +189,9 @@ export default function W4FixIssueDialog({
                 <label htmlFor="w4-fix-input" className="w4-field-label">
                   Editable WordPress {elementDetails.label}
                 </label>
-                {seoType !== 'h1' && (
-                  <span className={`w4-length-badge ${lengthBadgeVariant}`}>
-                    {lengthBadgeText}
-                  </span>
-                )}
+                <span className={`w4-length-badge ${lengthBadgeVariant}`}>
+                  {lengthBadgeText}
+                </span>
               </div>
 
               {seoType === 'meta_desc' ? (
@@ -215,6 +216,9 @@ export default function W4FixIssueDialog({
 
               <div className="w4-guidance-box">
                 <div className="w4-guidance-item">
+                  <strong>Recommended Range:</strong> <span>{minLen}–{maxLen} characters</span>
+                </div>
+                <div className="w4-guidance-item">
                   <strong>Target Phrase:</strong> <span>{page.target || page.targetPhrase || 'Not set'}</span>
                 </div>
                 <div className="w4-guidance-item">
@@ -231,7 +235,7 @@ export default function W4FixIssueDialog({
                   type="button"
                   className="w3-btn-emerald"
                   onClick={handleSave}
-                  disabled={isSaving || !fieldValue.trim()}
+                  disabled={isSaving}
                 >
                   {isSaving ? 'Saving...' : 'Save / Update WordPress'}
                 </button>
