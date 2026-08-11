@@ -237,26 +237,41 @@ export function generateContextualReplacement(sourcePage, anchorText) {
 
   const chosenSentence = bestSentence || editorialSentences[0]
 
-  // 5. Create natural replacement sentence incorporating anchorText
+  // 5. Create fluent, natural replacement sentence incorporating anchorText
   const lowerSentence = chosenSentence.toLowerCase()
   const lowerAnchor = cleanAnchor.toLowerCase()
   let replacement = ''
-  let recommendationType = 'Modify Existing Text'
+  let recommendationType = 'Add New Sentence'
 
   if (lowerSentence.includes(lowerAnchor)) {
     replacement = chosenSentence
     recommendationType = 'Modify Existing Text'
   } else {
     const baseText = chosenSentence.replace(/[.!?]+$/, '').trim()
-    if (/\b(loft conversions|loft conversion)\b/i.test(baseText)) {
-      replacement = baseText.replace(/\b(loft conversions|loft conversion)\b/i, cleanAnchor)
+    const pageTitle = (sourcePage?.title || sourcePage?.proposedTitle || '').trim()
+    const locationMatch = (baseText + ' ' + pageTitle).match(/\b(Banstead|Surrey|London|Walton|Hampton|Leatherhead|Kingston|New Malden|Epsom|Sutton)\b/i)
+    const locationStr = locationMatch ? ` in ${locationMatch[1]}` : ''
+
+    const isGerund = /^(adding|building|creating|planning|designing|converting|expanding|choosing|transforming)\b/i.test(cleanAnchor)
+    const isPlural = /\b(conversions|extensions|services|solutions|rooms|spaces)\b/i.test(cleanAnchor)
+    const startsWithVowel = /^[aeiou]/i.test(cleanAnchor)
+
+    let articlePrefix = ''
+    if (!isGerund && !isPlural && !/\b(services|solutions|work)\b/i.test(cleanAnchor)) {
+      articlePrefix = startsWithVowel ? 'an ' : 'a '
+    }
+
+    if (/\b(loft conversions|loft conversion)\b/i.test(baseText) && !/\b(adding|building|creating|planning)\b/i.test(cleanAnchor)) {
+      replacement = baseText.replace(/\b(loft conversions|loft conversion)\b/i, cleanAnchor) + '.'
       recommendationType = 'Modify Existing Text'
-    } else if (/\b(services|solutions|projects|work|building|home|space|choices|extensions)\b/i.test(baseText)) {
-      replacement = baseText.replace(/\b(services|solutions|projects|work|building|home|space|choices|extensions)\b/i, `$1, including specialized ${cleanAnchor},`)
-      recommendationType = 'Add New Sentence'
+    } else if (isGerund) {
+      replacement = `If you are considering ${cleanAnchor}${locationStr}, our experienced team can help create the perfect space for your home.`
+    } else if (cleanAnchor.toLowerCase().startsWith('expert') || cleanAnchor.toLowerCase().startsWith('professional') || cleanAnchor.toLowerCase().startsWith('specialized')) {
+      replacement = `For ${cleanAnchor}${locationStr}, our experienced team provides high-quality construction and design services.`
+    } else if (isPlural) {
+      replacement = `For homeowners seeking high-quality ${cleanAnchor}${locationStr}, our experienced team provides full design and build solutions.`
     } else {
-      replacement = `${baseText}, including our dedicated ${cleanAnchor} services.`
-      recommendationType = 'Add New Sentence'
+      replacement = `If you are considering ${articlePrefix}${cleanAnchor}${locationStr}, our experienced team can help create the perfect space for your home.`
     }
   }
 
