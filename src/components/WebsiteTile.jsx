@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { extractPagesFromPackage } from '../utils/packageExtractor'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
+import { getPageConfigsApi } from '../services/websiteManagerApi'
 import './WebsiteTile.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -41,6 +43,20 @@ const INDICATOR = {
 }
 
 export default function WebsiteTile({ site, onManage, onEdit }) {
+  const [apiConfigs, setApiConfigs] = useState({})
+
+  useEffect(() => {
+    let isMounted = true
+    if (site?.id) {
+      getPageConfigsApi(site.id).then(configs => {
+        if (isMounted && configs) {
+          setApiConfigs(configs)
+        }
+      }).catch(() => {})
+    }
+    return () => { isMounted = false }
+  }, [site?.id])
+
   // 1. Calculate live pages & configured metrics
   const packageStorageKey = getSitePackageStorageKey(site)
   let pkg = site.storedPackageData
@@ -74,17 +90,30 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const ind = isConnected ? INDICATOR.connected : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
 
   const siteIdKey = getSiteConfigsStorageKey(site)
-  let savedConfigs = {}
-  try {
-    const saved = localStorage.getItem(siteIdKey)
-    if (saved) savedConfigs = JSON.parse(saved)
-  } catch (e) {
-    // ignore
-  }
+  const savedConfigs = (() => {
+    try {
+      const saved = localStorage.getItem(siteIdKey)
+      const localMap = saved ? JSON.parse(saved) : {}
+      const merged = { ...(apiConfigs || {}) }
+      Object.keys(localMap).forEach(key => {
+        const localItem = localMap[key]
+        const apiItem = merged[key]
+        if (localItem && (localItem.targetPhrase || localItem.isConfigured || !apiItem || !apiItem.targetPhrase)) {
+          merged[key] = { ...(apiItem || {}), ...localItem }
+        }
+      })
+      return merged
+    } catch (e) {
+      return apiConfigs || {}
+    }
+  })()
 
   const configuredPagesCount = rawPages.filter(p => {
-    const pageKey = p.id || p.url
-    const override = savedConfigs[pageKey] || (p.url ? savedConfigs[p.url] : null)
+    const override = (p.url ? savedConfigs[p.url] : null) ||
+                     (p.url ? savedConfigs[p.url.replace(/\/$/, '')] : null) ||
+                     (p.url ? savedConfigs[p.url + '/'] : null) ||
+                     (p.id ? savedConfigs[p.id] : null)
+
     const targetPhraseStr = (override?.targetPhrase || override?.target || p.targetPhrase || p.target || '').trim()
     const isConfigured = Boolean(targetPhraseStr.length > 0)
     const isExcluded = Boolean(override?.isExcluded || override?.type === 'Excluded' || p.isExcluded || p.type === 'Excluded')
@@ -94,49 +123,21 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   let configuredText = totalPages > 0 ? `${configuredPagesCount} of ${totalPages}` : 'Not Configured'
   let configuredVariant = totalPages > 0 ? (configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')) : 'grey'
 
-  // 2. Calculate live audited pages count (e.g. 1 of 60)
-  const auditStorageKey = getSiteAuditsStorageKey(site)
-  let storedAudits = {}
-  try {
-    const savedAudits = localStorage.getItem(auditStorageKey)
-    if (savedAudits) storedAudits = JSON.parse(savedAudits)
-  } catch (e) {
-    // ignore
-  }
-
-  const auditedPagesCount = rawPages.filter(p => {
-    const pageKey = p.id || p.url
-    const record = storedAudits[pageKey] || (p.url ? storedAudits[p.url] : null)
-    return Boolean(record && record.isAudited && record.auditResult)
-  }).length
-
-  let auditedText = totalPages > 0 ? `${auditedPagesCount} of ${totalPages}` : (site.lastAuditTimestamp ? site.lastAuditTimestamp : 'Never')
-  let auditedVariant = totalPages > 0 ? (auditedPagesCount === totalPages ? 'green' : (auditedPagesCount > 0 ? 'amber' : 'grey')) : (site.lastAuditTimestamp ? 'green' : 'grey')
-
-  // 3. Calculate live outstanding tasks (0 when none exist)
-  const taskCount = site.taskCount || 0
-  const taskText = `${taskCount} Outstanding`
-  const taskVariant = taskCount > 0 ? 'amber' : 'green'
-
   const liveStatusRows = [
     { label: 'Connection',       value: isConnected ? 'Connected' : 'Disconnected', variant: isConnected ? 'green' : 'red' },
     { label: 'WordPress API',    value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
+    { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
     { label: 'Configured',       value: configuredText, variant: configuredVariant },
-    { label: 'Audited',          value: auditedText, variant: auditedVariant },
-    { label: 'Tasks Outstanding', value: taskText, variant: taskVariant },
   ]
 
   return (
     <div className="website-tile" role="article" aria-label={`${site.name} website tile`}>
 
-      {/* ── Top row: connection status + task count ── */}
+      {/* ── Top row: connection status ── */}
       <div className="tile-top-row">
         <span className={`connection-status ${ind.cls}`}>
           <span className="connection-dot" aria-hidden="true" />
           {ind.label}
-        </span>
-        <span className="task-count-badge">
-          {taskCount} TASKS
         </span>
       </div>
 
