@@ -78,21 +78,6 @@ export default function PageAuditorRulesPage() {
       failExample: 'Word Count: 180 words. (Fail: Word Count below 300 words)',
     },
     {
-      id: 'internal_links',
-      num: '6',
-      name: 'Internal Link Count',
-      weight: '7%',
-      purpose: 'Measure the number of internal links from other pages on the website that point to the audited page.',
-      dataExtracted: 'Count all valid internal links from other pages on the same website that link to the audited page.',
-      matchingLogic: 'Crawl the website and count valid internal links from other pages that point to the audited page.',
-      scoringContribution: '7 Points (Internal Linking area weight).',
-      passCriteria: 'The audited page receives at least 3 internal links from other pages on the website.',
-      failCriteria: 'The audited page receives fewer than 3 internal links.',
-      recommendedAction: 'Current Incoming Internal Links: [N] | Minimum Required to Pass Audit: 3',
-      passExample: 'Incoming Links: 5 internal links pointing to this page. (Pass)',
-      failExample: 'Incoming Links: 1 internal link pointing to this page. (Fail)',
-    },
-    {
       id: 'image_count',
       num: '7',
       name: 'Image Count',
@@ -149,9 +134,8 @@ export default function PageAuditorRulesPage() {
           <li className="v1-summary-item"><span className="v1-summary-item-num">3.</span> <span><strong>H1 Heading (15%):</strong> Single &lt;h1&gt; tag containing or topically matching the Target Phrase.</span></li>
           <li className="v1-summary-item"><span className="v1-summary-item-num">4.</span> <span><strong>H2 Headings (8%):</strong> At least one &lt;h2&gt; subheading containing or topically matching the Target Phrase.</span></li>
           <li className="v1-summary-item"><span className="v1-summary-item-num">5.</span> <span><strong>Word Count & Depth (18%):</strong> Minimum 300 words + Target Phrase present naturally in body text.</span></li>
-          <li className="v1-summary-item"><span className="v1-summary-item-num">6.</span> <span><strong>Internal Link Count (7%):</strong> Minimum 3 incoming internal links from other pages on the website.</span></li>
-          <li className="v1-summary-item"><span className="v1-summary-item-num">7.</span> <span><strong>Image Count (6%):</strong> Minimum 1 relevant image present on the page.</span></li>
-          <li className="v1-summary-item"><span className="v1-summary-item-num">8.</span> <span><strong>Images Missing Alt Text (6%):</strong> All images must have meaningful alt text (0 missing).</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">6.</span> <span><strong>Image Count (6%):</strong> Minimum 1 relevant image present on the page.</span></li>
+          <li className="v1-summary-item"><span className="v1-summary-item-num">7.</span> <span><strong>Images Missing Alt Text (6%):</strong> All images must have meaningful alt text (0 missing).</span></li>
         </ul>
       </div>
 
@@ -166,7 +150,6 @@ export default function PageAuditorRulesPage() {
           <div className="weight-item"><span className="weight-val">8%</span><span className="weight-lbl">Meta Description</span></div>
           <div className="weight-item"><span className="weight-val">8%</span><span className="weight-lbl">H2 Headings</span></div>
           <div className="weight-item"><span className="weight-val">8%</span><span className="weight-lbl">URL Slug</span></div>
-          <div className="weight-item"><span className="weight-val">7%</span><span className="weight-lbl">Internal Links</span></div>
           <div className="weight-item"><span className="weight-val">6%</span><span className="weight-lbl">Images & Alt Text</span></div>
           <div className="weight-item"><span className="weight-val">5%</span><span className="weight-lbl">FAQ Section</span></div>
         </div>

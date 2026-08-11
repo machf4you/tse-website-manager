@@ -368,109 +368,6 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         wordCountRec = `Increase content length to at least 300 words and add target phrase "${targetPhrase}"`
       }
     }
-    // Resilient URL normalization helper functions for internal link matching
-    const normalizeUrlForMatching = (url) => {
-      if (!url || typeof url !== 'string') return ''
-      let cleaned = url.trim().toLowerCase()
-      cleaned = cleaned.replace(/^https?:\/\//, '')
-      cleaned = cleaned.replace(/^www\./, '')
-      cleaned = cleaned.replace(/\/+$/, '')
-      return cleaned
-    }
-
-    const getPathSlugForMatching = (url) => {
-      const norm = normalizeUrlForMatching(url)
-      if (!norm) return ''
-      const slashIdx = norm.indexOf('/')
-      if (slashIdx === -1) return '/'
-      return norm.slice(slashIdx)
-    }
-
-    const effectivePagesList = enrichedPagesList.length > 0 ? enrichedPagesList : pagesList
-    const incomingLinkCount = (currentPage?.url && Array.isArray(effectivePagesList)) ? effectivePagesList.filter(p => {
-      if (!p || !p.url) return false
-      
-      const targetNormUrl = normalizeUrlForMatching(currentPage.url)
-      const targetPathSlug = getPathSlugForMatching(currentPage.url)
-      const pNormUrl = normalizeUrlForMatching(p.url)
-      
-      // Do not count self-referential links on the audited page itself
-      if (targetNormUrl && pNormUrl && targetNormUrl === pNormUrl) return false
-
-      const isHome = currentPage.isHomePage || !targetPathSlug || targetPathSlug === '/'
-
-      const pLinks = p.internal_links || p.links || []
-      const rawContent = (
-        typeof p.content?.rendered === 'string' && p.content.rendered.trim() ? p.content.rendered.trim() :
-        typeof p.content?.raw === 'string' && p.content.raw.trim() ? p.content.raw.trim() :
-        typeof p.content === 'string' && p.content.trim() ? p.content.trim() :
-        typeof p.post_content === 'string' && p.post_content.trim() ? p.post_content.trim() :
-        typeof p.body_text === 'string' && p.body_text.trim() ? p.body_text.trim() :
-        typeof p.html === 'string' && p.html.trim() ? p.html.trim() :
-        typeof p.post_excerpt === 'string' && p.post_excerpt.trim() ? p.post_excerpt.trim() :
-        typeof p.excerpt?.rendered === 'string' && p.excerpt.rendered.trim() ? p.excerpt.rendered.trim() :
-        typeof p.excerpt === 'string' && p.excerpt.trim() ? p.excerpt.trim() : ''
-      )
-      
-      // Exclude navigation, header, footer, logo, and menu components
-      const bodyOnlyContent = rawContent
-        .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-        .replace(/<div[^>]*class="[^"]*(header|nav|footer|logo|site-header|site-footer|menu)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-
-      // Check extracted link objects first
-      const hasLinkObj = Array.isArray(pLinks) && pLinks.some(l => {
-        const href = (typeof l === 'string' ? l : (l?.href || '')).trim()
-        const normHref = normalizeUrlForMatching(href)
-        const hrefSlug = getPathSlugForMatching(href)
-        if (isHome) {
-          return normHref === targetNormUrl || hrefSlug === '/' || href === '/' || href === ''
-        }
-        return normHref === targetNormUrl || (targetPathSlug && targetPathSlug !== '/' && hrefSlug === targetPathSlug)
-      })
-
-      if (hasLinkObj) return true
-
-      // Parse HTML anchor tags in body content
-      const linkRegex = /<a\s+[^>]*href=["']([^"']*)["'][^>]*>/gi
-      let match
-      while ((match = linkRegex.exec(bodyOnlyContent)) !== null) {
-        const href = match[1]
-        const normHref = normalizeUrlForMatching(href)
-        const hrefSlug = getPathSlugForMatching(href)
-
-        if (isHome) {
-          if (normHref === targetNormUrl || hrefSlug === '/' || href === '/' || href === '') {
-            return true
-          }
-        } else {
-          if (normHref === targetNormUrl || (targetPathSlug && targetPathSlug !== '/' && hrefSlug === targetPathSlug)) {
-            return true
-          }
-        }
-      }
-
-      return false
-    }).length : 0
-
-    console.log('[LINK_TRACE_1] currentPage.url:', currentPage?.url)
-    console.log('[LINK_TRACE_2] pagesList.length:', pagesList?.length)
-    if (Array.isArray(pagesList)) {
-      pagesList.forEach((p, idx) => {
-        const url = p?.url || p?.link || ''
-        if (url.includes('loft-conversions')) {
-          const rawContent = typeof p?.content === 'string' ? p.content : (p?.content?.rendered || p?.content?.raw || p?.body_text || p?.html || '')
-          console.log(`[PAGES_LIST_INSPECT] idx=${idx} title="${p?.title}" url="${url}" contentLen=${rawContent.length} containsBanstead=${rawContent.toLowerCase().includes('banstead')}`)
-        }
-      })
-    }
-    const linkCheck = getCheck('Internal Link Count') || getCheck('Internal Links')
-    const incomingAnchorsList = Array.isArray(snap.incoming_anchors) ? snap.incoming_anchors : []
-    const incomingAnchorsTotal = incomingAnchorsList.reduce((sum, item) => sum + (item.count || 1), 0)
-    const displayIncomingLinks = incomingAnchorsList.length > 0 ? incomingAnchorsTotal : incomingLinkCount
-    const finalLinkStatus = displayIncomingLinks >= 3 ? 'Pass' : 'Fail'
-
     auditElements = [
       {
         id: 'meta_title',
@@ -518,16 +415,6 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
         status: wordCountStatus,
         recommendation: wordCountRec,
         recommendationType: wordCountStatus === 'Pass' ? 'default' : 'fail',
-      },
-      {
-        id: 'internal_links',
-        name: 'Internal Link Count',
-        currentValue: `${displayIncomingLinks} incoming internal links`,
-        hasTargetPhrase: true,
-        status: finalLinkStatus,
-        recommendation: finalLinkStatus === 'Pass' ? '—' : `Current Incoming Internal Links: ${displayIncomingLinks} | Minimum Required to Pass Audit: 3`,
-        recommendationType: finalLinkStatus === 'Pass' ? 'default' : 'fail',
-        issueCode: 'ISSUE 2: INTERNAL LINK COUNT',
       },
       {
         id: 'image_count',
@@ -813,15 +700,7 @@ export default function PageAuditResultsPage({ site, page, pagesList = [], onBac
                     type="button"
                     className="w4-btn-fix-issue"
                     onClick={() => {
-                      if (issue.name?.toLowerCase().includes('internal link') || issue.id === 'internal_links') {
-                        if (onNavigateToInternalLinking) {
-                          onNavigateToInternalLinking(currentPage.url)
-                        } else {
-                          alert(`Navigating to W4 Internal Linking for page: ${currentPage.url}`)
-                        }
-                      } else {
-                        alert(`Redirecting to WordPress Editor to fix: ${issue.name}`)
-                      }
+                      alert(`Redirecting to WordPress Editor to fix: ${issue.name}`)
                     }}
                   >
                     Fix Issue ▷
