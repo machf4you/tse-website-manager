@@ -268,6 +268,89 @@ export function generateContextualReplacement(sourcePage, anchorText) {
   }
 }
 
+const STOPWORDS = new Set([
+  'a', 'an', 'the', 'and', 'or', 'but', 'is', 'if', 'then', 'else', 'when',
+  'at', 'from', 'by', 'for', 'with', 'about', 'against', 'between', 'into',
+  'through', 'during', 'before', 'after', 'above', 'below', 'to', 'in', 'on',
+  'off', 'over', 'under', 'again', 'further', 'this', 'that', 'these', 'those',
+  'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having',
+  'do', 'does', 'did', 'doing', 'can', 'could', 'should', 'would', 'vs', 'versus',
+  'how', 'much', 'what', 'which', 'who', 'whom', 'why', 'where'
+])
+
+function extractKeyTokens(str) {
+  if (!str || typeof str !== 'string') return new Set()
+  const words = str
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 2 && !STOPWORDS.has(w))
+
+  const tokens = new Set()
+  words.forEach(w => {
+    tokens.add(w)
+    if (w.endsWith('s') && w.length > 3) {
+      tokens.add(w.slice(0, -1))
+    }
+  })
+  return tokens
+}
+
+function calculateRelevanceScore(source, target) {
+  let score = 0
+
+  const sTargetPhrase = (source.targetPhrase || source.target || '').trim()
+  const tTargetPhrase = (target.targetPhrase || target.target || '').trim()
+
+  const sTitle = (source.title || source.proposedTitle || '').trim()
+  const tTitle = (target.title || target.proposedTitle || '').trim()
+
+  const sUrl = (source.url || '').trim()
+  const tUrl = (target.url || '').trim()
+
+  // 1. Target phrase match (highest weight: 50 pts per token overlap)
+  if (sTargetPhrase && tTargetPhrase) {
+    const sTokens = extractKeyTokens(sTargetPhrase)
+    const tTokens = extractKeyTokens(tTargetPhrase)
+    sTokens.forEach(t => {
+      if (tTokens.has(t)) score += 50
+    })
+  }
+
+  if (sTargetPhrase) {
+    const sTokens = extractKeyTokens(sTargetPhrase)
+    const tTitleTokens = extractKeyTokens(tTitle)
+    const tUrlTokens = extractKeyTokens(tUrl)
+    sTokens.forEach(t => {
+      if (tTitleTokens.has(t)) score += 30
+      if (tUrlTokens.has(t)) score += 20
+    })
+  }
+
+  // 2. Page title word overlap (15 pts per token overlap)
+  const sTitleTokens = extractKeyTokens(sTitle)
+  const tTitleTokens = extractKeyTokens(tTitle)
+  sTitleTokens.forEach(t => {
+    if (tTitleTokens.has(t)) score += 15
+  })
+
+  // 3. URL word overlap (10 pts per token overlap)
+  const sUrlTokens = extractKeyTokens(sUrl)
+  const tUrlTokens = extractKeyTokens(tUrl)
+  sUrlTokens.forEach(t => {
+    if (tUrlTokens.has(t)) score += 10
+  })
+
+  // Hub Bonus: Hub pages (Priority 1) get a small base weight (+5)
+  const targetType = (target.type || target.seoPageType || '').toLowerCase()
+  if (targetType === 'hub' || Number(target.priority) === 1) {
+    score += 5
+  }
+
+  return score
+}
+
 /**
  * W5 Phase 1 Simple Internal Link Recommendations Generator
  * Based strictly on existing synced page data (URL, Title, Page Type, Priority).
@@ -318,8 +401,12 @@ export function generateSimpleInternalLinkRecommendations(pagesList) {
       return allowedTargetTypes.some(t => t.toLowerCase() === targetType.toLowerCase())
     })
 
-    // Sort matching targets by Priority (1 -> 2 -> 3 -> 4) then title
+    // Sort matching targets by Relevance Score (highest topic overlap first), then Priority (1 -> 2 -> 3 -> 4), then Title
     const sortedTargets = [...matchingTargets].sort((a, b) => {
+      const scoreA = calculateRelevanceScore(source, a)
+      const scoreB = calculateRelevanceScore(source, b)
+      if (scoreA !== scoreB) return scoreB - scoreA
+
       const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
       const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
       if (pA !== pB) return pA - pB
