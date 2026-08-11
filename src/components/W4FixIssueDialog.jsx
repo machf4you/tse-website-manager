@@ -13,25 +13,23 @@ export default function W4FixIssueDialog({
   onRerunAudit,
 }) {
   const [step, setStep] = useState('edit') // 'edit' | 'saved_confirmation'
-  const [fieldValue, setFieldValue] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
-  // Status workflow tracking
+  // Multi-field state for Meta Title, Meta Description, and H1
+  const [metaTitleVal, setMetaTitleVal] = useState('')
+  const [metaDescVal, setMetaDescVal] = useState('')
+  const [h1Val, setH1Val] = useState('')
+
+  // Initial values for diff tracking
+  const [initialTitle, setInitialTitle] = useState('')
+  const [initialDesc, setInitialDesc] = useState('')
+  const [initialH1, setInitialH1] = useState('')
+
+  // Workflow tracking
   const [syncStarted, setSyncStarted] = useState(false)
   const [syncCompleted, setSyncCompleted] = useState(false)
   const [auditCompleted, setAuditCompleted] = useState(false)
 
-  // Determine SEO Element type & pre-fill current text
-  const seoType = (() => {
-    if (!issue) return 'meta_title'
-    const name = (issue.name || issue.label || issue.issueCode || '').toLowerCase()
-    const id = (issue.id || '').toLowerCase()
-    if (name.includes('description') || id.includes('desc')) return 'meta_desc'
-    if (name.includes('h1') || id.includes('h1')) return 'h1'
-    return 'meta_title'
-  })()
-
-  // Pre-fill initial text from page object
   useEffect(() => {
     if (!isOpen || !page) return
     setStep('edit')
@@ -40,14 +38,19 @@ export default function W4FixIssueDialog({
     setSyncCompleted(false)
     setAuditCompleted(false)
 
-    if (seoType === 'meta_title') {
-      setFieldValue(page.proposedTitle || page.metaTitle || page.title || '')
-    } else if (seoType === 'meta_desc') {
-      setFieldValue(page.metaDescription || page.meta_description || page.snippet || '')
-    } else if (seoType === 'h1') {
-      setFieldValue(page.h1 || page.h1_text || page.title || '')
-    }
-  }, [isOpen, page, seoType])
+    const initT = page.proposedTitle || page.metaTitle || page.title || ''
+    const initD = page.metaDescription || page.meta_description || page.snippet || ''
+    const initH = page.h1 || page.h1_text || page.title || ''
+
+    setMetaTitleVal(initT)
+    setInitialTitle(initT)
+
+    setMetaDescVal(initD)
+    setInitialDesc(initD)
+
+    setH1Val(initH)
+    setInitialH1(initH)
+  }, [isOpen, page])
 
   // Track global isSyncing prop completion
   useEffect(() => {
@@ -56,63 +59,53 @@ export default function W4FixIssueDialog({
     }
   }, [syncStarted, isSyncing])
 
-  if (!isOpen || !issue) return null
+  if (!isOpen || !page) return null
 
-  // Details per element type
-  const elementDetails = {
-    meta_title: {
-      label: 'Meta Title',
-      why: 'The Meta Title is the primary on-page SEO ranking signal in Google search results and defines the clickable headline in search engine snippets.',
-      recommended: issue.recommendation || 'Include the target phrase near the beginning of the title and keep length between 50–60 characters.',
-      idealLengthMin: 50,
-      idealLengthMax: 60,
-    },
-    meta_desc: {
-      label: 'Meta Description',
-      why: 'The Meta Description drives organic click-through rates (CTR) in Google search snippets and provides crucial context to search crawlers.',
-      recommended: issue.recommendation || 'Include target phrase naturally and aim for 150–160 characters to avoid snippet truncation.',
-      idealLengthMin: 150,
-      idealLengthMax: 160,
-    },
-    h1: {
-      label: 'H1 Header Tag',
-      why: 'The H1 tag establishes the main topic hierarchy for search crawlers and site visitors. Every page should have exactly one descriptive H1.',
-      recommended: issue.recommendation || 'Ensure the H1 header clearly communicates the primary topic and includes the target phrase.',
-      idealLengthMin: 20,
-      idealLengthMax: 70,
-    },
-  }[seoType]
+  // Calculate pending modified fields
+  const isTitleModified = metaTitleVal.trim() !== initialTitle.trim()
+  const isDescModified = metaDescVal.trim() !== initialDesc.trim()
+  const isH1Modified = h1Val.trim() !== initialH1.trim()
 
-  const charCount = fieldValue.length
-  const minLen = elementDetails.idealLengthMin
-  const maxLen = elementDetails.idealLengthMax
+  const pendingFields = []
+  if (isTitleModified) pendingFields.push('Meta Title')
+  if (isDescModified) pendingFields.push('Meta Description')
+  if (isH1Modified) pendingFields.push('H1 Tag')
 
-  let lengthBadgeVariant = 'optimal'
-  let lengthBadgeText = `${charCount} characters — Optimal`
-
-  if (seoType !== 'h1') {
-    if (charCount < minLen) {
-      lengthBadgeVariant = 'warning'
-      lengthBadgeText = `${charCount} characters — Below recommended length`
-    } else if (charCount > maxLen) {
-      lengthBadgeVariant = 'warning'
-      lengthBadgeText = `${charCount} characters — Longer than recommended`
-    } else {
-      lengthBadgeVariant = 'optimal'
-      lengthBadgeText = `${charCount} characters — Optimal`
+  // Guidance badge helper
+  const getGuidanceBadge = (type, value) => {
+    const len = value.length
+    if (type === 'title') {
+      if (len < 50) return { variant: 'warning', text: `${len} characters — Below recommended length (50–60 chars)` }
+      if (len > 60) return { variant: 'warning', text: `${len} characters — Longer than recommended (50–60 chars)` }
+      return { variant: 'optimal', text: `${len} characters — Optimal` }
     }
-  } else {
-    lengthBadgeVariant = 'info'
-    lengthBadgeText = `${charCount} characters`
+    if (type === 'desc') {
+      if (len < 150) return { variant: 'warning', text: `${len} characters — Below recommended length (150–160 chars)` }
+      if (len > 160) return { variant: 'warning', text: `${len} characters — Longer than recommended (150–160 chars)` }
+      return { variant: 'optimal', text: `${len} characters — Optimal` }
+    }
+    return { variant: 'info', text: `${len} characters` }
   }
+
+  const titleBadge = getGuidanceBadge('title', metaTitleVal)
+  const descBadge = getGuidanceBadge('desc', metaDescVal)
+  const h1Badge = getGuidanceBadge('h1', h1Val)
 
   const handleSave = async () => {
     setIsSaving(true)
     if (onSaveFix) {
       try {
-        await onSaveFix({ page, seoType, fieldValue })
+        await onSaveFix({
+          page,
+          seoType: 'batch_optimization',
+          fieldValues: {
+            metaTitle: metaTitleVal,
+            metaDescription: metaDescVal,
+            h1: h1Val,
+          },
+        })
       } catch (err) {
-        console.error('Failed to save fix:', err)
+        console.error('Failed to save batch optimization:', err)
       }
     }
     setIsSaving(false)
@@ -150,13 +143,13 @@ export default function W4FixIssueDialog({
 
   return (
     <div className="w4-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
-      <div className="w4-modal-dialog" onClick={(e) => e.stopPropagation()}>
+      <div className="w4-modal-dialog w4-opt-panel-dialog" onClick={(e) => e.stopPropagation()}>
 
         {/* Modal Header */}
         <div className="w4-modal-header">
           <div>
-            <span className="w4-modal-code">{issue.issueCode || 'W4 AUDIT FIX'}</span>
-            <h2 className="w4-modal-title">Fix Issue: {elementDetails.label}</h2>
+            <span className="w4-modal-code">W4 PAGE SEO OPTIMISATION</span>
+            <h2 className="w4-modal-title">Page Optimisation: {page.proposedTitle || page.title || page.url}</h2>
           </div>
           <button type="button" className="w4-modal-close" onClick={onClose} aria-label="Close dialog">
             ✕
@@ -164,88 +157,140 @@ export default function W4FixIssueDialog({
         </div>
 
         {step === 'edit' ? (
-          <div className="w4-modal-body">
+          <div className="w4-opt-panel-body">
             
-            {/* LEFT COLUMN: Issue Details */}
-            <div className="w4-panel-left">
-              <div className="w4-info-group">
-                <span className="w4-info-label">SEO Element</span>
-                <div className="w4-info-value-badge">{elementDetails.label}</div>
+            {/* PENDING CHANGES SUMMARY BAR */}
+            <div className={`w4-pending-summary-bar ${pendingFields.length > 0 ? 'active' : 'empty'}`}>
+              <div className="w4-summary-left">
+                <span className="w4-summary-icon">{pendingFields.length > 0 ? '⚡' : 'ⓘ'}</span>
+                <span className="w4-summary-text">
+                  {pendingFields.length > 0
+                    ? `Pending Changes (${pendingFields.length}): ${pendingFields.join(', ')}`
+                    : 'Pending Changes: None (Edit fields below to stage optimizations)'}
+                </span>
               </div>
-
-              <div className="w4-info-group">
-                <span className="w4-info-label">Current Audit Value</span>
-                <div className="w4-info-current-box">{issue.currentValue || page[seoType] || 'Not Set'}</div>
-              </div>
-
-              <div className="w4-info-group">
-                <span className="w4-info-label">Recommended Action</span>
-                <div className="w4-info-recom-box">{elementDetails.recommended}</div>
-              </div>
-
-              <div className="w4-info-group">
-                <span className="w4-info-label">Why This Matters</span>
-                <p className="w4-info-why-text">{elementDetails.why}</p>
+              <div className="w4-summary-target">
+                Target Phrase: <strong>{page.target || page.targetPhrase || 'Not Set'}</strong>
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Editable WordPress Field */}
-            <div className="w4-panel-right">
-              <div className="w4-field-header">
-                <label htmlFor="w4-fix-input" className="w4-field-label">
-                  Editable WordPress {elementDetails.label}
-                </label>
-                <span className={`w4-length-badge ${lengthBadgeVariant}`}>
-                  {lengthBadgeText}
-                </span>
-              </div>
+            {/* STACKED SECTIONS */}
+            <div className="w4-stacked-sections-container">
 
-              {seoType === 'meta_desc' ? (
-                <textarea
-                  id="w4-fix-input"
-                  className="w4-field-textarea"
-                  rows={6}
-                  value={fieldValue}
-                  onChange={(e) => setFieldValue(e.target.value)}
-                  placeholder={`Enter proposed ${elementDetails.label}...`}
-                />
-              ) : (
-                <input
-                  type="text"
-                  id="w4-fix-input"
-                  className="w4-field-input"
-                  value={fieldValue}
-                  onChange={(e) => setFieldValue(e.target.value)}
-                  placeholder={`Enter proposed ${elementDetails.label}...`}
-                />
-              )}
+              {/* SECTION 1: META TITLE */}
+              <div className={`w4-opt-section-card ${isTitleModified ? 'is-modified' : ''}`}>
+                <div className="w4-opt-section-header">
+                  <div className="w4-opt-section-title-group">
+                    <span className="w4-opt-section-num">1</span>
+                    <h3 className="w4-opt-section-title">Meta Title</h3>
+                    {isTitleModified && <span className="w4-modified-pill">Modified</span>}
+                  </div>
+                  <span className={`w4-length-badge ${titleBadge.variant}`}>
+                    {titleBadge.text}
+                  </span>
+                </div>
 
-              <div className="w4-guidance-box">
-                <div className="w4-guidance-item">
-                  <strong>Recommended Range:</strong> <span>{minLen}–{maxLen} characters</span>
-                </div>
-                <div className="w4-guidance-item">
-                  <strong>Target Phrase:</strong> <span>{page.target || page.targetPhrase || 'Not set'}</span>
-                </div>
-                <div className="w4-guidance-item">
-                  <strong>Page URL:</strong> <code>{page.url}</code>
+                <div className="w4-opt-section-body">
+                  <div className="w4-opt-row">
+                    <span className="w4-opt-label">Current Audit Value:</span>
+                    <div className="w4-opt-current-box">{initialTitle || 'Not Set'}</div>
+                  </div>
+
+                  <div className="w4-opt-row">
+                    <label htmlFor="opt-input-title" className="w4-opt-label">Editable Proposed Meta Title:</label>
+                    <input
+                      id="opt-input-title"
+                      type="text"
+                      className="w4-field-input"
+                      value={metaTitleVal}
+                      onChange={(e) => setMetaTitleVal(e.target.value)}
+                      placeholder="Enter proposed Meta Title..."
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Actions Footer */}
-              <div className="w4-modal-actions">
-                <button type="button" className="w3-btn-secondary" onClick={onClose}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="w3-btn-emerald"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Saving...' : 'Save / Update WordPress'}
-                </button>
+              {/* SECTION 2: META DESCRIPTION */}
+              <div className={`w4-opt-section-card ${isDescModified ? 'is-modified' : ''}`}>
+                <div className="w4-opt-section-header">
+                  <div className="w4-opt-section-title-group">
+                    <span className="w4-opt-section-num">2</span>
+                    <h3 className="w4-opt-section-title">Meta Description</h3>
+                    {isDescModified && <span className="w4-modified-pill">Modified</span>}
+                  </div>
+                  <span className={`w4-length-badge ${descBadge.variant}`}>
+                    {descBadge.text}
+                  </span>
+                </div>
+
+                <div className="w4-opt-section-body">
+                  <div className="w4-opt-row">
+                    <span className="w4-opt-label">Current Audit Value:</span>
+                    <div className="w4-opt-current-box">{initialDesc || 'Not Set'}</div>
+                  </div>
+
+                  <div className="w4-opt-row">
+                    <label htmlFor="opt-input-desc" className="w4-opt-label">Editable Proposed Meta Description:</label>
+                    <textarea
+                      id="opt-input-desc"
+                      className="w4-field-textarea"
+                      rows={3}
+                      value={metaDescVal}
+                      onChange={(e) => setMetaDescVal(e.target.value)}
+                      placeholder="Enter proposed Meta Description..."
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* SECTION 3: H1 HEADER TAG */}
+              <div className={`w4-opt-section-card ${isH1Modified ? 'is-modified' : ''}`}>
+                <div className="w4-opt-section-header">
+                  <div className="w4-opt-section-title-group">
+                    <span className="w4-opt-section-num">3</span>
+                    <h3 className="w4-opt-section-title">H1 Header Tag</h3>
+                    {isH1Modified && <span className="w4-modified-pill">Modified</span>}
+                  </div>
+                  <span className={`w4-length-badge ${h1Badge.variant}`}>
+                    {h1Badge.text}
+                  </span>
+                </div>
+
+                <div className="w4-opt-section-body">
+                  <div className="w4-opt-row">
+                    <span className="w4-opt-label">Current Audit Value:</span>
+                    <div className="w4-opt-current-box">{initialH1 || 'Not Set'}</div>
+                  </div>
+
+                  <div className="w4-opt-row">
+                    <label htmlFor="opt-input-h1" className="w4-opt-label">Editable Proposed H1 Tag:</label>
+                    <input
+                      id="opt-input-h1"
+                      type="text"
+                      className="w4-field-input"
+                      value={h1Val}
+                      onChange={(e) => setH1Val(e.target.value)}
+                      placeholder="Enter proposed H1 Tag..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Actions Footer */}
+            <div className="w4-modal-actions w4-opt-actions">
+              <button type="button" className="w3-btn-secondary" onClick={onClose}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="w3-btn-emerald"
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving Changes...' : 'Save & Stage Page Optimisations'}
+              </button>
             </div>
 
           </div>
@@ -258,12 +303,12 @@ export default function W4FixIssueDialog({
             <h3 className="w4-confirm-title">
               {syncCompleted && auditCompleted
                 ? 'Fix Workflow Completed Successfully!'
-                : 'WordPress Field Staged Successfully'}
+                : 'Page Optimisations Staged Successfully'}
             </h3>
             <p className="w4-confirm-text">
               {syncCompleted && auditCompleted
-                ? `The updated ${elementDetails.label} has been synced from WordPress and the page audit has passed!`
-                : `The updated ${elementDetails.label} has been saved. Complete the steps below to verify your changes pass the Page Audit:`}
+                ? `The page optimisations (${pendingFields.join(', ') || 'All fields'}) have been synced from WordPress and the page audit has passed!`
+                : `Proposed changes for ${pendingFields.join(', ') || 'selected fields'} have been saved. Complete the steps below to verify your changes pass the Page Audit:`}
             </p>
 
             <div className="w4-confirm-steps-grid">

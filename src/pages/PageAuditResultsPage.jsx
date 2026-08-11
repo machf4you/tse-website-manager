@@ -101,7 +101,7 @@ export default function PageAuditResultsPage({
     h1: overrideObj.h1 !== undefined ? overrideObj.h1 : rawCurrentPage.h1,
   }
 
-  const handleSaveFix = async ({ page: targetPage, seoType, fieldValue }) => {
+  const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {
     if (!targetPage) return
     const siteIdKey = getSiteConfigsStorageKey(site)
     const pageKey = targetPage.id || targetPage.url
@@ -123,7 +123,18 @@ export default function PageAuditResultsPage({
       isManualOverride: true,
     }
 
-    if (seoType === 'meta_title') {
+    if (seoType === 'batch_optimization' && fieldValues) {
+      if (fieldValues.metaTitle !== undefined) {
+        updatedConfig.proposedTitle = fieldValues.metaTitle
+        updatedConfig.metaTitle = fieldValues.metaTitle
+      }
+      if (fieldValues.metaDescription !== undefined) {
+        updatedConfig.metaDescription = fieldValues.metaDescription
+      }
+      if (fieldValues.h1 !== undefined) {
+        updatedConfig.h1 = fieldValues.h1
+      }
+    } else if (seoType === 'meta_title') {
       updatedConfig.proposedTitle = fieldValue
       updatedConfig.metaTitle = fieldValue
     } else if (seoType === 'meta_desc') {
@@ -540,6 +551,7 @@ export default function PageAuditResultsPage({
         const l = (w.label || '').toLowerCase()
         const k = (w.key || '').toLowerCase()
         if (l.includes('internal link') || k.includes('internal_link')) return false
+        if (l.includes('title tag') || k.includes('title_tag') || l === 'title tag' || l === 'title') return false
         return !auditElements.some(el => (el.name || '').toLowerCase() === l)
       })
       .map((w, idx) => ({
@@ -801,14 +813,24 @@ export default function PageAuditResultsPage({
         {/* Action Checklist: What to Fix Card */}
         {liveAuditData && failedIssues.length > 0 && (
           <div className="w4-checklist-card">
-            <div className="w4-checklist-header">
-              <span className="w4-warning-icon">⚠</span>
-              <div>
-                <h3 className="w4-checklist-title">Action Checklist: What to Fix</h3>
-                <p className="w4-checklist-subtitle">
-                  Staff Action Required: Fix the following issues in the WordPress editor to optimize the page.
-                </p>
+            <div className="w4-checklist-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span className="w4-warning-icon">⚠</span>
+                <div>
+                  <h3 className="w4-checklist-title">Action Checklist: What to Fix</h3>
+                  <p className="w4-checklist-subtitle">
+                    Staff Action Required: Fix issues below using the Page Optimisation workflow.
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                className="w3-btn-emerald"
+                style={{ padding: '8px 16px', fontSize: '0.88rem' }}
+                onClick={() => setActiveFixIssue({ isBatch: true, name: 'Page SEO' })}
+              >
+                Optimize Page SEO ▷
+              </button>
             </div>
 
             <div className="w4-issues-list">
