@@ -120,12 +120,31 @@ export default function PageAuditResultsPage({
 
     const existingConfig = savedConfigs[pageKey] || (targetPage.url ? savedConfigs[targetPage.url] : {}) || {}
 
+    // Explicitly preserve W3 page configuration fields so W3 settings are NEVER lost
+    const preservedTargetPhrase = (existingConfig.targetPhrase || existingConfig.target || targetPage.targetPhrase || targetPage.target || '').trim()
+    const preservedType = existingConfig.type || existingConfig.seoPageType || targetPage.type || targetPage.seoPageType || 'Unclassified'
+    const preservedPriority = existingConfig.priority !== undefined ? existingConfig.priority : (targetPage.priority !== undefined ? targetPage.priority : 0)
+    const preservedAutoType = existingConfig.autoType || targetPage.autoType || preservedType
+    const preservedIsConfigured = existingConfig.isConfigured !== undefined ? existingConfig.isConfigured : Boolean(preservedTargetPhrase.length > 0)
+    const preservedIsExcluded = existingConfig.isExcluded !== undefined ? existingConfig.isExcluded : Boolean(targetPage.isExcluded)
+    const preservedStatus = existingConfig.status || (preservedIsConfigured ? 'configured' : 'unconfigured')
+    const preservedIsManualOverride = existingConfig.isManualOverride !== undefined ? existingConfig.isManualOverride : Boolean(targetPage.isManualOverride)
+
     const updatedConfig = {
+      ...targetPage,
       ...existingConfig,
       pageId: pageKey,
       url: targetPage.url,
-      isConfigured: true,
-      isManualOverride: true,
+      targetPhrase: preservedTargetPhrase,
+      target: preservedTargetPhrase,
+      type: preservedType,
+      seoPageType: preservedType,
+      autoType: preservedAutoType,
+      priority: preservedPriority,
+      isConfigured: preservedIsConfigured,
+      isExcluded: preservedIsExcluded,
+      status: preservedStatus,
+      isManualOverride: preservedIsManualOverride,
     }
 
     if (seoType === 'batch_optimization' && fieldValues) {
@@ -160,16 +179,6 @@ export default function PageAuditResultsPage({
       } catch (e) {
         console.error('Failed to save page configs to API:', e)
       }
-    }
-
-    try {
-      const auditStorageKey = getSiteAuditsStorageKey(site)
-      const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-      delete storedAudits[pageKey]
-      if (targetPage.url) delete storedAudits[targetPage.url]
-      localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
-    } catch (e) {
-      console.error('Failed to clear cached audit:', e)
     }
 
     setLocalOverrides(prev => ({
