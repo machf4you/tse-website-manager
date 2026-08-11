@@ -14,7 +14,6 @@ export default function W4FixIssueDialog({
   isSyncing = false,
   onRerunAudit,
 }) {
-  const [step, setStep] = useState('edit') // 'edit' | 'saved_confirmation'
   const [isSaving, setIsSaving] = useState(false)
 
   // Multi-field state for Meta Title, Meta Description, and H1
@@ -27,10 +26,19 @@ export default function W4FixIssueDialog({
   const [initialDesc, setInitialDesc] = useState('')
   const [initialH1, setInitialH1] = useState('')
 
+  // Single modal workflow state transitions
+  const [isSavedReady, setIsSavedReady] = useState(false)
+  const [syncStarted, setSyncStarted] = useState(false)
+  const [syncCompleted, setSyncCompleted] = useState(false)
+  const [auditCompleted, setAuditCompleted] = useState(false)
+
   useEffect(() => {
     if (!isOpen || !page) return
-    setStep('edit')
     setIsSaving(false)
+    setIsSavedReady(false)
+    setSyncStarted(false)
+    setSyncCompleted(false)
+    setAuditCompleted(false)
 
     // Extract values directly from audit table elements if present
     const metaDescFromAudit = auditElements?.find(el => (el.id === 'meta_description' || el.name === 'Meta Description'))?.currentValue
@@ -60,6 +68,13 @@ export default function W4FixIssueDialog({
     setH1Val(initH)
     setInitialH1(initH)
   }, [isOpen, page, auditElements, liveAuditData])
+
+  // Track global isSyncing prop completion
+  useEffect(() => {
+    if (syncStarted && !isSyncing) {
+      setSyncCompleted(true)
+    }
+  }, [syncStarted, isSyncing])
 
   if (!isOpen || !page) return null
 
@@ -111,7 +126,36 @@ export default function W4FixIssueDialog({
       }
     }
     setIsSaving(false)
-    setStep('saved_confirmation')
+    setIsSavedReady(true)
+  }
+
+  const handleSyncClick = async () => {
+    setSyncStarted(true)
+    if (onSyncWebsiteData) {
+      try {
+        const res = onSyncWebsiteData()
+        if (res && typeof res.then === 'function') {
+          await res
+        }
+      } catch (err) {
+        console.error('Sync error:', err)
+      }
+    }
+    setSyncCompleted(true)
+  }
+
+  const handleAuditClick = async () => {
+    if (onRerunAudit) {
+      try {
+        const res = onRerunAudit()
+        if (res && typeof res.then === 'function') {
+          await res
+        }
+      } catch (err) {
+        console.error('Audit error:', err)
+      }
+    }
+    setAuditCompleted(true)
   }
 
   return (
@@ -129,205 +173,190 @@ export default function W4FixIssueDialog({
           </button>
         </div>
 
-        {step === 'edit' ? (
-          <div className="w4-opt-panel-body">
-            
-            {/* PENDING CHANGES SUMMARY BAR */}
-            <div className={`w4-pending-summary-bar ${pendingFields.length > 0 ? 'active' : 'empty'}`}>
-              <div className="w4-summary-left">
-                <span className="w4-summary-icon">{pendingFields.length > 0 ? '⚡' : 'ⓘ'}</span>
-                <span className="w4-summary-text">
-                  {pendingFields.length > 0
+        {/* Single View Panel Body */}
+        <div className="w4-opt-panel-body">
+          
+          {/* PENDING CHANGES SUMMARY BAR */}
+          <div className={`w4-pending-summary-bar ${isSavedReady ? 'active' : (pendingFields.length > 0 ? 'active' : 'empty')}`}>
+            <div className="w4-summary-left">
+              <span className="w4-summary-icon">{isSavedReady ? '🟢' : (pendingFields.length > 0 ? '⚡' : 'ⓘ')}</span>
+              <span className="w4-summary-text">
+                {isSavedReady
+                  ? 'Changes Saved & Ready (Proceed to Sync & Audit below)'
+                  : (pendingFields.length > 0
                     ? `Pending Changes (${pendingFields.length}): ${pendingFields.join(', ')}`
-                    : 'Pending Changes: None (Edit fields below to stage optimizations)'}
+                    : 'Pending Changes: None (Edit fields below to stage optimizations)')}
+              </span>
+            </div>
+            <div className="w4-summary-target">
+              Target Phrase: <strong>{page.target || page.targetPhrase || 'Not Set'}</strong>
+            </div>
+          </div>
+
+          {/* STACKED SECTIONS */}
+          <div className="w4-stacked-sections-container">
+
+            {/* SECTION 1: META TITLE */}
+            <div className={`w4-opt-section-card ${isTitleModified ? 'is-modified' : ''}`}>
+              <div className="w4-opt-section-header">
+                <div className="w4-opt-section-title-group">
+                  <span className="w4-opt-section-num">1</span>
+                  <h3 className="w4-opt-section-title">Meta Title</h3>
+                  {isTitleModified && <span className="w4-modified-pill">Modified</span>}
+                </div>
+                <span className={`w4-length-badge ${titleBadge.variant}`}>
+                  {titleBadge.text}
                 </span>
               </div>
-              <div className="w4-summary-target">
-                Target Phrase: <strong>{page.target || page.targetPhrase || 'Not Set'}</strong>
+
+              <div className="w4-opt-section-body">
+                <div className="w4-opt-row">
+                  <span className="w4-opt-label">Current Audit Value:</span>
+                  <div className="w4-opt-current-box">{initialTitle || 'Not Set'}</div>
+                </div>
+
+                <div className="w4-opt-row">
+                  <label htmlFor="opt-input-title" className="w4-opt-label">Editable Proposed Meta Title:</label>
+                  <input
+                    id="opt-input-title"
+                    type="text"
+                    className="w4-field-input"
+                    value={metaTitleVal}
+                    onChange={(e) => {
+                      setMetaTitleVal(e.target.value)
+                      setIsSavedReady(false)
+                    }}
+                    placeholder="Enter proposed Meta Title..."
+                  />
+                </div>
               </div>
             </div>
 
-            {/* STACKED SECTIONS */}
-            <div className="w4-stacked-sections-container">
-
-              {/* SECTION 1: META TITLE */}
-              <div className={`w4-opt-section-card ${isTitleModified ? 'is-modified' : ''}`}>
-                <div className="w4-opt-section-header">
-                  <div className="w4-opt-section-title-group">
-                    <span className="w4-opt-section-num">1</span>
-                    <h3 className="w4-opt-section-title">Meta Title</h3>
-                    {isTitleModified && <span className="w4-modified-pill">Modified</span>}
-                  </div>
-                  <span className={`w4-length-badge ${titleBadge.variant}`}>
-                    {titleBadge.text}
-                  </span>
+            {/* SECTION 2: META DESCRIPTION */}
+            <div className={`w4-opt-section-card ${isDescModified ? 'is-modified' : ''}`}>
+              <div className="w4-opt-section-header">
+                <div className="w4-opt-section-title-group">
+                  <span className="w4-opt-section-num">2</span>
+                  <h3 className="w4-opt-section-title">Meta Description</h3>
+                  {isDescModified && <span className="w4-modified-pill">Modified</span>}
                 </div>
-
-                <div className="w4-opt-section-body">
-                  <div className="w4-opt-row">
-                    <span className="w4-opt-label">Current Audit Value:</span>
-                    <div className="w4-opt-current-box">{initialTitle || 'Not Set'}</div>
-                  </div>
-
-                  <div className="w4-opt-row">
-                    <label htmlFor="opt-input-title" className="w4-opt-label">Editable Proposed Meta Title:</label>
-                    <input
-                      id="opt-input-title"
-                      type="text"
-                      className="w4-field-input"
-                      value={metaTitleVal}
-                      onChange={(e) => setMetaTitleVal(e.target.value)}
-                      placeholder="Enter proposed Meta Title..."
-                    />
-                  </div>
-                </div>
+                <span className={`w4-length-badge ${descBadge.variant}`}>
+                  {descBadge.text}
+                </span>
               </div>
 
-              {/* SECTION 2: META DESCRIPTION */}
-              <div className={`w4-opt-section-card ${isDescModified ? 'is-modified' : ''}`}>
-                <div className="w4-opt-section-header">
-                  <div className="w4-opt-section-title-group">
-                    <span className="w4-opt-section-num">2</span>
-                    <h3 className="w4-opt-section-title">Meta Description</h3>
-                    {isDescModified && <span className="w4-modified-pill">Modified</span>}
-                  </div>
-                  <span className={`w4-length-badge ${descBadge.variant}`}>
-                    {descBadge.text}
-                  </span>
+              <div className="w4-opt-section-body">
+                <div className="w4-opt-row">
+                  <span className="w4-opt-label">Current Audit Value:</span>
+                  <div className="w4-opt-current-box">{initialDesc || 'Not Set'}</div>
                 </div>
 
-                <div className="w4-opt-section-body">
-                  <div className="w4-opt-row">
-                    <span className="w4-opt-label">Current Audit Value:</span>
-                    <div className="w4-opt-current-box">{initialDesc || 'Not Set'}</div>
-                  </div>
-
-                  <div className="w4-opt-row">
-                    <label htmlFor="opt-input-desc" className="w4-opt-label">Editable Proposed Meta Description:</label>
-                    <textarea
-                      id="opt-input-desc"
-                      className="w4-field-textarea"
-                      rows={3}
-                      value={metaDescVal}
-                      onChange={(e) => setMetaDescVal(e.target.value)}
-                      placeholder="Enter proposed Meta Description..."
-                    />
-                  </div>
+                <div className="w4-opt-row">
+                  <label htmlFor="opt-input-desc" className="w4-opt-label">Editable Proposed Meta Description:</label>
+                  <textarea
+                    id="opt-input-desc"
+                    className="w4-field-textarea"
+                    rows={3}
+                    value={metaDescVal}
+                    onChange={(e) => {
+                      setMetaDescVal(e.target.value)
+                      setIsSavedReady(false)
+                    }}
+                    placeholder="Enter proposed Meta Description..."
+                  />
                 </div>
               </div>
-
-              {/* SECTION 3: H1 HEADER TAG */}
-              <div className={`w4-opt-section-card ${isH1Modified ? 'is-modified' : ''}`}>
-                <div className="w4-opt-section-header">
-                  <div className="w4-opt-section-title-group">
-                    <span className="w4-opt-section-num">3</span>
-                    <h3 className="w4-opt-section-title">H1 Header Tag</h3>
-                    {isH1Modified && <span className="w4-modified-pill">Modified</span>}
-                  </div>
-                  <span className={`w4-length-badge ${h1Badge.variant}`}>
-                    {h1Badge.text}
-                  </span>
-                </div>
-
-                <div className="w4-opt-section-body">
-                  <div className="w4-opt-row">
-                    <span className="w4-opt-label">Current Audit Value:</span>
-                    <div className="w4-opt-current-box">{initialH1 || 'Not Set'}</div>
-                  </div>
-
-                  <div className="w4-opt-row">
-                    <label htmlFor="opt-input-h1" className="w4-opt-label">Editable Proposed H1 Tag:</label>
-                    <input
-                      id="opt-input-h1"
-                      type="text"
-                      className="w4-field-input"
-                      value={h1Val}
-                      onChange={(e) => setH1Val(e.target.value)}
-                      placeholder="Enter proposed H1 Tag..."
-                    />
-                  </div>
-                </div>
-              </div>
-
             </div>
 
-            {/* Actions Footer */}
-            <div className="w4-modal-actions w4-opt-actions">
+            {/* SECTION 3: H1 HEADER TAG */}
+            <div className={`w4-opt-section-card ${isH1Modified ? 'is-modified' : ''}`}>
+              <div className="w4-opt-section-header">
+                <div className="w4-opt-section-title-group">
+                  <span className="w4-opt-section-num">3</span>
+                  <h3 className="w4-opt-section-title">H1 Header Tag</h3>
+                  {isH1Modified && <span className="w4-modified-pill">Modified</span>}
+                </div>
+                <span className={`w4-length-badge ${h1Badge.variant}`}>
+                  {h1Badge.text}
+                </span>
+              </div>
+
+              <div className="w4-opt-section-body">
+                <div className="w4-opt-row">
+                  <span className="w4-opt-label">Current Audit Value:</span>
+                  <div className="w4-opt-current-box">{initialH1 || 'Not Set'}</div>
+                </div>
+
+                <div className="w4-opt-row">
+                  <label htmlFor="opt-input-h1" className="w4-opt-label">Editable Proposed H1 Tag:</label>
+                  <input
+                    id="opt-input-h1"
+                    type="text"
+                    className="w4-field-input"
+                    value={h1Val}
+                    onChange={(e) => {
+                      setH1Val(e.target.value)
+                      setIsSavedReady(false)
+                    }}
+                    placeholder="Enter proposed H1 Tag..."
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* SINGLE VIEW WORKFLOW FOOTER */}
+          <div className="w4-modal-workflow-footer">
+            <div className="w4-workflow-status-bar">
+              {auditCompleted ? (
+                <span className="w4-status-msg success">🎉 Audit Complete ✓ — All page optimisations verified!</span>
+              ) : syncCompleted ? (
+                <span className="w4-status-msg info">🟢 Sync Complete ✓ — Ready to re-run audit</span>
+              ) : isSavedReady ? (
+                <span className="w4-status-msg ready">🟢 Changes Saved & Ready — Ready to sync website data</span>
+              ) : (
+                <span className="w4-status-msg initial">ⓘ Stage changes above, then click Save & Stage Page Optimisations</span>
+              )}
+            </div>
+
+            <div className="w4-workflow-actions-bar">
               <button type="button" className="w3-btn-secondary" onClick={onClose}>
-                Cancel
+                {auditCompleted ? 'Done / Close' : 'Cancel'}
               </button>
+
               <button
                 type="button"
-                className="w3-btn-emerald"
+                className={isSavedReady ? 'w3-btn-secondary' : 'w3-btn-emerald'}
                 onClick={handleSave}
                 disabled={isSaving}
               >
-                {isSaving ? 'Saving Changes...' : 'Save & Stage Page Optimisations'}
+                {isSaving ? 'Saving...' : (isSavedReady ? 'Changes Saved ✓' : 'Save & Stage Page Optimisations')}
+              </button>
+
+              <button
+                type="button"
+                className={syncCompleted ? 'w3-btn-secondary' : 'w3-btn-primary'}
+                onClick={handleSyncClick}
+                disabled={!isSavedReady || isSyncing || syncCompleted}
+                title={!isSavedReady ? 'Save & Stage Page Optimisations first' : ''}
+              >
+                {syncCompleted ? '🟢 Sync Complete ✓' : (isSyncing ? 'Syncing...' : 'Sync Website Data')}
+              </button>
+
+              <button
+                type="button"
+                className="w3-btn-emerald"
+                onClick={handleAuditClick}
+                disabled={!syncCompleted || auditCompleted}
+                title={!syncCompleted ? 'Sync Website Data first' : ''}
+              >
+                {auditCompleted ? '🟢 Audit Complete ✓' : 'Re-run Audit ▷'}
               </button>
             </div>
-
           </div>
-        ) : (
-          /* STAGE 1 POST-SAVE CONFIRMATION STATE: "SEO changes ready to sync" */
-          <div className="w4-modal-body-confirmation">
-            <div className="w4-confirm-icon-box">
-              <span className="w4-confirm-icon">🟢</span>
-            </div>
-            
-            <h3 className="w4-confirm-title">SEO changes ready to sync</h3>
-            
-            <p className="w4-confirm-text">
-              Your proposed page optimisations have been saved locally to the page configuration database.
-            </p>
 
-            {/* STAGED SUMMARY CARD */}
-            <div className="w4-staged-summary-card">
-              <div className="w4-staged-summary-header">
-                <span className="w4-staged-summary-title">Staged Page Optimisations:</span>
-                <span className="w4-staged-count-badge">
-                  {pendingFields.length > 0 ? `${pendingFields.length} Field(s) Updated` : 'Page Configuration Updated'}
-                </span>
-              </div>
-
-              <div className="w4-staged-fields-list">
-                <div className="w4-staged-field-item">
-                  <span className="w4-staged-field-label">Meta Title:</span>
-                  <div className="w4-staged-field-value">{metaTitleVal || 'Not Set'}</div>
-                </div>
-                <div className="w4-staged-field-item">
-                  <span className="w4-staged-field-label">Meta Description:</span>
-                  <div className="w4-staged-field-value">{metaDescVal || 'Not Set'}</div>
-                </div>
-                <div className="w4-staged-field-item">
-                  <span className="w4-staged-field-label">H1 Header:</span>
-                  <div className="w4-staged-field-value">{h1Val || 'Not Set'}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="w4-confirm-footer">
-              <p className="w4-confirm-note">
-                ✓ Changes stored in database. Staged optimizations will be published during the next WordPress sync.
-              </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', width: '100%', marginTop: '8px' }}>
-                <button
-                  type="button"
-                  className="w3-btn-secondary"
-                  onClick={() => setStep('edit')}
-                >
-                  Edit Optimisations
-                </button>
-                <button
-                  type="button"
-                  className="w3-btn-emerald"
-                  onClick={onClose}
-                >
-                  Done / Back to Page Audit
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
 
       </div>
     </div>
