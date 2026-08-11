@@ -864,6 +864,8 @@ export default function PageAuditResultsPage({
           issue={activeFixIssue}
           page={currentPage}
           site={site}
+          auditElements={auditElements}
+          liveAuditData={liveAuditData}
           onClose={() => setActiveFixIssue(null)}
           onSaveFix={handleSaveFix}
           onSyncWebsiteData={onSyncFromWordPress}

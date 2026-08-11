@@ -6,6 +6,8 @@ export default function W4FixIssueDialog({
   issue,
   page,
   site,
+  auditElements = [],
+  liveAuditData = null,
   onClose,
   onSaveFix,
   onSyncWebsiteData,
@@ -30,9 +32,24 @@ export default function W4FixIssueDialog({
     setStep('edit')
     setIsSaving(false)
 
-    const initT = page.proposedTitle || page.metaTitle || page.title || ''
-    const initD = page.metaDescription || page.meta_description || page.metaDesc || page.description || page.snippet || ''
-    const initH = page.h1 || page.h1_text || page.title || ''
+    // Extract values directly from audit table elements if present
+    const metaDescFromAudit = auditElements?.find(el => (el.id === 'meta_description' || el.name === 'Meta Description'))?.currentValue
+    const cleanAuditDesc = (metaDescFromAudit && metaDescFromAudit !== '—') ? metaDescFromAudit : ''
+    const snapDesc = liveAuditData?.page_snapshot?.meta_description || ''
+
+    const metaTitleFromAudit = auditElements?.find(el => (el.id === 'meta_title' || el.name === 'Meta Title'))?.currentValue
+    const cleanAuditTitle = (metaTitleFromAudit && metaTitleFromAudit !== '—') ? metaTitleFromAudit : ''
+    const snapTitle = liveAuditData?.page_snapshot?.title || ''
+
+    const h1FromAudit = auditElements?.find(el => (el.id === 'h1' || el.name === 'H1'))?.currentValue
+    const cleanAuditH1 = (h1FromAudit && h1FromAudit !== '—') ? h1FromAudit : ''
+    const snapH1 = Array.isArray(liveAuditData?.page_snapshot?.h1)
+      ? liveAuditData?.page_snapshot?.h1[0]
+      : (liveAuditData?.page_snapshot?.h1 || '')
+
+    const initT = page.proposedTitle || page.metaTitle || cleanAuditTitle || snapTitle || page.title || ''
+    const initD = page.metaDescription || page.meta_description || page.metaDesc || cleanAuditDesc || snapDesc || page.description || page.snippet || ''
+    const initH = page.h1 || page.h1_text || cleanAuditH1 || snapH1 || page.title || ''
 
     setMetaTitleVal(initT)
     setInitialTitle(initT)
@@ -42,7 +59,7 @@ export default function W4FixIssueDialog({
 
     setH1Val(initH)
     setInitialH1(initH)
-  }, [isOpen, page])
+  }, [isOpen, page, auditElements, liveAuditData])
 
   if (!isOpen || !page) return null
 
