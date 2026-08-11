@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { updateWordPressSEOFields } from '../services/wordpressApi'
 import './W4FixIssueDialog.css'
 
 export default function W4FixIssueDialog({
@@ -28,6 +29,9 @@ export default function W4FixIssueDialog({
 
   // Workflow state transitions
   const [isSavedReady, setIsSavedReady] = useState(false)
+  const [isPushingWp, setIsPushingWp] = useState(false)
+  const [wpPushedReady, setWpPushedReady] = useState(false)
+  const [wpPushError, setWpPushError] = useState(null)
   const [syncStarted, setSyncStarted] = useState(false)
   const [syncCompleted, setSyncCompleted] = useState(false)
   const [auditCompleted, setAuditCompleted] = useState(false)
@@ -37,6 +41,9 @@ export default function W4FixIssueDialog({
     if (isOpen) {
       setIsSaving(false)
       setIsSavedReady(false)
+      setIsPushingWp(false)
+      setWpPushedReady(false)
+      setWpPushError(null)
       setSyncStarted(false)
       setSyncCompleted(false)
       setAuditCompleted(false)
@@ -117,6 +124,7 @@ export default function W4FixIssueDialog({
 
   const handleSave = async () => {
     setIsSaving(true)
+    setWpPushError(null)
     if (onSaveFix) {
       try {
         await onSaveFix({
@@ -134,6 +142,39 @@ export default function W4FixIssueDialog({
     }
     setIsSaving(false)
     setIsSavedReady(true)
+  }
+
+  const handlePushToWordPress = async () => {
+    setIsPushingWp(true)
+    setWpPushError(null)
+    try {
+      const targetWebsiteUrl = site?.url || page?.websiteUrl || ''
+      const targetUser = site?.wpUser || site?.connectedUser || ''
+      const targetPass = site?.wpPass || ''
+      const targetPageId = page?.id || page?.ID
+
+      const res = await updateWordPressSEOFields({
+        websiteUrl: targetWebsiteUrl,
+        username: targetUser,
+        applicationPassword: targetPass,
+        pageId: targetPageId,
+        postType: page?.post_type || page?.type || 'pages',
+        metaTitle: metaTitleVal,
+        metaDescription: metaDescVal,
+      })
+
+      if (res && res.success) {
+        setWpPushedReady(true)
+      } else {
+        const errorDetail = res?.responseData?.message || res?.error || (res?.status === 401 ? 'Authentication failed (HTTP 401). Please verify Application Password on W1 Site Tile.' : 'WordPress REST update failed.')
+        setWpPushError(errorDetail)
+      }
+    } catch (err) {
+      console.error('WordPress push error:', err)
+      setWpPushError(err.message || 'Failed to update WordPress REST API.')
+    } finally {
+      setIsPushingWp(false)
+    }
   }
 
   const handleSyncClick = async () => {
@@ -324,7 +365,9 @@ export default function W4FixIssueDialog({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {isSavedReady && (
-                  <span className="w4-saved-indicator">✓ Changes Saved</span>
+                  <span className="w4-saved-indicator">
+                    {wpPushedReady ? '✓ WordPress Updated' : '✓ Changes Saved'}
+                  </span>
                 )}
                 <button
                   type="button"
@@ -342,23 +385,42 @@ export default function W4FixIssueDialog({
               <div className="w4-next-actions-header">
                 <span className="w4-next-actions-title">Next Workflow Actions:</span>
                 {!isSavedReady && (
-                  <span className="w4-next-actions-hint">(Save Changes above to enable Sync)</span>
+                  <span className="w4-next-actions-hint">(Save Changes above to enable WordPress Push)</span>
+                )}
+                {isSavedReady && !wpPushedReady && (
+                  <span className="w4-next-actions-hint">(Push Changes to WordPress to enable Sync)</span>
                 )}
               </div>
 
-              <div className="w4-next-actions-grid">
+              {wpPushError && (
+                <div className="w4-wp-push-error-banner">
+                  ⚠️ {wpPushError}
+                </div>
+              )}
+
+              <div className="w4-next-actions-grid-3">
                 
-                {/* 1. SYNC WEBSITE DATA */}
+                {/* STEP 1. PUSH CHANGES TO WORDPRESS */}
                 <button
                   type="button"
-                  className={`w4-action-flow-btn ${syncCompleted ? 'completed' : (isSavedReady ? 'active' : 'disabled')}`}
+                  className={`w4-action-flow-btn ${wpPushedReady ? 'completed' : (isSavedReady ? 'active-purple' : 'disabled')}`}
+                  onClick={handlePushToWordPress}
+                  disabled={!isSavedReady || isPushingWp || wpPushedReady}
+                >
+                  {wpPushedReady ? '✓ WordPress Updated' : (isPushingWp ? 'Pushing to WordPress...' : 'Push Changes to WordPress')}
+                </button>
+
+                {/* STEP 2. SYNC WEBSITE DATA */}
+                <button
+                  type="button"
+                  className={`w4-action-flow-btn ${syncCompleted ? 'completed' : (wpPushedReady ? 'active' : 'disabled')}`}
                   onClick={handleSyncClick}
-                  disabled={!isSavedReady || isSyncing || syncCompleted}
+                  disabled={!wpPushedReady || isSyncing || syncCompleted}
                 >
                   {syncCompleted ? '🟢 1. Sync Website Data ✓' : (isSyncing ? 'Syncing Website Data...' : '1. Sync Website Data')}
                 </button>
 
-                {/* 2. RE-RUN AUDIT */}
+                {/* STEP 3. RE-RUN AUDIT */}
                 <button
                   type="button"
                   className={`w4-action-flow-btn ${auditCompleted ? 'completed' : (syncCompleted ? 'active' : 'disabled')}`}
