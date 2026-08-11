@@ -3,6 +3,7 @@ import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { savePageAuditApi, getPageAuditsApi } from '../services/websiteManagerApi'
 import { getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
+import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import './PageAuditResultsPage.css'
 
 function getCleanPathname(fullUrl, siteBaseUrl) {
@@ -66,6 +67,7 @@ export default function PageAuditResultsPage({
   const [liveAuditData, setLiveAuditData] = useState(null)
   const [isLoadingAudit, setIsLoadingAudit] = useState(false)
   const [auditError, setAuditError] = useState(null)
+  const [activeFixIssue, setActiveFixIssue] = useState(null)
 
   // Active page selection precedence:
   // 1. Configured page (passed via the page prop)
@@ -745,9 +747,7 @@ export default function PageAuditResultsPage({
                   <button
                     type="button"
                     className="w4-btn-fix-issue"
-                    onClick={() => {
-                      alert(`Redirecting to WordPress Editor to fix: ${issue.name}`)
-                    }}
+                    onClick={() => setActiveFixIssue(issue)}
                   >
                     Fix Issue ▷
                   </button>
@@ -756,6 +756,17 @@ export default function PageAuditResultsPage({
             </div>
           </div>
         )}
+
+        {/* Fix Issue Workflow Modal Template */}
+        <W4FixIssueDialog
+          isOpen={Boolean(activeFixIssue)}
+          issue={activeFixIssue}
+          page={currentPage}
+          site={site}
+          onClose={() => setActiveFixIssue(null)}
+          onSyncWebsiteData={onSyncFromWordPress}
+          onRerunAudit={() => setIsRerunRequested(true)}
+        />
 
       </div>
     </div>
