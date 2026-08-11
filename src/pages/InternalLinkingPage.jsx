@@ -438,13 +438,7 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
               {/* Expanded Detail View */}
               {isExpanded && (
                 <div className="il-card-details">
-                  {/* Selected Page Sub-Header */}
-                  <div className="il-detail-subheader">
-                    <div className="il-detail-slug-row">
-                      <span className="il-link-icon">&#x1F517;</span>
-                      <h2 className="il-detail-slug">{page.slug}</h2>
-                    </div>
-                  </div>
+                  {/* Stat Cards Row */}
 
                   {/* Stat Cards Row */}
                   <div className="il-stats-grid">
