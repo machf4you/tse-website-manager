@@ -267,3 +267,81 @@ export function generateContextualReplacement(sourcePage, anchorText) {
     recommendationType
   }
 }
+
+/**
+ * W5 Phase 1 Simple Internal Link Recommendations Generator
+ * Based strictly on existing synced page data (URL, Title, Page Type, Priority).
+ * Page Type Relationships:
+ * - Article -> Landing / Hub
+ * - Topical -> Landing / Hub
+ * - Landing -> Hub / Related Landing
+ * - Hub -> Landing / Topical
+ */
+export function generateSimpleInternalLinkRecommendations(pagesList) {
+  if (!Array.isArray(pagesList) || pagesList.length === 0) return []
+
+  const activePages = pagesList.filter(p => {
+    if (!p || !p.url) return false
+    const typeStr = (p.type || p.seoPageType || '').trim().toLowerCase()
+    return !p.isExcluded && typeStr !== 'excluded' && typeStr !== 'unclassified / excluded'
+  })
+
+  const recommendations = []
+
+  activePages.forEach(source => {
+    const sourceType = (source.type || source.seoPageType || 'Unclassified').trim()
+    const lowerType = sourceType.toLowerCase()
+
+    let allowedTargetTypes = []
+    let reasonText = ''
+
+    if (lowerType === 'article') {
+      allowedTargetTypes = ['Landing', 'Hub']
+      reasonText = 'Article pages should link up to Landing and Hub pages'
+    } else if (lowerType === 'topical') {
+      allowedTargetTypes = ['Landing', 'Hub']
+      reasonText = 'Topical pages should link up to Landing and Hub pages'
+    } else if (lowerType === 'landing') {
+      allowedTargetTypes = ['Hub', 'Landing']
+      reasonText = 'Landing pages should link up to Hub pages or related Landing pages'
+    } else if (lowerType === 'hub') {
+      allowedTargetTypes = ['Landing', 'Topical']
+      reasonText = 'Hub pages should link down to Landing and Topical pages'
+    } else {
+      allowedTargetTypes = ['Hub', 'Landing']
+      reasonText = 'Pages should link up to higher priority Hub or Landing pages'
+    }
+
+    const matchingTargets = activePages.filter(target => {
+      if (target.url === source.url || target.id === source.id) return false
+      const targetType = (target.type || target.seoPageType || 'Unclassified').trim()
+      return allowedTargetTypes.some(t => t.toLowerCase() === targetType.toLowerCase())
+    })
+
+    // Sort matching targets by Priority (1 -> 2 -> 3 -> 4) then title
+    const sortedTargets = [...matchingTargets].sort((a, b) => {
+      const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
+      const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
+      if (pA !== pB) return pA - pB
+      return (a.title || '').localeCompare(b.title || '')
+    })
+
+    // Take top targets for this source page
+    sortedTargets.slice(0, 3).forEach((target, idx) => {
+      recommendations.push({
+        id: `rec_${source.url || source.id}_${target.url || target.id}_${idx}`,
+        sourceTitle: source.title || source.proposedTitle || 'Untitled Page',
+        sourceUrl: source.url,
+        sourceType: sourceType,
+        sourcePriority: source.priority !== undefined ? source.priority : 0,
+        targetTitle: target.title || target.proposedTitle || 'Untitled Page',
+        targetUrl: target.url,
+        targetType: target.type || target.seoPageType || 'Unclassified',
+        targetPriority: target.priority !== undefined ? target.priority : 0,
+        reason: reasonText
+      })
+    })
+  })
+
+  return recommendations
+}

@@ -1,6 +1,11 @@
 import { useState, useMemo } from 'react'
 import { getPathSlugForMatching } from '../utils/urlUtils'
-import { getExistingInternalLinks, getRecommendedInternalLinks, generateContextualReplacement } from '../utils/internalLinkingHelper'
+import {
+  getExistingInternalLinks,
+  getRecommendedInternalLinks,
+  generateContextualReplacement,
+  generateSimpleInternalLinkRecommendations
+} from '../utils/internalLinkingHelper'
 import './InternalLinkingPage.css'
 
 export function renderHighlightedText(text, anchorText) {
@@ -38,9 +43,20 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
 
   const [aiSentences, setAiSentences] = useState({})
   const [generatingIds, setGeneratingIds] = useState({})
+  const [sourceTypeFilter, setSourceTypeFilter] = useState('all')
 
   const websiteTitle = site?.name || 'The Search Equation'
   const websiteUrl = site?.url || 'https://www.thesearchequation.com'
+
+  // W5 Phase 1 Simple Recommendations based strictly on page type relationships
+  const phase1Recommendations = useMemo(() => {
+    return generateSimpleInternalLinkRecommendations(pagesList)
+  }, [pagesList])
+
+  const filteredPhase1Recs = useMemo(() => {
+    if (sourceTypeFilter === 'all') return phase1Recommendations
+    return phase1Recommendations.filter(r => (r.sourceType || '').toLowerCase() === sourceTypeFilter)
+  }, [phase1Recommendations, sourceTypeFilter])
 
   // Filter active non-excluded pages strictly by W3 Type configuration
   const activePages = useMemo(() => {
@@ -196,6 +212,107 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
         <button type="button" className="il-tab-btn" onClick={() => onNavigateTab?.('w6-settings')}>
           W6 | Website Settings
         </button>
+      </div>
+
+      {/* Phase 1 Simple Internal Link Recommendations Section */}
+      <div className="il-phase1-container">
+        <div className="il-phase1-header">
+          <h2 className="il-phase1-title">
+            <span>&#x26A1;</span> Phase 1 | Simple Internal Link Recommendations
+          </h2>
+          <p className="il-phase1-subtitle">
+            Link suggestions derived strictly from page type hierarchy (Article/Topical &rarr; Landing/Hub &bull; Landing &rarr; Hub/Related Landing &bull; Hub &rarr; Landing/Topical).
+          </p>
+        </div>
+
+        <div className="il-phase1-filters">
+          <button
+            type="button"
+            className={`il-filter-chip ${sourceTypeFilter === 'all' ? 'active' : ''}`}
+            onClick={() => setSourceTypeFilter('all')}
+          >
+            All Recommendations ({phase1Recommendations.length})
+          </button>
+          <button
+            type="button"
+            className={`il-filter-chip ${sourceTypeFilter === 'article' ? 'active' : ''}`}
+            onClick={() => setSourceTypeFilter('article')}
+          >
+            Article &rarr; Landing / Hub
+          </button>
+          <button
+            type="button"
+            className={`il-filter-chip ${sourceTypeFilter === 'topical' ? 'active' : ''}`}
+            onClick={() => setSourceTypeFilter('topical')}
+          >
+            Topical &rarr; Landing / Hub
+          </button>
+          <button
+            type="button"
+            className={`il-filter-chip ${sourceTypeFilter === 'landing' ? 'active' : ''}`}
+            onClick={() => setSourceTypeFilter('landing')}
+          >
+            Landing &rarr; Hub / Related Landing
+          </button>
+          <button
+            type="button"
+            className={`il-filter-chip ${sourceTypeFilter === 'hub' ? 'active' : ''}`}
+            onClick={() => setSourceTypeFilter('hub')}
+          >
+            Hub &rarr; Landing / Topical
+          </button>
+        </div>
+
+        <div className="il-table-wrapper">
+          {filteredPhase1Recs.length === 0 ? (
+            <div className="il-empty-msg">No recommendations found for the selected filter.</div>
+          ) : (
+            <table className="il-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '38%' }}>Source Page</th>
+                  <th style={{ width: '38%' }}>Suggested Target Page</th>
+                  <th style={{ width: '24%' }}>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPhase1Recs.map(rec => (
+                  <tr key={rec.id}>
+                    <td>
+                      <div className="il-source-page-cell">
+                        <span className="il-doc-icon">&#x1F4C4;</span>
+                        <div>
+                          <div className="il-source-title">{rec.sourceTitle}</div>
+                          <div className="il-source-url">{getPathSlugForMatching(rec.sourceUrl) || rec.sourceUrl}</div>
+                          <div className="il-meta-badges">
+                            <span className={`il-badge-type ${rec.sourceType.toLowerCase()}`}>{rec.sourceType}</span>
+                            <span className="il-badge-priority">Prio {rec.sourcePriority}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="il-source-page-cell">
+                        <span className="il-doc-icon">&#x1F3AF;</span>
+                        <div>
+                          <div className="il-source-title">{rec.targetTitle}</div>
+                          <div className="il-source-url">{getPathSlugForMatching(rec.targetUrl) || rec.targetUrl}</div>
+                          <div className="il-meta-badges">
+                            <span className={`il-badge-type ${rec.targetType.toLowerCase()}`}>{rec.targetType}</span>
+                            <span className="il-badge-priority">Prio {rec.targetPriority}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="il-reason-badge">{rec.reason}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       {/* Grouped Page Sections */}
