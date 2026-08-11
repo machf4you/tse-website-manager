@@ -367,11 +367,6 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
             {websiteUrl} &#x2197;
           </a>
         </div>
-        <div className="il-title-right">
-          <button type="button" className="il-rebuild-btn">
-            &#x2728; Rebuild Internal Links
-          </button>
-        </div>
       </div>
 
       {/* Sub-Navigation Tabs */}
