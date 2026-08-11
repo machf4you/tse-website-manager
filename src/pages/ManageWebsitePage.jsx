@@ -420,7 +420,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
         page={selectedPageForAudit || exportedPages[0]}
         pagesList={exportedPages}
         onBack={() => setActiveTab('w3')}
-        onSyncFromWordPress={handleSyncFromWordPress}
+        onSyncFromWordPress={handleSynchroniseClick}
         isSyncing={isSyncing}
         onNavigateToInternalLinking={(url) => {
           if (url) {
