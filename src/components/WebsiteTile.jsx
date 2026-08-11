@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { extractPagesFromPackage } from '../utils/packageExtractor'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
-import { getPageConfigsApi } from '../services/websiteManagerApi'
+import { getPageConfigsApi, getWpPackageApi } from '../services/websiteManagerApi'
 import './WebsiteTile.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -44,6 +44,7 @@ const INDICATOR = {
 
 export default function WebsiteTile({ site, onManage, onEdit }) {
   const [apiConfigs, setApiConfigs] = useState({})
+  const [apiPackageData, setApiPackageData] = useState(null)
 
   useEffect(() => {
     let isMounted = true
@@ -53,13 +54,22 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
           setApiConfigs(configs)
         }
       }).catch(() => {})
+
+      getWpPackageApi(site.id).then(pkgRes => {
+        if (!isMounted) return
+        if (pkgRes && pkgRes.packageData) {
+          setApiPackageData(pkgRes.packageData)
+        } else if (pkgRes) {
+          setApiPackageData(pkgRes)
+        }
+      }).catch(() => {})
     }
     return () => { isMounted = false }
   }, [site?.id])
 
   // 1. Calculate live pages & configured metrics
   const packageStorageKey = getSitePackageStorageKey(site)
-  let pkg = site.storedPackageData
+  let pkg = apiPackageData || site?.storedPackageData
   if (!pkg) {
     try {
       const savedPkg = localStorage.getItem(packageStorageKey)
