@@ -13,19 +13,16 @@ export default function W4FixIssueDialog({
   onRerunAudit,
 }) {
   const [step, setStep] = useState('edit') // 'edit' | 'saved_confirmation'
-  const [fieldValue, setFieldValue] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-
-  // Status workflow tracking
-  const [syncStarted, setSyncStarted] = useState(false)
-  const [syncCompleted, setSyncCompleted] = useState(false)
-  const [auditCompleted, setAuditCompleted] = useState(false)
+  const [metaTitleVal, setMetaTitleVal] = useState('')
+  const [metaDescVal, setMetaDescVal] = useState('')
+  const [h1Val, setH1Val] = useState('')
 
   // Determine SEO Element type & pre-fill current text
   const seoType = (() => {
     if (!issue) return 'meta_title'
-    const name = (issue.name || issue.label || issue.issueCode || '').toLowerCase()
     const id = (issue.id || '').toLowerCase()
+    if (id === 'batch_optimization') return 'batch_optimization'
+    const name = (issue.name || issue.label || issue.issueCode || '').toLowerCase()
     if (name.includes('description') || id.includes('desc')) return 'meta_desc'
     if (name.includes('h1') || id.includes('h1')) return 'h1'
     return 'meta_title'
@@ -40,12 +37,20 @@ export default function W4FixIssueDialog({
     setSyncCompleted(false)
     setAuditCompleted(false)
 
+    const initT = page.metaTitle || page.proposedTitle || page.title || ''
+    const initD = page.metaDescription || page.meta_description || page.snippet || ''
+    const initH = page.h1 || page.h1_text || page.title || ''
+
+    setMetaTitleVal(initT)
+    setMetaDescVal(initD)
+    setH1Val(initH)
+
     if (seoType === 'meta_title') {
-      setFieldValue(page.metaTitle || page.proposedTitle || page.title || '')
+      setFieldValue(initT)
     } else if (seoType === 'meta_desc') {
-      setFieldValue(page.metaDescription || page.meta_description || page.snippet || '')
+      setFieldValue(initD)
     } else if (seoType === 'h1') {
-      setFieldValue(page.h1 || page.h1_text || page.title || '')
+      setFieldValue(initH)
     }
   }, [isOpen, page, seoType])
 
@@ -60,6 +65,13 @@ export default function W4FixIssueDialog({
 
   // Details per element type
   const elementDetails = {
+    batch_optimization: {
+      label: 'Batch Page Optimisation',
+      why: 'Optimising Meta Title, Meta Description, and H1 tag together ensures maximum SEO relevance and target phrase alignment.',
+      recommended: 'Update Meta Title (50-60 chars), Meta Description (150-160 chars), and H1 heading tag.',
+      idealLengthMin: 50,
+      idealLengthMax: 160,
+    },
     meta_title: {
       label: 'Meta Title',
       why: 'The Meta Title is the primary on-page SEO ranking signal in Google search results and defines the clickable headline in search engine snippets.',
@@ -81,7 +93,13 @@ export default function W4FixIssueDialog({
       idealLengthMin: 20,
       idealLengthMax: 70,
     },
-  }[seoType]
+  }[seoType] || {
+    label: 'SEO Optimisation',
+    why: 'On-page SEO optimization improves search visibility.',
+    recommended: 'Update page SEO fields.',
+    idealLengthMin: 10,
+    idealLengthMax: 160,
+  }
 
   const charCount = fieldValue.length
   const minLen = elementDetails.idealLengthMin
@@ -90,7 +108,7 @@ export default function W4FixIssueDialog({
   let lengthBadgeVariant = 'optimal'
   let lengthBadgeText = `${charCount} characters — Optimal`
 
-  if (seoType !== 'h1') {
+  if (seoType !== 'h1' && seoType !== 'batch_optimization') {
     if (charCount < minLen) {
       lengthBadgeVariant = 'warning'
       lengthBadgeText = `${charCount} characters — Below recommended length`
@@ -110,7 +128,19 @@ export default function W4FixIssueDialog({
     setIsSaving(true)
     if (onSaveFix) {
       try {
-        await onSaveFix({ page, seoType, fieldValue })
+        if (seoType === 'batch_optimization') {
+          await onSaveFix({
+            page,
+            seoType: 'batch_optimization',
+            fieldValues: {
+              metaTitle: metaTitleVal,
+              metaDescription: metaDescVal,
+              h1: h1Val,
+            },
+          })
+        } else {
+          await onSaveFix({ page, seoType, fieldValue })
+        }
       } catch (err) {
         console.error('Failed to save fix:', err)
       }
@@ -155,8 +185,8 @@ export default function W4FixIssueDialog({
         {/* Modal Header */}
         <div className="w4-modal-header">
           <div>
-            <span className="w4-modal-code">{issue.issueCode || 'W4 AUDIT FIX'}</span>
-            <h2 className="w4-modal-title">Fix Issue: {elementDetails.label}</h2>
+            <span className="w4-modal-code">{issue.issueCode || 'W4 OPTIMISATION'}</span>
+            <h2 className="w4-modal-title">Page Optimisation: {page.title || page.url}</h2>
           </div>
           <button type="button" className="w4-modal-close" onClick={onClose} aria-label="Close dialog">
             ✕
@@ -169,13 +199,13 @@ export default function W4FixIssueDialog({
             {/* LEFT COLUMN: Issue Details */}
             <div className="w4-panel-left">
               <div className="w4-info-group">
-                <span className="w4-info-label">SEO Element</span>
-                <div className="w4-info-value-badge">{elementDetails.label}</div>
+                <span className="w4-info-label">Target Page</span>
+                <div className="w4-info-value-badge" style={{ wordBreak: 'break-all' }}>{page.url}</div>
               </div>
 
               <div className="w4-info-group">
-                <span className="w4-info-label">Current Audit Value</span>
-                <div className="w4-info-current-box">{issue.currentValue || page[seoType] || 'Not Set'}</div>
+                <span className="w4-info-label">Target Keyword / Phrase</span>
+                <div className="w4-info-current-box">{page.target || page.targetPhrase || 'Not set'}</div>
               </div>
 
               <div className="w4-info-group">
@@ -189,41 +219,98 @@ export default function W4FixIssueDialog({
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Editable WordPress Field */}
+            {/* RIGHT COLUMN: Editable WordPress Fields */}
             <div className="w4-panel-right">
-              <div className="w4-field-header">
-                <label htmlFor="w4-fix-input" className="w4-field-label">
-                  Editable WordPress {elementDetails.label}
-                </label>
-                <span className={`w4-length-badge ${lengthBadgeVariant}`}>
-                  {lengthBadgeText}
-                </span>
-              </div>
+              {seoType === 'batch_optimization' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
+                        Proposed Meta Title
+                      </label>
+                      <span style={{ fontSize: '0.78rem', color: metaTitleVal.length >= 50 && metaTitleVal.length <= 60 ? '#10b981' : '#f59e0b' }}>
+                        {metaTitleVal.length} chars (Target: 50-60)
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      className="w4-field-input"
+                      value={metaTitleVal}
+                      onChange={(e) => setMetaTitleVal(e.target.value)}
+                      placeholder="Enter proposed Meta Title..."
+                    />
+                  </div>
 
-              {seoType === 'meta_desc' ? (
-                <textarea
-                  id="w4-fix-input"
-                  className="w4-field-textarea"
-                  rows={6}
-                  value={fieldValue}
-                  onChange={(e) => setFieldValue(e.target.value)}
-                  placeholder={`Enter proposed ${elementDetails.label}...`}
-                />
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
+                        Proposed Meta Description
+                      </label>
+                      <span style={{ fontSize: '0.78rem', color: metaDescVal.length >= 150 && metaDescVal.length <= 160 ? '#10b981' : '#f59e0b' }}>
+                        {metaDescVal.length} chars (Target: 150-160)
+                      </span>
+                    </div>
+                    <textarea
+                      className="w4-field-textarea"
+                      rows={4}
+                      value={metaDescVal}
+                      onChange={(e) => setMetaDescVal(e.target.value)}
+                      placeholder="Enter proposed Meta Description..."
+                    />
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
+                        Proposed H1 Heading Tag
+                      </label>
+                      <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                        {h1Val.length} chars
+                      </span>
+                    </div>
+                    <input
+                      type="text"
+                      className="w4-field-input"
+                      value={h1Val}
+                      onChange={(e) => setH1Val(e.target.value)}
+                      placeholder="Enter proposed H1 Tag..."
+                    />
+                  </div>
+                </div>
               ) : (
-                <input
-                  type="text"
-                  id="w4-fix-input"
-                  className="w4-field-input"
-                  value={fieldValue}
-                  onChange={(e) => setFieldValue(e.target.value)}
-                  placeholder={`Enter proposed ${elementDetails.label}...`}
-                />
+                <>
+                  <div className="w4-field-header">
+                    <label htmlFor="w4-fix-input" className="w4-field-label">
+                      Editable WordPress {elementDetails.label}
+                    </label>
+                    <span className={`w4-length-badge ${lengthBadgeVariant}`}>
+                      {lengthBadgeText}
+                    </span>
+                  </div>
+
+                  {seoType === 'meta_desc' ? (
+                    <textarea
+                      id="w4-fix-input"
+                      className="w4-field-textarea"
+                      rows={6}
+                      value={fieldValue}
+                      onChange={(e) => setFieldValue(e.target.value)}
+                      placeholder={`Enter proposed ${elementDetails.label}...`}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      id="w4-fix-input"
+                      className="w4-field-input"
+                      value={fieldValue}
+                      onChange={(e) => setFieldValue(e.target.value)}
+                      placeholder={`Enter proposed ${elementDetails.label}...`}
+                    />
+                  )}
+                </>
               )}
 
-              <div className="w4-guidance-box">
-                <div className="w4-guidance-item">
-                  <strong>Recommended Range:</strong> <span>{minLen}–{maxLen} characters</span>
-                </div>
+              <div className="w4-guidance-box" style={{ marginTop: '16px' }}>
                 <div className="w4-guidance-item">
                   <strong>Target Phrase:</strong> <span>{page.target || page.targetPhrase || 'Not set'}</span>
                 </div>
@@ -233,7 +320,7 @@ export default function W4FixIssueDialog({
               </div>
 
               {/* Actions Footer */}
-              <div className="w4-modal-actions">
+              <div className="w4-modal-actions" style={{ marginTop: '20px' }}>
                 <button type="button" className="w3-btn-secondary" onClick={onClose}>
                   Cancel
                 </button>
@@ -243,7 +330,7 @@ export default function W4FixIssueDialog({
                   onClick={handleSave}
                   disabled={isSaving}
                 >
-                  {isSaving ? 'Saving...' : 'Save / Update WordPress'}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </div>

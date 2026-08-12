@@ -525,9 +525,10 @@ export default function PageAuditResultsPage({
       },
     ]
 
-    // Construct Action Checklist items from all failed audit elements
+    // Construct Action Checklist items from all failed audit elements (excluding duplicate Title Tag)
     const failedFromTable = auditElements
       .filter(el => el.status === 'Fail' && el.recommendation && el.recommendation !== '—')
+      .filter(el => (el.name || '').toLowerCase() !== 'title tag')
       .map((el, idx) => ({
         id: el.id || `fail_${idx}`,
         issueCode: el.issueCode || `ISSUE ${idx + 1}: ${el.name.toUpperCase()}`,
@@ -540,6 +541,7 @@ export default function PageAuditResultsPage({
         const l = (w.label || '').toLowerCase()
         const k = (w.key || '').toLowerCase()
         if (l.includes('internal link') || k.includes('internal_link')) return false
+        if (l.includes('title tag') || k.includes('title_tag') || l === 'title tag') return false
         return !auditElements.some(el => (el.name || '').toLowerCase() === l)
       })
       .map((w, idx) => ({
@@ -578,8 +580,8 @@ export default function PageAuditResultsPage({
     <div className="w4-audit-wrapper">
       <div className="w4-audit-container">
 
-        {/* Top Back Navigation Link & Action Row */}
-        <div className="w4-back-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Top Back Navigation Link */}
+        <div className="w4-back-row" style={{ marginBottom: '20px' }}>
           <button
             type="button"
             className="w4-btn-back"
@@ -588,49 +590,6 @@ export default function PageAuditResultsPage({
           >
             ← Back to Website Management
           </button>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <button
-              type="button"
-              className="w3-btn-secondary"
-              onClick={onSyncFromWordPress}
-              disabled={isSyncing}
-              id="btn-w4-sync-wp"
-              title="Pull the latest changes from WordPress"
-            >
-              {isSyncing ? 'Syncing...' : 'Sync Website Data'}
-            </button>
-            <button
-              type="button"
-              className="w3-btn-emerald"
-              onClick={() => setIsRerunRequested(true)}
-              disabled={isLoadingAudit}
-              id="btn-rerun-live-audit"
-              title="Re-run live audit for this page"
-            >
-              {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
-            </button>
-          </div>
-        </div>
-
-        {/* Workflow Guidance Card */}
-        <div className="w4-workflow-guidance-card">
-          <h3 className="w4-guidance-title">WordPress Changes Detected?</h3>
-          <div className="w4-guidance-steps">
-            <div className="w4-guidance-step">
-              <span className="w4-step-num">1</span>
-              <div className="w4-step-content">
-                <strong>Sync Website Data</strong>
-                <p>Pull the latest changes from WordPress.</p>
-              </div>
-            </div>
-            <div className="w4-guidance-step">
-              <span className="w4-step-num">2</span>
-              <div className="w4-step-content">
-                <strong>Re-run Audit</strong>
-                <p>Analyse the updated page data.</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Audit Stale Banner */}
@@ -799,35 +758,48 @@ export default function PageAuditResultsPage({
         </div>
 
         {/* Action Checklist: What to Fix Card */}
-        {liveAuditData && failedIssues.length > 0 && (
+        {liveAuditData && (
           <div className="w4-checklist-card">
-            <div className="w4-checklist-header">
-              <span className="w4-warning-icon">⚠</span>
-              <div>
-                <h3 className="w4-checklist-title">Action Checklist: What to Fix</h3>
-                <p className="w4-checklist-subtitle">
-                  Staff Action Required: Fix the following issues in the WordPress editor to optimize the page.
-                </p>
+            <div className="w4-checklist-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <span className="w4-warning-icon">⚠</span>
+                <div>
+                  <h3 className="w4-checklist-title">Action Checklist: What to Fix</h3>
+                  <p className="w4-checklist-subtitle">
+                    Staff Action Required: Fix issues or click Optimise Page SEO to edit page metadata.
+                  </p>
+                </div>
               </div>
+              <button
+                type="button"
+                className="w4-btn-fix-issue"
+                style={{ backgroundColor: '#7c3aed', borderColor: '#7c3aed', padding: '10px 18px', fontSize: '0.92rem', fontWeight: '600' }}
+                onClick={() => setActiveFixIssue({ id: 'batch_optimization', name: 'Batch Page Optimization', recommendation: 'Optimize Meta Title, Meta Description, and H1 tags.' })}
+                id="btn-optimise-page-seo"
+              >
+                Optimise Page SEO ▷
+              </button>
             </div>
 
-            <div className="w4-issues-list">
-              {failedIssues.map((issue) => (
-                <div className="w4-issue-item-card" key={issue.id}>
-                  <div className="w4-issue-details">
-                    <span className="w4-issue-code">{issue.issueCode}</span>
-                    <div className="w4-issue-title">{issue.recommendation}</div>
+            {failedIssues.length > 0 && (
+              <div className="w4-issues-list">
+                {failedIssues.map((issue) => (
+                  <div className="w4-issue-item-card" key={issue.id}>
+                    <div className="w4-issue-details">
+                      <span className="w4-issue-code">{issue.issueCode}</span>
+                      <div className="w4-issue-title">{issue.recommendation}</div>
+                    </div>
+                    <button
+                      type="button"
+                      className="w4-btn-fix-issue"
+                      onClick={() => setActiveFixIssue(issue)}
+                    >
+                      Fix Issue ▷
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    className="w4-btn-fix-issue"
-                    onClick={() => setActiveFixIssue(issue)}
-                  >
-                    Fix Issue ▷
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
