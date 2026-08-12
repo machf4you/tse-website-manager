@@ -3,6 +3,7 @@ import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi } from '../services/websiteManagerApi'
 import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
+import { normalizeUrlForMatching } from '../utils/urlUtils'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import './PageAuditResultsPage.css'
 
