@@ -367,72 +367,80 @@ export default function W4FixIssueDialog({
               </div>
             </div>
 
-            {/* ── SEQUENTIAL NEXT WORKFLOW ACTIONS SECTION ── */}
-            <div className="w4-workflow-actions-section" style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
-              <h4 style={{ color: '#f8fafc', fontSize: '0.82rem', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* ── HORIZONTAL 4-STEP WORKFLOW ACTIONS STRIP ── */}
+            <div className="w4-workflow-actions-section" style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
+              <h4 style={{ color: '#f8fafc', fontSize: '0.82rem', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>🔄 Next Workflow Actions</span>
               </h4>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
 
-                {/* 1. Save Changes */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30,41,59,0.7)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {/* Step 1: Save Changes */}
+                <div style={{ background: 'rgba(30,41,59,0.7)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>1. Save Changes</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Save Meta Title, Meta Description and H1 to database.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>1. Save Changes</strong>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Save fields to database</span>
                   </div>
-                  {isSaved ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ Saved to Database</span>
-                  ) : (
-                    <button type="button" className={`w3-btn-emerald ${isSaving ? 'btn-disabled' : ''}`} onClick={handleSave} disabled={isSaving} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
-                      {isSaving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                  )}
+                  <div style={{ marginTop: '6px' }}>
+                    {isSaved ? (
+                      <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Saved</span>
+                    ) : (
+                      <button type="button" className={`w3-btn-emerald ${isSaving ? 'btn-disabled' : ''}`} onClick={handleSave} disabled={isSaving} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* 2. Push Changes to WordPress */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {/* Step 2: Push Changes to WordPress */}
+                <div style={{ background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>2. Push Changes to WordPress</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Send changed SEO fields (Meta Title, Meta Description) to live WordPress page.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>2. Push to WP</strong>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Send fields to live WP page</span>
                   </div>
-                  {isPushed ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ WordPress Updated</span>
-                  ) : (
-                    <button type="button" className={`w3-btn-blue ${!isSaved || isPushing ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved || isPushing} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
-                      {isPushing ? 'Pushing...' : 'Push Changes to WordPress'}
-                    </button>
-                  )}
+                  <div style={{ marginTop: '6px' }}>
+                    {isPushed ? (
+                      <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ WP Updated</span>
+                    ) : (
+                      <button type="button" className={`w3-btn-blue ${!isSaved || isPushing ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved || isPushing} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
+                        {isPushing ? 'Pushing...' : 'Push to WP'}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* 3. Sync Website Data */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {/* Step 3: Sync Website Data */}
+                <div style={{ background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>3. Sync Website Data</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Pull updated WordPress page data back into Website Management.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>3. Sync Data</strong>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Pull WP data to Manager</span>
                   </div>
-                  {isSynced ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ Website Data Synced</span>
-                  ) : (
-                    <button type="button" className={`w3-btn-secondary ${!isPushed || isSyncing ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed || isSyncing} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
-                      {isSyncing ? 'Syncing...' : 'Sync Website Data'}
-                    </button>
-                  )}
+                  <div style={{ marginTop: '6px' }}>
+                    {isSynced ? (
+                      <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Synced</span>
+                    ) : (
+                      <button type="button" className={`w3-btn-secondary ${!isPushed || isSyncing ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed || isSyncing} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
+                        {isSyncing ? 'Syncing...' : 'Sync Data'}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* 4. Re-run Audit */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                {/* Step 4: Re-run Audit */}
+                <div style={{ background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>4. Re-run Audit</strong>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Re-evaluate page SEO checks against updated page.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>4. Re-run Audit</strong>
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Re-evaluate page SEO</span>
                   </div>
-                  {isAudited ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ Audit Complete</span>
-                  ) : (
-                    <button type="button" className={`w3-btn-emerald ${!isSynced ? 'btn-disabled' : ''}`} onClick={handleAuditClick} disabled={!isSynced} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
-                      Re-run Audit ▷
-                    </button>
-                  )}
+                  <div style={{ marginTop: '6px' }}>
+                    {isAudited ? (
+                      <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Audit Complete</span>
+                    ) : (
+                      <button type="button" className={`w3-btn-emerald ${!isSynced ? 'btn-disabled' : ''}`} onClick={handleAuditClick} disabled={!isSynced} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
+                        Re-run Audit ▷
+                      </button>
+                    )}
+                  </div>
                 </div>
 
               </div>
