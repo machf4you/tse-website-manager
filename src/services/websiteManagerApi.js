@@ -34,50 +34,80 @@ async function fetchJson(url, options = {}) {
 // 1. CONNECTED WEBSITES
 export async function getWebsitesApi() {
   try {
-    return await fetchJson(`${API_BASE_URL}/websites`)
+    const list = await fetchJson(`${API_BASE_URL}/websites`)
+    if (Array.isArray(list)) {
+      return list.map(s => {
+        const cfg = s.configData || {}
+        return {
+          ...s,
+          wpUser: s.wpUser || cfg.wpUser || s.connectedUser || '',
+          wpPass: s.wpPass || cfg.wpPass || ''
+        }
+      })
+    }
+    return []
   } catch (e) {
-    // Fallback to localStorage if server is offline during transition
-    const raw = localStorage.getItem('tse_website_dashboard_sites')
+    const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem('tse_website_dashboard_sites') : null
     return raw ? JSON.parse(raw) : []
   }
 }
 
 export async function saveWebsiteApi(siteRecord) {
+  if (!siteRecord || siteRecord.id === undefined) return
   const statusVal = typeof siteRecord.status === 'object' ? JSON.stringify(siteRecord.status) : siteRecord.status
-  const payload = {
-    ...siteRecord,
-    status: statusVal
+  const configData = {
+    ...(siteRecord.configData || {}),
+    wpUser: siteRecord.wpUser || siteRecord.connectedUser || siteRecord.configData?.wpUser || '',
+    wpPass: siteRecord.wpPass || siteRecord.configData?.wpPass || ''
   }
 
-  // Save to SQLite API
+  const payload = {
+    ...siteRecord,
+    id: String(siteRecord.id),
+    status: statusVal,
+    configData
+  }
+
   try {
     await fetchJson(`${API_BASE_URL}/websites`, {
       method: 'POST',
       body: JSON.stringify(payload)
     })
   } catch (e) {
-    console.warn('Backend API save failed, updating localStorage fallback')
+    console.warn('Backend API save failed:', e)
   }
 
-  // Also maintain localStorage as local mirror
   try {
-    const raw = localStorage.getItem('tse_website_dashboard_sites')
-    let list = raw ? JSON.parse(raw) : []
-    const idx = list.findIndex(s => String(s.id) === String(siteRecord.id))
-    if (idx >= 0) {
-      list[idx] = { ...list[idx], ...siteRecord }
-    } else {
-      list.push(siteRecord)
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem('tse_website_dashboard_sites')
+      let list = raw ? JSON.parse(raw) : []
+      const idx = list.findIndex(s => String(s.id) === String(siteRecord.id))
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...payload }
+      } else {
+        list.push(payload)
+      }
+      localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(list))
     }
-    localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(list))
   } catch (err) {}
 }
 
 export async function saveWebsitesBatchApi(sitesList) {
-  const sanitizedList = Array.isArray(sitesList) ? sitesList.map(s => ({
-    ...s,
-    status: typeof s.status === 'object' ? JSON.stringify(s.status) : s.status
-  })) : []
+  if (!Array.isArray(sitesList) || sitesList.length === 0) return
+  const sanitizedList = sitesList.map(s => {
+    const statusVal = typeof s.status === 'object' ? JSON.stringify(s.status) : s.status
+    const configData = {
+      ...(s.configData || {}),
+      wpUser: s.wpUser || s.connectedUser || s.configData?.wpUser || '',
+      wpPass: s.wpPass || s.configData?.wpPass || ''
+    }
+    return {
+      ...s,
+      id: String(s.id),
+      status: statusVal,
+      configData
+    }
+  })
 
   try {
     await fetchJson(`${API_BASE_URL}/websites/batch`, {
@@ -86,7 +116,9 @@ export async function saveWebsitesBatchApi(sitesList) {
     })
   } catch (e) {}
   try {
-    localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(sitesList))
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(sanitizedList))
+    }
   } catch (err) {}
 }
 
