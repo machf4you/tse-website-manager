@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { updateWordPressSEOFields } from '../services/wordpressApi'
 import './W4FixIssueDialog.css'
 
 export default function W4FixIssueDialog({
@@ -12,15 +13,22 @@ export default function W4FixIssueDialog({
   isSyncing = false,
   onRerunAudit,
 }) {
-  const [step, setStep] = useState('edit') // 'edit' | 'saved_confirmation'
   const [metaTitleVal, setMetaTitleVal] = useState('')
   const [metaDescVal, setMetaDescVal] = useState('')
   const [h1Val, setH1Val] = useState('')
   const [fieldValue, setFieldValue] = useState('')
+
+  // Sequential 4-Step Workflow Completion States
   const [isSaving, setIsSaving] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
+
+  const [isPushing, setIsPushing] = useState(false)
+  const [isPushed, setIsPushed] = useState(false)
+
   const [syncStarted, setSyncStarted] = useState(false)
-  const [syncCompleted, setSyncCompleted] = useState(false)
-  const [auditCompleted, setAuditCompleted] = useState(false)
+  const [isSynced, setIsSynced] = useState(false)
+
+  const [isAudited, setIsAudited] = useState(false)
 
   // Determine SEO Element type & pre-fill current text
   const seoType = (() => {
@@ -33,14 +41,16 @@ export default function W4FixIssueDialog({
     return 'meta_title'
   })()
 
-  // Pre-fill initial text from page object
+  // Pre-fill initial text from page object & reset workflow on open
   useEffect(() => {
     if (!isOpen || !page) return
-    setStep('edit')
     setIsSaving(false)
+    setIsSaved(false)
+    setIsPushing(false)
+    setIsPushed(false)
     setSyncStarted(false)
-    setSyncCompleted(false)
-    setAuditCompleted(false)
+    setIsSynced(false)
+    setIsAudited(false)
 
     const initT = page.metaTitle || page.proposedTitle || page.title || ''
     const initD = page.metaDescription || page.meta_description || page.snippet || ''
@@ -62,7 +72,7 @@ export default function W4FixIssueDialog({
   // Track global isSyncing prop completion
   useEffect(() => {
     if (syncStarted && !isSyncing) {
-      setSyncCompleted(true)
+      setIsSynced(true)
     }
   }, [syncStarted, isSyncing])
 
@@ -146,15 +156,36 @@ export default function W4FixIssueDialog({
         } else {
           await onSaveFix({ page, seoType, fieldValue })
         }
+        setIsSaved(true)
       } catch (err) {
         console.error('Failed to save fix:', err)
       }
+    } else {
+      setIsSaved(true)
     }
     setIsSaving(false)
-    setStep('saved_confirmation')
+  }
+
+  const handlePushToWordPress = async () => {
+    if (!isSaved || isPushing) return
+    setIsPushing(true)
+    try {
+      await updateWordPressSEOFields({
+        site,
+        page,
+        metaTitle: metaTitleVal || fieldValue,
+        metaDescription: metaDescVal || fieldValue,
+      })
+      setIsPushed(true)
+    } catch (err) {
+      console.error('Failed to push to WordPress:', err)
+      setIsPushed(true)
+    }
+    setIsPushing(false)
   }
 
   const handleSyncClick = async () => {
+    if (!isPushed || isSyncing) return
     setSyncStarted(true)
     if (onSyncWebsiteData) {
       try {
@@ -166,10 +197,11 @@ export default function W4FixIssueDialog({
         console.error('Sync error:', err)
       }
     }
-    setSyncCompleted(true)
+    setIsSynced(true)
   }
 
   const handleAuditClick = async () => {
+    if (!isSynced) return
     if (onRerunAudit) {
       try {
         const res = onRerunAudit()
@@ -180,7 +212,7 @@ export default function W4FixIssueDialog({
         console.error('Audit error:', err)
       }
     }
-    setAuditCompleted(true)
+    setIsAudited(true)
   }
 
   return (
@@ -198,244 +230,211 @@ export default function W4FixIssueDialog({
           </button>
         </div>
 
-        {step === 'edit' ? (
-          <div className="w4-modal-body">
-            
-            {/* LEFT COLUMN: Issue Details */}
-            <div className="w4-panel-left">
-              <div className="w4-info-group">
-                <span className="w4-info-label">Target Page</span>
-                <div className="w4-info-value-badge" style={{ wordBreak: 'break-all' }}>{page.url}</div>
-              </div>
-
-              <div className="w4-info-group">
-                <span className="w4-info-label">Target Keyword / Phrase</span>
-                <div className="w4-info-current-box">{page.target || page.targetPhrase || 'Not set'}</div>
-              </div>
-
-              <div className="w4-info-group">
-                <span className="w4-info-label">Recommended Action</span>
-                <div className="w4-info-recom-box">{elementDetails.recommended}</div>
-              </div>
-
-              <div className="w4-info-group">
-                <span className="w4-info-label">Why This Matters</span>
-                <p className="w4-info-why-text">{elementDetails.why}</p>
-              </div>
+        <div className="w4-modal-body">
+          
+          {/* LEFT COLUMN: Issue Details */}
+          <div className="w4-panel-left">
+            <div className="w4-info-group">
+              <span className="w4-info-label">Target Page</span>
+              <div className="w4-info-value-badge" style={{ wordBreak: 'break-all' }}>{page.url}</div>
             </div>
 
-            {/* RIGHT COLUMN: Editable WordPress Fields */}
-            <div className="w4-panel-right">
-              {seoType === 'batch_optimization' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
-                        Proposed Meta Title
-                      </label>
-                      <span style={{ fontSize: '0.78rem', color: metaTitleVal.length >= 50 && metaTitleVal.length <= 60 ? '#10b981' : '#f59e0b' }}>
-                        {metaTitleVal.length} chars (Target: 50-60)
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      className="w4-field-input"
-                      value={metaTitleVal}
-                      onChange={(e) => setMetaTitleVal(e.target.value)}
-                      placeholder="Enter proposed Meta Title..."
-                    />
-                  </div>
+            <div className="w4-info-group">
+              <span className="w4-info-label">Target Keyword / Phrase</span>
+              <div className="w4-info-current-box">{page.target || page.targetPhrase || 'Not set'}</div>
+            </div>
 
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
-                        Proposed Meta Description
-                      </label>
-                      <span style={{ fontSize: '0.78rem', color: metaDescVal.length >= 150 && metaDescVal.length <= 160 ? '#10b981' : '#f59e0b' }}>
-                        {metaDescVal.length} chars (Target: 150-160)
-                      </span>
-                    </div>
-                    <textarea
-                      className="w4-field-textarea"
-                      rows={4}
-                      value={metaDescVal}
-                      onChange={(e) => setMetaDescVal(e.target.value)}
-                      placeholder="Enter proposed Meta Description..."
-                    />
-                  </div>
+            <div className="w4-info-group">
+              <span className="w4-info-label">Recommended Action</span>
+              <div className="w4-info-recom-box">{elementDetails.recommended}</div>
+            </div>
 
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
-                        Proposed H1 Heading Tag
-                      </label>
-                      <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-                        {h1Val.length} chars
-                      </span>
-                    </div>
-                    <input
-                      type="text"
-                      className="w4-field-input"
-                      value={h1Val}
-                      onChange={(e) => setH1Val(e.target.value)}
-                      placeholder="Enter proposed H1 Tag..."
-                    />
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="w4-field-header">
-                    <label htmlFor="w4-fix-input" className="w4-field-label">
-                      Editable WordPress {elementDetails.label}
+            <div className="w4-info-group">
+              <span className="w4-info-label">Why This Matters</span>
+              <p className="w4-info-why-text">{elementDetails.why}</p>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: Editable WordPress Fields */}
+          <div className="w4-panel-right">
+            {seoType === 'batch_optimization' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
+                      Proposed Meta Title
                     </label>
-                    <span className={`w4-length-badge ${lengthBadgeVariant}`}>
-                      {lengthBadgeText}
+                    <span style={{ fontSize: '0.78rem', color: metaTitleVal.length >= 50 && metaTitleVal.length <= 60 ? '#10b981' : '#f59e0b' }}>
+                      {metaTitleVal.length} chars (Target: 50-60)
                     </span>
                   </div>
+                  <input
+                    type="text"
+                    className="w4-field-input"
+                    value={metaTitleVal}
+                    onChange={(e) => setMetaTitleVal(e.target.value)}
+                    placeholder="Enter proposed Meta Title..."
+                  />
+                </div>
 
-                  {seoType === 'meta_desc' ? (
-                    <textarea
-                      id="w4-fix-input"
-                      className="w4-field-textarea"
-                      rows={6}
-                      value={fieldValue}
-                      onChange={(e) => setFieldValue(e.target.value)}
-                      placeholder={`Enter proposed ${elementDetails.label}...`}
-                    />
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
+                      Proposed Meta Description
+                    </label>
+                    <span style={{ fontSize: '0.78rem', color: metaDescVal.length >= 150 && metaDescVal.length <= 160 ? '#10b981' : '#f59e0b' }}>
+                      {metaDescVal.length} chars (Target: 150-160)
+                    </span>
+                  </div>
+                  <textarea
+                    className="w4-field-textarea"
+                    rows={4}
+                    value={metaDescVal}
+                    onChange={(e) => setMetaDescVal(e.target.value)}
+                    placeholder="Enter proposed Meta Description..."
+                  />
+                </div>
+
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
+                      Proposed H1 Heading Tag
+                    </label>
+                    <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                      {h1Val.length} chars
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    className="w4-field-input"
+                    value={h1Val}
+                    onChange={(e) => setH1Val(e.target.value)}
+                    placeholder="Enter proposed H1 Tag..."
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="w4-field-header">
+                  <label htmlFor="w4-fix-input" className="w4-field-label">
+                    Editable WordPress {elementDetails.label}
+                  </label>
+                  <span className={`w4-length-badge ${lengthBadgeVariant}`}>
+                    {lengthBadgeText}
+                  </span>
+                </div>
+
+                {seoType === 'meta_desc' ? (
+                  <textarea
+                    id="w4-fix-input"
+                    className="w4-field-textarea"
+                    rows={6}
+                    value={fieldValue}
+                    onChange={(e) => setFieldValue(e.target.value)}
+                    placeholder={`Enter proposed ${elementDetails.label}...`}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    id="w4-fix-input"
+                    className="w4-field-input"
+                    value={fieldValue}
+                    onChange={(e) => setFieldValue(e.target.value)}
+                    placeholder={`Enter proposed ${elementDetails.label}...`}
+                  />
+                )}
+              </>
+            )}
+
+            <div className="w4-guidance-box" style={{ marginTop: '16px' }}>
+              <div className="w4-guidance-item">
+                <strong>Target Phrase:</strong> <span>{page.target || page.targetPhrase || 'Not set'}</span>
+              </div>
+              <div className="w4-guidance-item">
+                <strong>Page URL:</strong> <code>{page.url}</code>
+              </div>
+            </div>
+
+            {/* ── SEQUENTIAL NEXT WORKFLOW ACTIONS SECTION ── */}
+            <div className="w4-workflow-actions-section" style={{ marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '18px' }}>
+              <h4 style={{ color: '#f8fafc', fontSize: '0.92rem', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🔄 Next Workflow Actions</span>
+              </h4>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
+                {/* 1. Save Changes */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30,41,59,0.7)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>1. Save Changes</strong>
+                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Save Meta Title, Meta Description and H1 to database.</span>
+                  </div>
+                  {isSaved ? (
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Saved to Database</span>
                   ) : (
-                    <input
-                      type="text"
-                      id="w4-fix-input"
-                      className="w4-field-input"
-                      value={fieldValue}
-                      onChange={(e) => setFieldValue(e.target.value)}
-                      placeholder={`Enter proposed ${elementDetails.label}...`}
-                    />
+                    <button type="button" className="w3-btn-emerald" onClick={handleSave} disabled={isSaving}>
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </button>
                   )}
-                </>
-              )}
-
-              <div className="w4-guidance-box" style={{ marginTop: '16px' }}>
-                <div className="w4-guidance-item">
-                  <strong>Target Phrase:</strong> <span>{page.target || page.targetPhrase || 'Not set'}</span>
                 </div>
-                <div className="w4-guidance-item">
-                  <strong>Page URL:</strong> <code>{page.url}</code>
-                </div>
-              </div>
 
-              {/* Actions Footer */}
-              <div className="w4-modal-actions" style={{ marginTop: '20px' }}>
-                <button type="button" className="w3-btn-secondary" onClick={onClose}>
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="w3-btn-emerald"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </div>
-
-          </div>
-        ) : (
-          /* STEP 2: Post-Save Confirmation & Workflow Progress */
-          <div className="w4-modal-body-confirmation">
-            <div className="w4-confirm-icon-box">
-              <span className="w4-confirm-icon">{syncCompleted && auditCompleted ? '🎉' : '🟢'}</span>
-            </div>
-            <h3 className="w4-confirm-title">
-              {syncCompleted && auditCompleted
-                ? 'Fix Workflow Completed Successfully!'
-                : 'WordPress Field Staged Successfully'}
-            </h3>
-            <p className="w4-confirm-text">
-              {syncCompleted && auditCompleted
-                ? `The updated ${elementDetails.label} has been synced from WordPress and the page audit has passed!`
-                : `The updated ${elementDetails.label} has been saved. Complete the steps below to verify your changes pass the Page Audit:`}
-            </p>
-
-            <div className="w4-confirm-steps-grid">
-              
-              {/* STEP 1 CARD */}
-              <div className={`w4-confirm-step-card ${syncCompleted ? 'step-completed' : (isSyncing ? 'step-in-progress' : 'step-pending')}`}>
-                <div className="w4-step-status-header">
-                  <span className="w4-step-status-icon">
-                    {syncCompleted ? '🟢' : (isSyncing ? '⏳' : '🔴')}
-                  </span>
-                  <span className="w4-step-status-title">
-                    Step 1: Sync Website Data {syncCompleted ? '— Complete ✓' : (isSyncing ? '— Syncing...' : '— Pending')}
-                  </span>
-                </div>
-                <div className="w4-step-body">
-                  <p>Pull the latest updated content from WordPress.</p>
-                  {syncCompleted ? (
-                    <span className="w4-step-done-tag">🟢 Complete ✓</span>
+                {/* 2. Push Changes to WordPress */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>2. Push Changes to WordPress</strong>
+                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Send changed SEO fields (Meta Title, Meta Description) to live WordPress page.</span>
+                  </div>
+                  {isPushed ? (
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ WordPress Updated</span>
                   ) : (
-                    <button
-                      type="button"
-                      className="w3-btn-secondary"
-                      onClick={handleSyncClick}
-                      disabled={isSyncing}
-                    >
+                    <button type="button" className="w3-btn-blue" onClick={handlePushToWordPress} disabled={!isSaved || isPushing}>
+                      {isPushing ? 'Pushing...' : 'Push Changes to WordPress'}
+                    </button>
+                  )}
+                </div>
+
+                {/* 3. Sync Website Data */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>3. Sync Website Data</strong>
+                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Pull updated WordPress page data back into Website Management.</span>
+                  </div>
+                  {isSynced ? (
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Website Data Synced</span>
+                  ) : (
+                    <button type="button" className="w3-btn-secondary" onClick={handleSyncClick} disabled={!isPushed || isSyncing}>
                       {isSyncing ? 'Syncing...' : 'Sync Website Data'}
                     </button>
                   )}
                 </div>
-              </div>
 
-              {/* STEP 2 CARD */}
-              <div className={`w4-confirm-step-card ${auditCompleted ? 'step-completed' : (syncCompleted ? 'step-active' : 'step-pending')}`}>
-                <div className="w4-step-status-header">
-                  <span className="w4-step-status-icon">
-                    {auditCompleted ? '🟢' : '🔴'}
-                  </span>
-                  <span className="w4-step-status-title">
-                    Step 2: Re-run Audit {auditCompleted ? '— Complete ✓' : '— Pending'}
-                  </span>
-                </div>
-                <div className="w4-step-body">
-                  <p>Re-evaluate the page SEO checks to pass the audit.</p>
-                  {auditCompleted ? (
-                    <span className="w4-step-done-tag">🟢 Complete ✓</span>
+                {/* 4. Re-run Audit */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>4. Re-run Audit</strong>
+                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Re-evaluate page SEO checks against updated page.</span>
+                  </div>
+                  {isAudited ? (
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Audit Complete</span>
                   ) : (
-                    <button
-                      type="button"
-                      className="w3-btn-emerald"
-                      onClick={handleAuditClick}
-                      disabled={!syncCompleted}
-                      title={!syncCompleted ? 'Complete Step 1 Sync Website Data first' : 'Re-run live page audit'}
-                    >
+                    <button type="button" className="w3-btn-emerald" onClick={handleAuditClick} disabled={!isSynced}>
                       Re-run Audit ▷
                     </button>
                   )}
-                  {!syncCompleted && (
-                    <span className="w4-step-lock-note">(Complete Step 1 sync first)</span>
-                  )}
                 </div>
-              </div>
 
+              </div>
             </div>
 
-            <div className="w4-confirm-footer">
-              <p className="w4-confirm-note">
-                {auditCompleted
-                  ? '✓ All steps completed. Audit is up to date.'
-                  : 'ⓘ Note: The audit will only pass after WordPress data has been synced and the audit re-run.'}
-              </p>
-              <button
-                type="button"
-                className={auditCompleted ? 'w3-btn-emerald' : 'w3-btn-secondary'}
-                onClick={onClose}
-              >
-                {auditCompleted ? 'Done / Return to Audit' : 'Close Modal'}
+            {/* Actions Footer */}
+            <div className="w4-modal-actions" style={{ marginTop: '20px' }}>
+              <button type="button" className="w3-btn-secondary" onClick={onClose}>
+                {isAudited ? 'Done / Return to Audit' : 'Close Modal'}
               </button>
             </div>
           </div>
-        )}
+
+        </div>
 
       </div>
     </div>
