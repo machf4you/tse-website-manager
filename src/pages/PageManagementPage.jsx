@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import ConfigurePageDialog from '../components/ConfigurePageDialog'
-import { getPageConfigsApi, savePageConfigsApi } from '../services/websiteManagerApi'
-import { getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
+import { getPageConfigsApi, savePageConfigsApi, getPageAuditsApi } from '../services/websiteManagerApi'
+import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
 import './PageManagementPage.css'
 
 export default function PageManagementPage({
@@ -30,6 +30,17 @@ export default function PageManagementPage({
     return {}
   })
 
+  const [pageAudits, setPageAudits] = useState(() => {
+    try {
+      const siteIdKey = getSiteAuditsStorageKey(site)
+      const saved = localStorage.getItem(siteIdKey)
+      if (saved) return JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed to load page audits:', e)
+    }
+    return {}
+  })
+
   useEffect(() => {
     let isMounted = true
     if (site?.id) {
@@ -44,6 +55,12 @@ export default function PageManagementPage({
             })
             return merged
           })
+        }
+      }).catch(() => {})
+
+      getPageAuditsApi(site.id).then(apiAudits => {
+        if (isMounted && apiAudits && Object.keys(apiAudits).length > 0) {
+          setPageAudits(prev => ({ ...apiAudits, ...prev }))
         }
       }).catch(() => {})
     }
@@ -163,18 +180,6 @@ export default function PageManagementPage({
     handleSavePageConfig(updatedConfig)
   }
 
-  // Load stored page audit completions
-  const auditStorageKey = site?.id ? `tse_page_audits_${site.id}` : 'tse_page_audits_default'
-  const pageAudits = (() => {
-    try {
-      const saved = localStorage.getItem(auditStorageKey)
-      return saved ? JSON.parse(saved) : {}
-    } catch (e) {
-      console.error('Failed to load page audits:', e)
-      return {}
-    }
-  })()
-
   // Extract exported pages and merge user custom configurations and audit data
   const pkg = storedPackageData || site?.storedPackageData
   const rawPagesList = extractPagesFromPackage(pkg, site?.url)
@@ -184,12 +189,16 @@ export default function PageManagementPage({
     const pageKey = page.id || page.url || page.pageUrl
     const urlKey = page.url || page.pageUrl || ''
     const override = configurations[pageKey] || (urlKey ? configurations[urlKey] : null)
-    const auditRecord = pageAudits[pageKey] || (urlKey ? pageAudits[urlKey] : null)
+    const auditRecord = pageAudits[pageKey] ||
+                        (urlKey ? pageAudits[urlKey] : null) ||
+                        (page.id ? pageAudits[page.id] : null) ||
+                        (page.url ? pageAudits[page.url] : null) ||
+                        Object.values(pageAudits).find(a => (a?.auditResult?.url === urlKey || a?.url === urlKey))
 
-    const isAudited = Boolean(auditRecord && auditRecord.isAudited && auditRecord.lastAuditTimestamp)
+    const isAudited = Boolean(auditRecord && (auditRecord.isAudited || auditRecord.lastAuditTimestamp || auditRecord.auditResult))
     const isStale = Boolean(auditRecord && auditRecord.isStale)
     const staleReason = auditRecord?.staleReason || null
-    const lastAuditDate = isAudited ? auditRecord.lastAuditTimestamp : (override?.lastAuditDate || page.lastAuditDate || 'Never')
+    const lastAuditDate = isAudited ? (auditRecord.lastAuditTimestamp || 'Audited ✓') : (override?.lastAuditDate || page.lastAuditDate || 'Never')
 
     const autoType = override?.autoType || page.type || page.seoPageType || 'Unclassified'
     const isManualOverride = Boolean(override && override.isManualOverride === true)
