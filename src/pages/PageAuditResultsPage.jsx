@@ -296,12 +296,21 @@ export default function PageAuditResultsPage({
       setIsCurrentPageStale(false)
       setStaleReasonText(null)
 
+      const effectiveTarget = (currentPage.target || currentPage.targetPhrase || targetPhrase || '').trim()
+      if (!effectiveTarget || effectiveTarget.toLowerCase() === 'not set') {
+        if (isMounted) {
+          setIsLoadingAudit(false)
+          setAuditError('Target Phrase Not Configured — Please configure a target phrase for this page in W3 Page Management to run audit.')
+        }
+        return
+      }
+
       try {
         const result = await executePageAudit({
           siteId: site?.id || 'site-1',
           pageId: currentPage.id || currentPage.url,
           url: currentPage.url,
-          targetPhrase: currentPage.target || currentPage.targetPhrase || targetPhrase,
+          targetPhrase: effectiveTarget,
           seoPageType: currentPage.type || currentPage.seoPageType || pageType,
         })
 
@@ -631,6 +640,10 @@ export default function PageAuditResultsPage({
               <span className="w4-status-connected" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#10b981', backgroundColor: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
                 🟢 LIVE API DATA
               </span>
+            ) : auditError && auditError.includes('Target Phrase') ? (
+              <span className="w4-status-warning" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
+                🟡 TARGET PHRASE REQUIRED
+              </span>
             ) : (
               <span className="w4-status-offline" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#ef4444', backgroundColor: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
                 Page Auditor Offline — Audit Cannot Run
@@ -723,12 +736,14 @@ export default function PageAuditResultsPage({
         {/* SEO Elements Audit Table / Offline State */}
         <div className="w4-table-card">
           {!liveAuditData && !isLoadingAudit ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center', color: '#ef4444' }}>
+            <div style={{ padding: '40px 20px', textAlign: 'center', color: auditError && auditError.includes('Target Phrase') ? '#f59e0b' : '#ef4444' }}>
               <div style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '8px' }}>
-                Page Auditor Offline — Audit Cannot Run
+                {auditError && auditError.includes('Target Phrase')
+                  ? 'Target Phrase Not Configured'
+                  : 'Page Auditor Offline — Audit Cannot Run'}
               </div>
               <div style={{ fontSize: '0.88rem', color: '#94a3b8' }}>
-                Please ensure the TSE Page Auditor backend server (<code>python server.py</code> inside <code>c:\Antigravity\tse-page-auditor\backend</code>) is running.
+                {auditError || 'Please ensure the TSE Page Auditor backend server (python server.py inside c:\\Antigravity\\tse-page-auditor\\backend) is running.'}
               </div>
             </div>
           ) : (
