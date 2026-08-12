@@ -168,8 +168,21 @@ app.get('/api/websites/:id/package', (req, res) => {
     if (!row) {
       return res.status(404).json({ error: 'Package not found for site' })
     }
-    const packageData = JSON.parse(row.package_data)
-    res.json({ siteId: id, packageData, updatedAt: row.updated_at })
+    const rawData = JSON.parse(row.package_data)
+    // Clean unwrapping if nested wrapper exists
+    const cleanPackage = (rawData && rawData.packageData && (Array.isArray(rawData.packageData.pages) || Array.isArray(rawData.packageData.posts)))
+      ? rawData.packageData
+      : rawData
+
+    const lastSyncTimestamp = rawData?.lastSyncTimestamp || row.updated_at
+
+    res.json({
+      siteId: id,
+      isSynchronised: true,
+      lastSyncTimestamp,
+      packageData: cleanPackage,
+      updatedAt: row.updated_at
+    })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
@@ -179,22 +192,47 @@ app.get('/api/websites/:id/package', (req, res) => {
 app.post('/api/websites/:id/package', (req, res) => {
   try {
     const { id } = req.params
-    const packageData = req.body
-    if (!packageData) {
+    const rawBody = req.body
+    if (!rawBody) {
       return res.status(400).json({ error: 'Package data is required' })
     }
 
-    const now = new Date().toISOString()
-    const stmt = db.prepare(`
-      INSERT INTO wp_packages (site_id, package_data, updated_at)
-      VALUES (?, ?, ?)
-      ON CONFLICT(site_id) DO UPDATE SET
-        package_data = excluded.package_data,
-        updated_at = excluded.updated_at
-    `)
+    // Unwrap clean packageData if wrapper was passed
+    const cleanPackageData = (rawBody && rawBody.packageData && (Array.isArray(rawBody.packageData.pages) || Array.isArray(rawBody.packageData.posts)))
+      ? rawBody.packageData
+      : (rawBody.pages || rawBody.posts ? rawBody : (rawBody.packageData || rawBody))
 
-    stmt.run(id, JSON.stringify(packageData), now)
-    res.json({ success: true, siteId: id, updatedAt: now })
+    const now = new Date().toISOString()
+    const syncTx = db.transaction(() => {
+      // 1. Save clean package to wp_packages table
+      db.prepare(`
+        INSERT INTO wp_packages (site_id, package_data, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(site_id) DO UPDATE SET
+          package_data = excluded.package_data,
+          updated_at = excluded.updated_at
+      `).run(id, JSON.stringify(cleanPackageData), now)
+
+      // 2. Update websites table sync_status and last_sync_timestamp
+      db.prepare(`
+        UPDATE websites
+        SET sync_status = 'Synced',
+            last_sync_timestamp = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(now, now, id)
+    })
+
+    syncTx()
+
+    res.json({
+      success: true,
+      siteId: id,
+      isSynchronised: true,
+      lastSyncTimestamp: now,
+      packageData: cleanPackageData,
+      updatedAt: now
+    })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }

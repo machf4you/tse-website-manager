@@ -3,11 +3,13 @@
  * Replaces pure localStorage operations with persistent REST API calls to Website Manager server.
  */
 
-import { normalizeSiteId } from '../utils/siteKeyHelper'
+import { normalizeSiteId } from '../utils/siteKeyHelper.js'
 
-const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBSITE_MANAGER_API_URL)
-  ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
-  : 'https://api-website-manager.thesearchequation.co.uk/api'
+const API_BASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_WEBSITE_MANAGER_API_URL)
+  ? process.env.VITE_WEBSITE_MANAGER_API_URL
+  : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBSITE_MANAGER_API_URL)
+      ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
+      : 'http://localhost:3001/api')
 
 async function fetchJson(url, options = {}) {
   try {
@@ -107,22 +109,41 @@ export async function deleteWebsiteApi(siteId) {
 export async function getWpPackageApi(siteId) {
   try {
     const res = await fetchJson(`${API_BASE_URL}/websites/${siteId}/package`)
-    return res.packageData || null
+    return res || null
   } catch (e) {
     const raw = localStorage.getItem(`tse_wp_package_${siteId}`)
-    return raw ? JSON.parse(raw) : null
+    if (!raw) return null
+    try {
+      const parsed = JSON.parse(raw)
+      const cleanData = (parsed && parsed.packageData && (Array.isArray(parsed.packageData.pages) || Array.isArray(parsed.packageData.posts)))
+        ? parsed.packageData
+        : (parsed.pages || parsed.posts ? parsed : (parsed.packageData || parsed))
+
+      return {
+        siteId,
+        isSynchronised: true,
+        lastSyncTimestamp: parsed?.lastSyncTimestamp || null,
+        packageData: cleanData
+      }
+    } catch (err) {
+      return null
+    }
   }
 }
 
 export async function saveWpPackageApi(siteId, packageData) {
+  const cleanPackageData = (packageData && packageData.packageData && (Array.isArray(packageData.packageData.pages) || Array.isArray(packageData.packageData.posts)))
+    ? packageData.packageData
+    : (packageData.pages || packageData.posts ? packageData : (packageData.packageData || packageData))
+
   try {
     await fetchJson(`${API_BASE_URL}/websites/${siteId}/package`, {
       method: 'POST',
-      body: JSON.stringify(packageData)
+      body: JSON.stringify(cleanPackageData)
     })
   } catch (e) {}
   try {
-    localStorage.setItem(`tse_wp_package_${siteId}`, JSON.stringify(packageData))
+    localStorage.setItem(`tse_wp_package_${siteId}`, JSON.stringify(cleanPackageData))
   } catch (err) {}
 }
 

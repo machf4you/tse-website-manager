@@ -254,10 +254,11 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       // 1. Fetch package data from SQLite API
       getWpPackageApi(site.id).then(pkgRes => {
         if (!isMounted) return
-        if (pkgRes && pkgRes.packageData) {
+        if (pkgRes && (pkgRes.packageData || pkgRes.pages)) {
           setHasSyncHeader(true)
           if (pkgRes.lastSyncTimestamp) setLastSyncDate(pkgRes.lastSyncTimestamp)
-          setStoredPackageData(pkgRes.packageData)
+          const cleanPkg = pkgRes.packageData || pkgRes
+          setStoredPackageData(cleanPkg)
         }
         setIsPackageHydrated(true)
       }).catch(() => {
@@ -368,15 +369,11 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
             console.error('Failed during post-sync audit freshness tracking:', e)
           }
 
-          // Save package to persistent localStorage key for site
+          // Save package to SQLite API backend (updates wp_packages + websites.sync_status in one transaction)
           try {
-            localStorage.setItem(packageStorageKey, JSON.stringify({
-              isSynchronised: true,
-              lastSyncTimestamp: completedTime,
-              packageData: normalizedPackageData
-            }))
+            await saveWpPackageApi(site.id, normalizedPackageData)
           } catch (e) {
-            console.error('Failed to save WP package to localStorage:', e)
+            console.error('Failed to save WP package to backend API:', e)
           }
 
           const updatedSite = {
