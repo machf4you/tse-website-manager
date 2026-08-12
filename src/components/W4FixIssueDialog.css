@@ -374,3 +374,15 @@
   color: #fbbf24;
   margin: 0;
 }
+
+.btn-disabled,
+button:disabled,
+button[disabled] {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #475569 !important;
+  cursor: not-allowed !important;
+  opacity: 0.45 !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+}

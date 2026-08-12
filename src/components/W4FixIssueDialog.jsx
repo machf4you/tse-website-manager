@@ -372,7 +372,7 @@ export default function W4FixIssueDialog({
                   {isSaved ? (
                     <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Saved to Database</span>
                   ) : (
-                    <button type="button" className="w3-btn-emerald" onClick={handleSave} disabled={isSaving}>
+                    <button type="button" className={`w3-btn-emerald ${isSaving ? 'btn-disabled' : ''}`} onClick={handleSave} disabled={isSaving}>
                       {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
                   )}
@@ -387,7 +387,7 @@ export default function W4FixIssueDialog({
                   {isPushed ? (
                     <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ WordPress Updated</span>
                   ) : (
-                    <button type="button" className="w3-btn-blue" onClick={handlePushToWordPress} disabled={!isSaved || isPushing}>
+                    <button type="button" className={`w3-btn-blue ${!isSaved || isPushing ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved || isPushing}>
                       {isPushing ? 'Pushing...' : 'Push Changes to WordPress'}
                     </button>
                   )}
@@ -402,7 +402,7 @@ export default function W4FixIssueDialog({
                   {isSynced ? (
                     <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Website Data Synced</span>
                   ) : (
-                    <button type="button" className="w3-btn-secondary" onClick={handleSyncClick} disabled={!isPushed || isSyncing}>
+                    <button type="button" className={`w3-btn-secondary ${!isPushed || isSyncing ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed || isSyncing}>
                       {isSyncing ? 'Syncing...' : 'Sync Website Data'}
                     </button>
                   )}
@@ -417,7 +417,7 @@ export default function W4FixIssueDialog({
                   {isAudited ? (
                     <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Audit Complete</span>
                   ) : (
-                    <button type="button" className="w3-btn-emerald" onClick={handleAuditClick} disabled={!isSynced}>
+                    <button type="button" className={`w3-btn-emerald ${!isSynced ? 'btn-disabled' : ''}`} onClick={handleAuditClick} disabled={!isSynced}>
                       Re-run Audit ▷
                     </button>
                   )}
