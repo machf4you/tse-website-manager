@@ -69,6 +69,18 @@ export default function W4FixIssueDialog({
     }
   }, [isOpen, page, seoType])
 
+  // Prevent background scrolling while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
   // Track global isSyncing prop completion
   useEffect(() => {
     if (syncStarted && !isSyncing) {
@@ -258,13 +270,13 @@ export default function W4FixIssueDialog({
           {/* RIGHT COLUMN: Editable WordPress Fields */}
           <div className="w4-panel-right">
             {seoType === 'batch_optimization' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                     <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
                       Proposed Meta Title
                     </label>
-                    <span style={{ fontSize: '0.78rem', color: metaTitleVal.length >= 50 && metaTitleVal.length <= 60 ? '#10b981' : '#f59e0b' }}>
+                    <span style={{ fontSize: '0.74rem', color: metaTitleVal.length >= 50 && metaTitleVal.length <= 60 ? '#10b981' : '#f59e0b' }}>
                       {metaTitleVal.length} chars (Target: 50-60)
                     </span>
                   </div>
@@ -278,17 +290,17 @@ export default function W4FixIssueDialog({
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                     <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
                       Proposed Meta Description
                     </label>
-                    <span style={{ fontSize: '0.78rem', color: metaDescVal.length >= 150 && metaDescVal.length <= 160 ? '#10b981' : '#f59e0b' }}>
+                    <span style={{ fontSize: '0.74rem', color: metaDescVal.length >= 150 && metaDescVal.length <= 160 ? '#10b981' : '#f59e0b' }}>
                       {metaDescVal.length} chars (Target: 150-160)
                     </span>
                   </div>
                   <textarea
                     className="w4-field-textarea"
-                    rows={4}
+                    rows={2}
                     value={metaDescVal}
                     onChange={(e) => setMetaDescVal(e.target.value)}
                     placeholder="Enter proposed Meta Description..."
@@ -296,11 +308,11 @@ export default function W4FixIssueDialog({
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
                     <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
                       Proposed H1 Heading Tag
                     </label>
-                    <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                    <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
                       {h1Val.length} chars
                     </span>
                   </div>
@@ -328,7 +340,7 @@ export default function W4FixIssueDialog({
                   <textarea
                     id="w4-fix-input"
                     className="w4-field-textarea"
-                    rows={6}
+                    rows={3}
                     value={fieldValue}
                     onChange={(e) => setFieldValue(e.target.value)}
                     placeholder={`Enter proposed ${elementDetails.label}...`}
@@ -346,7 +358,7 @@ export default function W4FixIssueDialog({
               </>
             )}
 
-            <div className="w4-guidance-box" style={{ marginTop: '16px' }}>
+            <div className="w4-guidance-box" style={{ marginTop: '6px' }}>
               <div className="w4-guidance-item">
                 <strong>Target Phrase:</strong> <span>{page.target || page.targetPhrase || 'Not set'}</span>
               </div>
@@ -356,68 +368,68 @@ export default function W4FixIssueDialog({
             </div>
 
             {/* ── SEQUENTIAL NEXT WORKFLOW ACTIONS SECTION ── */}
-            <div className="w4-workflow-actions-section" style={{ marginTop: '14px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
-              <h4 style={{ color: '#f8fafc', fontSize: '0.88rem', fontWeight: '700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="w4-workflow-actions-section" style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+              <h4 style={{ color: '#f8fafc', fontSize: '0.82rem', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>🔄 Next Workflow Actions</span>
               </h4>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
 
                 {/* 1. Save Changes */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30,41,59,0.7)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(30,41,59,0.7)', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>1. Save Changes</strong>
-                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Save Meta Title, Meta Description and H1 to database.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>1. Save Changes</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Save Meta Title, Meta Description and H1 to database.</span>
                   </div>
                   {isSaved ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Saved to Database</span>
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ Saved to Database</span>
                   ) : (
-                    <button type="button" className={`w3-btn-emerald ${isSaving ? 'btn-disabled' : ''}`} onClick={handleSave} disabled={isSaving}>
+                    <button type="button" className={`w3-btn-emerald ${isSaving ? 'btn-disabled' : ''}`} onClick={handleSave} disabled={isSaving} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
                       {isSaving ? 'Saving...' : 'Save Changes'}
                     </button>
                   )}
                 </div>
 
                 {/* 2. Push Changes to WordPress */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>2. Push Changes to WordPress</strong>
-                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Send changed SEO fields (Meta Title, Meta Description) to live WordPress page.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>2. Push Changes to WordPress</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Send changed SEO fields (Meta Title, Meta Description) to live WordPress page.</span>
                   </div>
                   {isPushed ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ WordPress Updated</span>
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ WordPress Updated</span>
                   ) : (
-                    <button type="button" className={`w3-btn-blue ${!isSaved || isPushing ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved || isPushing}>
+                    <button type="button" className={`w3-btn-blue ${!isSaved || isPushing ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved || isPushing} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
                       {isPushing ? 'Pushing...' : 'Push Changes to WordPress'}
                     </button>
                   )}
                 </div>
 
                 {/* 3. Sync Website Data */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>3. Sync Website Data</strong>
-                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Pull updated WordPress page data back into Website Management.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>3. Sync Website Data</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Pull updated WordPress page data back into Website Management.</span>
                   </div>
                   {isSynced ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Website Data Synced</span>
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ Website Data Synced</span>
                   ) : (
-                    <button type="button" className={`w3-btn-secondary ${!isPushed || isSyncing ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed || isSyncing}>
+                    <button type="button" className={`w3-btn-secondary ${!isPushed || isSyncing ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed || isSyncing} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
                       {isSyncing ? 'Syncing...' : 'Sync Website Data'}
                     </button>
                   )}
                 </div>
 
                 {/* 4. Re-run Audit */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.88rem', display: 'block' }}>4. Re-run Audit</strong>
-                    <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Re-evaluate page SEO checks against updated page.</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.82rem', display: 'block' }}>4. Re-run Audit</strong>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Re-evaluate page SEO checks against updated page.</span>
                   </div>
                   {isAudited ? (
-                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.82rem' }}>✓ Audit Complete</span>
+                    <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.78rem' }}>✓ Audit Complete</span>
                   ) : (
-                    <button type="button" className={`w3-btn-emerald ${!isSynced ? 'btn-disabled' : ''}`} onClick={handleAuditClick} disabled={!isSynced}>
+                    <button type="button" className={`w3-btn-emerald ${!isSynced ? 'btn-disabled' : ''}`} onClick={handleAuditClick} disabled={!isSynced} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
                       Re-run Audit ▷
                     </button>
                   )}
@@ -427,8 +439,8 @@ export default function W4FixIssueDialog({
             </div>
 
             {/* Actions Footer */}
-            <div className="w4-modal-actions" style={{ marginTop: '20px' }}>
-              <button type="button" className="w3-btn-secondary" onClick={onClose}>
+            <div className="w4-modal-actions" style={{ marginTop: '8px', paddingTop: 0 }}>
+              <button type="button" className="w3-btn-secondary" onClick={onClose} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
                 {isAudited ? 'Done / Return to Audit' : 'Close Modal'}
               </button>
             </div>
