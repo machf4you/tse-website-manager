@@ -41,7 +41,7 @@ export default function W4FixIssueDialog({
     setAuditCompleted(false)
 
     if (seoType === 'meta_title') {
-      setFieldValue(page.proposedTitle || page.metaTitle || page.title || '')
+      setFieldValue(page.metaTitle || page.proposedTitle || page.title || '')
     } else if (seoType === 'meta_desc') {
       setFieldValue(page.metaDescription || page.meta_description || page.snippet || '')
     } else if (seoType === 'h1') {
