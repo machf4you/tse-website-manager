@@ -356,8 +356,8 @@ export default function W4FixIssueDialog({
             </div>
 
             {/* ── SEQUENTIAL NEXT WORKFLOW ACTIONS SECTION ── */}
-            <div className="w4-workflow-actions-section" style={{ marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '18px' }}>
-              <h4 style={{ color: '#f8fafc', fontSize: '0.92rem', fontWeight: '700', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="w4-workflow-actions-section" style={{ marginTop: '14px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
+              <h4 style={{ color: '#f8fafc', fontSize: '0.88rem', fontWeight: '700', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>🔄 Next Workflow Actions</span>
               </h4>
 

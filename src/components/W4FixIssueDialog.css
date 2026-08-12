@@ -15,7 +15,8 @@
   border: 1px solid #334155;
   border-radius: 12px;
   width: 100%;
-  max-width: 1240px;
+  max-width: 1180px;
+  max-height: 88vh;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65);
   overflow: hidden;
   display: flex;
@@ -23,12 +24,13 @@
 }
 
 .w4-modal-header {
-  padding: 18px 24px;
+  padding: 14px 20px;
   border-bottom: 1px solid #1e293b;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   background: #1e293b;
+  flex-shrink: 0;
 }
 
 .w4-modal-code {
@@ -42,7 +44,7 @@
 }
 
 .w4-modal-title {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #f8fafc;
   margin: 0;
@@ -66,27 +68,31 @@
 /* Two-column body layout */
 .w4-modal-body {
   display: flex;
-  min-height: 380px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .w4-panel-left {
   flex: 0.85;
-  max-width: 380px;
+  max-width: 340px;
   background: #0b1329;
-  padding: 24px;
+  padding: 16px 18px;
   border-right: 1px solid #1e293b;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  overflow-y: auto;
 }
 
 .w4-panel-right {
   flex: 1.85;
   background: #0f172a;
-  padding: 24px 28px;
+  padding: 16px 22px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  overflow-y: auto;
 }
 
 .w4-info-group {
