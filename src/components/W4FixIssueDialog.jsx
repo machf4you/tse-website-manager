@@ -16,6 +16,11 @@ export default function W4FixIssueDialog({
   const [metaTitleVal, setMetaTitleVal] = useState('')
   const [metaDescVal, setMetaDescVal] = useState('')
   const [h1Val, setH1Val] = useState('')
+  const [fieldValue, setFieldValue] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [syncStarted, setSyncStarted] = useState(false)
+  const [syncCompleted, setSyncCompleted] = useState(false)
+  const [auditCompleted, setAuditCompleted] = useState(false)
 
   // Determine SEO Element type & pre-fill current text
   const seoType = (() => {
