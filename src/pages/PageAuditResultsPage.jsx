@@ -46,6 +46,7 @@ export default function PageAuditResultsPage({
 
   // Allow selecting any page from the dropdown, with localStorage persistence
   const [selectedUrl, setSelectedUrl] = useState(() => {
+    if (page?.url) return page.url
     try {
       const saved = localStorage.getItem(selectedUrlStorageKey)
       if (saved && pagesList.some(p => p.url === saved)) return saved
@@ -54,6 +55,12 @@ export default function PageAuditResultsPage({
     }
     return page?.url || pagesList[0]?.url || ''
   })
+
+  useEffect(() => {
+    if (page?.url && page.url !== selectedUrl) {
+      setSelectedUrl(page.url)
+    }
+  }, [page?.url])
 
   useEffect(() => {
     if (selectedUrl) {
@@ -561,17 +568,19 @@ export default function PageAuditResultsPage({
   const passedCount = auditElements.length > 0 ? auditElements.filter(el => el.status === 'Pass').length : 0
   const totalCount = auditElements.length
 
-  if (!currentPage || !currentPage.url || (Array.isArray(pagesList) && pagesList.length === 0)) {
+  if (!currentPage || (!currentPage.url && !currentPage.target && !currentPage.targetPhrase)) {
     return (
-      <div className="w4-audit-container">
-        <div className="w3-back-row">
-          <button type="button" className="w3-btn-back" onClick={onBack}>
-            ← Back to W2 | Website Dashboard
-          </button>
-        </div>
-        <div style={{ padding: '40px 20px', textAlign: 'center', color: '#94a3b8' }}>
-          <h2>No Pages Available to Audit</h2>
-          <p style={{ marginTop: '8px' }}>Please synchronise the website in W2 Website Dashboard to load pages.</p>
+      <div className="w4-audit-wrapper">
+        <div className="w4-audit-container">
+          <div className="w4-back-row">
+            <button type="button" className="w4-btn-back" onClick={onBack}>
+              ← Back to Website Management
+            </button>
+          </div>
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
+            <h2 style={{ fontSize: '1.4rem', color: '#f8fafc' }}>No Page Selected to Audit</h2>
+            <p style={{ marginTop: '10px', fontSize: '0.95rem' }}>Please select a configured page from W3 Page Management to view audit results.</p>
+          </div>
         </div>
       </div>
     )
