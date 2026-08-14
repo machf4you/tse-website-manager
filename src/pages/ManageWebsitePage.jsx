@@ -485,7 +485,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     )
   }
 
-  const progressPercent = Math.round(((stageIndex + 1) / SYNC_STAGES.length) * 100)
+  const progressPercent = Math.round(((stageIndex + 1) / syncStages.length) * 100)
 
   return (
     <div className="w2-dashboard">
