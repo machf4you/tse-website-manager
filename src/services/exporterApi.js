@@ -180,46 +180,27 @@ export async function fetchMagentoExportPackage({
   const targetId = websiteId || site?.id || '1786704253814'
 
   try {
-    let response = await fetch(`${API_BASE_URL}/websites/${encodeURIComponent(targetId)}/magento-sync`, {
+    const response = await fetch(`${API_BASE_URL}/websites/${encodeURIComponent(targetId)}/magento-sync`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json'
       }
     })
 
-    let contentType = response.headers.get('content-type') || ''
-    if (!response.ok && (response.status === 404 || contentType.includes('text/html'))) {
-      // Fallback: Query live backend package endpoint
-      response = await fetch(`${API_BASE_URL}/websites/${encodeURIComponent(targetId)}/package`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          action: 'magento_sync',
-          packageData: site?.storedPackageData || {
-            site_info: { url: site?.url || 'https://www.hf4you.co.uk', platform: 'magento' },
-            pages: []
-          }
-        })
-      })
-      contentType = response.headers.get('content-type') || ''
-    }
-
+    const contentType = response.headers.get('content-type') || ''
     if (!contentType.includes('application/json')) {
-      const htmlText = await response.text()
+      const text = await response.text()
       return {
         success: false,
         status: response.status,
-        error: 'BACKEND_HTML_RESPONSE',
-        message: `Backend returned non-JSON response (HTTP ${response.status}): ${htmlText.slice(0, 100)}`
+        error: 'NON_JSON_RESPONSE',
+        message: `Backend endpoint returned non-JSON (${response.status}): ${text.slice(0, 150)}`
       }
     }
 
     const data = await response.json()
 
-    if (!response.ok || (data.success !== undefined && !data.success)) {
+    if (!response.ok || !data.success) {
       return {
         success: false,
         status: response.status,
@@ -230,7 +211,7 @@ export async function fetchMagentoExportPackage({
 
     return {
       success: true,
-      packageData: data.packageData || data
+      packageData: data.packageData
     }
   } catch (error) {
     return {
