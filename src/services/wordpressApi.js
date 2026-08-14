@@ -78,8 +78,8 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     base = 'https://' + base
   }
 
-  const username = site?.wpUser || site?.connectedUser || site?.configData?.wpUser || site?.configData?.connectedUser || ''
-  const password = site?.wpPass || site?.configData?.wpPass || ''
+  const username = site?.configData?.wpUser || site?.wpUser || site?.connectedUser || site?.configData?.connectedUser || ''
+  const password = site?.configData?.wpPass || site?.wpPass || ''
   if (!username || !password) {
     return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
   }
@@ -195,8 +195,8 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
     base = 'https://' + base
   }
 
-  const username = site?.wpUser || site?.connectedUser || site?.configData?.wpUser || site?.configData?.connectedUser || ''
-  const password = site?.wpPass || site?.configData?.wpPass || ''
+  const username = site?.configData?.wpUser || site?.wpUser || site?.connectedUser || site?.configData?.connectedUser || ''
+  const password = site?.configData?.wpPass || site?.wpPass || ''
 
   console.log('[WP_CONTENT_PUSH_DIAGNOSTIC]', {
     hasSite: Boolean(site),
