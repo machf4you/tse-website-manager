@@ -661,7 +661,7 @@ export default function AddWebsiteDialog({
                 onClick={handleResetSync}
                 disabled={isConnecting}
               >
-                Reset Synchronisation
+                Reset Sync
               </button>
               <button
                 type="button"
@@ -670,7 +670,7 @@ export default function AddWebsiteDialog({
                 onClick={handleDelete}
                 disabled={isConnecting}
               >
-                Delete Website
+                Delete
               </button>
             </div>
           )}
