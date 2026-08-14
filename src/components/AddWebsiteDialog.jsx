@@ -138,8 +138,8 @@ export default function AddWebsiteDialog({
     if (isOpen && editingSite) {
       setWpName(editingSite.name || '')
       setWpUrl(editingSite.url || '')
-      setWpUser(editingSite.wpUser || editingSite.connectedUser || '')
-      setWpPass(editingSite.wpPass || '')
+      setWpUser(editingSite.wpUser || editingSite.connectedUser || editingSite.configData?.wpUser || editingSite.configData?.connectedUser || '')
+      setWpPass(editingSite.wpPass || editingSite.configData?.wpPass || '')
       setPortfolio(editingSite.portfolio || 'tse')
       setElementorEnabled(editingSite.elementorEnabled || false)
     } else if (isOpen && !editingSite) {
@@ -255,6 +255,12 @@ export default function AddWebsiteDialog({
           wpUser: wpUser.trim(),
           wpPass: wpPass.trim(),
           connectedUser: res.user ? res.user.name : wpUser.trim(),
+          configData: {
+            ...(editingSite?.configData || {}),
+            wpUser: wpUser.trim(),
+            wpPass: wpPass.trim(),
+            connectedUser: res.user ? res.user.name : wpUser.trim(),
+          }
         }
         onUpdateWebsite(updatedTile)
       } else {
