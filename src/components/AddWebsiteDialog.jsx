@@ -136,10 +136,16 @@ export default function AddWebsiteDialog({
   // Populate fields when editing an existing site
   useEffect(() => {
     if (isOpen && editingSite) {
+      let cfg = editingSite.configData
+      if (!cfg && editingSite.config_data && typeof editingSite.config_data === 'string') {
+        try { cfg = JSON.parse(editingSite.config_data) } catch (e) {}
+      }
+      cfg = cfg || {}
+
       setWpName(editingSite.name || '')
       setWpUrl(editingSite.url || '')
-      setWpUser(editingSite.wpUser || editingSite.connectedUser || editingSite.configData?.wpUser || editingSite.configData?.connectedUser || '')
-      setWpPass(editingSite.wpPass || editingSite.configData?.wpPass || '')
+      setWpUser(editingSite.wpUser || editingSite.connectedUser || cfg.wpUser || cfg.connectedUser || '')
+      setWpPass(editingSite.wpPass || cfg.wpPass || '')
       setPortfolio(editingSite.portfolio || 'tse')
       setElementorEnabled(editingSite.elementorEnabled || false)
     } else if (isOpen && !editingSite) {

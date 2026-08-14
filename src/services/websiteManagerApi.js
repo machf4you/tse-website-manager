@@ -44,10 +44,15 @@ export async function getWebsitesApi() {
     const list = await fetchJson(`${API_BASE_URL}/websites`)
     if (Array.isArray(list)) {
       return list.map(s => {
-        const cfg = s.configData || {}
+        let cfg = s.configData
+        if (!cfg && s.config_data && typeof s.config_data === 'string') {
+          try { cfg = JSON.parse(s.config_data) } catch (e) {}
+        }
+        cfg = cfg || {}
         return {
           ...s,
-          wpUser: s.wpUser || cfg.wpUser || s.connectedUser || '',
+          configData: cfg,
+          wpUser: s.wpUser || cfg.wpUser || s.connectedUser || cfg.connectedUser || '',
           wpPass: s.wpPass || cfg.wpPass || ''
         }
       })
