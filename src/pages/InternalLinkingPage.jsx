@@ -40,7 +40,7 @@ export function renderHighlightedText(text, anchorText) {
   )
 }
 
-export default function InternalLinkingPage({ site, pagesList, initialSelectedUrl, onNavigateTab, onNavigateBack }) {
+export default function InternalLinkingPage({ site, pagesList, isLoadingPackage, initialSelectedUrl, onNavigateTab, onNavigateBack }) {
   const [expandedUrl, setExpandedUrl] = useState(() => {
     if (initialSelectedUrl) {
       return initialSelectedUrl
@@ -462,6 +462,23 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
       >
         {generatingIds[recKey] ? 'Generating...' : '✨ Generate'}
       </button>
+    )
+  }
+
+  if (isLoadingPackage && (!Array.isArray(activePages) || activePages.length === 0)) {
+    return (
+      <div className="il-page-container">
+        <div className="il-header-top">
+          <button type="button" className="il-back-btn" onClick={onNavigateBack}>
+            &larr; Back to W2 | Website Dashboard
+          </button>
+        </div>
+        <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
+          <div className="spinner" style={{ margin: '0 auto 16px auto' }} />
+          <h3 style={{ color: '#f8fafc', margin: '0 0 8px 0' }}>Loading Website Pages & Link Analysis...</h3>
+          <p style={{ fontSize: '0.85rem', color: '#64748b' }}>Hydrating page inventory and internal link recommendations.</p>
+        </div>
+      </div>
     )
   }
 

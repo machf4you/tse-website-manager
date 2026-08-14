@@ -280,12 +280,13 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
   useEffect(() => {
     if (!isPackageHydrated) return
 
-    if (!isSynced || exportedPages.length === 0) {
+    // Do NOT force redirect to W2 if stored package data exists or package is still hydrating
+    if (!storedPackageData && !site?.storedPackageData && (!isSynced || exportedPages.length === 0)) {
       if (activeTab !== 'w2') {
         setActiveTab('w2')
       }
     }
-  }, [isPackageHydrated, isSynced, exportedPages.length, activeTab])
+  }, [isPackageHydrated, storedPackageData, site?.storedPackageData, isSynced, exportedPages.length, activeTab])
 
   useEffect(() => {
     return () => {
@@ -410,6 +411,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
       <InternalLinkingPage
         site={site}
         pagesList={exportedPages}
+        isLoadingPackage={!isPackageHydrated}
         initialSelectedUrl={selectedPageForAudit?.url}
         onNavigateBack={() => setActiveTab('w2')}
         onNavigateTab={(tab) => {
