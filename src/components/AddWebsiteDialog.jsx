@@ -54,13 +54,13 @@ function StoreViewSelect({ id, value, onChange, disabled }) {
       <select
         className="aw-input aw-select"
         id={id}
-        value={value}
+        value={value || 'default'}
         onChange={e => onChange(e.target.value)}
         disabled={disabled}
       >
-        <option value="">Default Store View</option>
-        <option value="main">Main Store View</option>
-        <option value="uk">UK Store View</option>
+        <option value="default">HF4You</option>
+        <option value="mt">Mattress Time</option>
+        <option value="cheapbedsale">Cheap Bed Sale</option>
       </select>
     </div>
   )
@@ -149,7 +149,7 @@ export default function AddWebsiteDialog({
   const [mgApi, setMgApi] = useState('')
   const [mgUser, setMgUser] = useState('')
   const [mgPass, setMgPass] = useState('')
-  const [mgStore, setMgStore] = useState('')
+  const [mgStore, setMgStore] = useState('default')
   const [mgPortfolio, setMgPortfolio] = useState('tse')
 
   // Status & error state
