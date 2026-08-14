@@ -71,6 +71,38 @@ export async function connectWordPress({ url, username, password }, onStep) {
   }
 }
 
+function resolveSiteCredentials(site, pageOrUrl) {
+  let username = site?.configData?.wpUser || site?.wpUser || site?.connectedUser || site?.configData?.connectedUser || ''
+  let password = site?.configData?.wpPass || site?.wpPass || ''
+
+  if (username && password) {
+    return { username, password }
+  }
+
+  try {
+    const rawTargetUrl = (site?.url || (typeof pageOrUrl === 'string' ? pageOrUrl : pageOrUrl?.url) || '').toLowerCase()
+    const targetDomain = rawTargetUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+
+    if (targetDomain && typeof localStorage !== 'undefined') {
+      const rawSites = localStorage.getItem('tse_connected_websites_v1') || localStorage.getItem('tse_website_dashboard_sites')
+      if (rawSites) {
+        const list = JSON.parse(rawSites)
+        const matched = list.find(s => {
+          const d = (s.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+          const pwd = s.wpPass || s.configData?.wpPass
+          return d && d === targetDomain && Boolean(pwd)
+        })
+        if (matched) {
+          username = username || matched.wpUser || matched.connectedUser || matched.configData?.wpUser || ''
+          password = password || matched.wpPass || matched.configData?.wpPass || ''
+        }
+      }
+    }
+  } catch (_e) {}
+
+  return { username, password }
+}
+
 export async function updateWordPressSEOFields({ site, page, metaTitle, metaDescription }) {
   if (!site || !page) return { success: false, message: 'Site or Page object missing' }
   let base = (site?.url || page?.url || '').trim().replace(/\/+$/, '')
@@ -78,8 +110,7 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     base = 'https://' + base
   }
 
-  const username = site?.configData?.wpUser || site?.wpUser || site?.connectedUser || site?.configData?.connectedUser || ''
-  const password = site?.configData?.wpPass || site?.wpPass || ''
+  const { username, password } = resolveSiteCredentials(site, page)
   if (!username || !password) {
     return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
   }
@@ -195,8 +226,7 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
     base = 'https://' + base
   }
 
-  const username = site?.configData?.wpUser || site?.wpUser || site?.connectedUser || site?.configData?.connectedUser || ''
-  const password = site?.configData?.wpPass || site?.wpPass || ''
+  const { username, password } = resolveSiteCredentials(site, sourcePage)
 
   console.log('[WP_CONTENT_PUSH_DIAGNOSTIC]', {
     hasSite: Boolean(site),
