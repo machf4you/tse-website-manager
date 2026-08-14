@@ -239,6 +239,79 @@ export default function AddWebsiteDialog({
     if (isConnecting) return
     setErrorMsg(null)
 
+    if (platform === 'magento') {
+      if (!mgName.trim()) {
+        setErrorMsg('Please enter a Website Name.')
+        return
+      }
+      if (!mgUrl.trim()) {
+        setErrorMsg('Please enter a Website URL.')
+        return
+      }
+      if (!mgBackend.trim()) {
+        setErrorMsg('Please enter a Magento Backend URL.')
+        return
+      }
+      if (!mgApi.trim()) {
+        setErrorMsg('Please enter an API Base URL.')
+        return
+      }
+      if (!mgUser.trim()) {
+        setErrorMsg('Please enter an API Username.')
+        return
+      }
+      if (!mgPass.trim()) {
+        setErrorMsg('Please enter an API Password / Token.')
+        return
+      }
+
+      setIsConnecting(true)
+
+      const magentoTile = {
+        ...(editingSite || {}),
+        id: editingSite?.id || Date.now(),
+        name: mgName.trim(),
+        url: mgUrl.trim(),
+        platform: 'magento',
+        portfolio: mgPortfolio || 'tse',
+        wpUser: mgUser.trim(),
+        wpPass: mgPass.trim(),
+        connectedUser: mgUser.trim(),
+        configData: {
+          ...(editingSite?.configData || {}),
+          wpUser: mgUser.trim(),
+          wpPass: mgPass.trim(),
+          connectedUser: mgUser.trim(),
+          mgBackendUrl: mgBackend.trim(),
+          apiBaseUrl: mgApi.trim(),
+          mgStore: mgStore || 'default'
+        },
+        lifecycleStage: 3,
+        topIndicator: 'connected',
+        isSynchronised: false,
+        lastSyncTimestamp: null,
+        taskCount: 0,
+        status: {
+          connection:       { label: 'Connected',         value: 'Connected',          variant: 'green'  },
+          platformApi:      { label: 'Magento API',       value: 'Securely Connected', variant: 'green', icon: 'lock' },
+          configured:       { label: 'Configured',        value: 'Not Configured',     variant: 'grey'   },
+          audited:          { label: 'Audited',           value: 'Not Audited',        variant: 'grey'   },
+          tasksOutstanding: { label: 'Tasks Outstanding', value: '0 Outstanding',      variant: 'green'  },
+        }
+      }
+
+      if (editingSite && onUpdateWebsite) {
+        onUpdateWebsite(magentoTile)
+      } else if (onAddWebsite) {
+        onAddWebsite(magentoTile)
+      }
+
+      setIsConnecting(false)
+      resetForm()
+      onClose()
+      return
+    }
+
     // Validation
     if (!wpName.trim()) {
       setErrorMsg('Please enter a Website Name.')
@@ -498,7 +571,7 @@ export default function AddWebsiteDialog({
               form="aw-connect-form"
               className="aw-btn-connect"
               id="btn-connect-website"
-              disabled={isConnecting || platform !== 'wordpress'}
+              disabled={isConnecting || platform === 'other'}
             >
               {isConnecting ? (editingSite ? 'Updating…' : 'Connecting…') : (editingSite ? 'Update Connection' : 'Connect Website')}
             </button>
