@@ -11,22 +11,29 @@ const API_BASE_URL = (typeof process !== 'undefined' && process.env && process.e
       ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
       : 'http://localhost:3001/api')
 
-async function fetchJson(url, options = {}) {
+async function fetchJson(url, options = {}, timeoutMs = 2500) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
   try {
     const res = await fetch(url, {
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {})
       },
       ...options
     })
+    clearTimeout(timeoutId)
+
     if (!res.ok) {
       const errText = await res.text()
       throw new Error(`API error (${res.status}): ${errText}`)
     }
     return await res.json()
   } catch (e) {
-    console.error(`[WM_API_ERROR] ${url}:`, e)
+    clearTimeout(timeoutId)
+    console.error(`[WM_API_ERROR] ${url}:`, e.name === 'AbortError' ? `Request timed out after ${timeoutMs}ms` : e)
     throw e
   }
 }

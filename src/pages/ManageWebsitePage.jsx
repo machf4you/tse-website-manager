@@ -11,7 +11,7 @@ import {
   getPageConfigsApi,
   savePageConfigsApi
 } from '../services/websiteManagerApi'
-import { getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
+import { getSiteConfigsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -121,11 +121,11 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
     }
   }, [activeTab, activeTabStorageKey])
 
-  const packageStorageKey = site?.id ? `tse_wp_package_${site.id}` : 'tse_wp_package_default'
+  const packageStorageKey = getSitePackageStorageKey(site)
 
   const [storedPackageData, setStoredPackageData] = useState(() => {
     try {
-      const saved = localStorage.getItem(packageStorageKey)
+      const saved = localStorage.getItem(packageStorageKey) || (site?.id ? localStorage.getItem(`tse_wp_package_${site.id}`) : null)
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed && parsed.packageData) return parsed.packageData
@@ -139,7 +139,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   const [isPackageHydrated, setIsPackageHydrated] = useState(() => {
     try {
-      const saved = localStorage.getItem(packageStorageKey)
+      const saved = localStorage.getItem(packageStorageKey) || (site?.id ? localStorage.getItem(`tse_wp_package_${site.id}`) : null)
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed && (parsed.packageData || (Array.isArray(parsed.pages) && parsed.pages.length > 0) || (Array.isArray(parsed.posts) && parsed.posts.length > 0))) {
@@ -152,7 +152,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   const [_hasSyncHeader, setHasSyncHeader] = useState(() => {
     try {
-      const saved = localStorage.getItem(packageStorageKey)
+      const saved = localStorage.getItem(packageStorageKey) || (site?.id ? localStorage.getItem(`tse_wp_package_${site.id}`) : null)
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed && parsed.isSynchronised) return true
@@ -165,7 +165,7 @@ export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
 
   const [lastSyncDate, setLastSyncDate] = useState(() => {
     try {
-      const saved = localStorage.getItem(packageStorageKey)
+      const saved = localStorage.getItem(packageStorageKey) || (site?.id ? localStorage.getItem(`tse_wp_package_${site.id}`) : null)
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed && parsed.lastSyncTimestamp) return parsed.lastSyncTimestamp
