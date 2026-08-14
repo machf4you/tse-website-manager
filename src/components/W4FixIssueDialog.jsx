@@ -41,6 +41,8 @@ export default function W4FixIssueDialog({
     return 'meta_title'
   })()
 
+  const pageKey = page?.id || page?.url
+
   // Pre-fill initial text from page object & reset workflow on open
   useEffect(() => {
     if (!isOpen || !page) return
@@ -67,7 +69,7 @@ export default function W4FixIssueDialog({
     } else if (seoType === 'h1') {
       setFieldValue(initH)
     }
-  }, [isOpen, page, seoType])
+  }, [isOpen, pageKey, seoType])
 
   // Prevent background scrolling while modal is open
   useEffect(() => {
@@ -342,7 +344,11 @@ export default function W4FixIssueDialog({
                     className="w4-field-textarea"
                     rows={3}
                     value={fieldValue}
-                    onChange={(e) => setFieldValue(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setFieldValue(val)
+                      setMetaDescVal(val)
+                    }}
                     placeholder={`Enter proposed ${elementDetails.label}...`}
                   />
                 ) : (
@@ -351,7 +357,12 @@ export default function W4FixIssueDialog({
                     id="w4-fix-input"
                     className="w4-field-input"
                     value={fieldValue}
-                    onChange={(e) => setFieldValue(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setFieldValue(val)
+                      if (seoType === 'meta_title') setMetaTitleVal(val)
+                      if (seoType === 'h1') setH1Val(val)
+                    }}
                     placeholder={`Enter proposed ${elementDetails.label}...`}
                   />
                 )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
-import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi } from '../services/websiteManagerApi'
+import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi, getPageConfigsApi } from '../services/websiteManagerApi'
 import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import { normalizeUrlForMatching } from '../utils/urlUtils'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
@@ -78,6 +78,28 @@ export default function PageAuditResultsPage({
   const [activeFixIssue, setActiveFixIssue] = useState(null)
   const [localOverrides, setLocalOverrides] = useState({})
 
+  // Load stored page configurations from SQLite backend DB on mount
+  useEffect(() => {
+    let isMounted = true
+    if (site?.id) {
+      getPageConfigsApi(site.id)
+        .then(dbConfigs => {
+          if (isMounted && dbConfigs && typeof dbConfigs === 'object') {
+            setLocalOverrides(prev => ({
+              ...dbConfigs,
+              ...prev,
+            }))
+          }
+        })
+        .catch(err => {
+          console.error('Failed to load page configs from SQLite API:', err)
+        })
+    }
+    return () => {
+      isMounted = false
+    }
+  }, [site?.id])
+
   // Active page selection precedence:
   // 1. Configured page (passed via the page prop)
   // 2. Matching configured page from pagesList
@@ -110,16 +132,19 @@ export default function PageAuditResultsPage({
     h1: overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || ''),
   }
 
-  const handleSaveFix = async ({ page: targetPage, seoType, fieldValue }) => {
-    if (!targetPage) return
-    const siteIdKey = getSiteConfigsStorageKey(site)
+  const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {
+    if (!targetPage || !site?.id) return
     const pageKey = targetPage.id || targetPage.url
 
     let savedConfigs = {}
     try {
-      savedConfigs = JSON.parse(localStorage.getItem(siteIdKey) || '{}')
+      savedConfigs = await getPageConfigsApi(site.id)
     } catch (e) {
-      console.error('Failed to parse saved configs:', e)
+      console.error('Failed to parse saved configs from API:', e)
+      try {
+        const siteIdKey = getSiteConfigsStorageKey(site)
+        savedConfigs = JSON.parse(localStorage.getItem(siteIdKey) || '{}')
+      } catch (err) {}
     }
 
     const existingConfig = savedConfigs[pageKey] || (targetPage.url ? savedConfigs[targetPage.url] : {}) || {}
@@ -132,7 +157,18 @@ export default function PageAuditResultsPage({
       isManualOverride: true,
     }
 
-    if (seoType === 'meta_title') {
+    if (seoType === 'batch_optimization' && fieldValues) {
+      if (fieldValues.metaTitle !== undefined) {
+        updatedConfig.proposedTitle = fieldValues.metaTitle
+        updatedConfig.metaTitle = fieldValues.metaTitle
+      }
+      if (fieldValues.metaDescription !== undefined) {
+        updatedConfig.metaDescription = fieldValues.metaDescription
+      }
+      if (fieldValues.h1 !== undefined) {
+        updatedConfig.h1 = fieldValues.h1
+      }
+    } else if (seoType === 'meta_title') {
       updatedConfig.proposedTitle = fieldValue
       updatedConfig.metaTitle = fieldValue
     } else if (seoType === 'meta_desc') {
@@ -145,15 +181,17 @@ export default function PageAuditResultsPage({
     if (targetPage.url && targetPage.url !== pageKey) {
       savedConfigs[targetPage.url] = updatedConfig
     }
-    localStorage.setItem(siteIdKey, JSON.stringify(savedConfigs))
 
-    if (site?.id) {
-      try {
-        await savePageConfigsApi(site.id, savedConfigs)
-      } catch (e) {
-        console.error('Failed to save page configs to API:', e)
-      }
+    try {
+      await savePageConfigsApi(site.id, savedConfigs)
+    } catch (e) {
+      console.error('Failed to save page configs to API:', e)
     }
+
+    try {
+      const siteIdKey = getSiteConfigsStorageKey(site)
+      localStorage.setItem(siteIdKey, JSON.stringify(savedConfigs))
+    } catch (e) {}
 
     try {
       const auditStorageKey = getSiteAuditsStorageKey(site)
