@@ -7,6 +7,8 @@
  * Status values: 'loading' | 'done' | 'error'
  */
 
+import { getWebsitesApi } from './websiteManagerApi.js'
+
 export const WP_STEPS = [
   { id: 'api',   label: 'Checking WordPress REST API'  },
   { id: 'auth',  label: 'Authenticating credentials'   },
@@ -71,7 +73,7 @@ export async function connectWordPress({ url, username, password }, onStep) {
   }
 }
 
-function resolveSiteCredentials(site, pageOrUrl) {
+export async function resolveSiteCredentials(site, pageOrUrl) {
   let username = site?.configData?.wpUser || site?.wpUser || site?.connectedUser || site?.configData?.connectedUser || ''
   let password = site?.configData?.wpPass || site?.wpPass || ''
 
@@ -79,18 +81,52 @@ function resolveSiteCredentials(site, pageOrUrl) {
     return { username, password }
   }
 
+  // 1. Authoritative Backend/SQLite API Query
+  try {
+    const backendSites = await getWebsitesApi()
+    if (Array.isArray(backendSites) && backendSites.length > 0) {
+      // Try exact ID match first
+      let matched = backendSites.find(s => String(s.id) === String(site?.id) && Boolean(s.wpPass || s.configData?.wpPass))
+
+      // If no ID match, try domain URL match
+      if (!matched) {
+        const rawTargetUrl = (site?.url || (typeof pageOrUrl === 'string' ? pageOrUrl : pageOrUrl?.url) || '').toLowerCase()
+        const targetDomain = rawTargetUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+        if (targetDomain) {
+          matched = backendSites.find(s => {
+            const d = (s.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+            const pwd = s.wpPass || s.configData?.wpPass
+            return d && d === targetDomain && Boolean(pwd)
+          })
+        }
+      }
+
+      if (matched) {
+        username = username || matched.wpUser || matched.connectedUser || matched.configData?.wpUser || ''
+        password = password || matched.wpPass || matched.configData?.wpPass || ''
+      }
+    }
+  } catch (_apiErr) {
+    console.warn('[WP_CREDENTIAL_RESOLVER] Backend API lookup failed, falling back to localStorage:', _apiErr)
+  }
+
+  if (username && password) {
+    return { username, password }
+  }
+
+  // 2. Secondary Fallback: localStorage ONLY if backend was genuinely unavailable
   try {
     const rawTargetUrl = (site?.url || (typeof pageOrUrl === 'string' ? pageOrUrl : pageOrUrl?.url) || '').toLowerCase()
     const targetDomain = rawTargetUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
 
-    if (targetDomain && typeof localStorage !== 'undefined') {
+    if (typeof localStorage !== 'undefined') {
       const rawSites = localStorage.getItem('tse_connected_websites_v1') || localStorage.getItem('tse_website_dashboard_sites')
       if (rawSites) {
         const list = JSON.parse(rawSites)
         const matched = list.find(s => {
           const d = (s.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
           const pwd = s.wpPass || s.configData?.wpPass
-          return d && d === targetDomain && Boolean(pwd)
+          return (String(s.id) === String(site?.id) || (d && d === targetDomain)) && Boolean(pwd)
         })
         if (matched) {
           username = username || matched.wpUser || matched.connectedUser || matched.configData?.wpUser || ''
@@ -110,7 +146,7 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     base = 'https://' + base
   }
 
-  const { username, password } = resolveSiteCredentials(site, page)
+  const { username, password } = await resolveSiteCredentials(site, page)
   if (!username || !password) {
     return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
   }
@@ -226,7 +262,7 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
     base = 'https://' + base
   }
 
-  const { username, password } = resolveSiteCredentials(site, sourcePage)
+  const { username, password } = await resolveSiteCredentials(site, sourcePage)
 
   console.log('[WP_CONTENT_PUSH_DIAGNOSTIC]', {
     hasSite: Boolean(site),
