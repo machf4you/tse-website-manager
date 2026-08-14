@@ -77,16 +77,6 @@ const RefreshCwIcon = ({ className }) => (
   </svg>
 )
 
-const SYNC_STAGES = [
-  'Preparing synchronisation...',
-  'Connecting to WordPress...',
-  'Calling TSE WordPress Exporter...',
-  'Waiting for exporter...',
-  'Receiving synchronisation package...',
-  'Saving package...',
-  'Synchronisation complete.',
-]
-
 function formatNowDDMMYYYYHHMM() {
   const d = new Date()
   const day = String(d.getDate()).padStart(2, '0')
@@ -97,14 +87,25 @@ function formatNowDDMMYYYYHHMM() {
   return `${day}-${month}-${year} ${hours}:${minutes}`
 }
 
-
-
 export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite }) {
   const site = rawSite ? {
     ...rawSite,
     wpUser: rawSite.wpUser || rawSite.connectedUser || rawSite.configData?.wpUser || rawSite.configData?.connectedUser || '',
     wpPass: rawSite.wpPass || rawSite.configData?.wpPass || ''
   } : rawSite
+
+  const isMagento = site?.platform === 'magento' || site?.platform === 'Magento'
+  const platformName = isMagento ? 'Magento' : 'WordPress'
+
+  const syncStages = [
+    'Preparing synchronisation...',
+    `Connecting to ${platformName}...`,
+    isMagento ? 'Calling Magento REST API...' : 'Calling TSE WordPress Exporter...',
+    'Waiting for API response...',
+    'Receiving synchronisation package...',
+    'Saving package...',
+    'Synchronisation complete.',
+  ]
 
   const [apiConfigs, setApiConfigs] = useState({})
   const activeTabStorageKey = site?.id ? `tse_active_tab_${site.id}` : 'tse_active_tab_default'
@@ -328,7 +329,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     let idx = 0
     timerRef.current = setInterval(async () => {
       idx += 1
-      if (idx < SYNC_STAGES.length - 1) {
+      if (idx < syncStages.length - 1) {
         setStageIndex(idx)
       } else {
         clearInterval(timerRef.current)
@@ -368,7 +369,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
                 if (prevFingerprint && prevFingerprint !== newFingerprint) {
                   // Material SEO change detected! Flag page for re-audit (Audited ?)
                   record.isStale = true
-                  record.staleReason = 'Page content or SEO elements modified in WordPress'
+                  record.staleReason = `Page content or SEO elements modified in ${platformName}`
                   auditsUpdated = true
                 } else if (prevFingerprint && prevFingerprint === newFingerprint) {
                   // No material SEO change: Keep Audited ✓ (Green)
@@ -390,7 +391,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
           try {
             await saveWpPackageApi(site.id, normalizedPackageData)
           } catch (e) {
-            console.error('Failed to save WP package to backend API:', e)
+            console.error('Failed to save package to backend API:', e)
           }
 
           const updatedSite = {
@@ -411,12 +412,12 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         } else if (result.success && result.packageData && resPages.length === 0) {
           setIsSyncing(false)
           setHasSyncHeader(false)
-          setSyncError('WordPress connected, but the TSE Exporter returned 0 pages. Please verify the TSE Site Exporter plugin is activated in WP Admin.')
+          setSyncError(`${platformName} connected, but returned 0 pages. Please verify API configuration.`)
         } else {
           // If exporter call fails: Keep banner visible and show error
           setIsSyncing(false)
           setHasSyncHeader(false)
-          setSyncError(result.message || 'Failed to connect to TSE WordPress Exporter endpoint.')
+          setSyncError(result.message || `Failed to connect to ${platformName} API endpoint.`)
         }
       }
     }, 500)
@@ -511,7 +512,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
                   {syncError ? 'Synchronisation Failed' : (exportedPages.length === 0 && isSynced ? 'Synchronisation Package Required' : 'This website has not yet been synchronised.')}
                 </h2>
                 <p className="w2-banner-explanation">
-                  {syncError ? syncError : (exportedPages.length === 0 && isSynced ? 'Page inventory is empty. Click Synchronise Website to fetch pages from WordPress.' : 'Synchronisation is required before pages, audits and other website data become available.')}
+                  {syncError ? syncError : (exportedPages.length === 0 && isSynced ? `Page inventory is empty. Click Synchronise Website to fetch pages from ${platformName}.` : 'Synchronisation is required before pages, audits and other website data become available.')}
                 </p>
               </div>
               <button
@@ -529,7 +530,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
               <div className="w2-sync-progress-header">
                 <div className="w2-sync-stage-title">
                   <RefreshCwIcon className="icon-spin" />
-                  <span>Stage {stageIndex + 1} of {SYNC_STAGES.length}: {SYNC_STAGES[stageIndex]}</span>
+                  <span>Stage {stageIndex + 1} of {syncStages.length}: {syncStages[stageIndex]}</span>
                 </div>
                 <span className="w2-sync-percent">{progressPercent}%</span>
               </div>
@@ -744,7 +745,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
             {isSynced ? (
               <>
                 <div className="act-row">
-                  <span className="act-label">WordPress sync completed</span>
+                  <span className="act-label">{platformName} sync completed</span>
                   <span className="act-time">{lastSyncDate || '07-08-2026 08:15'}</span>
                 </div>
                 <div className="act-row">
@@ -754,7 +755,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
               </>
             ) : (
               <div className="act-row">
-                <span className="act-label">WordPress connection established</span>
+                <span className="act-label">{platformName} connection established</span>
                 <span className="act-time">Just now</span>
               </div>
             )}
