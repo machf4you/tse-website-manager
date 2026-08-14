@@ -180,20 +180,30 @@ export default function W4FixIssueDialog({
     setIsSaving(false)
   }
 
+  const [pushError, setPushError] = useState(null)
+
   const handlePushToWordPress = async () => {
     if (!isSaved || isPushing) return
     setIsPushing(true)
+    setPushError(null)
     try {
-      await updateWordPressSEOFields({
+      const res = await updateWordPressSEOFields({
         site,
         page,
         metaTitle: metaTitleVal || fieldValue,
         metaDescription: metaDescVal || fieldValue,
       })
-      setIsPushed(true)
+      if (res && res.success) {
+        setIsPushed(true)
+        setPushError(null)
+      } else {
+        setPushError(res?.message || 'WordPress update failed. Please check credentials and server connection.')
+        setIsPushed(false)
+      }
     } catch (err) {
       console.error('Failed to push to WordPress:', err)
-      setIsPushed(true)
+      setPushError(err.message || 'Push to WordPress failed due to network error.')
+      setIsPushed(false)
     }
     setIsPushing(false)
   }
@@ -404,11 +414,16 @@ export default function W4FixIssueDialog({
                 </div>
 
                 {/* Step 2: Push Changes to WordPress */}
-                <div style={{ background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
+                <div style={{ background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: pushError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
                   <div>
                     <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>2. Push to WP</strong>
                     <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Send fields to live WP page</span>
                   </div>
+                  {pushError && (
+                    <div style={{ fontSize: '0.68rem', color: '#ef4444', marginTop: '4px', lineHeight: '1.2' }}>
+                      ⚠️ {pushError}
+                    </div>
+                  )}
                   <div style={{ marginTop: '6px' }}>
                     {isPushed ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ WP Updated</span>

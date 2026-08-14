@@ -80,11 +80,39 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
 
   const username = site?.wpUser || site?.connectedUser || ''
   const password = site?.wpPass || ''
+  if (!username || !password) {
+    return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
+  }
+
   const authHeader = 'Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)
 
   const isPost = Boolean(page.post_type === 'post' || page.type === 'post' || page.seoPageType === 'Article' || page.type === 'Article')
   const endpoint = isPost ? 'posts' : 'pages'
-  const numericId = parseInt(page.id || page.ID || page.pageId, 10)
+
+  let numericId = parseInt(page.id || page.ID || page.pageId || page.numericId, 10)
+
+  // If numeric ID is missing from page object, attempt to resolve via slug
+  if (isNaN(numericId) && page.url) {
+    try {
+      const pathParts = page.url.replace(/\/+$/, '').split('/')
+      const slug = pathParts[pathParts.length - 1]
+      if (slug) {
+        const lookupRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}?slug=${encodeURIComponent(slug)}`, {
+          headers: { Authorization: authHeader, Accept: 'application/json' }
+        })
+        if (lookupRes.ok) {
+          const list = await lookupRes.json()
+          if (Array.isArray(list) && list.length > 0 && list[0].id) {
+            numericId = list[0].id
+          }
+        }
+      }
+    } catch (_err) {}
+  }
+
+  if (isNaN(numericId)) {
+    return { success: false, message: `Could not resolve numeric WordPress page ID for page '${page.url}'.` }
+  }
 
   const payload = {
     title: metaTitle,
@@ -94,11 +122,11 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     }
   }
 
-  try {
-    const targetUrl = isNaN(numericId)
-      ? `${base}/wp-json/wp/v2/${endpoint}`
-      : `${base}/wp-json/wp/v2/${endpoint}/${numericId}`
+  const targetUrl = `${base}/wp-json/wp/v2/${endpoint}/${numericId}`
+  console.log('[WP_WRITE_TRACE] Target Endpoint:', targetUrl)
+  console.log('[WP_WRITE_TRACE] Request Payload:', JSON.stringify(payload))
 
+  try {
     const res = await fetch(targetUrl, {
       method: 'POST',
       headers: {
@@ -109,13 +137,50 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
       body: JSON.stringify(payload)
     })
 
-    if (res.ok) {
-      const data = await res.json()
-      return { success: true, data }
-    } else {
-      return { success: true, simulated: true }
+    console.log('[WP_WRITE_TRACE] HTTP Response Status:', res.status)
+
+    if (!res.ok) {
+      let errDetail = `HTTP ${res.status}`
+      try {
+        const errJson = await res.json()
+        errDetail = errJson.message || errJson.code || errDetail
+      } catch (_e) {
+        const text = await res.text()
+        if (text) errDetail = text.slice(0, 150)
+      }
+      console.error('[WP_WRITE_TRACE] Write Failed:', errDetail)
+      return {
+        success: false,
+        status: res.status,
+        message: `WordPress update failed (${res.status}): ${errDetail}`
+      }
     }
+
+    const postData = await res.json()
+    console.log('[WP_WRITE_TRACE] POST Returned Title:', postData.title?.rendered)
+
+    // ── LIVE GET VERIFICATION STEP ──
+    try {
+      const verifyRes = await fetch(targetUrl, {
+        headers: { Authorization: authHeader, Accept: 'application/json' }
+      })
+      if (verifyRes.ok) {
+        const verifyData = await verifyRes.json()
+        const liveTitle = verifyData.title?.rendered || ''
+        console.log('[WP_WRITE_TRACE] Immediate GET Verification Title:', liveTitle)
+
+        if (metaTitle && liveTitle && !liveTitle.toLowerCase().includes(metaTitle.toLowerCase().slice(0, 15))) {
+          console.warn('[WP_WRITE_TRACE] Verification Mismatch! Target:', metaTitle, 'Live:', liveTitle)
+        }
+      }
+    } catch (_vErr) {}
+
+    return { success: true, data: postData }
   } catch (e) {
-    return { success: true, simulated: true }
+    console.error('[WP_WRITE_TRACE] Network/CORS Exception:', e)
+    return {
+      success: false,
+      message: `Failed to connect to WordPress REST API: ${e.message}`
+    }
   }
 }
