@@ -4,12 +4,15 @@ import {
   getExistingInternalLinks,
   getRecommendedInternalLinks,
   generateContextualReplacement,
-  generateSimpleInternalLinkRecommendations
+  generateSimpleInternalLinkRecommendations,
+  buildModifiedSourceContent
 } from '../utils/internalLinkingHelper'
 import {
   getInternalLinkRecommendationsApi,
   saveInternalLinkRecommendationsApi
 } from '../services/websiteManagerApi'
+import { updateWordPressPageContent } from '../services/wordpressApi'
+import W5LinkImplementationModal from '../components/W5LinkImplementationModal'
 import './InternalLinkingPage.css'
 
 export function renderHighlightedText(text, anchorText) {
@@ -59,6 +62,106 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
 
   const [editingRecs, setEditingRecs] = useState({})
   const [editTextMap, setEditTextMap] = useState({})
+
+  const [activeModalRec, setActiveModalRec] = useState(null)
+  const [activeModalSourcePage, setActiveModalSourcePage] = useState(null)
+  const [isPushingLink, setIsPushingLink] = useState(false)
+  const [modalError, setModalError] = useState(null)
+
+  const handleOpenImplementModal = (rec) => {
+    const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
+    const savedRecord = savedRecs[recKey]
+    const recToUse = {
+      ...rec,
+      savedSentence: savedRecord?.savedSentence || aiSentences[recKey]?.suggestedReplacement || ''
+    }
+    const sUrl = recToUse.sourceUrl || recToUse.suggestedSourceUrl
+    const sNorm = normalizeUrlForMatching(sUrl)
+    const sSlug = getPathSlugForMatching(sUrl)
+    const srcPageObj = activePages.find(p => {
+      const pNorm = normalizeUrlForMatching(p.url)
+      const pSlug = getPathSlugForMatching(p.url)
+      return (pNorm && pNorm === sNorm) || (pSlug && pSlug === sSlug) || p.url === sUrl || p.title === recToUse.sourceTitle
+    }) || recToUse.sourcePageObj
+
+    setActiveModalRec(recToUse)
+    setActiveModalSourcePage(srcPageObj)
+    setModalError(null)
+  }
+
+  const handleConfirmPushLink = async () => {
+    if (!activeModalRec || isPushingLink) return
+    setIsPushingLink(true)
+    setModalError(null)
+
+    const rec = activeModalRec
+    const sourcePage = activeModalSourcePage || rec.sourcePageObj
+
+    const buildRes = buildModifiedSourceContent(
+      sourcePage,
+      rec.targetUrl,
+      rec.anchorText || rec.targetTitle,
+      rec.savedSentence
+    )
+
+    if (!buildRes.success) {
+      setModalError(buildRes.message || 'Failed to modify source page content.')
+      setIsPushingLink(false)
+      return
+    }
+
+    try {
+      const pushRes = await updateWordPressPageContent({
+        site,
+        sourcePage: sourcePage || { url: rec.sourceUrl || rec.suggestedSourceUrl },
+        contentHtml: buildRes.newContent
+      })
+
+      if (!pushRes || !pushRes.success) {
+        setModalError(pushRes?.message || 'WordPress content push failed.')
+        setIsPushingLink(false)
+        return
+      }
+
+      // Successful WordPress update! Update status in SQLite backend
+      const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
+      const existingSavedRecord = savedRecs[recKey] || {}
+      const updatedRecord = {
+        ...existingSavedRecord,
+        id: rec.id,
+        sourceUrl: rec.sourceUrl || rec.suggestedSourceUrl,
+        targetUrl: rec.targetUrl,
+        anchorText: rec.anchorText || rec.targetTitle,
+        savedSentence: rec.savedSentence,
+        isSaved: true,
+        isImplemented: true,
+        status: 'IMPLEMENTED',
+        implementedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+
+      const updatedMap = {
+        ...savedRecs,
+        [recKey]: updatedRecord
+      }
+
+      setSavedRecs(updatedMap)
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updatedMap))
+      } catch (_e) {}
+
+      if (site?.id) {
+        saveInternalLinkRecommendationsApi(site.id, updatedMap)
+      }
+
+      setActiveModalRec(null)
+      setIsPushingLink(false)
+    } catch (err) {
+      console.error('Failed to push link to WordPress:', err)
+      setModalError(err.message || 'Push to WordPress failed due to a network error.')
+      setIsPushingLink(false)
+    }
+  }
 
   // Hydrate saved recommendations from backend API if available
   useEffect(() => {
@@ -291,32 +394,60 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
     }
 
     if (currentDisplaySentence) {
+      const isImplemented = Boolean(savedRecord && (savedRecord.isImplemented || savedRecord.status === 'IMPLEMENTED'))
+
       return (
         <div className="il-gen-block">
           <div className="il-gen-header-row">
-            <span className="il-gen-heading" style={{ color: isSaved ? '#34d399' : '#60a5fa' }}>
-              {isSaved ? 'SAVED RECOMMENDATION ✓' : 'SUGGESTED REPLACEMENT:'}
+            <span className="il-gen-heading" style={{ color: isImplemented ? '#10b981' : (isSaved ? '#34d399' : '#60a5fa') }}>
+              {isImplemented ? '✓ WORDPRESS UPDATED (READY TO SYNC)' : (isSaved ? 'SAVED RECOMMENDATION ✓' : 'SUGGESTED REPLACEMENT:')}
             </span>
-            <button
-              type="button"
-              className="il-btn-icon-edit"
-              onClick={() => handleStartEdit(recKey, currentDisplaySentence)}
-              title="Edit sentence inline"
-            >
-              ✏️ Edit
-            </button>
+            {!isImplemented && (
+              <button
+                type="button"
+                className="il-btn-icon-edit"
+                onClick={() => handleStartEdit(recKey, currentDisplaySentence)}
+                title="Edit sentence inline"
+              >
+                ✏️ Edit
+              </button>
+            )}
           </div>
           <div className="il-gen-replacement">
             "{renderHighlightedText(currentDisplaySentence, rec.anchorText || rec.targetTitle)}"
           </div>
-          <div style={{ marginTop: '8px' }}>
+          <div style={{ marginTop: '8px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               type="button"
               className="il-btn-save-rec"
               onClick={() => handleSaveRecommendation(rec, currentDisplaySentence)}
+              disabled={isImplemented}
+              style={{ opacity: isImplemented ? 0.7 : 1 }}
             >
               {isSaved ? '💾 Update Saved' : '💾 Save Recommendation'}
             </button>
+
+            {isSaved && !isImplemented && (
+              <button
+                type="button"
+                className="w3-btn-blue"
+                onClick={() => handleOpenImplementModal(rec)}
+                style={{ padding: '4px 10px', fontSize: '0.74rem', fontWeight: '700', borderRadius: '4px' }}
+              >
+                🚀 Implement Link
+              </button>
+            )}
+
+            {isImplemented && (
+              <button
+                type="button"
+                className="w3-btn-emerald"
+                onClick={() => onNavigateTab ? onNavigateTab('dashboard') : onNavigateBack()}
+                style={{ padding: '4px 10px', fontSize: '0.74rem', fontWeight: '700', borderRadius: '4px' }}
+              >
+                🔄 Synchronise Website Data (W2)
+              </button>
+            )}
           </div>
         </div>
       )
@@ -615,6 +746,20 @@ export default function InternalLinkingPage({ site, pagesList, initialSelectedUr
           )
         })}
       </div>
+
+      <W5LinkImplementationModal
+        isOpen={Boolean(activeModalRec)}
+        rec={activeModalRec}
+        site={site}
+        sourcePage={activeModalSourcePage}
+        onConfirm={handleConfirmPushLink}
+        onClose={() => {
+          setActiveModalRec(null)
+          setModalError(null)
+        }}
+        isPushing={isPushingLink}
+        error={modalError}
+      />
     </div>
   )
 }

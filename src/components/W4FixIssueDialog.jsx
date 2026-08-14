@@ -29,6 +29,7 @@ export default function W4FixIssueDialog({
   const [isSynced, setIsSynced] = useState(false)
 
   const [isAudited, setIsAudited] = useState(false)
+  const [pushError, setPushError] = useState(null)
 
   // Determine SEO Element type & pre-fill current text
   const seoType = (() => {
@@ -179,8 +180,6 @@ export default function W4FixIssueDialog({
     }
     setIsSaving(false)
   }
-
-  const [pushError, setPushError] = useState(null)
 
   const handlePushToWordPress = async () => {
     if (!isSaved || isPushing) return

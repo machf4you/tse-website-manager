@@ -451,3 +451,101 @@ export function generateSimpleInternalLinkRecommendations(pagesList) {
 
   return recommendations
 }
+
+/**
+ * Safely inserts a target hyperlink into source page content using the saved sentence & anchor text.
+ * Preserves all surrounding HTML/content and prevents duplicate links.
+ */
+export function buildModifiedSourceContent(sourcePage, targetUrl, anchorText, savedSentence) {
+  if (!sourcePage) {
+    return { success: false, message: 'Source page object missing.' }
+  }
+  if (!targetUrl || !anchorText || !savedSentence) {
+    return { success: false, message: 'Target URL, anchor text, or saved sentence missing.' }
+  }
+
+  const rawContent = (
+    typeof sourcePage.content?.raw === 'string' && sourcePage.content.raw.trim() ? sourcePage.content.raw.trim() :
+    typeof sourcePage.content?.rendered === 'string' && sourcePage.content.rendered.trim() ? sourcePage.content.rendered.trim() :
+    typeof sourcePage.content === 'string' && sourcePage.content.trim() ? sourcePage.content.trim() :
+    typeof sourcePage.post_content === 'string' && sourcePage.post_content.trim() ? sourcePage.post_content.trim() :
+    typeof sourcePage.body_text === 'string' && sourcePage.body_text.trim() ? sourcePage.body_text.trim() :
+    typeof sourcePage.html === 'string' && sourcePage.html.trim() ? sourcePage.html.trim() : ''
+  )
+
+  if (!rawContent) {
+    return { success: false, message: `No HTML content found for source page '${sourcePage.title || sourcePage.url}'.` }
+  }
+
+  // 1. Check if duplicate link already exists on source page
+  const targetNormUrl = normalizeUrlForMatching(targetUrl)
+  const linkRegex = /<a\s+[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi
+  let match
+  let isAlreadyLinked = false
+  while ((match = linkRegex.exec(rawContent)) !== null) {
+    const href = match[1]
+    if (normalizeUrlForMatching(href) === targetNormUrl) {
+      isAlreadyLinked = true
+      break
+    }
+  }
+
+  if (isAlreadyLinked) {
+    return {
+      success: false,
+      isAlreadyLinked: true,
+      message: `The target URL '${targetUrl}' is already hyperlinked on this source page.`
+    }
+  }
+
+  // 2. Build hyperlinked sentence string <a href="TARGET_URL">ANCHOR_TEXT</a>
+  const cleanAnchor = anchorText.trim()
+
+  let hyperlinkedSentence = savedSentence
+  const lowerSentence = savedSentence.toLowerCase()
+  const lowerAnchor = cleanAnchor.toLowerCase()
+
+  if (savedSentence.toLowerCase().includes(`<a href="${targetUrl.toLowerCase()}"`)) {
+    hyperlinkedSentence = savedSentence
+  } else {
+    const anchorIdx = lowerSentence.indexOf(lowerAnchor)
+    if (anchorIdx !== -1) {
+      const beforeAnchor = savedSentence.slice(0, anchorIdx)
+      const matchedAnchor = savedSentence.slice(anchorIdx, anchorIdx + cleanAnchor.length)
+      const afterAnchor = savedSentence.slice(anchorIdx + cleanAnchor.length)
+      hyperlinkedSentence = `${beforeAnchor}<a href="${targetUrl}">${matchedAnchor}</a>${afterAnchor}`
+    } else {
+      hyperlinkedSentence = `${savedSentence} <a href="${targetUrl}">${cleanAnchor}</a>`
+    }
+  }
+
+  // 3. Locate and replace in rawContent
+  let newContent = rawContent
+  if (rawContent.includes(savedSentence)) {
+    newContent = rawContent.replace(savedSentence, hyperlinkedSentence)
+  } else {
+    const cleanSentenceStr = savedSentence.trim().replace(/\s+/g, ' ')
+    if (rawContent.includes(cleanSentenceStr)) {
+      newContent = rawContent.replace(cleanSentenceStr, hyperlinkedSentence)
+    } else {
+      const lowerRaw = rawContent.toLowerCase()
+      const rawAnchorIdx = lowerRaw.indexOf(lowerAnchor)
+      if (rawAnchorIdx !== -1) {
+        const before = rawContent.slice(0, rawAnchorIdx)
+        const matched = rawContent.slice(rawAnchorIdx, rawAnchorIdx + cleanAnchor.length)
+        const after = rawContent.slice(rawAnchorIdx + cleanAnchor.length)
+        newContent = `${before}<a href="${targetUrl}">${matched}</a>${after}`
+      } else {
+        newContent = `${rawContent}\n\n<p>${hyperlinkedSentence}</p>`
+      }
+    }
+  }
+
+  return {
+    success: true,
+    newContent,
+    hyperlinkedSentence,
+    originalContent: rawContent
+  }
+}
+

@@ -184,3 +184,94 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     }
   }
 }
+
+/**
+ * Pushes modified HTML content to a source page in WordPress REST API.
+ */
+export async function updateWordPressPageContent({ site, sourcePage, contentHtml }) {
+  if (!site || !sourcePage) return { success: false, message: 'Site or Source Page object missing' }
+  let base = (site?.url || sourcePage?.url || '').trim().replace(/\/+$/, '')
+  if (!/^https?:\/\//i.test(base)) {
+    base = 'https://' + base
+  }
+
+  const username = site?.wpUser || site?.connectedUser || ''
+  const password = site?.wpPass || ''
+  if (!username || !password) {
+    return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
+  }
+
+  const authHeader = 'Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)
+
+  const isPost = Boolean(sourcePage.post_type === 'post' || sourcePage.type === 'post' || sourcePage.seoPageType === 'Article' || sourcePage.type === 'Article')
+  const endpoint = isPost ? 'posts' : 'pages'
+
+  let numericId = parseInt(sourcePage.id || sourcePage.ID || sourcePage.pageId || sourcePage.numericId, 10)
+
+  // If numeric ID is missing, attempt resolution via slug
+  if (isNaN(numericId) && sourcePage.url) {
+    try {
+      const pathParts = sourcePage.url.replace(/\/+$/, '').split('/')
+      const slug = pathParts[pathParts.length - 1]
+      if (slug) {
+        const lookupRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}?slug=${encodeURIComponent(slug)}`, {
+          headers: { Authorization: authHeader, Accept: 'application/json' }
+        })
+        if (lookupRes.ok) {
+          const list = await lookupRes.json()
+          if (Array.isArray(list) && list.length > 0 && list[0].id) {
+            numericId = list[0].id
+          }
+        }
+      }
+    } catch (_err) {}
+  }
+
+  if (isNaN(numericId)) {
+    return { success: false, message: `Could not resolve numeric WordPress page ID for source page '${sourcePage.url}'.` }
+  }
+
+  const payload = {
+    content: contentHtml
+  }
+
+  const targetUrl = `${base}/wp-json/wp/v2/${endpoint}/${numericId}`
+  console.log('[WP_CONTENT_PUSH_TRACE] Target Endpoint:', targetUrl)
+
+  try {
+    const res = await fetch(targetUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authHeader,
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!res.ok) {
+      let errDetail = `HTTP ${res.status}`
+      try {
+        const errJson = await res.json()
+        errDetail = errJson.message || errJson.code || errDetail
+      } catch (_e) {
+        const text = await res.text()
+        if (text) errDetail = text.slice(0, 150)
+      }
+      return {
+        success: false,
+        status: res.status,
+        message: `WordPress content update failed (${res.status}): ${errDetail}`
+      }
+    }
+
+    const postData = await res.json()
+    return { success: true, data: postData }
+  } catch (e) {
+    return {
+      success: false,
+      message: `Failed to connect to WordPress REST API: ${e.message}`
+    }
+  }
+}
+
