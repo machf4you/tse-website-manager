@@ -105,7 +105,19 @@ export default function W5LinkImplementationModal({
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => {
+              console.log('[W5_MODAL_DIAGNOSTIC]', {
+                hasSite: Boolean(site),
+                siteId: site?.id,
+                siteName: site?.name,
+                hasWpUser: Boolean(site?.wpUser),
+                hasWpPass: Boolean(site?.wpPass),
+                hasConfigData: Boolean(site?.configData),
+                hasConfigWpUser: Boolean(site?.configData?.wpUser),
+                hasConfigWpPass: Boolean(site?.configData?.wpPass)
+              })
+              onConfirm()
+            }}
             disabled={isPushing}
             className="w3-btn-emerald"
             style={{ padding: '8px 18px', fontSize: '0.82rem', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px' }}

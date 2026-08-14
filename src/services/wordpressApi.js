@@ -197,6 +197,20 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
 
   const username = site?.wpUser || site?.connectedUser || site?.configData?.wpUser || site?.configData?.connectedUser || ''
   const password = site?.wpPass || site?.configData?.wpPass || ''
+
+  console.log('[WP_CONTENT_PUSH_DIAGNOSTIC]', {
+    hasSite: Boolean(site),
+    siteId: site?.id,
+    siteName: site?.name,
+    hasWpUser: Boolean(site?.wpUser),
+    hasWpPass: Boolean(site?.wpPass),
+    hasConfigData: Boolean(site?.configData),
+    hasConfigWpUser: Boolean(site?.configData?.wpUser),
+    hasConfigWpPass: Boolean(site?.configData?.wpPass),
+    usernamePresent: Boolean(username),
+    passwordPresent: Boolean(password)
+  })
+
   if (!username || !password) {
     return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
   }
