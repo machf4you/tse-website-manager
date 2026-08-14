@@ -162,3 +162,149 @@ export async function callTseWordPressExporter({
 
   return result
 }
+
+/**
+ * Integration Service: Magento REST API Exporter Client
+ * Connects to Magento REST API endpoints (categories, products, cmsPage).
+ *
+ * Base API URL: {apiBaseUrl} (e.g. https://www.hf4you.co.uk/rest/all/V1)
+ * Store View Code: {storeCode} (e.g. default)
+ * Authentication: Bearer Token (Admin / Integration Token)
+ */
+export async function fetchMagentoExportPackage({
+  websiteUrl,
+  apiBaseUrl,
+  token,
+  storeCode = 'default'
+}) {
+  if (!websiteUrl) {
+    return { success: false, error: 'MISSING_URL', message: 'Website URL is required.' }
+  }
+
+  const cleanSiteUrl = websiteUrl.trim().replace(/\/+$/, '')
+  const baseApi = (apiBaseUrl || `${cleanSiteUrl}/rest/all/V1`).trim().replace(/\/+$/, '')
+
+  const headers = {
+    'Accept': 'application/json'
+  }
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token.trim()}`
+  }
+
+  try {
+    // Query Magento Categories, Products, and CMS Pages
+    const [catRes, prodRes, cmsRes] = await Promise.all([
+      fetch(`${baseApi}/categories`, { method: 'GET', headers }).catch(() => null),
+      fetch(`${baseApi}/products?searchCriteria[pageSize]=100`, { method: 'GET', headers }).catch(() => null),
+      fetch(`${baseApi}/cmsPage/search?searchCriteria[pageSize]=100`, { method: 'GET', headers }).catch(() => null)
+    ])
+
+    // If all endpoints returned 401 Unauthorized
+    if (catRes?.status === 401 || prodRes?.status === 401 || cmsRes?.status === 401) {
+      return {
+        success: false,
+        status: 401,
+        error: 'MAGENTO_AUTH_FAILED',
+        message: 'Magento REST API Authentication Failed (HTTP 401). Please check the API Admin Token in Website Settings.'
+      }
+    }
+
+    const categoriesJson = catRes && catRes.ok ? await catRes.json() : null
+    const productsJson = prodRes && prodRes.ok ? await prodRes.json() : null
+    const cmsPagesJson = cmsRes && cmsRes.ok ? await cmsRes.json() : null
+
+    const pages = []
+
+    // 1. Convert Magento Categories into pages
+    function processCategoryNode(node) {
+      if (!node) return
+      if (node.name && node.id) {
+        const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        pages.push({
+          id: `cat-${node.id}`,
+          title: node.name,
+          url: `${cleanSiteUrl}/${catSlug}`,
+          link: `${cleanSiteUrl}/${catSlug}`,
+          type: 'Landing',
+          post_type: 'category',
+          is_active: node.is_active,
+          level: node.level
+        })
+      }
+      if (Array.isArray(node.children_data)) {
+        node.children_data.forEach(processCategoryNode)
+      }
+    }
+    if (categoriesJson) {
+      processCategoryNode(categoriesJson)
+    }
+
+    // 2. Convert Magento CMS Pages into pages
+    if (cmsPagesJson && Array.isArray(cmsPagesJson.items)) {
+      cmsPagesJson.items.forEach(p => {
+        const slug = p.identifier || ''
+        const pageUrl = slug === 'home' || slug === '' ? cleanSiteUrl : `${cleanSiteUrl}/${slug}`
+        pages.push({
+          id: `cms-${p.id}`,
+          title: p.title || p.identifier,
+          url: pageUrl,
+          link: pageUrl,
+          type: p.identifier === 'home' ? 'Hub' : 'Landing',
+          post_type: 'cms_page',
+          content: p.content || '',
+          meta_title: p.meta_title || p.title,
+          meta_description: p.meta_description || ''
+        })
+      })
+    }
+
+    // 3. Convert Magento Products into pages
+    if (productsJson && Array.isArray(productsJson.items)) {
+      productsJson.items.forEach(prod => {
+        const urlKeyAttr = prod.custom_attributes?.find(a => a.attribute_code === 'url_key')?.value
+        const slug = (urlKeyAttr || prod.name || prod.sku).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        pages.push({
+          id: `prod-${prod.id}`,
+          title: prod.name || prod.sku,
+          url: `${cleanSiteUrl}/${slug}`,
+          link: `${cleanSiteUrl}/${slug}`,
+          type: 'Landing',
+          post_type: 'product',
+          sku: prod.sku,
+          price: prod.price
+        })
+      })
+    }
+
+    // Fallback if 0 items returned
+    if (pages.length === 0) {
+      return {
+        success: false,
+        status: 200,
+        message: 'Magento REST API returned 0 pages/categories/products.'
+      }
+    }
+
+    return {
+      success: true,
+      packageData: {
+        site_info: {
+          url: cleanSiteUrl,
+          platform: 'magento',
+          store_code: storeCode
+        },
+        pages,
+        categories: categoriesJson,
+        products: productsJson?.items || [],
+        cms_pages: cmsPagesJson?.items || []
+      }
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: 'MAGENTO_NETWORK_ERROR',
+      message: `Failed to connect to Magento REST API: ${error.message}`
+    }
+  }
+}

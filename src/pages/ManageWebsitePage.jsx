@@ -4,7 +4,7 @@ import PageAuditResultsPage from './PageAuditResultsPage'
 import InternalLinkingPage from './InternalLinkingPage'
 import GlobalSettings from './GlobalSettings'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
-import { fetchTseWordPressExportPackage } from '../services/exporterApi'
+import { fetchTseWordPressExportPackage, fetchMagentoExportPackage } from '../services/exporterApi'
 import {
   getWpPackageApi,
   saveWpPackageApi,
@@ -308,12 +308,22 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     setSyncError(null)
     setStageIndex(0)
 
-    // Call Exporter Service
-    const exporterPromise = fetchTseWordPressExportPackage({
-      websiteUrl: site.url,
-      username: site.wpUser || site.connectedUser || '',
-      applicationPassword: site.wpPass || '',
-    })
+    const isMagento = site?.platform === 'magento' || site?.platform === 'Magento'
+    const cfg = site?.configData || {}
+
+    // Call Exporter Service (WordPress vs Magento)
+    const exporterPromise = isMagento
+      ? fetchMagentoExportPackage({
+          websiteUrl: site.url,
+          apiBaseUrl: cfg.apiBaseUrl || site.apiBaseUrl,
+          token: site.wpPass || cfg.wpPass || '',
+          storeCode: cfg.mgStore || site.mgStore || 'default'
+        })
+      : fetchTseWordPressExportPackage({
+          websiteUrl: site.url,
+          username: site.wpUser || site.connectedUser || '',
+          applicationPassword: site.wpPass || '',
+        })
 
     let idx = 0
     timerRef.current = setInterval(async () => {
