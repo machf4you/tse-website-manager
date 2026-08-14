@@ -128,6 +128,7 @@ export default function WebsitesDashboard() {
         <div className="w1-header-content">
           <h1 className="w1-title">Connected Websites</h1>
           <span className="w1-pill-badge">W1 | CONNECTED WEBSITES</span>
+          <span className="w1-pill-badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#34d399', borderColor: 'rgba(16, 185, 129, 0.3)', marginLeft: '8px' }}>● v9.5 LIVE</span>
           <p className="w1-subtitle">Manage your connected websites.</p>
         </div>
 
