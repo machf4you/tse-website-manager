@@ -47,12 +47,20 @@ function Toggle({ label, id, checked, onChange, disabled }) {
   )
 }
 
-function SelectPlaceholder({ label, id }) {
+function StoreViewSelect({ id, value, onChange, disabled }) {
   return (
     <div className="aw-field">
-      <label className="aw-label" htmlFor={id}>{label}</label>
-      <select className="aw-input aw-select" id={id} defaultValue="" disabled>
-        <option value="" disabled>Select store view…</option>
+      <label className="aw-label" htmlFor={id}>Store View</label>
+      <select
+        className="aw-input aw-select"
+        id={id}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+      >
+        <option value="">Default Store View</option>
+        <option value="main">Main Store View</option>
+        <option value="uk">UK Store View</option>
       </select>
     </div>
   )
@@ -81,17 +89,27 @@ function PortfolioSelect({ id, value, onChange, disabled }) {
 }
 
 /* ── Magento field set ── */
-function MagentoFields() {
+function MagentoFields({
+  mgName, setMgName,
+  mgUrl, setMgUrl,
+  mgBackend, setMgBackend,
+  mgApi, setMgApi,
+  mgUser, setMgUser,
+  mgPass, setMgPass,
+  mgStore, setMgStore,
+  mgPortfolio, setMgPortfolio,
+  isConnecting
+}) {
   return (
     <>
-      <Field label="Website Name"           id="mg-name"     placeholder="e.g. My Magento Store" disabled />
-      <Field label="Website URL (Frontend)" id="mg-url"      placeholder="https://www.example.co.uk" disabled />
-      <Field label="Magento Backend URL"    id="mg-backend"  placeholder="https://www.example.co.uk/admin" disabled />
-      <Field label="API Base URL"           id="mg-api"      placeholder="https://www.example.co.uk/rest/V1" disabled />
-      <Field label="API Username"           id="mg-api-user" placeholder="api_user" disabled />
-      <Field label="API Password / Token"   id="mg-api-pass" type="password" placeholder="••••••••••••••••" disabled />
-      <SelectPlaceholder label="Store View" id="mg-store" />
-      <PortfolioSelect id="mg-portfolio" value="" onChange={() => {}} disabled />
+      <Field label="Website Name"           id="mg-name"     placeholder="e.g. My Magento Store" value={mgName} onChange={setMgName} disabled={isConnecting} />
+      <Field label="Website URL (Frontend)" id="mg-url"      placeholder="https://www.example.co.uk" value={mgUrl} onChange={setMgUrl} disabled={isConnecting} />
+      <Field label="Magento Backend URL"    id="mg-backend"  placeholder="https://www.example.co.uk/admin" value={mgBackend} onChange={setMgBackend} disabled={isConnecting} />
+      <Field label="API Base URL"           id="mg-api"      placeholder="https://www.example.co.uk/rest/V1" value={mgApi} onChange={setMgApi} disabled={isConnecting} />
+      <Field label="API Username"           id="mg-api-user" placeholder="api_user" value={mgUser} onChange={setMgUser} disabled={isConnecting} />
+      <Field label="API Password / Token"   id="mg-api-pass" type="password" placeholder="••••••••••••••••" value={mgPass} onChange={setMgPass} disabled={isConnecting} />
+      <StoreViewSelect                      id="mg-store"    value={mgStore} onChange={setMgStore} disabled={isConnecting} />
+      <PortfolioSelect                      id="mg-portfolio" value={mgPortfolio} onChange={setMgPortfolio} disabled={isConnecting} />
     </>
   )
 }
@@ -123,6 +141,16 @@ export default function AddWebsiteDialog({
   const [wpPass, setWpPass] = useState('')
   const [portfolio, setPortfolio] = useState('tse')
   const [elementorEnabled, setElementorEnabled] = useState(false)
+
+  // Magento form state
+  const [mgName, setMgName] = useState('')
+  const [mgUrl, setMgUrl] = useState('')
+  const [mgBackend, setMgBackend] = useState('')
+  const [mgApi, setMgApi] = useState('')
+  const [mgUser, setMgUser] = useState('')
+  const [mgPass, setMgPass] = useState('')
+  const [mgStore, setMgStore] = useState('')
+  const [mgPortfolio, setMgPortfolio] = useState('tse')
 
   // Status & error state
   const [isConnecting, setIsConnecting] = useState(false)
@@ -416,7 +444,19 @@ export default function AddWebsiteDialog({
             </>
           )}
 
-          {platform === 'magento'   && <MagentoFields />}
+          {platform === 'magento'   && (
+            <MagentoFields
+              mgName={mgName} setMgName={setMgName}
+              mgUrl={mgUrl} setMgUrl={setMgUrl}
+              mgBackend={mgBackend} setMgBackend={setMgBackend}
+              mgApi={mgApi} setMgApi={setMgApi}
+              mgUser={mgUser} setMgUser={setMgUser}
+              mgPass={mgPass} setMgPass={setMgPass}
+              mgStore={mgStore} setMgStore={setMgStore}
+              mgPortfolio={mgPortfolio} setMgPortfolio={setMgPortfolio}
+              isConnecting={isConnecting}
+            />
+          )}
           {platform === 'other'     && <OtherFields />}
         </form>
 
