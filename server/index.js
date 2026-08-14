@@ -244,6 +244,147 @@ app.post('/api/websites/:id/package', (req, res) => {
   }
 })
 
+// Server-side Magento REST API proxy sync endpoint
+app.post('/api/websites/:id/magento-sync', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // 1. Fetch website record & credentials directly from SQLite database
+    const siteRow = db.prepare('SELECT * FROM websites WHERE id = ?').get(id)
+    if (!siteRow) {
+      return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND', message: `Website ID '${id}' not found in database.` })
+    }
+
+    let configData = {}
+    try {
+      if (siteRow.config_data) configData = JSON.parse(siteRow.config_data)
+    } catch (_e) {}
+
+    const websiteUrl = siteRow.url || ''
+    const cleanSiteUrl = websiteUrl.trim().replace(/\/+$/, '')
+
+    const apiBaseUrl = (configData.apiBaseUrl || `${cleanSiteUrl}/rest/all/V1`).trim().replace(/\/+$/, '')
+    const storeCode = configData.mgStore || 'default'
+
+    // Server-side token read from SQLite database (never exposed to browser)
+    const token = siteRow.wp_pass || configData.wpPass || ''
+
+    if (!cleanSiteUrl) {
+      return res.status(400).json({ success: false, error: 'MISSING_URL', message: 'Website URL is missing from website record.' })
+    }
+
+    const headers = { 'Accept': 'application/json' }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token.trim()}`
+    }
+
+    // Issue server-side HTTP requests to Magento REST API
+    const [catRes, prodRes, cmsRes] = await Promise.all([
+      fetch(`${apiBaseUrl}/categories`, { method: 'GET', headers }).catch(() => null),
+      fetch(`${apiBaseUrl}/products?searchCriteria[pageSize]=100`, { method: 'GET', headers }).catch(() => null),
+      fetch(`${apiBaseUrl}/cmsPage/search?searchCriteria[pageSize]=100`, { method: 'GET', headers }).catch(() => null)
+    ])
+
+    // Check for HTTP 401 Unauthorized
+    if (catRes?.status === 401 || prodRes?.status === 401 || cmsRes?.status === 401) {
+      return res.status(401).json({
+        success: false,
+        status: 401,
+        error: 'MAGENTO_AUTH_FAILED',
+        message: 'Magento REST API Authentication Failed (HTTP 401). Server-side Bearer token rejected by Magento.'
+      })
+    }
+
+    const categoriesJson = catRes && catRes.ok ? await catRes.json() : null
+    const productsJson = prodRes && prodRes.ok ? await prodRes.json() : null
+    const cmsPagesJson = cmsRes && cmsRes.ok ? await cmsRes.json() : null
+
+    const pages = []
+
+    // 1. Process Categories
+    function processCategoryNode(node) {
+      if (!node) return
+      if (node.name && node.id) {
+        const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        pages.push({
+          id: `cat-${node.id}`,
+          title: node.name,
+          url: `${cleanSiteUrl}/${catSlug}`,
+          link: `${cleanSiteUrl}/${catSlug}`,
+          type: 'Landing',
+          post_type: 'category',
+          is_active: node.is_active,
+          level: node.level
+        })
+      }
+      if (Array.isArray(node.children_data)) {
+        node.children_data.forEach(processCategoryNode)
+      }
+    }
+    if (categoriesJson) processCategoryNode(categoriesJson)
+
+    // 2. Process CMS Pages
+    if (cmsPagesJson && Array.isArray(cmsPagesJson.items)) {
+      cmsPagesJson.items.forEach(p => {
+        const slug = p.identifier || ''
+        const pageUrl = slug === 'home' || slug === '' ? cleanSiteUrl : `${cleanSiteUrl}/${slug}`
+        pages.push({
+          id: `cms-${p.id}`,
+          title: p.title || p.identifier,
+          url: pageUrl,
+          link: pageUrl,
+          type: p.identifier === 'home' ? 'Hub' : 'Landing',
+          post_type: 'cms_page',
+          content: p.content || '',
+          meta_title: p.meta_title || p.title,
+          meta_description: p.meta_description || ''
+        })
+      })
+    }
+
+    // 3. Process Products
+    if (productsJson && Array.isArray(productsJson.items)) {
+      productsJson.items.forEach(prod => {
+        const urlKeyAttr = prod.custom_attributes?.find(a => a.attribute_code === 'url_key')?.value
+        const slug = (urlKeyAttr || prod.name || prod.sku).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        pages.push({
+          id: `prod-${prod.id}`,
+          title: prod.name || prod.sku,
+          url: `${cleanSiteUrl}/${slug}`,
+          link: `${cleanSiteUrl}/${slug}`,
+          type: 'Landing',
+          post_type: 'product',
+          sku: prod.sku,
+          price: prod.price
+        })
+      })
+    }
+
+    const packageData = {
+      site_info: {
+        url: cleanSiteUrl,
+        platform: 'magento',
+        store_code: storeCode
+      },
+      pages,
+      categories: categoriesJson,
+      products: productsJson?.items || [],
+      cms_pages: cmsPagesJson?.items || []
+    }
+
+    res.json({
+      success: true,
+      packageData
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'SERVER_MAGENTO_SYNC_ERROR',
+      message: `Backend failed to sync with Magento REST API: ${error.message}`
+    })
+  }
+})
+
 // ==========================================
 // 3. PAGE CONFIGURATIONS ENDPOINTS
 // ==========================================

@@ -315,10 +315,8 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     // Call Exporter Service (WordPress vs Magento)
     const exporterPromise = isMagento
       ? fetchMagentoExportPackage({
-          websiteUrl: site.url,
-          apiBaseUrl: cfg.apiBaseUrl || site.apiBaseUrl,
-          token: site.wpPass || cfg.wpPass || '',
-          storeCode: cfg.mgStore || site.mgStore || 'default'
+          websiteId: site.id,
+          site
         })
       : fetchTseWordPressExportPackage({
           websiteUrl: site.url,

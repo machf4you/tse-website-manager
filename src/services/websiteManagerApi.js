@@ -5,11 +5,11 @@
 
 import { normalizeSiteId } from '../utils/siteKeyHelper.js'
 
-const API_BASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_WEBSITE_MANAGER_API_URL)
+export const API_BASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_WEBSITE_MANAGER_API_URL)
   ? process.env.VITE_WEBSITE_MANAGER_API_URL
   : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBSITE_MANAGER_API_URL)
       ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
-      : 'http://localhost:3001/api')
+      : 'https://api-website-manager.thesearchequation.co.uk/api')
 
 async function fetchJson(url, options = {}, timeoutMs = 2500) {
   const controller = new AbortController()
