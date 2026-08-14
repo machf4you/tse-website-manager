@@ -99,7 +99,13 @@ function formatNowDDMMYYYYHHMM() {
 
 
 
-export default function ManageWebsitePage({ site, onBack, onUpdateSite }) {
+export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite }) {
+  const site = rawSite ? {
+    ...rawSite,
+    wpUser: rawSite.wpUser || rawSite.connectedUser || rawSite.configData?.wpUser || rawSite.configData?.connectedUser || '',
+    wpPass: rawSite.wpPass || rawSite.configData?.wpPass || ''
+  } : rawSite
+
   const [apiConfigs, setApiConfigs] = useState({})
   const activeTabStorageKey = site?.id ? `tse_active_tab_${site.id}` : 'tse_active_tab_default'
 
