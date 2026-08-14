@@ -60,7 +60,10 @@ app.post('/api/websites', (req, res) => {
         last_audit_timestamp = excluded.last_audit_timestamp,
         sync_status = excluded.sync_status,
         last_sync_timestamp = excluded.last_sync_timestamp,
-        config_data = excluded.config_data,
+        config_data = CASE
+          WHEN excluded.config_data IS NOT NULL AND excluded.config_data != '' AND excluded.config_data != '{"wpUser":"","wpPass":""}' THEN excluded.config_data
+          ELSE websites.config_data
+        END,
         updated_at = excluded.updated_at
     `)
 
@@ -113,7 +116,10 @@ app.post('/api/websites/batch', (req, res) => {
         last_audit_timestamp = excluded.last_audit_timestamp,
         sync_status = excluded.sync_status,
         last_sync_timestamp = excluded.last_sync_timestamp,
-        config_data = excluded.config_data,
+        config_data = CASE
+          WHEN excluded.config_data IS NOT NULL AND excluded.config_data != '' AND excluded.config_data != '{"wpUser":"","wpPass":""}' THEN excluded.config_data
+          ELSE websites.config_data
+        END,
         updated_at = excluded.updated_at
     `)
 

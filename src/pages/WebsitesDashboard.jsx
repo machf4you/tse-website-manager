@@ -84,7 +84,6 @@ export default function WebsitesDashboard() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sites))
       localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(sites))
-      saveWebsitesBatchApi(sites)
     } catch (e) {}
   }, [sites])
 
