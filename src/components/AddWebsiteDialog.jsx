@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { connectWordPress, WP_STEPS } from '../services/wordpressApi'
+import { saveWebsiteApi } from '../services/websiteManagerApi'
 import { buildWordPressSite } from '../data/mockData'
 import './AddWebsiteDialog.css'
 
@@ -170,12 +171,26 @@ export default function AddWebsiteDialog({
       }
       cfg = cfg || {}
 
-      setWpName(editingSite.name || '')
-      setWpUrl(editingSite.url || '')
-      setWpUser(editingSite.wpUser || editingSite.connectedUser || cfg.wpUser || cfg.connectedUser || '')
-      setWpPass(editingSite.wpPass || cfg.wpPass || '')
-      setPortfolio(editingSite.portfolio || 'tse')
-      setElementorEnabled(editingSite.elementorEnabled || false)
+      const isMg = editingSite.platform === 'magento' || editingSite.platform === 'Magento'
+      if (isMg) {
+        setPlatform('magento')
+        setMgName(editingSite.name || '')
+        setMgUrl(editingSite.url || '')
+        setMgBackend(cfg.mgBackendUrl || editingSite.mgBackendUrl || '')
+        setMgApi(cfg.apiBaseUrl || editingSite.apiBaseUrl || '')
+        setMgUser(editingSite.wpUser || editingSite.connectedUser || cfg.wpUser || cfg.connectedUser || '')
+        setMgPass(editingSite.wpPass || cfg.wpPass || '')
+        setMgStore(cfg.mgStore || editingSite.mgStore || 'default')
+        setMgPortfolio(editingSite.portfolio || cfg.portfolio || 'tse')
+      } else {
+        setPlatform('wordpress')
+        setWpName(editingSite.name || '')
+        setWpUrl(editingSite.url || '')
+        setWpUser(editingSite.wpUser || editingSite.connectedUser || cfg.wpUser || cfg.connectedUser || '')
+        setWpPass(editingSite.wpPass || cfg.wpPass || '')
+        setPortfolio(editingSite.portfolio || 'tse')
+        setElementorEnabled(editingSite.elementorEnabled || false)
+      }
     } else if (isOpen && !editingSite) {
       resetForm()
     }
@@ -190,9 +205,101 @@ export default function AddWebsiteDialog({
     setWpPass('')
     setPortfolio('tse')
     setElementorEnabled(false)
+
+    setMgName('')
+    setMgUrl('')
+    setMgBackend('')
+    setMgApi('')
+    setMgUser('')
+    setMgPass('')
+    setMgStore('default')
+    setMgPortfolio('tse')
+
     setIsConnecting(false)
     setErrorMsg(null)
     setStepStates({ api: 'pending', auth: 'pending', perms: 'pending' })
+  }
+
+  function handleSaveDraft() {
+    setErrorMsg(null)
+    const isMg = platform === 'magento'
+    const siteName = isMg ? mgName.trim() : wpName.trim()
+    if (!siteName) {
+      setErrorMsg('Please enter a Website Name before saving.')
+      return
+    }
+
+    const isConnected = editingSite ? Boolean(editingSite.topIndicator === 'connected' || editingSite.isSynchronised) : false
+
+    const draftTile = isMg ? {
+      ...(editingSite || {}),
+      id: editingSite?.id || String(Date.now()),
+      name: mgName.trim(),
+      url: mgUrl.trim() || '',
+      platform: 'magento',
+      portfolio: mgPortfolio || 'tse',
+      wpUser: mgUser.trim(),
+      wpPass: mgPass.trim(),
+      connectedUser: mgUser.trim() || null,
+      lifecycleStage: editingSite?.lifecycleStage || 2,
+      topIndicator: isConnected ? 'connected' : 'pending',
+      syncStatus: isConnected ? (editingSite.syncStatus || 'Synced') : 'Draft Saved',
+      isSynchronised: isConnected,
+      configData: {
+        ...(editingSite?.configData || {}),
+        wpUser: mgUser.trim(),
+        wpPass: mgPass.trim(),
+        connectedUser: mgUser.trim(),
+        mgBackendUrl: mgBackend.trim(),
+        apiBaseUrl: mgApi.trim(),
+        mgStore: mgStore || 'default'
+      },
+      status: editingSite?.status || {
+        connection:       { label: 'Draft Saved',       value: 'Draft Saved',        variant: 'grey'   },
+        platformApi:      { label: 'Magento API',       value: 'Not Connected',      variant: 'grey'   },
+        configured:       { label: 'Configured',        value: 'Not Configured',     variant: 'grey'   },
+        audited:          { label: 'Audited',           value: 'Not Audited',        variant: 'grey'   },
+        tasksOutstanding: { label: 'Tasks Outstanding', value: '0 Outstanding',      variant: 'green'  },
+      }
+    } : {
+      ...(editingSite || {}),
+      id: editingSite?.id || String(Date.now()),
+      name: wpName.trim(),
+      url: wpUrl.trim() || '',
+      platform: 'wordpress',
+      portfolio: portfolio || 'tse',
+      elementorEnabled,
+      wpUser: wpUser.trim(),
+      wpPass: wpPass.trim(),
+      connectedUser: wpUser.trim() || null,
+      lifecycleStage: editingSite?.lifecycleStage || 2,
+      topIndicator: isConnected ? 'connected' : 'pending',
+      syncStatus: isConnected ? (editingSite.syncStatus || 'Synced') : 'Draft Saved',
+      isSynchronised: isConnected,
+      configData: {
+        ...(editingSite?.configData || {}),
+        wpUser: wpUser.trim(),
+        wpPass: wpPass.trim(),
+        connectedUser: wpUser.trim(),
+        elementorEnabled
+      },
+      status: editingSite?.status || {
+        connection:       { label: 'Draft Saved',       value: 'Draft Saved',        variant: 'grey'   },
+        platformApi:      { label: 'WordPress API',     value: 'Not Connected',      variant: 'grey'   },
+        configured:       { label: 'Configured',        value: 'Not Configured',     variant: 'grey'   },
+        audited:          { label: 'Audited',           value: 'Not Audited',        variant: 'grey'   },
+        tasksOutstanding: { label: 'Tasks Outstanding', value: '0 Outstanding',      variant: 'green'  },
+      }
+    }
+
+    if (editingSite && onUpdateWebsite) {
+      onUpdateWebsite(draftTile)
+    } else if (onAddWebsite) {
+      onAddWebsite(draftTile)
+    }
+
+    saveWebsiteApi(draftTile)
+    handleClose()
   }
 
   function handleClose() {
@@ -395,6 +502,14 @@ export default function AddWebsiteDialog({
     }
   }
 
+  const hasMinName = platform === 'magento'
+    ? Boolean(mgName.trim())
+    : (platform === 'wordpress' ? Boolean(wpName.trim()) : false)
+
+  const canConnect = platform === 'magento'
+    ? Boolean(mgName.trim() && mgUrl.trim() && mgBackend.trim() && mgApi.trim() && mgUser.trim() && mgPass.trim())
+    : (platform === 'wordpress' ? Boolean(wpName.trim() && wpUrl.trim() && wpUser.trim() && wpPass.trim()) : false)
+
   return (
     <div
       className="aw-backdrop"
@@ -407,7 +522,7 @@ export default function AddWebsiteDialog({
 
         {/* Header */}
         <div className="aw-header">
-          <h2 className="aw-title">{editingSite ? 'Edit Website Connection' : 'Connect New Website'}</h2>
+          <h2 className="aw-title" id="aw-title">{editingSite ? 'Edit Website Connection' : 'Connect New Website'}</h2>
           <button
             type="button"
             className="aw-close"
@@ -423,23 +538,25 @@ export default function AddWebsiteDialog({
         </div>
 
         {/* Platform selector */}
-        <div className="aw-platform-selector" role="group" aria-label="Select platform">
-          {PLATFORMS.map(p => (
-            <button
-              key={p.id}
-              type="button"
-              className={`aw-platform-btn ${platform === p.id ? 'aw-platform-active' : ''}`}
-              onClick={() => {
-                if (!isConnecting) setPlatform(p.id)
-              }}
-              aria-pressed={platform === p.id}
-              id={`platform-${p.id}`}
-              disabled={isConnecting}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        {!editingSite && (
+          <div className="aw-platform-selector" role="group" aria-label="Select platform">
+            {PLATFORMS.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                className={`aw-platform-btn ${platform === p.id ? 'aw-platform-active' : ''}`}
+                onClick={() => {
+                  if (!isConnecting) setPlatform(p.id)
+                }}
+                aria-pressed={platform === p.id}
+                id={`platform-${p.id}`}
+                disabled={isConnecting}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Form fields */}
         <form id="aw-connect-form" className="aw-form" onSubmit={handleConnect}>
@@ -557,7 +674,7 @@ export default function AddWebsiteDialog({
               </button>
             </div>
           )}
-          <div className="aw-footer-actions">
+          <div className="aw-footer-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button
               type="button"
               className="aw-btn-cancel"
@@ -567,11 +684,31 @@ export default function AddWebsiteDialog({
               Cancel
             </button>
             <button
+              type="button"
+              className="aw-btn-save"
+              id="btn-save-website-draft"
+              onClick={handleSaveDraft}
+              disabled={isConnecting || !hasMinName}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                background: 'rgba(255, 255, 255, 0.08)',
+                color: '#f8fafc',
+                fontWeight: '600',
+                fontSize: '0.85rem',
+                cursor: (isConnecting || !hasMinName) ? 'not-allowed' : 'pointer',
+                opacity: (isConnecting || !hasMinName) ? 0.5 : 1
+              }}
+            >
+              Save
+            </button>
+            <button
               type="submit"
               form="aw-connect-form"
               className="aw-btn-connect"
               id="btn-connect-website"
-              disabled={isConnecting || platform === 'other'}
+              disabled={isConnecting || !canConnect}
             >
               {isConnecting ? (editingSite ? 'Updating…' : 'Connecting…') : (editingSite ? 'Update Connection' : 'Connect Website')}
             </button>
