@@ -65,6 +65,8 @@ const SlidersIcon = () => (
   </svg>
 )
 
+import GlobalDeploymentIndicator from './components/GlobalDeploymentIndicator'
+
 function App() {
   const [activeNavTab, setActiveNavTab] = useState(() => {
     try {
@@ -148,6 +150,9 @@ function App() {
         {activeNavTab === 'websites' && <WebsitesDashboard />}
         {activeNavTab === 'global-settings' && <GlobalSettings />}
       </main>
+
+      {/* Global Deployment & Update Indicator Component */}
+      <GlobalDeploymentIndicator />
     </div>
   )
 }

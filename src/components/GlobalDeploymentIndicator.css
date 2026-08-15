@@ -1,0 +1,88 @@
+/* Global Deployment & Update Indicator Component Styles */
+.global-deploy-indicator {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 30px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+/* Updating / Deploying State */
+.global-deploy-updating {
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+}
+
+.global-deploy-updating .deploy-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+  animation: deploySpin 0.8s linear infinite;
+}
+
+@keyframes deploySpin {
+  to { transform: rotate(360deg); }
+}
+
+.global-deploy-timer {
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 0.8rem;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Ready for Ctrl+F5 State */
+.global-deploy-ready {
+  background: rgba(6, 78, 59, 0.92);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  color: #34d399;
+  animation: deployPulse 2s infinite;
+}
+
+@keyframes deployPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4), 0 10px 30px rgba(0, 0, 0, 0.45); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), 0 10px 30px rgba(0, 0, 0, 0.45); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 10px 30px rgba(0, 0, 0, 0.45); }
+}
+
+.deploy-ready-dot {
+  width: 9px;
+  height: 9px;
+  background-color: #34d399;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #34d399;
+}
+
+.deploy-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.deploy-action-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
