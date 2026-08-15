@@ -4,27 +4,20 @@
   flex-direction: column;
   align-items: flex-start;
   padding: 2.5rem;
-  gap: 2rem;
+  gap: 1.5rem;
   width: 100%;
   max-width: 1452px;
   margin: 0 auto;
   box-sizing: border-box;
 }
 
-/* W1 Header */
-.w1-header {
+/* ── ROW 1: Connected Websites Title (Left) | Global Version / Deployment Indicator (Right) ── */
+.w1-row-1 {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   width: 100%;
   gap: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.w1-header-content {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
 }
 
 .w1-title {
@@ -32,8 +25,26 @@
   font-size: 2rem;
   font-weight: 800;
   color: rgb(248, 250, 252);
-  margin: 0 0 0.4rem 0;
+  margin: 0;
   line-height: 1.1;
+}
+
+/* ── ROW 2: W1 Badge + Server Type Filters (Left) | Add Website Button (Right) ── */
+.w1-row-2 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.w1-row-2-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
 .w1-pill-badge {
@@ -44,17 +55,10 @@
   color: rgb(16, 185, 129);
   background-color: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
-}
-
-.w1-subtitle {
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  color: rgb(148, 163, 184);
-  margin: 0;
+  white-space: nowrap;
 }
 
 /* Add Website button */
@@ -71,6 +75,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.15s;
 }
 
@@ -87,15 +92,14 @@
 
 /* W1 Filter Bar */
 .w1-filter-bar {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
   flex-wrap: wrap;
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
 }
 
 .w1-filter-label {
@@ -105,7 +109,7 @@
   color: rgb(148, 163, 184);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-right: 6px;
+  margin-right: 4px;
 }
 
 .w1-filter-btn {

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { CURRENT_BUILD_VERSION } from '../config/version'
+import { CURRENT_BUILD_VERSION, CURRENT_BUILD_LABEL } from '../config/version'
 import './GlobalDeploymentIndicator.css'
 
-export default function GlobalDeploymentIndicator() {
+export default function GlobalDeploymentIndicator({ inline = false }) {
   const [deployState, setDeployState] = useState('idle') // 'idle' | 'updating' | 'ready'
   const [targetVersion, setTargetVersion] = useState(CURRENT_BUILD_VERSION)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
@@ -27,12 +27,12 @@ export default function GlobalDeploymentIndicator() {
             setTargetVersion(liveVer)
             setDeployState('ready')
           } else {
-            // If live version matches loaded version, reset to idle
+            // Live version matches loaded version -> IDLE / LIVE state
             setDeployState('idle')
           }
         }
       } catch (_e) {
-        // Network or local dev environment fallback
+        // Fallback for offline or local dev environment
       }
     }
 
@@ -63,19 +63,17 @@ export default function GlobalDeploymentIndicator() {
     }
   }, [deployState])
 
-  if (deployState === 'idle') {
-    return null
-  }
-
   const formatTimer = (sec) => {
     const mins = Math.floor(sec / 60)
     const remSec = sec % 60
     return `${String(mins).padStart(2, '0')}:${String(remSec).padStart(2, '0')}`
   }
 
+  const containerClass = `global-deploy-indicator ${inline ? 'inline-mode' : 'fixed-mode'}`
+
   if (deployState === 'updating') {
     return (
-      <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite">
+      <div className={`${containerClass} global-deploy-updating`} role="status" aria-live="polite">
         <span className="deploy-spinner" aria-hidden="true" />
         <span className="deploy-text">Updating V{targetVersion}…</span>
         <span className="global-deploy-timer">{formatTimer(elapsedSeconds)}</span>
@@ -85,7 +83,7 @@ export default function GlobalDeploymentIndicator() {
 
   if (deployState === 'ready') {
     return (
-      <div className="global-deploy-indicator global-deploy-ready" role="status" aria-live="polite">
+      <div className={`${containerClass} global-deploy-ready`} role="status" aria-live="polite">
         <span className="deploy-ready-dot" aria-hidden="true" />
         <span className="deploy-text">🟢 V{targetVersion} READY</span>
         <span className="deploy-action-badge">Ctrl+F5</span>
@@ -93,5 +91,12 @@ export default function GlobalDeploymentIndicator() {
     )
   }
 
-  return null
+  // Idle state: Default to permanent live badge in header
+  return (
+    <div className={`${containerClass} global-deploy-idle`}>
+      <span className="global-deploy-live-badge">
+        <span className="deploy-live-dot">●</span> {CURRENT_BUILD_LABEL}
+      </span>
+    </div>
+  )
 }

@@ -14,6 +14,7 @@ import './WebsitesDashboard.css'
 
 const STORAGE_KEY = 'tse_connected_websites_v1'
 
+import GlobalDeploymentIndicator from '../components/GlobalDeploymentIndicator'
 import { CURRENT_BUILD_LABEL } from '../config/version'
 
 export default function WebsitesDashboard() {
@@ -135,13 +136,29 @@ export default function WebsitesDashboard() {
   return (
     <div className="tile-preview-page">
 
-      {/* ── W1 Header ── */}
-      <div className="w1-header">
-        <div className="w1-header-content">
-          <h1 className="w1-title">Connected Websites</h1>
+      {/* ── ROW 1: Title (Left) | Global Version/Deployment Indicator (Right) ── */}
+      <div className="w1-row-1">
+        <h1 className="w1-title">Connected Websites</h1>
+        <GlobalDeploymentIndicator inline={true} />
+      </div>
+
+      {/* ── ROW 2: W1 Badge + Server Type Filters (Left) | Add Website Button (Right) ── */}
+      <div className="w1-row-2">
+        <div className="w1-row-2-left">
           <span className="w1-pill-badge">W1 | CONNECTED WEBSITES</span>
-          <span className="w1-pill-badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#34d399', borderColor: 'rgba(16, 185, 129, 0.3)', marginLeft: '8px' }}>● {CURRENT_BUILD_LABEL}</span>
-          <p className="w1-subtitle">Manage your connected websites.</p>
+          <div className="w1-filter-bar">
+            <span className="w1-filter-label">Server Type:</span>
+            {filterOptions.map(opt => (
+              <button
+                key={opt}
+                type="button"
+                className={`w1-filter-btn ${serverTypeFilter === opt ? 'w1-filter-btn-active' : ''}`}
+                onClick={() => setServerTypeFilter(opt)}
+              >
+                {opt === 'All' ? 'All Servers' : opt}
+              </button>
+            ))}
+          </div>
         </div>
 
         <button
@@ -160,21 +177,6 @@ export default function WebsitesDashboard() {
           </svg>
           Add Website
         </button>
-      </div>
-
-      {/* ── Server Type Filter Toolbar ── */}
-      <div className="w1-filter-bar">
-        <span className="w1-filter-label">Server Type:</span>
-        {filterOptions.map(opt => (
-          <button
-            key={opt}
-            type="button"
-            className={`w1-filter-btn ${serverTypeFilter === opt ? 'w1-filter-btn-active' : ''}`}
-            onClick={() => setServerTypeFilter(opt)}
-          >
-            {opt === 'All' ? 'All Servers' : opt}
-          </button>
-        ))}
       </div>
 
       {/* Website Tiles Grid */}
