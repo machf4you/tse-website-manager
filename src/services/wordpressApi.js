@@ -184,19 +184,19 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
   // ── 1. Prepare Content & H1 HTML Replacement ──
   let updatedContent = undefined
   let existingContent = page.content?.rendered || page.content || page.contentHtml || ''
+  let existingElementorData = page.elementorData || page._elementor_data || null
 
-  // If page content not provided, fetch current page data from WP REST API
-  if (!existingContent) {
-    try {
-      const pageFetchRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}/${numericId}`, {
-        headers: { Authorization: authHeader, Accept: 'application/json' }
-      })
-      if (pageFetchRes.ok) {
-        const existingPageData = await pageFetchRes.json()
-        existingContent = existingPageData.content?.rendered || existingPageData.content || ''
-      }
-    } catch (_pErr) {}
-  }
+  // Fetch live page object if existing content or Elementor data missing
+  try {
+    const pageFetchRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}/${numericId}?context=edit`, {
+      headers: { Authorization: authHeader, Accept: 'application/json' }
+    })
+    if (pageFetchRes.ok) {
+      const existingPageData = await pageFetchRes.json()
+      existingContent = existingPageData.content?.rendered || existingPageData.content?.raw || existingContent
+      existingElementorData = existingPageData.meta?._elementor_data || existingPageData._elementor_data || existingElementorData
+    }
+  } catch (_pErr) {}
 
   if (h1 && typeof h1 === 'string' && h1.trim()) {
     const cleanH1 = h1.trim()
@@ -209,7 +209,28 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     }
   }
 
-  // ── 2. Build Multi-Mechanism Payload for WP REST & Yoast ──
+  // ── 2. Elementor JSON Document Tree Updating ──
+  let updatedElementorJson = null
+  if (existingElementorData && h1) {
+    try {
+      const tree = typeof existingElementorData === 'string' ? JSON.parse(existingElementorData) : existingElementorData
+      if (Array.isArray(tree)) {
+        function updateElementorHeadingNodes(nodes) {
+          if (!Array.isArray(nodes)) return
+          for (const node of nodes) {
+            if (node.widgetType === 'heading' || node.widgetType === 'elementskit-heading' || node.widgetType === 'theme-page-title') {
+              if (node.settings) node.settings.title = h1
+            }
+            if (Array.isArray(node.elements)) updateElementorHeadingNodes(node.elements)
+          }
+        }
+        updateElementorHeadingNodes(tree)
+        updatedElementorJson = JSON.stringify(tree)
+      }
+    } catch (_eErr) {}
+  }
+
+  // ── 3. Build Payload for WP REST, Yoast & Elementor ──
   const payload = {
     title: page.title?.rendered || page.title || metaTitle,
     ...(updatedContent !== undefined ? { content: updatedContent } : {}),
@@ -220,6 +241,7 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
       _yoast_wpseo_metadesc: metaDescription,
       yoast_wpseo_title: metaTitle,
       yoast_wpseo_metadesc: metaDescription,
+      ...(updatedElementorJson ? { _elementor_data: updatedElementorJson, elementor_data: updatedElementorJson } : {})
     }
   }
 
@@ -259,7 +281,7 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
 
     const postData = await res.json()
 
-    // ── 3. Secondary Call to Yoast Bulk Editor REST Endpoint if available ──
+    // ── 4. Secondary Call to Yoast Bulk Editor REST Endpoint if available ──
     try {
       await fetch(`${base}/wp-json/yoast/v1/bulk_editor/update_search`, {
         method: 'POST',
