@@ -136,8 +136,10 @@ function App() {
           </button>
         </nav>
 
-        {/* Right: empty spacer — keeps nav centred */}
-        <div className="header-right" aria-hidden="true" />
+        {/* Right: Global Deployment / Version Indicator */}
+        <div className="header-right" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <GlobalDeploymentIndicator />
+        </div>
 
       </header>
 
@@ -150,9 +152,6 @@ function App() {
         {activeNavTab === 'websites' && <WebsitesDashboard />}
         {activeNavTab === 'global-settings' && <GlobalSettings />}
       </main>
-
-      {/* Global Deployment & Update Indicator Component */}
-      <GlobalDeploymentIndicator />
     </div>
   )
 }

@@ -17,7 +17,8 @@ Every future restore point must update this file.
 | v1.3-w4 | `v1.3-w4-wordpress-seo-write` | `fc56997` | 15-08-2026 15:10 | Fixed W4 WordPress write implementation to store Yoast Meta Title, Yoast Meta Description, and H1 content in WordPress REST API. | Superseded |
 | v1.5-w1 | `v1.5-w1-server-type-field` | `dc7cd4b` | 15-08-2026 17:01 | Added permanent W1 Server Type field, connection modal selector, tile status display, and dashboard server type filtering system. | Superseded |
 | v1.6-deploy | `v1.6-global-deployment-indicator` | `890be98` | 15-08-2026 17:15 | Implemented viewport-fixed global deployment & update indicator component (Updating V10.3... -> V10.3 READY - Ctrl+F5) with cache-busting version polling. | Superseded |
-| v1.7-layout | `v1.7-w1-header-layout-rearrange` | `[AUTO]` | 15-08-2026 17:28 | Rearranged W1 header into Row 1 (Heading + Top-Right Version/Deployment Indicator) and Row 2 (W1 Badge + Server Type Filters + Right Add Website Button). | **Current** |
+| v1.7-layout | `v1.7-w1-header-layout-rearrange` | `d5497d8` | 15-08-2026 17:28 | Rearranged W1 header into Row 1 (Heading + Top-Right Version/Deployment Indicator) and Row 2 (W1 Badge + Server Type Filters + Right Add Website Button). | Superseded |
+| v1.8-header | `v1.8-global-header-version-indicator` | `[AUTO]` | 15-08-2026 17:32 | Moved global deployment/version indicator into far-right of top global application header (header-right), vertically centred, across all routes. | **Current** |
 
 ---
 

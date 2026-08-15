@@ -12,11 +12,6 @@ import {
 } from '../services/websiteManagerApi'
 import './WebsitesDashboard.css'
 
-const STORAGE_KEY = 'tse_connected_websites_v1'
-
-import GlobalDeploymentIndicator from '../components/GlobalDeploymentIndicator'
-import { CURRENT_BUILD_LABEL } from '../config/version'
-
 export default function WebsitesDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSite, setEditingSite] = useState(null)
@@ -136,10 +131,9 @@ export default function WebsitesDashboard() {
   return (
     <div className="tile-preview-page">
 
-      {/* ── ROW 1: Title (Left) | Global Version/Deployment Indicator (Right) ── */}
+      {/* ── ROW 1: Connected Websites Heading ── */}
       <div className="w1-row-1">
         <h1 className="w1-title">Connected Websites</h1>
-        <GlobalDeploymentIndicator inline={true} />
       </div>
 
       {/* ── ROW 2: W1 Badge + Server Type Filters (Left) | Add Website Button (Right) ── */}

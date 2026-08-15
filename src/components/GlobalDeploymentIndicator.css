@@ -1,51 +1,27 @@
-/* Global Deployment & Version Indicator Component Styles */
-
-/* Inline Header Mode (Used in W1 Header Row 1 Top-Right) */
-.global-deploy-indicator.inline-mode {
-  position: static;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  border: none;
-}
-
-/* Floating Viewport Fixed Mode (Used on Subpages / Global Settings) */
-.global-deploy-indicator.fixed-mode {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 99999;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  display: flex;
+/* Global Deployment & Version Indicator (App Header Far-Right Placement) */
+.global-deploy-indicator {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border-radius: 30px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.12);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: auto;
+  gap: 8px;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Live / Up-to-Date Badge */
+/* Idle / Up-to-Date Live Badge */
 .global-deploy-live-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.05em;
   color: #34d399;
   background-color: rgba(16, 185, 129, 0.12);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 6px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .deploy-live-dot {
@@ -61,18 +37,13 @@
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(59, 130, 246, 0.4);
   color: #93c5fd;
-  padding: 6px 14px;
-  border-radius: 20px;
-}
-
-.fixed-mode.global-deploy-updating {
-  padding: 10px 16px;
-  border-radius: 30px;
+  padding: 4px 10px;
+  border-radius: 8px;
 }
 
 .global-deploy-updating .deploy-spinner {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   border: 2px solid rgba(59, 130, 246, 0.3);
   border-top-color: #60a5fa;
   border-radius: 50%;
@@ -86,11 +57,11 @@
 .global-deploy-timer {
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   background: rgba(59, 130, 246, 0.15);
   color: #60a5fa;
-  padding: 2px 7px;
-  border-radius: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
@@ -102,43 +73,40 @@
   background: rgba(6, 78, 59, 0.92);
   border: 1px solid rgba(16, 185, 129, 0.5);
   color: #34d399;
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: 8px;
   animation: deployPulse 2s infinite;
 }
 
-.fixed-mode.global-deploy-ready {
-  padding: 10px 16px;
-  border-radius: 30px;
-}
-
 @keyframes deployPulse {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4), 0 10px 30px rgba(0, 0, 0, 0.45); }
-  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0), 0 10px 30px rgba(0, 0, 0, 0.45); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 10px 30px rgba(0, 0, 0, 0.45); }
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
 .deploy-ready-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   background-color: #34d399;
   border-radius: 50%;
   box-shadow: 0 0 8px #34d399;
 }
 
 .deploy-text {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .deploy-action-badge {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 800;
   background: rgba(16, 185, 129, 0.2);
   color: #6ee7b7;
   border: 1px solid rgba(16, 185, 129, 0.4);
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 2px 6px;
+  border-radius: 4px;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
