@@ -139,7 +139,7 @@ export async function resolveSiteCredentials(site, pageOrUrl) {
   return { username, password }
 }
 
-export async function updateWordPressSEOFields({ site, page, metaTitle, metaDescription }) {
+export async function updateWordPressSEOFields({ site, page, metaTitle, metaDescription, h1 }) {
   if (!site || !page) return { success: false, message: 'Site or Page object missing' }
   let base = (site?.url || page?.url || '').trim().replace(/\/+$/, '')
   if (!/^https?:\/\//i.test(base)) {
@@ -181,11 +181,45 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     return { success: false, message: `Could not resolve numeric WordPress page ID for page '${page.url}'.` }
   }
 
+  // ── 1. Prepare Content & H1 HTML Replacement ──
+  let updatedContent = undefined
+  let existingContent = page.content?.rendered || page.content || page.contentHtml || ''
+
+  // If page content not provided, fetch current page data from WP REST API
+  if (!existingContent) {
+    try {
+      const pageFetchRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}/${numericId}`, {
+        headers: { Authorization: authHeader, Accept: 'application/json' }
+      })
+      if (pageFetchRes.ok) {
+        const existingPageData = await pageFetchRes.json()
+        existingContent = existingPageData.content?.rendered || existingPageData.content || ''
+      }
+    } catch (_pErr) {}
+  }
+
+  if (h1 && typeof h1 === 'string' && h1.trim()) {
+    const cleanH1 = h1.trim()
+    if (existingContent && /<h1[^>]*>[\s\S]*?<\/h1>/i.test(existingContent)) {
+      updatedContent = existingContent.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/i, `<h1$1>${cleanH1}</h1>`)
+    } else if (existingContent) {
+      updatedContent = `<h1>${cleanH1}</h1>\n` + existingContent
+    } else {
+      updatedContent = `<h1>${cleanH1}</h1>`
+    }
+  }
+
+  // ── 2. Build Multi-Mechanism Payload for WP REST & Yoast ──
   const payload = {
-    title: metaTitle,
+    title: page.title?.rendered || page.title || metaTitle,
+    ...(updatedContent !== undefined ? { content: updatedContent } : {}),
+    yoast_wpseo_title: metaTitle,
+    yoast_wpseo_metadesc: metaDescription,
     meta: {
       _yoast_wpseo_title: metaTitle,
-      _yoast_wpseo_metadesc: metaDescription
+      _yoast_wpseo_metadesc: metaDescription,
+      yoast_wpseo_title: metaTitle,
+      yoast_wpseo_metadesc: metaDescription,
     }
   }
 
@@ -224,23 +258,27 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     }
 
     const postData = await res.json()
-    console.log('[WP_WRITE_TRACE] POST Returned Title:', postData.title?.rendered)
 
-    // ── LIVE GET VERIFICATION STEP ──
+    // ── 3. Secondary Call to Yoast Bulk Editor REST Endpoint if available ──
     try {
-      const verifyRes = await fetch(targetUrl, {
-        headers: { Authorization: authHeader, Accept: 'application/json' }
+      await fetch(`${base}/wp-json/yoast/v1/bulk_editor/update_search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: authHeader,
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          items: [
+            {
+              id: numericId,
+              seo_title: metaTitle,
+              meta_description: metaDescription
+            }
+          ]
+        })
       })
-      if (verifyRes.ok) {
-        const verifyData = await verifyRes.json()
-        const liveTitle = verifyData.title?.rendered || ''
-        console.log('[WP_WRITE_TRACE] Immediate GET Verification Title:', liveTitle)
-
-        if (metaTitle && liveTitle && !liveTitle.toLowerCase().includes(metaTitle.toLowerCase().slice(0, 15))) {
-          console.warn('[WP_WRITE_TRACE] Verification Mismatch! Target:', metaTitle, 'Live:', liveTitle)
-        }
-      }
-    } catch (_vErr) {}
+    } catch (_yErr) {}
 
     return { success: true, data: postData }
   } catch (e) {

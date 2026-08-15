@@ -191,6 +191,7 @@ export default function W4FixIssueDialog({
         page,
         metaTitle: metaTitleVal || fieldValue,
         metaDescription: metaDescVal || fieldValue,
+        h1: h1Val || (seoType === 'h1' ? fieldValue : page?.h1),
       })
       if (res && res.success) {
         setIsPushed(true)
