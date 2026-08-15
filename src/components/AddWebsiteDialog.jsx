@@ -67,6 +67,27 @@ function StoreViewSelect({ id, value, onChange, disabled }) {
   )
 }
 
+function ServerTypeSelect({ id, value, onChange, disabled }) {
+  return (
+    <div className="aw-field">
+      <label className="aw-label" htmlFor={id}>Server Type</label>
+      <select
+        className="aw-input aw-select"
+        id={id}
+        value={value || 'Unknown'}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+      >
+        <option value="Unknown">Unknown</option>
+        <option value="Caddy">Caddy</option>
+        <option value="LiteSpeed">LiteSpeed</option>
+        <option value="Nginx">Nginx</option>
+        <option value="Apache">Apache</option>
+      </select>
+    </div>
+  )
+}
+
 function PortfolioSelect({ id, value, onChange, disabled }) {
   return (
     <div className="aw-field">
@@ -99,6 +120,7 @@ function MagentoFields({
   mgPass, setMgPass,
   mgStore, setMgStore,
   mgPortfolio, setMgPortfolio,
+  mgServerType, setMgServerType,
   isConnecting
 }) {
   return (
@@ -111,6 +133,7 @@ function MagentoFields({
       <Field label="API Password / Token"   id="mg-api-pass" type="password" placeholder="••••••••••••••••" value={mgPass} onChange={setMgPass} disabled={isConnecting} />
       <StoreViewSelect                      id="mg-store"    value={mgStore} onChange={setMgStore} disabled={isConnecting} />
       <PortfolioSelect                      id="mg-portfolio" value={mgPortfolio} onChange={setMgPortfolio} disabled={isConnecting} />
+      <ServerTypeSelect                     id="mg-server-type" value={mgServerType} onChange={setMgServerType} disabled={isConnecting} />
     </>
   )
 }
@@ -141,6 +164,7 @@ export default function AddWebsiteDialog({
   const [wpUser, setWpUser] = useState('')
   const [wpPass, setWpPass] = useState('')
   const [portfolio, setPortfolio] = useState('tse')
+  const [serverType, setServerType] = useState('Unknown')
   const [elementorEnabled, setElementorEnabled] = useState(false)
 
   // Magento form state
@@ -152,6 +176,7 @@ export default function AddWebsiteDialog({
   const [mgPass, setMgPass] = useState('')
   const [mgStore, setMgStore] = useState('default')
   const [mgPortfolio, setMgPortfolio] = useState('tse')
+  const [mgServerType, setMgServerType] = useState('Unknown')
 
   // Status & error state
   const [isConnecting, setIsConnecting] = useState(false)
@@ -171,6 +196,8 @@ export default function AddWebsiteDialog({
       }
       cfg = cfg || {}
 
+      const resolvedServerType = editingSite.serverType || editingSite.server_type || cfg.serverType || 'Unknown'
+
       const isMg = editingSite.platform === 'magento' || editingSite.platform === 'Magento'
       if (isMg) {
         setPlatform('magento')
@@ -182,6 +209,7 @@ export default function AddWebsiteDialog({
         setMgPass(editingSite.wpPass || cfg.wpPass || '')
         setMgStore(cfg.mgStore || editingSite.mgStore || 'default')
         setMgPortfolio(editingSite.portfolio || cfg.portfolio || 'tse')
+        setMgServerType(resolvedServerType)
       } else {
         setPlatform('wordpress')
         setWpName(editingSite.name || '')
@@ -189,6 +217,7 @@ export default function AddWebsiteDialog({
         setWpUser(editingSite.wpUser || editingSite.connectedUser || cfg.wpUser || cfg.connectedUser || '')
         setWpPass(editingSite.wpPass || cfg.wpPass || '')
         setPortfolio(editingSite.portfolio || 'tse')
+        setServerType(resolvedServerType)
         setElementorEnabled(editingSite.elementorEnabled || false)
       }
     } else if (isOpen && !editingSite) {
@@ -204,6 +233,7 @@ export default function AddWebsiteDialog({
     setWpUser('')
     setWpPass('')
     setPortfolio('tse')
+    setServerType('Unknown')
     setElementorEnabled(false)
 
     setMgName('')
@@ -214,6 +244,7 @@ export default function AddWebsiteDialog({
     setMgPass('')
     setMgStore('default')
     setMgPortfolio('tse')
+    setMgServerType('Unknown')
 
     setIsConnecting(false)
     setErrorMsg(null)
@@ -238,6 +269,7 @@ export default function AddWebsiteDialog({
       url: mgUrl.trim() || '',
       platform: 'magento',
       portfolio: mgPortfolio || 'tse',
+      serverType: mgServerType || 'Unknown',
       wpUser: mgUser.trim(),
       wpPass: mgPass.trim(),
       connectedUser: mgUser.trim() || null,
@@ -250,6 +282,7 @@ export default function AddWebsiteDialog({
         wpUser: mgUser.trim(),
         wpPass: mgPass.trim(),
         connectedUser: mgUser.trim(),
+        serverType: mgServerType || 'Unknown',
         mgBackendUrl: mgBackend.trim(),
         apiBaseUrl: mgApi.trim(),
         mgStore: mgStore || 'default'
@@ -268,6 +301,7 @@ export default function AddWebsiteDialog({
       url: wpUrl.trim() || '',
       platform: 'wordpress',
       portfolio: portfolio || 'tse',
+      serverType: serverType || 'Unknown',
       elementorEnabled,
       wpUser: wpUser.trim(),
       wpPass: wpPass.trim(),
@@ -281,6 +315,7 @@ export default function AddWebsiteDialog({
         wpUser: wpUser.trim(),
         wpPass: wpPass.trim(),
         connectedUser: wpUser.trim(),
+        serverType: serverType || 'Unknown',
         elementorEnabled
       },
       status: editingSite?.status || {
@@ -381,6 +416,7 @@ export default function AddWebsiteDialog({
         url: mgUrl.trim(),
         platform: 'magento',
         portfolio: mgPortfolio || 'tse',
+        serverType: mgServerType || 'Unknown',
         wpUser: mgUser.trim(),
         wpPass: mgPass.trim(),
         connectedUser: mgUser.trim(),
@@ -389,6 +425,7 @@ export default function AddWebsiteDialog({
           wpUser: mgUser.trim(),
           wpPass: mgPass.trim(),
           connectedUser: mgUser.trim(),
+          serverType: mgServerType || 'Unknown',
           mgBackendUrl: mgBackend.trim(),
           apiBaseUrl: mgApi.trim(),
           mgStore: mgStore || 'default'
@@ -465,6 +502,7 @@ export default function AddWebsiteDialog({
           name: wpName.trim(),
           url: wpUrl.trim(),
           portfolio,
+          serverType: serverType || 'Unknown',
           elementorEnabled,
           wpUser: wpUser.trim(),
           wpPass: wpPass.trim(),
@@ -474,6 +512,7 @@ export default function AddWebsiteDialog({
             wpUser: wpUser.trim(),
             wpPass: wpPass.trim(),
             connectedUser: res.user ? res.user.name : wpUser.trim(),
+            serverType: serverType || 'Unknown',
           }
         }
         onUpdateWebsite(updatedTile)
@@ -483,6 +522,7 @@ export default function AddWebsiteDialog({
           name: wpName.trim(),
           url: wpUrl.trim(),
           portfolio,
+          serverType: serverType || 'Unknown',
           elementorEnabled,
           user: res.user,
           wpUser: wpUser.trim(),
@@ -607,6 +647,12 @@ export default function AddWebsiteDialog({
                 onChange={setPortfolio}
                 disabled={isConnecting}
               />
+              <ServerTypeSelect
+                id="wp-server-type"
+                value={serverType}
+                onChange={setServerType}
+                disabled={isConnecting}
+              />
               <Toggle
                 label="Elementor Enabled"
                 id="wp-elementor"
@@ -644,6 +690,7 @@ export default function AddWebsiteDialog({
               mgPass={mgPass} setMgPass={setMgPass}
               mgStore={mgStore} setMgStore={setMgStore}
               mgPortfolio={mgPortfolio} setMgPortfolio={setMgPortfolio}
+              mgServerType={mgServerType} setMgServerType={setMgServerType}
               isConnecting={isConnecting}
             />
           )}

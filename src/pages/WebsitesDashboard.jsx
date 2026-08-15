@@ -107,6 +107,16 @@ export default function WebsitesDashboard() {
     }
   }
 
+  const [serverTypeFilter, setServerTypeFilter] = useState('All')
+
+  const filterOptions = ['All', 'Caddy', 'LiteSpeed', 'Nginx', 'Apache', 'Unknown']
+
+  const filteredSites = sites.filter(s => {
+    if (serverTypeFilter === 'All') return true
+    const st = s.serverType || s.server_type || s.configData?.serverType || 'Unknown'
+    return st === serverTypeFilter
+  })
+
   if (managedSite) {
     return (
       <ManageWebsitePage
@@ -150,9 +160,24 @@ export default function WebsitesDashboard() {
         </button>
       </div>
 
+      {/* ── Server Type Filter Toolbar ── */}
+      <div className="w1-filter-bar">
+        <span className="w1-filter-label">Server Type:</span>
+        {filterOptions.map(opt => (
+          <button
+            key={opt}
+            type="button"
+            className={`w1-filter-btn ${serverTypeFilter === opt ? 'w1-filter-btn-active' : ''}`}
+            onClick={() => setServerTypeFilter(opt)}
+          >
+            {opt === 'All' ? 'All Servers' : opt}
+          </button>
+        ))}
+      </div>
+
       {/* Website Tiles Grid */}
       <div className="website-tiles-grid">
-        {sites.map(site => (
+        {filteredSites.map(site => (
           <WebsiteTile
             key={site.id}
             site={site}

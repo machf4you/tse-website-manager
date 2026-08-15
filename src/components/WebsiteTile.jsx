@@ -133,9 +133,17 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   let configuredText = totalPages > 0 ? `${configuredPagesCount} of ${totalPages}` : 'Not Configured'
   let configuredVariant = totalPages > 0 ? (configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')) : 'grey'
 
+  let serverTypeValue = site.serverType || site.server_type || site.configData?.serverType || 'Unknown'
+  let serverTypeVariant = 'grey'
+  if (serverTypeValue === 'Caddy') serverTypeVariant = 'blue'
+  else if (serverTypeValue === 'LiteSpeed') serverTypeVariant = 'green'
+  else if (serverTypeValue === 'Nginx') serverTypeVariant = 'purple'
+  else if (serverTypeValue === 'Apache') serverTypeVariant = 'amber'
+
   const liveStatusRows = [
     { label: 'Connection',       value: isConnected ? 'Connected' : 'Disconnected', variant: isConnected ? 'green' : 'red' },
     { label: 'WordPress API',    value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
+    { label: 'Server Type',      value: serverTypeValue, variant: serverTypeVariant },
     { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
     { label: 'Configured',       value: configuredText, variant: configuredVariant },
   ]

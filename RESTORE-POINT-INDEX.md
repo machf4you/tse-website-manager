@@ -14,7 +14,8 @@ Every future restore point must update this file.
 | v1.0-wp | `v1.0-wordpress-import-working` | `2cd1a2c` | 07-08-2026 12:50 | First fully working WordPress integration. Website connection, WordPress sync, Exporter integration, live page inventory import, and W3 Page Management. | Superseded |
 | v1.1-meta | `v1.1-page-metadata-import` | `0e7d1f4` | 07-08-2026 12:58 | Complete WordPress page import metadata. Title, URL, Page Type object mapping, and automatic exclusion rules. | Superseded |
 | v1.2-rules | `v1.2-global-import-rules` | `[AUTO]` | 07-08-2026 13:01 | WordPress Import Rules section created in Global Settings with Auto-Exclusion rules, Default Include rule, WP Object Types reference, and Future Import Rules placeholders. | Superseded |
-| v1.3-w4 | `v1.3-w4-wordpress-seo-write` | `[AUTO]` | 15-08-2026 15:10 | Fixed W4 WordPress write implementation to store Yoast Meta Title, Yoast Meta Description, and H1 content in WordPress REST API. | **Current** |
+| v1.3-w4 | `v1.3-w4-wordpress-seo-write` | `fc56997` | 15-08-2026 15:10 | Fixed W4 WordPress write implementation to store Yoast Meta Title, Yoast Meta Description, and H1 content in WordPress REST API. | Superseded |
+| v1.5-w1 | `v1.5-w1-server-type-field` | `[AUTO]` | 15-08-2026 17:01 | Added permanent W1 Server Type field, connection modal selector, tile status display, and dashboard server type filtering system. | **Current** |
 
 ---
 

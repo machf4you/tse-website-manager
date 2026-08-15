@@ -3,6 +3,7 @@ export const mockSiteTile = {
   name: 'Ascent Builders',
   url: 'https://ascentbuilders.co.uk',
   platform: 'wordpress',
+  serverType: 'Caddy',
   wpUser: 'admin',
   wpPass: '',
   lifecycleStage: 3,
@@ -21,13 +22,14 @@ export const mockSiteTile = {
 }
 
 // ── Factory: build a Stage 3 (Platform Connected) record after WP connection
-export function buildWordPressSite({ name, url, portfolio, elementorEnabled, user, wpUser, wpPass }) {
+export function buildWordPressSite({ name, url, portfolio, serverType, elementorEnabled, user, wpUser, wpPass }) {
   return {
     id: Date.now(),
     name,
     url,
     platform: 'wordpress',
     portfolio,
+    serverType: serverType || 'Unknown',
     elementorEnabled,
     wpUser: wpUser || (user ? user.name : ''),
     wpPass: wpPass || '',
