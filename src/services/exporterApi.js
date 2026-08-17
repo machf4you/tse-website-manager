@@ -17,11 +17,13 @@ export async function fetchTseWordPressExportPackage({
 
   // 1. Normalize Website Base URL
   const cleanUrl = websiteUrl.trim().replace(/\/+$/, '')
-  const endpoint = `${cleanUrl}/wp-json/tse-site-exporter/v1/export`
+  const endpoint = `${cleanUrl}/wp-json/tse-site-exporter/v1/export?nocache=1&t=${Date.now()}`
 
   // 2. Prepare Standard Request Headers
   const headers = {
     'Accept': 'application/json',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
   }
 
   if (username && applicationPassword) {

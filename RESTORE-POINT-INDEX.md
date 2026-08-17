@@ -24,7 +24,8 @@ Every future restore point must update this file.
 | v1.11-w4 | `v1.11-w4-state-persistence-and-live-data-precedence` | `39a132c` | 17-08-2026 10:10 | W4 Page-Selection State Persistence (Ctrl+F5) and Live Audit Data Precedence over stale local overrides. | Superseded |
 | v1.12-v10.4 | `v1.12-bump-version-10.4-live-deployment` | `e326b17` | 17-08-2026 10:16 | Bump build version to 10.4 in src/config/version.js and public/version.json to trigger live deployment indicator. | Superseded |
 | v1.13-sync | `v1.13-authoritative-synced-current-values` | `0586164` | 17-08-2026 10:28 | Authoritative W4 Current Value resolution from freshly synced WordPress exporter data and live audit snapshots. | Superseded |
-| v1.14-v10.5 | `v1.14-bump-version-10.5-live-deployment` | `[AUTO]` | 17-08-2026 10:35 | Bump build version to 10.5 in src/config/version.js and public/version.json to trigger live deployment indicator. | **Current** |
+| v1.14-v10.5 | `v1.14-bump-version-10.5-live-deployment` | `5f53fe3` | 17-08-2026 10:35 | Bump build version to 10.5 in src/config/version.js and public/version.json to trigger live deployment indicator. | Superseded |
+| v1.15-sync | `v1.15-cache-busting-exporter-sync` | `[AUTO]` | 17-08-2026 10:46 | Add cache-busting query params and headers to fetchTseWordPressExportPackage in exporterApi.js. | **Current** |
 
 ---
 
