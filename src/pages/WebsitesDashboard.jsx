@@ -37,11 +37,24 @@ export default function WebsitesDashboard() {
         await triggerLocalStorageMigrationApi()
       } catch (err) {}
 
-      // 2. Fetch latest websites from SQLite API
+      // 2. Fetch latest websites from SQLite API (Authoritative Server State)
       try {
         const apiSites = await getWebsitesApi()
         if (isMounted && Array.isArray(apiSites) && apiSites.length > 0) {
           setSites(apiSites)
+
+          // 3. Authoritative Server State Hydration: Update active managedSite from fresh server record
+          setManagedSiteState(prevManaged => {
+            if (!prevManaged || !prevManaged.id) return prevManaged
+            const freshSite = apiSites.find(s => String(s.id) === String(prevManaged.id))
+            if (freshSite) {
+              try {
+                localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(freshSite))
+              } catch (e) {}
+              return freshSite
+            }
+            return prevManaged
+          })
         }
       } catch (err) {}
     }
