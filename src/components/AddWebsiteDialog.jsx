@@ -242,7 +242,8 @@ export default function AddWebsiteDialog({
 
       const resolvedServerType = editingSite.serverType || editingSite.server_type || cfg.serverType || 'Unknown'
 
-      const isMg = editingSite.platform === 'magento' || editingSite.platform === 'Magento'
+      const rawPlatform = String(editingSite.platform || editingSite.platform_type || '').toLowerCase()
+      const isMg = rawPlatform === 'magento' || Boolean(cfg.mgBackendUrl) || Boolean(editingSite.mgBackendUrl)
       if (isMg) {
         setPlatform('magento')
         setMgName(editingSite.name || '')
@@ -555,6 +556,7 @@ export default function AddWebsiteDialog({
           ...editingSite,
           name: wpName.trim(),
           url: wpUrl.trim(),
+          platform: editingSite?.platform || 'wordpress',
           portfolio,
           serverType: serverType || 'Unknown',
           elementorEnabled,
@@ -563,6 +565,7 @@ export default function AddWebsiteDialog({
           connectedUser: res.user ? res.user.name : wpUser.trim(),
           configData: {
             ...(editingSite?.configData || {}),
+            platform: editingSite?.platform || 'wordpress',
             wpUser: wpUser.trim(),
             wpPass: wpPass.trim(),
             connectedUser: res.user ? res.user.name : wpUser.trim(),
@@ -631,8 +634,15 @@ export default function AddWebsiteDialog({
           </button>
         </div>
 
-        {/* Platform selector */}
-        {!editingSite && (
+        {/* Platform selector (new site) / Permanent Platform Badge (edit existing) */}
+        {editingSite ? (
+          <div className="aw-platform-readonly-badge" style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Platform Classification</span>
+            <span style={{ fontSize: '0.85rem', color: '#34d399', fontWeight: '700', textTransform: 'capitalize' }}>
+              {platform === 'magento' ? 'Magento' : (platform === 'other' ? 'Other' : 'WordPress')} (Permanent)
+            </span>
+          </div>
+        ) : (
           <div className="aw-platform-selector" role="group" aria-label="Select platform">
             {PLATFORMS.map(p => (
               <button

@@ -91,9 +91,18 @@ export default function WebsitesDashboard() {
   }
 
   const handleUpdateWebsite = (updatedSite) => {
-    setSites(prev => prev.map(s => s.id === updatedSite.id ? updatedSite : s))
-    saveWebsiteApi(updatedSite)
+    const rawPlatform = String(updatedSite.platform || updatedSite.platform_type || updatedSite.configData?.platform || '').toLowerCase()
+    const isMg = rawPlatform === 'magento' || Boolean(updatedSite.configData?.mgBackendUrl) || Boolean(updatedSite.mgBackendUrl)
+    const finalSite = {
+      ...updatedSite,
+      platform: isMg ? 'magento' : (updatedSite.platform || 'wordpress')
+    }
+    setSites(prev => prev.map(s => s.id === finalSite.id ? finalSite : s))
+    saveWebsiteApi(finalSite)
     setEditingSite(null)
+    if (managedSite && managedSite.id === finalSite.id) {
+      setManagedSite(finalSite)
+    }
   }
 
   const handleDeleteWebsite = (siteId) => {
