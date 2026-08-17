@@ -21,7 +21,8 @@ Every future restore point must update this file.
 | v1.8-header | `v1.8-global-header-version-indicator` | `474f4cd` | 15-08-2026 17:32 | Moved global deployment/version indicator into far-right of top global application header (header-right), vertically centred, across all routes. | Superseded |
 | v1.9-h1 | `v1.9-w4-elementskit-h1-write` | `c1a1a7d` | 17-08-2026 08:39 | Fixed Elementor & ElementsKit H1 document tree property updates (ekit_heading_title, header_title, title) and extended postmeta payload structure. | Superseded |
 | v1.10-cache | `v1.10-w4-cache-invalidation-and-public-verification` | `a574362` | 17-08-2026 09:09 | Integrated automatic REST cache invalidation (`DELETE /elementor/v1/cache`) and public HTML verification step into W4 Push workflow. | Superseded |
-| v1.11-w4 | `v1.11-w4-state-persistence-and-live-data-precedence` | `[AUTO]` | 17-08-2026 10:10 | W4 Page-Selection State Persistence (Ctrl+F5) and Live Audit Data Precedence over stale local overrides. | **Current** |
+| v1.11-w4 | `v1.11-w4-state-persistence-and-live-data-precedence` | `39a132c` | 17-08-2026 10:10 | W4 Page-Selection State Persistence (Ctrl+F5) and Live Audit Data Precedence over stale local overrides. | Superseded |
+| v1.12-v10.4 | `v1.12-bump-version-10.4-live-deployment` | `[AUTO]` | 17-08-2026 10:16 | Bump build version to 10.4 in src/config/version.js and public/version.json to trigger live deployment indicator. | **Current** |
 
 ---
 
