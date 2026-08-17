@@ -130,8 +130,13 @@
 }
 
 /* ── Header Right (balance spacer) ── */
+/* ── Header Right (Global Deployment Indicator Placement) ── */
 .header-right {
-  /* intentionally empty — mirrors left for true centre alignment */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  height: 100%;
 }
 
 /* ── Content Area ── */
@@ -166,11 +171,7 @@
 @media (max-width: 480px) {
   .app-header {
     padding: 0 0.75rem;
-    grid-template-columns: auto 1fr;
-  }
-
-  .header-right {
-    display: none;
+    grid-template-columns: auto 1fr auto;
   }
 
   .header-divider {

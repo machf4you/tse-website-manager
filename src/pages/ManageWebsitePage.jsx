@@ -94,8 +94,10 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     wpPass: rawSite.wpPass || rawSite.configData?.wpPass || ''
   } : rawSite
 
-  const isMagento = site?.platform === 'magento' || site?.platform === 'Magento'
-  const platformName = isMagento ? 'Magento' : 'WordPress'
+  const platformKey = String(site?.platform || '').toLowerCase()
+  const isMagento = platformKey === 'magento'
+  const isWordPress = platformKey === 'wordpress' || (!isMagento && platformKey !== 'other')
+  const platformName = isMagento ? 'Magento' : (isWordPress ? 'WordPress' : 'Other')
 
   const syncStages = [
     'Preparing synchronisation...',
@@ -583,19 +585,15 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         </div>
 
         <div className="w2-header-actions">
-          <button type="button" className="w2-btn-secondary" id="btn-sync-from-other">
-            Sync from Other
-          </button>
           <button
             type="button"
-            className="w2-btn-amber"
-            id="btn-latest-audit-results"
-            onClick={() => setActiveTab('w3_audit_results')}
+            className="w2-btn-secondary"
+            id="btn-sync-platform"
+            onClick={handleSynchroniseClick}
+            disabled={isSyncing}
           >
-            Latest Audit Results
-          </button>
-          <button type="button" className="w2-btn-emerald" id="btn-run-audit">
-            Run Audit ▷
+            <RefreshCwIcon className={isSyncing ? 'icon-spin' : ''} />
+            {isSyncing ? 'Syncing…' : `Sync from ${platformName}`}
           </button>
         </div>
       </div>
