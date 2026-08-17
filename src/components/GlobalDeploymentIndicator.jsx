@@ -25,17 +25,17 @@ export default function GlobalDeploymentIndicator() {
 
           if (!isMounted) return
 
-          if (liveVer && liveVer !== CURRENT_BUILD_VERSION) {
-            // Live version is newer -> READY state!
-            setTargetVersion(liveVer)
-            setDeployState('ready')
-            try { localStorage.removeItem('tse_deploying_version') } catch (e) {}
-          } else if (buildingVer && buildingVer !== CURRENT_BUILD_VERSION) {
+          if (buildingVer && buildingVer !== liveVer && buildingVer !== CURRENT_BUILD_VERSION) {
             // Build in progress on server -> UPDATING state!
             setTargetVersion(buildingVer)
             setDeployState('updating')
+          } else if (liveVer && liveVer !== CURRENT_BUILD_VERSION) {
+            // Live version is newer & ready -> READY state!
+            setTargetVersion(liveVer)
+            setDeployState('ready')
+            try { localStorage.removeItem('tse_deploying_version') } catch (e) {}
           } else if (pendingTarget && pendingTarget !== CURRENT_BUILD_VERSION) {
-            // Deployment triggered -> UPDATING state!
+            // Local deployment triggered -> UPDATING state!
             setTargetVersion(pendingTarget)
             setDeployState('updating')
           } else {
