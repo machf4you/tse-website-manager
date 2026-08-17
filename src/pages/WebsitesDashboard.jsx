@@ -109,11 +109,17 @@ export default function WebsitesDashboard() {
 
   const filterOptions = ['All', 'Caddy', 'LiteSpeed', 'Nginx', 'Apache', 'Unknown']
 
-  const filteredSites = sites.filter(s => {
-    if (serverTypeFilter === 'All') return true
-    const st = s.serverType || s.server_type || s.configData?.serverType || 'Unknown'
-    return st === serverTypeFilter
-  })
+  const filteredSites = sites
+    .filter(s => {
+      if (serverTypeFilter === 'All') return true
+      const st = s.serverType || s.server_type || s.configData?.serverType || 'Unknown'
+      return st === serverTypeFilter
+    })
+    .sort((a, b) => {
+      const nameA = String(a.name || a.title || a.siteName || '').trim()
+      const nameB = String(b.name || b.title || b.siteName || '').trim()
+      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
+    })
 
   if (managedSite) {
     return (
