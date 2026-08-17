@@ -143,8 +143,8 @@ export function normalizeImportedPage(p, siteUrl = '') {
   const url = rawUrl
 
   // 3. Automatic Exclusion Rules
-  const lowerTitle = title.toLowerCase()
-  const lowerUrl = url.toLowerCase()
+  const lowerTitle = String(title || '').toLowerCase()
+  const lowerUrl = String(url || '').toLowerCase()
 
   const exclusionPatterns = [
     // Legal / Policy Pages
@@ -369,11 +369,15 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
     const itemKeyId = String(item.id || item.ID || '')
     const seoMatch = seoMap.get(itemKeyId) || (rawUrl ? seoMap.get(rawUrl) : null)
 
+    const safeTitle = seoMatch?.title || (typeof item?.title === 'string' ? item.title : (item?.title?.rendered || ''))
+    const safeDesc = seoMatch?.description || item?.metaDescription || item?.yoast_head_json?.description || item?.meta?.yoast_wpseo_metadesc || (typeof item?.excerpt === 'string' ? item.excerpt : (item?.excerpt?.rendered || ''))
+    const safeMetaTitle = seoMatch?.title || item?.metaTitle || item?.yoast_head_json?.title || item?.meta?.yoast_wpseo_title || safeTitle
+
     const mergedItem = {
       ...item,
-      metaTitle: seoMatch?.title || item.metaTitle || item.yoast_head_json?.title || item.meta?.yoast_wpseo_title || (typeof item.title === 'string' ? item.title : item.title?.rendered),
-      metaDescription: seoMatch?.description || item.metaDescription || item.yoast_head_json?.description || item.meta?.yoast_wpseo_metadesc || (typeof item.excerpt === 'string' ? item.excerpt : item.excerpt?.rendered || ''),
-      title: seoMatch?.title || (typeof item.title === 'string' ? item.title : item.title?.rendered || item.title)
+      metaTitle: safeMetaTitle,
+      metaDescription: safeDesc,
+      title: safeTitle || 'Untitled Page'
     }
 
     uniqueItems.push(mergedItem)
