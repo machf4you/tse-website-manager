@@ -315,7 +315,46 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
       })
     } catch (_yErr) {}
 
-    return { success: true, data: postData }
+    // ── 5. Cache Invalidation (Elementor & WordPress Object Cache) ──
+    try {
+      console.log('[WP_WRITE_TRACE] Invalidation: Purging Elementor & WordPress Cache...')
+      await fetch(`${base}/wp-json/elementor/v1/cache`, {
+        method: 'DELETE',
+        headers: { Authorization: authHeader }
+      })
+    } catch (_cacheErr) {
+      console.warn('[WP_WRITE_TRACE] Cache purge call warning:', _cacheErr)
+    }
+
+    // ── 6. Public Frontend Verification ──
+    let publicVerified = false
+    if (h1) {
+      try {
+        const pageUrl = postData.link || `${base}/?p=${numericId}`
+        const verifyUrl = `${pageUrl}${pageUrl.includes('?') ? '&' : '?'}tse_verify=${Date.now()}`
+        console.log('[WP_WRITE_TRACE] Public Verification Fetching:', verifyUrl)
+        const pubRes = await fetch(verifyUrl, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        })
+        if (pubRes.ok) {
+          const pubHtml = await pubRes.text()
+          const cleanH1Str = h1.trim()
+          if (pubHtml.includes(cleanH1Str)) {
+            console.log('[WP_WRITE_TRACE] Public H1 Verification SUCCESS! HTML contains new H1.')
+            publicVerified = true
+          } else {
+            console.warn('[WP_WRITE_TRACE] Public H1 Verification Warning: H1 text not found in public response yet.')
+          }
+        }
+      } catch (_vErr) {
+        console.warn('[WP_WRITE_TRACE] Public verification fetch error:', _vErr)
+      }
+    }
+
+    return { success: true, data: postData, publicVerified }
   } catch (e) {
     console.error('[WP_WRITE_TRACE] Network/CORS Exception:', e)
     return {

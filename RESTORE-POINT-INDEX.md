@@ -19,7 +19,8 @@ Every future restore point must update this file.
 | v1.6-deploy | `v1.6-global-deployment-indicator` | `890be98` | 15-08-2026 17:15 | Implemented viewport-fixed global deployment & update indicator component (Updating V10.3... -> V10.3 READY - Ctrl+F5) with cache-busting version polling. | Superseded |
 | v1.7-layout | `v1.7-w1-header-layout-rearrange` | `d5497d8` | 15-08-2026 17:28 | Rearranged W1 header into Row 1 (Heading + Top-Right Version/Deployment Indicator) and Row 2 (W1 Badge + Server Type Filters + Right Add Website Button). | Superseded |
 | v1.8-header | `v1.8-global-header-version-indicator` | `474f4cd` | 15-08-2026 17:32 | Moved global deployment/version indicator into far-right of top global application header (header-right), vertically centred, across all routes. | Superseded |
-| v1.9-h1 | `v1.9-w4-elementskit-h1-write` | `[AUTO]` | 17-08-2026 08:39 | Fixed Elementor & ElementsKit H1 document tree property updates (ekit_heading_title, header_title, title) and extended postmeta payload structure. | **Current** |
+| v1.9-h1 | `v1.9-w4-elementskit-h1-write` | `c1a1a7d` | 17-08-2026 08:39 | Fixed Elementor & ElementsKit H1 document tree property updates (ekit_heading_title, header_title, title) and extended postmeta payload structure. | Superseded |
+| v1.10-cache | `v1.10-w4-cache-invalidation-and-public-verification` | `[AUTO]` | 17-08-2026 09:09 | Integrated automatic REST cache invalidation (`DELETE /elementor/v1/cache`) and public HTML verification step into W4 Push workflow. | **Current** |
 
 ---
 
