@@ -240,7 +240,9 @@ export function normalizeImportedPage(p, siteUrl = '') {
     return ''
   }
 
-  const contentText = extractContentText(p)
+  // Resolve explicit metaTitle & metaDescription from Yoast / REST metadata before deleting heavy objects
+  const metaTitle = p.metaTitle || p.yoast_head_json?.title || p.meta?.yoast_wpseo_title || title
+  const metaDescription = p.metaDescription || p.yoast_head_json?.description || p.meta?.yoast_wpseo_metadesc || ''
 
   // Remove heavy WP REST AST objects (yoast_head_json, _links, acf) to ensure quota-safe localStorage persistence
   const cleanPage = { ...p }
@@ -255,6 +257,8 @@ export function normalizeImportedPage(p, siteUrl = '') {
     ...cleanPage,
     id: p.id || p.ID || url,
     title,
+    metaTitle,
+    metaDescription,
     url,
     link: url,
     content: contentText,
@@ -365,12 +369,12 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
     const itemKeyId = String(item.id || item.ID || '')
     const seoMatch = seoMap.get(itemKeyId) || (rawUrl ? seoMap.get(rawUrl) : null)
 
-    const mergedItem = seoMatch ? {
+    const mergedItem = {
       ...item,
-      metaTitle: seoMatch.title || item.metaTitle || item.title,
-      metaDescription: seoMatch.description || item.metaDescription || item.description,
-      title: seoMatch.title || item.title
-    } : item
+      metaTitle: seoMatch?.title || item.metaTitle || item.yoast_head_json?.title || item.meta?.yoast_wpseo_title || (typeof item.title === 'string' ? item.title : item.title?.rendered),
+      metaDescription: seoMatch?.description || item.metaDescription || item.yoast_head_json?.description || item.meta?.yoast_wpseo_metadesc || (typeof item.excerpt === 'string' ? item.excerpt : item.excerpt?.rendered || ''),
+      title: seoMatch?.title || (typeof item.title === 'string' ? item.title : item.title?.rendered || item.title)
+    }
 
     uniqueItems.push(mergedItem)
   }

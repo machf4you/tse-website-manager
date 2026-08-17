@@ -27,7 +27,8 @@ Every future restore point must update this file.
 | v1.14-v10.5 | `v1.14-bump-version-10.5-live-deployment` | `5f53fe3` | 17-08-2026 10:35 | Bump build version to 10.5 in src/config/version.js and public/version.json to trigger live deployment indicator. | Superseded |
 | v1.15-sync | `v1.15-cache-busting-exporter-sync` | `b10bb83` | 17-08-2026 10:46 | Add cache-busting query params and headers to fetchTseWordPressExportPackage in exporterApi.js. | Superseded |
 | v1.16-updating | `v1.16-global-indicator-updating-state` | `2185169` | 17-08-2026 10:49 | Add active updating state detection (Updating V10.X...) to GlobalDeploymentIndicator. | Superseded |
-| v1.17-modal | `v1.17-modal-push-and-sync-visual-loading-indicators` | `[AUTO]` | 17-08-2026 10:57 | Add glowing borders, animated spinners, and processing subtitles for Push to WP and Sync Data steps in W4 modal. | **Current** |
+| v1.17-modal | `v1.17-modal-push-and-sync-visual-loading-indicators` | `433546c` | 17-08-2026 10:57 | Add glowing borders, animated spinners, and processing subtitles for Push to WP and Sync Data steps in W4 modal. | Superseded |
+| v1.18-yoast | `v1.18-yoast-rest-metadata-extraction-fix` | `[AUTO]` | 17-08-2026 11:08 | Preserve yoast_head_json.title and description in packageExtractor.js upon Sync Data. | **Current** |
 
 ---
 
