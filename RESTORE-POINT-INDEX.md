@@ -14,24 +14,15 @@ Every future restore point must update this file.
 | v1.0-wp | `v1.0-wordpress-import-working` | `2cd1a2c` | 07-08-2026 12:50 | First fully working WordPress integration. Website connection, WordPress sync, Exporter integration, live page inventory import, and W3 Page Management. | Superseded |
 | v1.1-meta | `v1.1-page-metadata-import` | `0e7d1f4` | 07-08-2026 12:58 | Complete WordPress page import metadata. Title, URL, Page Type object mapping, and automatic exclusion rules. | Superseded |
 | v1.2-rules | `v1.2-global-import-rules` | `[AUTO]` | 07-08-2026 13:01 | WordPress Import Rules section created in Global Settings with Auto-Exclusion rules, Default Include rule, WP Object Types reference, and Future Import Rules placeholders. | Superseded |
+| v1.21-guard | `v1.21-w4-hydration-render-guard` | `2488445` | 17-08-2026 12:08 | W4 Route Hydration Render Guard to prevent PageAuditResultsPage rendering against unhydrated {} page on Ctrl+F5. | Superseded |
+| v1.22-rollback | `v1.22-rollback-to-v1.10` | `[AUTO]` | 17-08-2026 12:12 | Exact 1-to-1 rollback of application codebase to Git tag v1.10-w4-cache-invalidation-and-public-verification (a574362). | **Current** |
 | v1.3-w4 | `v1.3-w4-wordpress-seo-write` | `fc56997` | 15-08-2026 15:10 | Fixed W4 WordPress write implementation to store Yoast Meta Title, Yoast Meta Description, and H1 content in WordPress REST API. | Superseded |
 | v1.5-w1 | `v1.5-w1-server-type-field` | `dc7cd4b` | 15-08-2026 17:01 | Added permanent W1 Server Type field, connection modal selector, tile status display, and dashboard server type filtering system. | Superseded |
 | v1.6-deploy | `v1.6-global-deployment-indicator` | `890be98` | 15-08-2026 17:15 | Implemented viewport-fixed global deployment & update indicator component (Updating V10.3... -> V10.3 READY - Ctrl+F5) with cache-busting version polling. | Superseded |
 | v1.7-layout | `v1.7-w1-header-layout-rearrange` | `d5497d8` | 15-08-2026 17:28 | Rearranged W1 header into Row 1 (Heading + Top-Right Version/Deployment Indicator) and Row 2 (W1 Badge + Server Type Filters + Right Add Website Button). | Superseded |
 | v1.8-header | `v1.8-global-header-version-indicator` | `474f4cd` | 15-08-2026 17:32 | Moved global deployment/version indicator into far-right of top global application header (header-right), vertically centred, across all routes. | Superseded |
 | v1.9-h1 | `v1.9-w4-elementskit-h1-write` | `c1a1a7d` | 17-08-2026 08:39 | Fixed Elementor & ElementsKit H1 document tree property updates (ekit_heading_title, header_title, title) and extended postmeta payload structure. | Superseded |
-| v1.10-cache | `v1.10-w4-cache-invalidation-and-public-verification` | `a574362` | 17-08-2026 09:09 | Integrated automatic REST cache invalidation (`DELETE /elementor/v1/cache`) and public HTML verification step into W4 Push workflow. | Superseded |
-| v1.11-w4 | `v1.11-w4-state-persistence-and-live-data-precedence` | `39a132c` | 17-08-2026 10:10 | W4 Page-Selection State Persistence (Ctrl+F5) and Live Audit Data Precedence over stale local overrides. | Superseded |
-| v1.12-v10.4 | `v1.12-bump-version-10.4-live-deployment` | `e326b17` | 17-08-2026 10:16 | Bump build version to 10.4 in src/config/version.js and public/version.json to trigger live deployment indicator. | Superseded |
-| v1.13-sync | `v1.13-authoritative-synced-current-values` | `0586164` | 17-08-2026 10:28 | Authoritative W4 Current Value resolution from freshly synced WordPress exporter data and live audit snapshots. | Superseded |
-| v1.14-v10.5 | `v1.14-bump-version-10.5-live-deployment` | `5f53fe3` | 17-08-2026 10:35 | Bump build version to 10.5 in src/config/version.js and public/version.json to trigger live deployment indicator. | Superseded |
-| v1.15-sync | `v1.15-cache-busting-exporter-sync` | `b10bb83` | 17-08-2026 10:46 | Add cache-busting query params and headers to fetchTseWordPressExportPackage in exporterApi.js. | Superseded |
-| v1.16-updating | `v1.16-global-indicator-updating-state` | `2185169` | 17-08-2026 10:49 | Add active updating state detection (Updating V10.X...) to GlobalDeploymentIndicator. | Superseded |
-| v1.17-modal | `v1.17-modal-push-and-sync-visual-loading-indicators` | `433546c` | 17-08-2026 10:57 | Add glowing borders, animated spinners, and processing subtitles for Push to WP and Sync Data steps in W4 modal. | Superseded |
-| v1.18-yoast | `v1.18-yoast-rest-metadata-extraction-fix` | `5fce865` | 17-08-2026 11:08 | Preserve yoast_head_json.title and description in packageExtractor.js upon Sync Data. | Superseded |
-| v1.19-building | `v1.19-building-version-priority-order` | `bd52ea0` | 17-08-2026 11:47 | Prioritize buildingVer evaluation in GlobalDeploymentIndicator to display active Updating V10.X... state. | Superseded |
-| v1.20-nullsafe | `v1.20-package-extractor-null-safety` | `89f9012` | 17-08-2026 12:01 | Add null-safe property evaluation in packageExtractor.js to prevent component unmounts. | Superseded |
-| v1.21-guard | `v1.21-w4-hydration-render-guard` | `[AUTO]` | 17-08-2026 12:08 | W4 Route Hydration Render Guard to prevent PageAuditResultsPage rendering against unhydrated {} page on Ctrl+F5. | **Current** |
+| v1.10-cache | `v1.10-w4-cache-invalidation-and-public-verification` | `[AUTO]` | 17-08-2026 09:09 | Integrated automatic REST cache invalidation (`DELETE /elementor/v1/cache`) and public HTML verification step into W4 Push workflow. | **Current** |
 
 ---
 

@@ -14,30 +14,18 @@ export default function GlobalDeploymentIndicator() {
 
     async function checkLiveVersion() {
       try {
-        // Cache-busting fetch with same-origin credentials to check currently deployed version on host
-        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store', credentials: 'same-origin' })
+        // Cache-busting fetch to check currently deployed version on host
+        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
           const liveVer = String(data.version || '').trim()
-          const buildingVer = String(data.building || '').trim()
-          let pendingTarget = null
-          try { pendingTarget = localStorage.getItem('tse_deploying_version') } catch (e) {}
 
           if (!isMounted) return
 
-          if (buildingVer && buildingVer !== liveVer && buildingVer !== CURRENT_BUILD_VERSION) {
-            // Build in progress on server -> UPDATING state!
-            setTargetVersion(buildingVer)
-            setDeployState('updating')
-          } else if (liveVer && liveVer !== CURRENT_BUILD_VERSION) {
-            // Live version is newer & ready -> READY state!
+          if (liveVer && liveVer !== CURRENT_BUILD_VERSION) {
+            // Live version is newer -> READY state!
             setTargetVersion(liveVer)
             setDeployState('ready')
-            try { localStorage.removeItem('tse_deploying_version') } catch (e) {}
-          } else if (pendingTarget && pendingTarget !== CURRENT_BUILD_VERSION) {
-            // Local deployment triggered -> UPDATING state!
-            setTargetVersion(pendingTarget)
-            setDeployState('updating')
           } else {
             // Live version matches loaded version -> IDLE / LIVE state
             setDeployState('idle')

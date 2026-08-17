@@ -46,6 +46,7 @@ export default function PageAuditResultsPage({
 
   // Allow selecting any page from the dropdown, with localStorage persistence
   const [selectedUrl, setSelectedUrl] = useState(() => {
+    if (page?.url) return page.url
     try {
       const saved = localStorage.getItem(selectedUrlStorageKey)
       if (saved && pagesList.some(p => p.url === saved)) return saved
@@ -57,14 +58,7 @@ export default function PageAuditResultsPage({
 
   useEffect(() => {
     if (page?.url && page.url !== selectedUrl) {
-      try {
-        const saved = localStorage.getItem(selectedUrlStorageKey)
-        if (!saved || saved === page.url) {
-          setSelectedUrl(page.url)
-        }
-      } catch (e) {
-        setSelectedUrl(page.url)
-      }
+      setSelectedUrl(page.url)
     }
   }, [page?.url])
 
@@ -123,36 +117,19 @@ export default function PageAuditResultsPage({
     if (matchedFromList) {
       return matchedFromList
     }
-    return page || pagesList[0] || null
+    return page || pagesList[0] || {}
   })()
-
-  if (!rawCurrentPage || !rawCurrentPage.url) {
-    return (
-      <div className="page-audit-results-page" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
-        <div style={{ padding: '28px', background: 'rgba(30,41,59,0.7)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '480px', margin: '40px auto' }}>
-          <div className="deploy-spinner" style={{ margin: '0 auto 14px auto', width: '26px', height: '26px', borderWidth: '3px' }} />
-          <h3 style={{ color: '#f8fafc', fontSize: '1.05rem', marginBottom: '6px' }}>Loading Page Configuration...</h3>
-          <p style={{ fontSize: '0.84rem', color: '#94a3b8', margin: 0 }}>Restoring page details and audit parameters...</p>
-        </div>
-      </div>
-    )
-  }
 
   const snap = liveAuditData?.page_snapshot || {}
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
   const currentPage = {
     ...rawCurrentPage,
     ...overrideObj,
-    title: liveAuditData ? (snap.title || rawCurrentPage.title || overrideObj.proposedTitle)
-      : (overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title),
-    proposedTitle: liveAuditData ? (snap.title || rawCurrentPage.proposedTitle || overrideObj.proposedTitle)
-      : (overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title),
-    metaTitle: liveAuditData ? (snap.title || rawCurrentPage.metaTitle || overrideObj.metaTitle)
-      : (overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || snap.title || rawCurrentPage.title),
-    metaDescription: liveAuditData ? (snap.meta_description !== undefined ? snap.meta_description : (rawCurrentPage.metaDescription || overrideObj.metaDescription || ''))
-      : (overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : (rawCurrentPage.metaDescription || snap.meta_description || '')),
-    h1: liveAuditData ? ((Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.h1 || overrideObj.h1 || '')
-      : (overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '')),
+    title: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title,
+    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title,
+    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || snap.title || rawCurrentPage.title,
+    metaDescription: overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : (rawCurrentPage.metaDescription || snap.meta_description || ''),
+    h1: overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || ''),
   }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {
@@ -539,7 +516,7 @@ export default function PageAuditResultsPage({
       {
         id: 'meta_title',
         name: 'Meta Title',
-        currentValue: snap.title || rawCurrentPage.metaTitle || rawCurrentPage.title || displayTitle,
+        currentValue: snap.title || displayTitle,
         hasTargetPhrase: hasTitleTarget,
         status: titleStatus,
         recommendation: titleStatus === 'Pass' ? '—' : (titleCheck?.detail || `Add target phrase "${targetPhrase}" to Meta Title`),
@@ -548,7 +525,7 @@ export default function PageAuditResultsPage({
       {
         id: 'meta_description',
         name: 'Meta Description',
-        currentValue: snap.meta_description || rawCurrentPage.metaDescription || '—',
+        currentValue: snap.meta_description || '—',
         hasTargetPhrase: hasDescTarget,
         status: descStatus,
         recommendation: descRec,
@@ -557,7 +534,7 @@ export default function PageAuditResultsPage({
       {
         id: 'h1',
         name: 'H1',
-        currentValue: (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.h1 || '—',
+        currentValue: (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '—',
         hasTargetPhrase: breakdown.h1 === 'Yes',
         status: h1Status,
         recommendation: h1Status === 'Pass' ? '—' : (h1Check?.detail || `Add target phrase "${targetPhrase}" to H1 heading`),

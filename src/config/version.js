@@ -1,2 +1,2 @@
-export const CURRENT_BUILD_VERSION = '10.12'
-export const CURRENT_BUILD_LABEL = 'v10.12 LIVE'
+export const CURRENT_BUILD_VERSION = '10.13'
+export const CURRENT_BUILD_LABEL = 'v10.13 LIVE'

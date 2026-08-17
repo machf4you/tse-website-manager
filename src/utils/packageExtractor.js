@@ -143,8 +143,8 @@ export function normalizeImportedPage(p, siteUrl = '') {
   const url = rawUrl
 
   // 3. Automatic Exclusion Rules
-  const lowerTitle = String(title || '').toLowerCase()
-  const lowerUrl = String(url || '').toLowerCase()
+  const lowerTitle = title.toLowerCase()
+  const lowerUrl = url.toLowerCase()
 
   const exclusionPatterns = [
     // Legal / Policy Pages
@@ -240,9 +240,7 @@ export function normalizeImportedPage(p, siteUrl = '') {
     return ''
   }
 
-  // Resolve explicit metaTitle & metaDescription from Yoast / REST metadata before deleting heavy objects
-  const metaTitle = p.metaTitle || p.yoast_head_json?.title || p.meta?.yoast_wpseo_title || title
-  const metaDescription = p.metaDescription || p.yoast_head_json?.description || p.meta?.yoast_wpseo_metadesc || ''
+  const contentText = extractContentText(p)
 
   // Remove heavy WP REST AST objects (yoast_head_json, _links, acf) to ensure quota-safe localStorage persistence
   const cleanPage = { ...p }
@@ -257,8 +255,6 @@ export function normalizeImportedPage(p, siteUrl = '') {
     ...cleanPage,
     id: p.id || p.ID || url,
     title,
-    metaTitle,
-    metaDescription,
     url,
     link: url,
     content: contentText,
@@ -338,22 +334,6 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
   const rawPosts = extractPostsFromPackage(pkg)
   const combined = [...rawPosts, ...rawPages]
 
-  // Parse seo-data.json if present in package
-  const unwrappedPkg = unwrapPackageData(pkg)
-  const seoDataRaw = unwrappedPkg ? (unwrappedPkg['seo-data.json'] || unwrappedPkg.seoData || unwrappedPkg.seo_data) : null
-  const seoMap = new Map()
-  if (seoDataRaw) {
-    try {
-      const seoList = typeof seoDataRaw === 'string' ? JSON.parse(seoDataRaw) : seoDataRaw
-      if (Array.isArray(seoList)) {
-        seoList.forEach(s => {
-          if (s && s.id !== undefined) seoMap.set(String(s.id), s)
-          if (s && s.url) seoMap.set(String(s.url).trim().toLowerCase(), s)
-        })
-      }
-    } catch (e) {}
-  }
-
   const seenUrls = new Set()
   const uniqueItems = []
 
@@ -365,22 +345,7 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
     if (rawUrl) {
       seenUrls.add(rawUrl)
     }
-
-    const itemKeyId = String(item.id || item.ID || '')
-    const seoMatch = seoMap.get(itemKeyId) || (rawUrl ? seoMap.get(rawUrl) : null)
-
-    const safeTitle = seoMatch?.title || (typeof item?.title === 'string' ? item.title : (item?.title?.rendered || ''))
-    const safeDesc = seoMatch?.description || item?.metaDescription || item?.yoast_head_json?.description || item?.meta?.yoast_wpseo_metadesc || (typeof item?.excerpt === 'string' ? item.excerpt : (item?.excerpt?.rendered || ''))
-    const safeMetaTitle = seoMatch?.title || item?.metaTitle || item?.yoast_head_json?.title || item?.meta?.yoast_wpseo_title || safeTitle
-
-    const mergedItem = {
-      ...item,
-      metaTitle: safeMetaTitle,
-      metaDescription: safeDesc,
-      title: safeTitle || 'Untitled Page'
-    }
-
-    uniqueItems.push(mergedItem)
+    uniqueItems.push(item)
   }
 
   return uniqueItems.map(page => normalizeImportedPage(page, siteUrl))

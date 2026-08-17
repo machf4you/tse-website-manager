@@ -368,7 +368,6 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
                   // Material SEO change detected! Flag page for re-audit (Audited ?)
                   record.isStale = true
                   record.staleReason = `Page content or SEO elements modified in ${platformName}`
-                  delete record.auditResult
                   auditsUpdated = true
                 } else if (prevFingerprint && prevFingerprint === newFingerprint) {
                   // No material SEO change: Keep Audited ✓ (Green)
@@ -384,39 +383,6 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
             }
           } catch (e) {
             console.error('Failed during post-sync audit freshness tracking:', e)
-          }
-
-          // Refresh local saved configs with freshly synced WordPress values
-          try {
-            const siteIdKey = getSiteConfigsStorageKey(site)
-            const existingConfigs = JSON.parse(localStorage.getItem(siteIdKey) || '{}')
-            let configsUpdated = false
-
-            resPages.forEach(p => {
-              const pageKey = p.id || p.url
-              const config = existingConfigs[pageKey] || (p.url ? existingConfigs[p.url] : null)
-              if (config) {
-                if (p.metaTitle || p.title) {
-                  config.metaTitle = p.metaTitle || p.title
-                  config.proposedTitle = p.metaTitle || p.title
-                }
-                if (p.metaDescription) {
-                  config.metaDescription = p.metaDescription
-                }
-                if (p.h1) {
-                  config.h1 = p.h1
-                }
-                configsUpdated = true
-              }
-            })
-
-            if (configsUpdated) {
-              localStorage.setItem(siteIdKey, JSON.stringify(existingConfigs))
-              savePageConfigsApi(site.id, existingConfigs).catch(() => {})
-              setApiConfigs(existingConfigs)
-            }
-          } catch (e) {
-            console.error('Failed to update page configs post-sync:', e)
           }
 
           // Save package to SQLite API backend (updates wp_packages + websites.sync_status in one transaction)
@@ -474,32 +440,10 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   }
 
   if (activeTab === 'w3_audit_results' || activeTab === 'w4') {
-    const selectedUrlStorageKey = site?.id ? `tse_audit_selected_url_${site.id}` : 'tse_audit_selected_url_default'
-    const savedAuditUrl = (() => {
-      try {
-        return localStorage.getItem(selectedUrlStorageKey)
-      } catch (e) {
-        return null
-      }
-    })()
-    const activeAuditPage = selectedPageForAudit || (savedAuditUrl ? exportedPages.find(p => p.url === savedAuditUrl || p.id === savedAuditUrl) : null) || exportedPages[0]
-
-    if (!isPackageHydrated || !activeAuditPage) {
-      return (
-        <div className="manage-website-page" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
-          <div className="w2-header-card" style={{ padding: '28px', background: 'rgba(30,41,59,0.7)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '480px', margin: '40px auto' }}>
-            <div className="deploy-spinner" style={{ margin: '0 auto 14px auto', width: '26px', height: '26px', borderWidth: '3px' }} />
-            <h3 style={{ color: '#f8fafc', fontSize: '1.05rem', marginBottom: '6px' }}>Loading W4 Page Audit...</h3>
-            <p style={{ fontSize: '0.84rem', color: '#94a3b8', margin: 0 }}>Restoring page data and website audit results.</p>
-          </div>
-        </div>
-      )
-    }
-
     return (
       <PageAuditResultsPage
         site={site}
-        page={activeAuditPage}
+        page={selectedPageForAudit || exportedPages[0]}
         pagesList={exportedPages}
         onBack={() => setActiveTab('w3')}
         onSyncFromWordPress={handleSynchroniseClick}
@@ -507,12 +451,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         onNavigateToInternalLinking={(url) => {
           if (url) {
             const matched = exportedPages.find(p => p.url === url)
-            if (matched) {
-              setSelectedPageForAudit(matched)
-              try {
-                localStorage.setItem(selectedUrlStorageKey, matched.url)
-              } catch (e) {}
-            }
+            if (matched) setSelectedPageForAudit(matched)
           }
           setActiveTab('w4_internal_linking')
         }}

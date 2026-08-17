@@ -342,8 +342,7 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
         if (pubRes.ok) {
           const pubHtml = await pubRes.text()
           const cleanH1Str = h1.trim()
-          const htmlEncodedH1Str = cleanH1Str.replace(/&/g, '&amp;')
-          if (pubHtml.includes(cleanH1Str) || pubHtml.includes(htmlEncodedH1Str)) {
+          if (pubHtml.includes(cleanH1Str)) {
             console.log('[WP_WRITE_TRACE] Public H1 Verification SUCCESS! HTML contains new H1.')
             publicVerified = true
           } else {
