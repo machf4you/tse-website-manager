@@ -218,8 +218,15 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
         function updateElementorHeadingNodes(nodes) {
           if (!Array.isArray(nodes)) return
           for (const node of nodes) {
-            if (node.widgetType === 'heading' || node.widgetType === 'elementskit-heading' || node.widgetType === 'theme-page-title') {
-              if (node.settings) node.settings.title = h1
+            const wType = String(node.widgetType || '').toLowerCase()
+            const isHeadingNode = wType === 'heading' || wType === 'elementskit-heading' || wType === 'ekit-heading' || wType === 'theme-page-title' || (node.settings && (node.settings.title !== undefined || node.settings.ekit_heading_title !== undefined))
+
+            if (isHeadingNode && node.settings) {
+              node.settings.title = h1
+              node.settings.ekit_heading_title = h1
+              node.settings.header_title = h1
+              node.settings.ekit_heading_title_title = h1
+              node.settings.heading_title = h1
             }
             if (Array.isArray(node.elements)) updateElementorHeadingNodes(node.elements)
           }
@@ -236,6 +243,12 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     ...(updatedContent !== undefined ? { content: updatedContent } : {}),
     yoast_wpseo_title: metaTitle,
     yoast_wpseo_metadesc: metaDescription,
+    ...(updatedElementorJson ? { _elementor_data: updatedElementorJson, elementor_data: updatedElementorJson } : {}),
+    meta_input: {
+      ...(updatedElementorJson ? { _elementor_data: updatedElementorJson, elementor_data: updatedElementorJson } : {}),
+      _yoast_wpseo_title: metaTitle,
+      _yoast_wpseo_metadesc: metaDescription
+    },
     meta: {
       _yoast_wpseo_title: metaTitle,
       _yoast_wpseo_metadesc: metaDescription,
