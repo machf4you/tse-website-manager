@@ -30,7 +30,8 @@ Every future restore point must update this file.
 | v1.17-modal | `v1.17-modal-push-and-sync-visual-loading-indicators` | `433546c` | 17-08-2026 10:57 | Add glowing borders, animated spinners, and processing subtitles for Push to WP and Sync Data steps in W4 modal. | Superseded |
 | v1.18-yoast | `v1.18-yoast-rest-metadata-extraction-fix` | `5fce865` | 17-08-2026 11:08 | Preserve yoast_head_json.title and description in packageExtractor.js upon Sync Data. | Superseded |
 | v1.19-building | `v1.19-building-version-priority-order` | `bd52ea0` | 17-08-2026 11:47 | Prioritize buildingVer evaluation in GlobalDeploymentIndicator to display active Updating V10.X... state. | Superseded |
-| v1.20-nullsafe | `v1.20-package-extractor-null-safety` | `[AUTO]` | 17-08-2026 12:01 | Add null-safe property evaluation in packageExtractor.js to prevent component unmounts. | **Current** |
+| v1.20-nullsafe | `v1.20-package-extractor-null-safety` | `89f9012` | 17-08-2026 12:01 | Add null-safe property evaluation in packageExtractor.js to prevent component unmounts. | Superseded |
+| v1.21-guard | `v1.21-w4-hydration-render-guard` | `[AUTO]` | 17-08-2026 12:08 | W4 Route Hydration Render Guard to prevent PageAuditResultsPage rendering against unhydrated {} page on Ctrl+F5. | **Current** |
 
 ---
 
