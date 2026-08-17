@@ -19,6 +19,9 @@ export default function GlobalDeploymentIndicator() {
         if (res.ok) {
           const data = await res.json()
           const liveVer = String(data.version || '').trim()
+          const buildingVer = String(data.building || '').trim()
+          let pendingTarget = null
+          try { pendingTarget = localStorage.getItem('tse_deploying_version') } catch (e) {}
 
           if (!isMounted) return
 
@@ -26,6 +29,15 @@ export default function GlobalDeploymentIndicator() {
             // Live version is newer -> READY state!
             setTargetVersion(liveVer)
             setDeployState('ready')
+            try { localStorage.removeItem('tse_deploying_version') } catch (e) {}
+          } else if (buildingVer && buildingVer !== CURRENT_BUILD_VERSION) {
+            // Build in progress on server -> UPDATING state!
+            setTargetVersion(buildingVer)
+            setDeployState('updating')
+          } else if (pendingTarget && pendingTarget !== CURRENT_BUILD_VERSION) {
+            // Deployment triggered -> UPDATING state!
+            setTargetVersion(pendingTarget)
+            setDeployState('updating')
           } else {
             // Live version matches loaded version -> IDLE / LIVE state
             setDeployState('idle')

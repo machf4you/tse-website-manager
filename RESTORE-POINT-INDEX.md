@@ -25,7 +25,8 @@ Every future restore point must update this file.
 | v1.12-v10.4 | `v1.12-bump-version-10.4-live-deployment` | `e326b17` | 17-08-2026 10:16 | Bump build version to 10.4 in src/config/version.js and public/version.json to trigger live deployment indicator. | Superseded |
 | v1.13-sync | `v1.13-authoritative-synced-current-values` | `0586164` | 17-08-2026 10:28 | Authoritative W4 Current Value resolution from freshly synced WordPress exporter data and live audit snapshots. | Superseded |
 | v1.14-v10.5 | `v1.14-bump-version-10.5-live-deployment` | `5f53fe3` | 17-08-2026 10:35 | Bump build version to 10.5 in src/config/version.js and public/version.json to trigger live deployment indicator. | Superseded |
-| v1.15-sync | `v1.15-cache-busting-exporter-sync` | `[AUTO]` | 17-08-2026 10:46 | Add cache-busting query params and headers to fetchTseWordPressExportPackage in exporterApi.js. | **Current** |
+| v1.15-sync | `v1.15-cache-busting-exporter-sync` | `b10bb83` | 17-08-2026 10:46 | Add cache-busting query params and headers to fetchTseWordPressExportPackage in exporterApi.js. | Superseded |
+| v1.16-updating | `v1.16-global-indicator-updating-state` | `[AUTO]` | 17-08-2026 10:49 | Add active updating state detection (Updating V10.X...) to GlobalDeploymentIndicator. | **Current** |
 
 ---
 
