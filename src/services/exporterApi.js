@@ -221,3 +221,39 @@ export async function fetchMagentoExportPackage({
     }
   }
 }
+
+/**
+ * Authorize Magento Admin Bearer Token via backend proxy
+ * POST /api/websites/{siteId}/magento-token
+ */
+export async function authorizeMagentoAdminTokenApi(siteId, username, password, apiBaseUrl) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/websites/${encodeURIComponent(siteId)}/magento-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({ username, password, apiBaseUrl })
+    })
+
+    const data = await response.json()
+    if (!response.ok || !data.success) {
+      return {
+        success: false,
+        status: response.status,
+        message: data.message || `Magento authorization failed (HTTP ${response.status}).`
+      }
+    }
+
+    return {
+      success: true,
+      message: data.message || 'Magento Bearer token successfully authorized.'
+    }
+  } catch (err) {
+    return {
+      success: false,
+      message: `Network error during Magento authorization: ${err.message}`
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { connectWordPress, WP_STEPS } from '../services/wordpressApi'
 import { saveWebsiteApi } from '../services/websiteManagerApi'
+import { authorizeMagentoAdminTokenApi } from '../services/exporterApi'
 import { buildWordPressSite } from '../data/mockData'
 import './AddWebsiteDialog.css'
 
@@ -409,9 +410,17 @@ export default function AddWebsiteDialog({
 
       setIsConnecting(true)
 
+      const targetId = editingSite?.id || String(Date.now())
+      const authRes = await authorizeMagentoAdminTokenApi(targetId, mgUser.trim(), mgPass.trim(), mgApi.trim())
+      if (!authRes.success) {
+        setIsConnecting(false)
+        setErrorMsg(authRes.message || 'Magento Admin Authentication Failed (HTTP 401). Please check Admin Username & Password.')
+        return
+      }
+
       const magentoTile = {
         ...(editingSite || {}),
-        id: editingSite?.id || Date.now(),
+        id: targetId,
         name: mgName.trim(),
         url: mgUrl.trim(),
         platform: 'magento',
@@ -443,6 +452,8 @@ export default function AddWebsiteDialog({
           tasksOutstanding: { label: 'Tasks Outstanding', value: '0 Outstanding',      variant: 'green'  },
         }
       }
+
+      saveWebsiteApi(magentoTile)
 
       if (editingSite && onUpdateWebsite) {
         onUpdateWebsite(magentoTile)

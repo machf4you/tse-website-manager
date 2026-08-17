@@ -244,7 +244,67 @@ app.post('/api/websites/:id/package', (req, res) => {
   }
 })
 
-// Server-side Magento REST API proxy sync endpoint
+// Server-side Magento REST Token generation endpoint
+app.post('/api/websites/:id/magento-token', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { username, password, apiBaseUrl } = req.body || {}
+
+    const siteRow = db.prepare('SELECT * FROM websites WHERE id = ?').get(id)
+    if (!siteRow) {
+      return res.status(404).json({ success: false, message: `Website ID '${id}' not found.` })
+    }
+
+    let configData = {}
+    try { if (siteRow.config_data) configData = JSON.parse(siteRow.config_data) } catch (_e) {}
+
+    const websiteUrl = siteRow.url || ''
+    const cleanSiteUrl = websiteUrl.trim().replace(/\/+$/, '')
+    const baseApi = (apiBaseUrl || configData.apiBaseUrl || `${cleanSiteUrl}/rest/all/V1`).trim().replace(/\/+$/, '')
+    const tokenUrl = baseApi.replace(/\/rest\/(all\/)?V1\/?$/, '/rest/V1') + '/integration/admin/token'
+
+    const adminUser = username || siteRow.wp_user || configData.wpUser
+    const adminPass = password || siteRow.wp_pass || configData.wpPass
+
+    if (!adminUser || !adminPass) {
+      return res.status(400).json({ success: false, message: 'Magento admin username or password is required.' })
+    }
+
+    const tokenRes = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ username: adminUser, password: adminPass })
+    })
+
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text()
+      let parsedErr = 'Magento Admin Authentication Failed (HTTP 401).'
+      try {
+        const json = JSON.parse(errText)
+        if (json.message) parsedErr = json.message
+      } catch (_e) {}
+      return res.status(tokenRes.status).json({ success: false, status: tokenRes.status, message: parsedErr })
+    }
+
+    const token = await tokenRes.json()
+    const tokenStr = typeof token === 'string' ? token : String(token)
+
+    // Securely update SQLite database with fresh Magento Bearer token
+    configData.wpUser = adminUser
+    configData.wpPass = tokenStr
+    configData.connectedUser = adminUser
+    configData.tokenGeneratedAt = Date.now()
+
+    db.prepare('UPDATE websites SET wp_user = ?, wp_pass = ?, config_data = ?, updated_at = ? WHERE id = ?')
+      .run(adminUser, tokenStr, JSON.stringify(configData), Date.now(), id)
+
+    res.json({ success: true, message: 'Magento Admin token successfully authorized and saved.' })
+  } catch (e) {
+    res.status(500).json({ success: false, message: e.message })
+  }
+})
+
+// Server-side Magento REST API proxy sync endpoint (Category Structure focus)
 app.post('/api/websites/:id/magento-sync', async (req, res) => {
   try {
     const { id } = req.params
@@ -278,84 +338,70 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
       headers['Authorization'] = `Bearer ${token.trim()}`
     }
 
-    // Issue server-side HTTP requests to Magento REST API
-    const [catRes, prodRes, cmsRes] = await Promise.all([
+    // Issue server-side HTTP requests to Magento REST API (Categories & CMS pages only)
+    const [catRes, cmsRes] = await Promise.all([
       fetch(`${apiBaseUrl}/categories`, { method: 'GET', headers }).catch(() => null),
-      fetch(`${apiBaseUrl}/products?searchCriteria[pageSize]=100`, { method: 'GET', headers }).catch(() => null),
       fetch(`${apiBaseUrl}/cmsPage/search?searchCriteria[pageSize]=100`, { method: 'GET', headers }).catch(() => null)
     ])
 
     // Check for HTTP 401 Unauthorized
-    if (catRes?.status === 401 || prodRes?.status === 401 || cmsRes?.status === 401) {
+    if (catRes?.status === 401 || cmsRes?.status === 401) {
       return res.status(401).json({
         success: false,
         status: 401,
         error: 'MAGENTO_AUTH_FAILED',
-        message: 'Magento REST API Authentication Failed (HTTP 401). Server-side Bearer token rejected by Magento.'
+        message: 'Magento REST API Authentication Failed (HTTP 401). Bearer token rejected by Magento.'
       })
     }
 
     const categoriesJson = catRes && catRes.ok ? await catRes.json() : null
-    const productsJson = prodRes && prodRes.ok ? await prodRes.json() : null
     const cmsPagesJson = cmsRes && cmsRes.ok ? await cmsRes.json() : null
 
     const pages = []
 
-    // 1. Process Categories
-    function processCategoryNode(node) {
+    // 1. Process Categories Structure
+    function processCategoryNode(node, parentName = '') {
       if (!node) return
       if (node.name && node.id) {
         const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        const fullCatUrl = `${cleanSiteUrl}/${catSlug}`
         pages.push({
           id: `cat-${node.id}`,
           title: node.name,
-          url: `${cleanSiteUrl}/${catSlug}`,
-          link: `${cleanSiteUrl}/${catSlug}`,
+          url: fullCatUrl,
+          link: fullCatUrl,
           type: 'Landing',
           post_type: 'category',
-          is_active: node.is_active,
-          level: node.level
+          is_active: Boolean(node.is_active),
+          level: node.level,
+          magentoCategoryId: node.id,
+          parentId: node.parent_id,
+          parentName: parentName || null,
+          position: node.position
         })
       }
       if (Array.isArray(node.children_data)) {
-        node.children_data.forEach(processCategoryNode)
+        node.children_data.forEach(child => processCategoryNode(child, node.name))
       }
     }
     if (categoriesJson) processCategoryNode(categoriesJson)
 
-    // 2. Process CMS Pages
+    // 2. Process CMS Pages (Preserves Homepage Hub Classification)
     if (cmsPagesJson && Array.isArray(cmsPagesJson.items)) {
       cmsPagesJson.items.forEach(p => {
         const slug = p.identifier || ''
         const pageUrl = slug === 'home' || slug === '' ? cleanSiteUrl : `${cleanSiteUrl}/${slug}`
+        const isHome = slug === 'home' || pageUrl === cleanSiteUrl || pageUrl === `${cleanSiteUrl}/`
         pages.push({
           id: `cms-${p.id}`,
           title: p.title || p.identifier,
           url: pageUrl,
           link: pageUrl,
-          type: p.identifier === 'home' ? 'Hub' : 'Landing',
+          type: isHome ? 'Hub' : 'Landing',
           post_type: 'cms_page',
           content: p.content || '',
           meta_title: p.meta_title || p.title,
           meta_description: p.meta_description || ''
-        })
-      })
-    }
-
-    // 3. Process Products
-    if (productsJson && Array.isArray(productsJson.items)) {
-      productsJson.items.forEach(prod => {
-        const urlKeyAttr = prod.custom_attributes?.find(a => a.attribute_code === 'url_key')?.value
-        const slug = (urlKeyAttr || prod.name || prod.sku).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-        pages.push({
-          id: `prod-${prod.id}`,
-          title: prod.name || prod.sku,
-          url: `${cleanSiteUrl}/${slug}`,
-          link: `${cleanSiteUrl}/${slug}`,
-          type: 'Landing',
-          post_type: 'product',
-          sku: prod.sku,
-          price: prod.price
         })
       })
     }
@@ -368,7 +414,6 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
       },
       pages,
       categories: categoriesJson,
-      products: productsJson?.items || [],
       cms_pages: cmsPagesJson?.items || []
     }
 
