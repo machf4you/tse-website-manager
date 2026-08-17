@@ -386,6 +386,39 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
             console.error('Failed during post-sync audit freshness tracking:', e)
           }
 
+          // Refresh local saved configs with freshly synced WordPress values
+          try {
+            const siteIdKey = getSiteConfigsStorageKey(site)
+            const existingConfigs = JSON.parse(localStorage.getItem(siteIdKey) || '{}')
+            let configsUpdated = false
+
+            resPages.forEach(p => {
+              const pageKey = p.id || p.url
+              const config = existingConfigs[pageKey] || (p.url ? existingConfigs[p.url] : null)
+              if (config) {
+                if (p.metaTitle || p.title) {
+                  config.metaTitle = p.metaTitle || p.title
+                  config.proposedTitle = p.metaTitle || p.title
+                }
+                if (p.metaDescription) {
+                  config.metaDescription = p.metaDescription
+                }
+                if (p.h1) {
+                  config.h1 = p.h1
+                }
+                configsUpdated = true
+              }
+            })
+
+            if (configsUpdated) {
+              localStorage.setItem(siteIdKey, JSON.stringify(existingConfigs))
+              savePageConfigsApi(site.id, existingConfigs).catch(() => {})
+              setApiConfigs(existingConfigs)
+            }
+          } catch (e) {
+            console.error('Failed to update page configs post-sync:', e)
+          }
+
           // Save package to SQLite API backend (updates wp_packages + websites.sync_status in one transaction)
           try {
             await saveWpPackageApi(site.id, normalizedPackageData)

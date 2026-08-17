@@ -527,7 +527,7 @@ export default function PageAuditResultsPage({
       {
         id: 'meta_title',
         name: 'Meta Title',
-        currentValue: snap.title || displayTitle,
+        currentValue: snap.title || rawCurrentPage.metaTitle || rawCurrentPage.title || displayTitle,
         hasTargetPhrase: hasTitleTarget,
         status: titleStatus,
         recommendation: titleStatus === 'Pass' ? '—' : (titleCheck?.detail || `Add target phrase "${targetPhrase}" to Meta Title`),
@@ -536,7 +536,7 @@ export default function PageAuditResultsPage({
       {
         id: 'meta_description',
         name: 'Meta Description',
-        currentValue: snap.meta_description || '—',
+        currentValue: snap.meta_description || rawCurrentPage.metaDescription || '—',
         hasTargetPhrase: hasDescTarget,
         status: descStatus,
         recommendation: descRec,
@@ -545,7 +545,7 @@ export default function PageAuditResultsPage({
       {
         id: 'h1',
         name: 'H1',
-        currentValue: (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '—',
+        currentValue: (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.h1 || '—',
         hasTargetPhrase: breakdown.h1 === 'Yes',
         status: h1Status,
         recommendation: h1Status === 'Pass' ? '—' : (h1Check?.detail || `Add target phrase "${targetPhrase}" to H1 heading`),
