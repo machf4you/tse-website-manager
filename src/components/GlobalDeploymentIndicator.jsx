@@ -14,8 +14,10 @@ export default function GlobalDeploymentIndicator() {
 
     async function checkLiveVersion() {
       try {
-        // Cache-busting fetch to check currently deployed version on host
-        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' })
+        const res = await fetch(`/version.json?t=${Date.now()}`, {
+          cache: 'no-store',
+          credentials: 'same-origin'
+        })
         if (res.ok) {
           const data = await res.json()
           const liveVer = String(data.version || '').trim()
