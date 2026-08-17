@@ -30,6 +30,49 @@ function Field({ label, id, type = 'text', placeholder = '', value, onChange, di
   )
 }
 
+function PasswordField({ label, id, placeholder = '', value, onChange, disabled }) {
+  const [showPassword, setShowPassword] = useState(false)
+
+  return (
+    <div className="aw-field">
+      <label className="aw-label" htmlFor={id}>{label}</label>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <input
+          className="aw-input"
+          id={id}
+          type={showPassword ? 'text' : 'password'}
+          placeholder={placeholder}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          disabled={disabled}
+          autoComplete="off"
+          style={{ flex: 1 }}
+        />
+        <button
+          type="button"
+          id={`${id}-toggle`}
+          onClick={() => setShowPassword(prev => !prev)}
+          disabled={disabled}
+          style={{
+            padding: '7px 12px',
+            borderRadius: '6px',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            background: showPassword ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+            color: showPassword ? '#93c5fd' : '#f8fafc',
+            fontSize: '0.8rem',
+            fontWeight: '600',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}
+        >
+          {showPassword ? 'Hide' : 'Show'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function Toggle({ label, id, checked, onChange, disabled }) {
   return (
     <div className="aw-field aw-toggle-row">
@@ -131,7 +174,7 @@ function MagentoFields({
       <Field label="Magento Backend URL"    id="mg-backend"  placeholder="https://www.example.co.uk/admin" value={mgBackend} onChange={setMgBackend} disabled={isConnecting} />
       <Field label="API Base URL"           id="mg-api"      placeholder="https://www.example.co.uk/rest/V1" value={mgApi} onChange={setMgApi} disabled={isConnecting} />
       <Field label="API Username"           id="mg-api-user" placeholder="api_user" value={mgUser} onChange={setMgUser} disabled={isConnecting} />
-      <Field label="API Password / Token"   id="mg-api-pass" type="password" placeholder="••••••••••••••••" value={mgPass} onChange={setMgPass} disabled={isConnecting} />
+      <PasswordField label="API Password / Token" id="mg-api-pass" placeholder="••••••••••••••••" value={mgPass} onChange={setMgPass} disabled={isConnecting} />
       <StoreViewSelect                      id="mg-store"    value={mgStore} onChange={setMgStore} disabled={isConnecting} />
       <PortfolioSelect                      id="mg-portfolio" value={mgPortfolio} onChange={setMgPortfolio} disabled={isConnecting} />
       <ServerTypeSelect                     id="mg-server-type" value={mgServerType} onChange={setMgServerType} disabled={isConnecting} />
