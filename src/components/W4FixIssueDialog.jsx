@@ -414,10 +414,12 @@ export default function W4FixIssueDialog({
                 </div>
 
                 {/* Step 2: Push Changes to WordPress */}
-                <div style={{ background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: pushError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
+                <div style={{ background: isPushing ? 'rgba(59,130,246,0.18)' : (isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)'), opacity: isSaved || isPushing ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: isPushing ? '1px solid #3b82f6' : (pushError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)'), display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px', transition: 'all 0.2s ease' }}>
                   <div>
                     <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>2. Push to WP</strong>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Send fields to live WP page</span>
+                    <span style={{ fontSize: '0.7rem', color: isPushing ? '#93c5fd' : '#94a3b8', display: 'block', lineHeight: '1.2' }}>
+                      {isPushing ? '🔄 Pushing fields & purging cache...' : 'Send fields to live WP page'}
+                    </span>
                   </div>
                   {pushError && (
                     <div style={{ fontSize: '0.68rem', color: '#ef4444', marginTop: '4px', lineHeight: '1.2' }}>
@@ -427,26 +429,38 @@ export default function W4FixIssueDialog({
                   <div style={{ marginTop: '6px' }}>
                     {isPushed ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ WP Updated</span>
+                    ) : isPushing ? (
+                      <button type="button" className="w3-btn-blue btn-disabled" disabled style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%', backgroundColor: '#2563eb', borderColor: '#3b82f6', color: '#ffffff', opacity: 1, cursor: 'wait', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <span className="deploy-spinner" style={{ width: '11px', height: '11px', borderWidth: '2px' }} />
+                        <span style={{ fontWeight: '600', color: '#ffffff' }}>Pushing to WP…</span>
+                      </button>
                     ) : (
-                      <button type="button" className={`w3-btn-blue ${!isSaved || isPushing ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved || isPushing} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
-                        {isPushing ? 'Pushing...' : 'Push to WP'}
+                      <button type="button" className={`w3-btn-blue ${!isSaved ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
+                        Push to WP
                       </button>
                     )}
                   </div>
                 </div>
 
                 {/* Step 3: Sync Website Data */}
-                <div style={{ background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
+                <div style={{ background: isSyncing ? 'rgba(16,185,129,0.18)' : (isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)'), opacity: isPushed || isSyncing ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: isSyncing ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px', transition: 'all 0.2s ease' }}>
                   <div>
                     <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>3. Sync Data</strong>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Pull WP data to Manager</span>
+                    <span style={{ fontSize: '0.7rem', color: isSyncing ? '#a7f3d0' : '#94a3b8', display: 'block', lineHeight: '1.2' }}>
+                      {isSyncing ? '🔄 Pulling fresh WP package...' : 'Pull WP data to Manager'}
+                    </span>
                   </div>
                   <div style={{ marginTop: '6px' }}>
                     {isSynced ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Synced</span>
+                    ) : isSyncing ? (
+                      <button type="button" className="w3-btn-secondary btn-disabled" disabled style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%', backgroundColor: '#059669', borderColor: '#10b981', color: '#ffffff', opacity: 1, cursor: 'wait', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <span className="deploy-spinner" style={{ width: '11px', height: '11px', borderWidth: '2px' }} />
+                        <span style={{ fontWeight: '600', color: '#ffffff' }}>Syncing Data…</span>
+                      </button>
                     ) : (
-                      <button type="button" className={`w3-btn-secondary ${!isPushed || isSyncing ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed || isSyncing} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
-                        {isSyncing ? 'Syncing...' : 'Sync Data'}
+                      <button type="button" className={`w3-btn-secondary ${!isPushed ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
+                        Sync Data
                       </button>
                     )}
                   </div>
