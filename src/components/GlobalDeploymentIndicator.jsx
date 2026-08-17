@@ -19,11 +19,16 @@ export default function GlobalDeploymentIndicator() {
         if (res.ok) {
           const data = await res.json()
           const liveVer = String(data.version || '').trim()
+          const buildingVer = String(data.building || '').trim()
 
           if (!isMounted) return
 
-          if (liveVer && liveVer !== CURRENT_BUILD_VERSION) {
-            // Live version is newer -> READY state!
+          if (buildingVer && buildingVer !== liveVer && buildingVer !== CURRENT_BUILD_VERSION) {
+            // Server build in progress -> UPDATING state with spinner & timer
+            setTargetVersion(buildingVer)
+            setDeployState('updating')
+          } else if (liveVer && liveVer !== CURRENT_BUILD_VERSION) {
+            // Live version deployed on host -> READY state with Ctrl+F5 badge
             setTargetVersion(liveVer)
             setDeployState('ready')
           } else {
@@ -39,8 +44,8 @@ export default function GlobalDeploymentIndicator() {
     // Initial check
     checkLiveVersion()
 
-    // Poll live host URL every 10 seconds
-    const interval = setInterval(checkLiveVersion, 10000)
+    // Poll live host URL every 3 seconds for instant deployment updates
+    const interval = setInterval(checkLiveVersion, 3000)
 
     return () => {
       isMounted = false
