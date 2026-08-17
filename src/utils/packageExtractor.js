@@ -334,6 +334,22 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
   const rawPosts = extractPostsFromPackage(pkg)
   const combined = [...rawPosts, ...rawPages]
 
+  // Parse seo-data.json if present in package
+  const unwrappedPkg = unwrapPackageData(pkg)
+  const seoDataRaw = unwrappedPkg ? (unwrappedPkg['seo-data.json'] || unwrappedPkg.seoData || unwrappedPkg.seo_data) : null
+  const seoMap = new Map()
+  if (seoDataRaw) {
+    try {
+      const seoList = typeof seoDataRaw === 'string' ? JSON.parse(seoDataRaw) : seoDataRaw
+      if (Array.isArray(seoList)) {
+        seoList.forEach(s => {
+          if (s && s.id !== undefined) seoMap.set(String(s.id), s)
+          if (s && s.url) seoMap.set(String(s.url).trim().toLowerCase(), s)
+        })
+      }
+    } catch (e) {}
+  }
+
   const seenUrls = new Set()
   const uniqueItems = []
 
@@ -345,7 +361,18 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
     if (rawUrl) {
       seenUrls.add(rawUrl)
     }
-    uniqueItems.push(item)
+
+    const itemKeyId = String(item.id || item.ID || '')
+    const seoMatch = seoMap.get(itemKeyId) || (rawUrl ? seoMap.get(rawUrl) : null)
+
+    const mergedItem = seoMatch ? {
+      ...item,
+      metaTitle: seoMatch.title || item.metaTitle || item.title,
+      metaDescription: seoMatch.description || item.metaDescription || item.description,
+      title: seoMatch.title || item.title
+    } : item
+
+    uniqueItems.push(mergedItem)
   }
 
   return uniqueItems.map(page => normalizeImportedPage(page, siteUrl))

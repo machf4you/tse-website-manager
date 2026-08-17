@@ -46,7 +46,6 @@ export default function PageAuditResultsPage({
 
   // Allow selecting any page from the dropdown, with localStorage persistence
   const [selectedUrl, setSelectedUrl] = useState(() => {
-    if (page?.url) return page.url
     try {
       const saved = localStorage.getItem(selectedUrlStorageKey)
       if (saved && pagesList.some(p => p.url === saved)) return saved
@@ -58,7 +57,14 @@ export default function PageAuditResultsPage({
 
   useEffect(() => {
     if (page?.url && page.url !== selectedUrl) {
-      setSelectedUrl(page.url)
+      try {
+        const saved = localStorage.getItem(selectedUrlStorageKey)
+        if (!saved || saved === page.url) {
+          setSelectedUrl(page.url)
+        }
+      } catch (e) {
+        setSelectedUrl(page.url)
+      }
     }
   }, [page?.url])
 
@@ -125,11 +131,16 @@ export default function PageAuditResultsPage({
   const currentPage = {
     ...rawCurrentPage,
     ...overrideObj,
-    title: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title,
-    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title,
-    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || snap.title || rawCurrentPage.title,
-    metaDescription: overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : (rawCurrentPage.metaDescription || snap.meta_description || ''),
-    h1: overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || ''),
+    title: liveAuditData ? (snap.title || rawCurrentPage.title || overrideObj.proposedTitle)
+      : (overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title),
+    proposedTitle: liveAuditData ? (snap.title || rawCurrentPage.proposedTitle || overrideObj.proposedTitle)
+      : (overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title),
+    metaTitle: liveAuditData ? (snap.title || rawCurrentPage.metaTitle || overrideObj.metaTitle)
+      : (overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || snap.title || rawCurrentPage.title),
+    metaDescription: liveAuditData ? (snap.meta_description !== undefined ? snap.meta_description : (rawCurrentPage.metaDescription || overrideObj.metaDescription || ''))
+      : (overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : (rawCurrentPage.metaDescription || snap.meta_description || '')),
+    h1: liveAuditData ? ((Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.h1 || overrideObj.h1 || '')
+      : (overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '')),
   }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {

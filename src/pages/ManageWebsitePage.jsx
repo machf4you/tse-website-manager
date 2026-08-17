@@ -368,6 +368,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
                   // Material SEO change detected! Flag page for re-audit (Audited ?)
                   record.isStale = true
                   record.staleReason = `Page content or SEO elements modified in ${platformName}`
+                  delete record.auditResult
                   auditsUpdated = true
                 } else if (prevFingerprint && prevFingerprint === newFingerprint) {
                   // No material SEO change: Keep Audited ✓ (Green)
@@ -440,10 +441,20 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   }
 
   if (activeTab === 'w3_audit_results' || activeTab === 'w4') {
+    const selectedUrlStorageKey = site?.id ? `tse_audit_selected_url_${site.id}` : 'tse_audit_selected_url_default'
+    const savedAuditUrl = (() => {
+      try {
+        return localStorage.getItem(selectedUrlStorageKey)
+      } catch (e) {
+        return null
+      }
+    })()
+    const activeAuditPage = selectedPageForAudit || (savedAuditUrl ? exportedPages.find(p => p.url === savedAuditUrl || p.id === savedAuditUrl) : null) || exportedPages[0]
+
     return (
       <PageAuditResultsPage
         site={site}
-        page={selectedPageForAudit || exportedPages[0]}
+        page={activeAuditPage}
         pagesList={exportedPages}
         onBack={() => setActiveTab('w3')}
         onSyncFromWordPress={handleSynchroniseClick}
@@ -451,7 +462,12 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         onNavigateToInternalLinking={(url) => {
           if (url) {
             const matched = exportedPages.find(p => p.url === url)
-            if (matched) setSelectedPageForAudit(matched)
+            if (matched) {
+              setSelectedPageForAudit(matched)
+              try {
+                localStorage.setItem(selectedUrlStorageKey, matched.url)
+              } catch (e) {}
+            }
           }
           setActiveTab('w4_internal_linking')
         }}
