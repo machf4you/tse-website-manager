@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import ConfigurePageDialog from '../components/ConfigurePageDialog'
-import { getPageConfigsApi, savePageConfigsApi, getPageAuditsApi } from '../services/websiteManagerApi'
+import { getPageConfigsApi, savePageConfigsApi, getPageAuditsApi, savePageAuditApi } from '../services/websiteManagerApi'
+import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
 import './PageManagementPage.css'
 
@@ -18,6 +19,9 @@ export default function PageManagementPage({
   const [sortColumn, setSortColumn] = useState('priority') // 'priority' | 'page' | 'type'
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' | 'desc'
   const [editingPage, setEditingPage] = useState(null)
+  const [isBulkAuditing, setIsBulkAuditing] = useState(false)
+  const [bulkAuditProgress, setBulkAuditProgress] = useState({ current: 0, total: 0 })
+  const [bulkAuditSummary, setBulkAuditSummary] = useState(null)
 
   const [configurations, setConfigurations] = useState(() => {
     try {
@@ -333,6 +337,86 @@ export default function PageManagementPage({
     return <span className="sort-icon active">{sortDirection === 'asc' ? '▲' : '▼'}</span>
   }
 
+  const handleRunFullUrlAudit = async () => {
+    // 1. Identify all active configured SEO pages in W3 (Hub, Landing, Topical, Article)
+    const activeSeoPages = pagesList.filter(p => {
+      const typeStr = (p.type || p.seoPageType || '').trim()
+      const isSeoType = ['Hub', 'Landing', 'Topical', 'Article'].includes(typeStr)
+      return isSeoType && !p.isExcluded && typeStr !== 'Excluded'
+    })
+
+    if (activeSeoPages.length === 0) {
+      alert('No active SEO pages (Hub, Landing, Topical, Article) found in W3 to audit.')
+      return
+    }
+
+    setIsBulkAuditing(true)
+    setBulkAuditSummary(null)
+    setBulkAuditProgress({ current: 0, total: activeSeoPages.length })
+
+    let successfulCount = 0
+    let failedCount = 0
+
+    const now = new Date()
+    const pad = n => String(n).padStart(2, '0')
+    const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+
+    for (let i = 0; i < activeSeoPages.length; i++) {
+      const page = activeSeoPages[i]
+      const pageKey = page.id || page.url || page.pageUrl
+      const urlKey = page.url || page.pageUrl || ''
+
+      setBulkAuditProgress({ current: i + 1, total: activeSeoPages.length })
+
+      try {
+        const auditResult = await executePageAudit({
+          siteId: site?.id || 'site-1',
+          pageId: pageKey,
+          url: urlKey,
+          targetPhrase: (page.target || page.targetPhrase || '').trim(),
+          seoPageType: page.type || page.seoPageType || 'Unclassified'
+        })
+
+        const auditRecord = {
+          isAudited: true,
+          isStale: false,
+          staleReason: null,
+          lastAuditTimestamp: formattedTimestamp,
+          auditResult
+        }
+
+        if (site?.id) {
+          await savePageAuditApi(site.id, pageKey, auditRecord)
+        }
+
+        setPageAudits(prev => {
+          const updated = {
+            ...prev,
+            [pageKey]: auditRecord
+          }
+          if (urlKey && urlKey !== pageKey) {
+            updated[urlKey] = auditRecord
+          }
+          return updated
+        })
+
+        successfulCount++
+      } catch (err) {
+        console.error(`Bulk audit failed for page "${page.title}" (${urlKey}):`, err)
+        failedCount++
+      }
+
+      await new Promise(res => setTimeout(res, 150))
+    }
+
+    setIsBulkAuditing(false)
+    setBulkAuditSummary({
+      audited: successfulCount,
+      failed: failedCount,
+      skipped: pagesList.length - activeSeoPages.length
+    })
+  }
+
   return (
     <div className="w3-page-container">
 
@@ -364,8 +448,41 @@ export default function PageManagementPage({
         </div>
 
         <div className="w3-header-actions">
+          <button
+            type="button"
+            className="btn-run-full-url-audit"
+            onClick={handleRunFullUrlAudit}
+            disabled={isBulkAuditing}
+            id="btn-run-full-url-audit"
+          >
+            {isBulkAuditing ? (
+              <>
+                <span className="icon-spin">⏳</span>
+                <span>Auditing {bulkAuditProgress.current} of {bulkAuditProgress.total}</span>
+              </>
+            ) : (
+              'Run Full URL Audit'
+            )}
+          </button>
         </div>
       </div>
+
+      {/* ── Bulk Audit Summary Toast Banner ── */}
+      {bulkAuditSummary && (
+        <div className="w3-audit-summary-banner">
+          <span>
+            <strong>Bulk Audit Complete:</strong> Audited: {bulkAuditSummary.audited} | Failed: {bulkAuditSummary.failed} | Skipped: {bulkAuditSummary.skipped}
+          </span>
+          <button
+            type="button"
+            className="btn-close-summary"
+            onClick={() => setBulkAuditSummary(null)}
+            id="btn-close-audit-summary"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* ── Main Module Navigation Tabs ── */}
       <div className="w3-module-tabs">

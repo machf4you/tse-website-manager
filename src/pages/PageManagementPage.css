@@ -80,31 +80,8 @@
   text-decoration: underline;
 }
 
-.w3-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.w3-btn-secondary {
-  background-color: rgba(255, 255, 255, 0.06);
-  color: rgb(241, 245, 249);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.w3-btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.w3-btn-emerald {
-  background-color: rgb(16, 185, 129);
+.btn-run-full-url-audit {
+  background-color: rgb(245, 158, 11);
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -112,11 +89,48 @@
   font-size: 0.85rem;
   font-weight: 800;
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.w3-btn-emerald:hover {
-  background-color: rgb(5, 150, 105);
+.btn-run-full-url-audit:hover:not(:disabled) {
+  background-color: rgb(217, 119, 6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+}
+
+.btn-run-full-url-audit:disabled {
+  opacity: 0.85;
+  cursor: not-allowed;
+}
+
+.w3-audit-summary-banner {
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.86rem;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.btn-close-summary {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.2rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.btn-close-summary:hover {
+  color: #ffffff;
 }
 
 /* ── Main Module Navigation Tabs ── */
@@ -467,10 +481,10 @@
 
 /* Green badge for Last Audit when page has been audited */
 .btn-audit-completed-badge {
-  color: rgb(52, 211, 153);
+  color: #ffffff;
   font-weight: 700;
-  background-color: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background-color: rgb(16, 185, 129);
+  border: 1px solid rgb(16, 185, 129);
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 0.76rem;
@@ -481,17 +495,17 @@
 }
 
 .btn-audit-completed-badge:hover {
-  background-color: rgba(16, 185, 129, 0.22);
-  border-color: rgba(16, 185, 129, 0.5);
+  background-color: rgb(5, 150, 105);
+  border-color: rgb(5, 150, 105);
   transform: translateY(-1px);
 }
 
-/* Green button style for Audit Page -> Audited once completed */
+/* Orange button style for Audit Page -> Audited once completed */
 .btn-audited-success {
   opacity: 1;
   color: #ffffff;
-  background-color: rgb(16, 185, 129);
-  border: 1px solid rgb(16, 185, 129);
+  background-color: rgb(245, 158, 11);
+  border: 1px solid rgb(245, 158, 11);
   font-size: 0.76rem;
   font-weight: 700;
   padding: 4px 10px;
@@ -503,8 +517,8 @@
 }
 
 .btn-audited-success:hover {
-  background-color: rgb(5, 150, 105);
-  border-color: rgb(5, 150, 105);
+  background-color: rgb(217, 119, 6);
+  border-color: rgb(217, 119, 6);
   transform: translateY(-1px);
 }
 

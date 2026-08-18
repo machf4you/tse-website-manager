@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-w3-run-full-url-audit-button',
+    version: 'v1.30-w3-bulk-audit',
+    gitTag: 'v1.30-w3-run-full-url-audit-button',
+    commit: '[AUTO]',
+    date: '18-08-2026 10:21',
+    title: 'Add top-right Run Full URL Audit button and orange Audited status buttons to W3 Page Management (V1.30)',
+    description: 'Added orange top-right Run Full URL Audit button to W3 Page Management with progress tracking, orange Audited buttons, green Last Audit date badges, and server persistence.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-w3-run-full-url-audit-button.md'
+  },
+  {
     id: 'v1.30-internal-linking-rules-doc',
     version: 'v1.30-link-rules-doc',
     gitTag: 'v1.30-internal-linking-rules-doc',
-    commit: '[AUTO]',
+    commit: '4a81a93',
     date: '18-08-2026 10:09',
     title: 'Add Global Settings -> Internal Linking Rules reference documentation and principles (V1.30)',
     description: 'Added Global Settings -> Internal Linking Rules page documenting 14 sections including min incoming links, recommendation caps, directional SEO hierarchy, contextual placement, relevance scoring, and platform independence.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-internal-linking-rules-doc.md'
   },
   {
