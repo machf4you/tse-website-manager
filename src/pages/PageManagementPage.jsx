@@ -20,6 +20,7 @@ export default function PageManagementPage({
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' | 'desc'
   const [editingPage, setEditingPage] = useState(null)
   const [isBulkAuditing, setIsBulkAuditing] = useState(false)
+  const [currentlyAuditingKey, setCurrentlyAuditingKey] = useState(null)
   const [bulkAuditProgress, setBulkAuditProgress] = useState({ current: 0, total: 0 })
   const [bulkAuditSummary, setBulkAuditSummary] = useState(null)
 
@@ -366,7 +367,7 @@ export default function PageManagementPage({
       const pageKey = page.id || page.url || page.pageUrl
       const urlKey = page.url || page.pageUrl || ''
 
-      setBulkAuditProgress({ current: i + 1, total: activeSeoPages.length })
+      setCurrentlyAuditingKey(pageKey)
 
       try {
         const auditResult = await executePageAudit({
@@ -389,14 +390,15 @@ export default function PageManagementPage({
           await savePageAuditApi(site.id, pageKey, auditRecord)
         }
 
+        // IMMEDIATELY update pageAudits state across ALL aliases (id, url, pageKey, urlKey, pageUrl)
         setPageAudits(prev => {
-          const updated = {
-            ...prev,
-            [pageKey]: auditRecord
-          }
-          if (urlKey && urlKey !== pageKey) {
-            updated[urlKey] = auditRecord
-          }
+          const updated = { ...prev }
+          const rec = { ...auditRecord, pageId: page.id, url: urlKey }
+          if (page.id) updated[page.id] = rec
+          if (page.url) updated[page.url] = rec
+          if (pageKey) updated[pageKey] = rec
+          if (urlKey) updated[urlKey] = rec
+          if (page.pageUrl) updated[page.pageUrl] = rec
           return updated
         })
 
@@ -406,9 +408,12 @@ export default function PageManagementPage({
         failedCount++
       }
 
-      await new Promise(res => setTimeout(res, 150))
+      // Advance progress counter and yield 250ms for React to flush DOM re-render of this row to screen!
+      setBulkAuditProgress({ current: i + 1, total: activeSeoPages.length })
+      await new Promise(res => setTimeout(res, 250))
     }
 
+    setCurrentlyAuditingKey(null)
     setIsBulkAuditing(false)
     setBulkAuditSummary({
       audited: successfulCount,
@@ -667,7 +672,16 @@ export default function PageManagementPage({
                     )}
                   </td>
                   <td className="col-audit-page">
-                    {page.isAudited ? (
+                    {currentlyAuditingKey && (currentlyAuditingKey === (page.id || page.url) || currentlyAuditingKey === page.url || currentlyAuditingKey === page.id) ? (
+                      <button
+                        type="button"
+                        className="btn-table-audit-action btn-audit-in-progress"
+                        disabled
+                        id={`btn-audit-page-${page.id || idx}`}
+                      >
+                        ⏳ Auditing...
+                      </button>
+                    ) : page.isAudited ? (
                       page.isStale ? (
                         <button
                           type="button"

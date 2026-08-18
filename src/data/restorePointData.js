@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-w3-row-audit-status-live-update',
+    version: 'v1.30-row-update',
+    gitTag: 'v1.30-w3-row-audit-status-live-update',
+    commit: '[AUTO]',
+    date: '18-08-2026 10:31',
+    title: 'Make W3 table rows visually update to orange Audited and green Last Audit timestamp row-by-row during bulk audit (V1.30)',
+    description: 'Updated W3 bulk audit execution loop so each row visually transitions to orange Audited button and green Last Audit timestamp immediately upon successful completion before advancing to the next URL.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-w3-row-audit-status-live-update.md'
+  },
+  {
     id: 'v1.30-w3-bulk-audit-progress-display-fix',
     version: 'v1.30-progress-fix',
     gitTag: 'v1.30-w3-bulk-audit-progress-display-fix',
-    commit: '[AUTO]',
+    commit: '875f90c',
     date: '18-08-2026 10:28',
     title: 'Add prominent live Auditing X of Y progress status card and completion banner to W3 (V1.30)',
     description: 'Added dedicated live progress card displaying Auditing X of Y with spinner and animated progress bar, plus explicit completion status banner.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-w3-bulk-audit-progress-display-fix.md'
   },
   {

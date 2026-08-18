@@ -535,6 +535,19 @@
   transform: translateY(-1px);
 }
 
+/* Active row in-progress button style */
+.btn-audit-in-progress {
+  opacity: 1;
+  color: #fef08a;
+  background-color: rgba(245, 158, 11, 0.25);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: wait;
+}
+
 /* Green badge for Last Audit when page has been audited */
 .btn-audit-completed-badge {
   color: #ffffff;
