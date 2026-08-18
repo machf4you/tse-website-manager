@@ -364,15 +364,6 @@ export default function PageManagementPage({
         </div>
 
         <div className="w3-header-actions">
-          <button
-            type="button"
-            className="w3-btn-secondary"
-            id="btn-w3-sync-wp"
-            onClick={onSyncFromWordPress}
-            disabled={isSyncing}
-          >
-            {isSyncing ? 'Syncing...' : 'Sync from WordPress'}
-          </button>
         </div>
       </div>
 
