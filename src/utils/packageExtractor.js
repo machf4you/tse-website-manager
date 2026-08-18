@@ -200,7 +200,19 @@ export function normalizeImportedPage(p, siteUrl = '') {
     // Other Non-SEO Pages
     'internal search',
     'test page', 'test-page',
-    'draft', 'staging', 'sample page'
+    'draft', 'staging', 'sample page',
+
+    // Extended Utility / Policy & Store Information Pages
+    'returns policy', 'returns-policy', 'orders & returns', 'orders-and-returns', 'orders-returns',
+    'delivery information', 'delivery-information', 'delivery details', 'delivery-details',
+    'payment information', 'payment-information', 'payment-options',
+    'faq', 'faqs', 'f-a-q', "f.a.q's",
+    'finance',
+    'showroom', 'showrooms', 'store-finder', 'store-info', 'our-stores', 'store-locator',
+    'price match', 'price-match',
+    'pay later with klarna', 'klarna', 'pay-later',
+    'partners',
+    'testimonials'
   ]
 
   const matchesExclusion = exclusionPatterns.some(pattern => {

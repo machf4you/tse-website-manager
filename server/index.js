@@ -397,7 +397,17 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
     const exclusionPatterns = [
       'privacy policy', 'privacy-policy', 'terms & conditions', 'terms-and-conditions', 'terms-conditions',
       'disclaimer', 'accessibility', 'about us', 'about-us', 'contact us', 'contact-us',
-      '404', 'no-route', 'evoque_404', 'cart', 'checkout', 'my-account'
+      '404', 'no-route', 'evoque_404', 'cart', 'checkout', 'my-account',
+      'returns policy', 'returns-policy', 'orders & returns', 'orders-and-returns', 'orders-returns',
+      'delivery information', 'delivery-information', 'delivery details', 'delivery-details',
+      'payment information', 'payment-information', 'payment-options',
+      'faq', 'faqs', 'f-a-q', "f.a.q's",
+      'finance',
+      'showroom', 'showrooms', 'store-finder', 'store-info', 'our-stores', 'store-locator',
+      'price match', 'price-match',
+      'pay later with klarna', 'klarna', 'pay-later',
+      'partners',
+      'testimonials'
     ]
 
     if (cmsPagesJson && Array.isArray(cmsPagesJson.items)) {
