@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CURRENT_BUILD_VERSION, CURRENT_BUILD_LABEL, CURRENT_BUILD_HASH, CURRENT_BUILD_TIMESTAMP } from '../config/version'
+import { API_BASE_URL } from '../services/websiteManagerApi'
 import './GlobalDeploymentIndicator.css'
 
 export default function GlobalDeploymentIndicator() {
@@ -18,9 +19,8 @@ export default function GlobalDeploymentIndicator() {
 
         // 1. Primary check: Server API /api/deployment/status
         try {
-          const apiRes = await fetch(`/api/deployment/status?_t=${Date.now()}`, {
-            cache: 'no-store',
-            credentials: 'same-origin'
+          const apiRes = await fetch(`${API_BASE_URL}/deployment/status?_t=${Date.now()}`, {
+            cache: 'no-store'
           })
           if (apiRes.ok) {
             const apiData = await apiRes.json()
@@ -90,7 +90,7 @@ export default function GlobalDeploymentIndicator() {
     return (
       <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite" title="Build/Deployment in progress - Do NOT refresh yet">
         <span className="deploy-spin-icon" aria-hidden="true">⏳</span>
-        <span className="deploy-text-updating">UPDATING — DO NOT PRESS CTRL+F5</span>
+        <span className="deploy-text-updating">V1.30 | UPDATING — DO NOT PRESS CTRL+F5</span>
       </div>
     )
   }
@@ -106,7 +106,7 @@ export default function GlobalDeploymentIndicator() {
         title="New deployment is live! Click or press Ctrl+F5 to reload"
       >
         <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
-        <span className="deploy-text-ready">PRESS CTRL+F5 — UPDATE READY</span>
+        <span className="deploy-text-ready">V1.30 | PRESS CTRL+F5 — UPDATE READY</span>
         <span className="deploy-action-badge">Refresh Now</span>
       </div>
     )

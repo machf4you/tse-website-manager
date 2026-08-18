@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.30-ready-label | `v1.30-visual-indicator-v130-ready` | `[AUTO]` | 18-08-2026 12:48 | Update global top header deployment status indicator text label to V1.30 \| READY (V1.30). | **Current** |
+| v1.30-42-phrases | `v1.30-configure-42-hf4you-target-phrases` | `[AUTO]` | 18-08-2026 12:55 | Configure 42 unconfigured HF4You Topical pages with concise 3-5 word target phrases in SQLite package (V1.30). | **Current** |
+| v1.30-ready-label | `v1.30-visual-indicator-v130-ready` | `19f830c` | 18-08-2026 12:48 | Update global top header deployment status indicator text label to V1.30 \| READY (V1.30). | Superseded |
 | v1.30-deploy-status | `v1.30-global-deployment-update-visibility-system` | `2157640` | 18-08-2026 12:06 | Add global top header deployment status indicator with NORMAL, UPDATING, and UPDATE READY states (V1.30). | Superseded |
 | v1.30-hf4you-42-target | `v1.30-hf4you-42-unconfigured-target-phrases` | `f93e983` | 18-08-2026 11:53 | Configure 42 unconfigured HF4You Topical pages with concise 3-5 word target phrases in SQLite package (V1.30). | Superseded |
 | v1.30-connect-page-auditor | `v1.30-connect-live-page-auditor-api` | `28b5e71` | 18-08-2026 11:24 | Update PAGE_AUDITOR_API_BASE to production HTTPS endpoint https://api-page-auditor.thesearchequation.co.uk/api in pageAuditorApi.js (V1.30). | Superseded |
