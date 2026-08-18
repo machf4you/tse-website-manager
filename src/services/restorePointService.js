@@ -11,12 +11,11 @@ export function getRestorePointIndex() {
     if (saved) {
       const parsed = JSON.parse(saved)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Always prioritize fresh code master restore points over stale local cache
-        const existingTags = new Set(parsed.map(item => item.gitTag || item.version || item.id))
-        const missingCodeItems = restorePointIndexData.filter(item => !existingTags.has(item.gitTag || item.version || item.id))
-        
-        // Place missing code items at the top and maintain single Current status
-        const merged = [...missingCodeItems, ...parsed]
+        // Always merge code master restore points with any user-created items
+        const codeTags = new Set(restorePointIndexData.map(item => item.gitTag || item.id))
+        const userCreated = parsed.filter(item => !codeTags.has(item.gitTag || item.id))
+
+        const merged = [...restorePointIndexData, ...userCreated]
         merged.forEach((item, idx) => {
           item.status = idx === 0 ? 'Current' : 'Superseded'
         })
@@ -26,7 +25,11 @@ export function getRestorePointIndex() {
   } catch (e) {
     console.error('Error reading restore points from localStorage:', e)
   }
-  return restorePointIndexData
+  const res = [...restorePointIndexData]
+  res.forEach((item, idx) => {
+    item.status = idx === 0 ? 'Current' : 'Superseded'
+  })
+  return res
 }
 
 export function saveRestorePointIndex(items) {
