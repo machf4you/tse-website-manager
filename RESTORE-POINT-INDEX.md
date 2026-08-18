@@ -24,7 +24,8 @@ Every future restore point must update this file.
 | v1.28-w2-sync | `v1.28-w2-platform-aware-sync-button` | `764aaa3` | 17-08-2026 13:09 | Make W2 sync button platform-aware (Sync from Magento/WordPress/Other) and remove W2 audit buttons (V1.28). | Superseded |
 | v1.30-pass-toggle | `v1.30-add-website-dialog-password-toggle` | `f91533c` | 17-08-2026 14:55 | Add Show/Hide visibility toggle button beside API Password/Token field in AddWebsiteDialog (V1.30). | Superseded |
 | v1.30-platform-arch | `v1.30-permanent-platform-architecture` | `6bbcb2e` | 17-08-2026 17:35 | Permanent website platform classification architecture & W2 platform sync persistence (V1.30). | Superseded |
-| v1.30-server-hydration | `v1.30-server-state-hydration-fix` | `[AUTO]` | 17-08-2026 17:44 | Authoritative SQLite database hydration for active managedSite in WebsitesDashboard (V1.30). | **Current** |
+| v1.30-server-hydration | `v1.30-server-state-hydration-fix` | `d861623` | 17-08-2026 17:44 | Authoritative SQLite database hydration for active managedSite in WebsitesDashboard (V1.30). | Superseded |
+| v1.30-token-persist | `v1.30-fix-magento-token-persistence` | `[AUTO]` | 18-08-2026 06:00 | Replace broken SQL query referencing obsolete wp_user/wp_pass columns with config_data update (V1.30). | **Current** |
 | v1.30-platform-fix | `v1.30-fix-platform-state-persistence` | `[AUTO]` | 17-08-2026 17:34 | Preserve platform: magento property across AddWebsiteDialog and WebsitesDashboard updates (V1.30). | Superseded |
 | v1.3-w4 | `v1.3-w4-wordpress-seo-write` | `fc56997` | 15-08-2026 15:10 | Fixed W4 WordPress write implementation to store Yoast Meta Title, Yoast Meta Description, and H1 content in WordPress REST API. | Superseded |
 | v1.5-w1 | `v1.5-w1-server-type-field` | `dc7cd4b` | 15-08-2026 17:01 | Added permanent W1 Server Type field, connection modal selector, tile status display, and dashboard server type filtering system. | Superseded |

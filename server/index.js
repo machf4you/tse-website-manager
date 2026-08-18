@@ -293,10 +293,11 @@ app.post('/api/websites/:id/magento-token', async (req, res) => {
     configData.wpUser = adminUser
     configData.wpPass = tokenStr
     configData.connectedUser = adminUser
-    configData.tokenGeneratedAt = Date.now()
+    configData.tokenGeneratedAt = new Date().toISOString()
 
-    db.prepare('UPDATE websites SET wp_user = ?, wp_pass = ?, config_data = ?, updated_at = ? WHERE id = ?')
-      .run(adminUser, tokenStr, JSON.stringify(configData), Date.now(), id)
+    const now = new Date().toISOString()
+    db.prepare('UPDATE websites SET config_data = ?, updated_at = ? WHERE id = ?')
+      .run(JSON.stringify(configData), now, id)
 
     res.json({ success: true, message: 'Magento Admin token successfully authorized and saved.' })
   } catch (e) {
