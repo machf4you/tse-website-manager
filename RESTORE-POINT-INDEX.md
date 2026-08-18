@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.30-housekeeping | `v1.30-restore-point-system-sync` | `[AUTO]` | 18-08-2026 09:45 | Bring Restore Points UI and RESTORE-POINT-INDEX.md fully in sync with V1.30 project history (V1.30). | **Current** |
+| v1.30-class-doc | `v1.30-page-type-classification-rules-doc` | `[AUTO]` | 18-08-2026 10:02 | Update Global Settings -> Page Type Classifications reference documentation and core principles (V1.30). | **Current** |
+| v1.30-housekeeping | `v1.30-restore-point-system-sync` | `17a49c5` | 18-08-2026 09:45 | Bring Restore Points UI and RESTORE-POINT-INDEX.md fully in sync with V1.30 project history (V1.30). | Superseded |
 | v1.30-add-three-excl | `v1.30-add-three-exclusions` | `1b4a3cd` | 18-08-2026 09:10 | Add Customer Service, Enable Cookies, Further Resources to exclusion rules in packageExtractor and server/index.js (V1.30). | Superseded |
 | v1.30-hf4you-excl | `v1.30-hf4you-exclusion-rules` | `ea5389a` | 18-08-2026 08:37 | Extended HF4You page exclusion rules for utility/policy CMS pages in packageExtractor and server/index.js (V1.30). | Superseded |
 | v1.30-hf4you-target | `v1.30-hf4you-target-phrases` | `234aa41` | 18-08-2026 08:18 | Auto-configure 50 commercial HF4You Magento target phrases while leaving 9 filter pages untouched in SQLite (V1.30). | Superseded |

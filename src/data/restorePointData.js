@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-page-type-classification-rules-doc',
+    version: 'v1.30-class-doc',
+    gitTag: 'v1.30-page-type-classification-rules-doc',
+    commit: '[AUTO]',
+    date: '18-08-2026 10:02',
+    title: 'Update Global Settings -> Page Type Classifications reference documentation and core principles (V1.30)',
+    description: 'Updated Global Settings -> Page Type Classifications reference document with core SEO purpose principles, 6 page types, full exclusion categories, Shop By/filter manual review rules, and Magento common framework integration.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-page-type-classification-rules-doc.md'
+  },
+  {
     id: 'v1.30-restore-point-system-sync',
     version: 'v1.30-housekeeping',
     gitTag: 'v1.30-restore-point-system-sync',
-    commit: '[AUTO]',
+    commit: '17a49c5',
     date: '18-08-2026 09:45',
     title: 'Bring Restore Points UI and RESTORE-POINT-INDEX.md fully in sync with V1.30 project history (V1.30)',
     description: 'Updated RESTORE-POINT-INDEX.md, restorePointData.js, and restorePointService.js to maintain a single authoritative chronological index across all 44 restore points.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-restore-point-system-sync.md'
   },
   {

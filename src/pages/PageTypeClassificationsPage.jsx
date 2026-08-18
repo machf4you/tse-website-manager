@@ -1,49 +1,75 @@
 import { useState } from 'react'
 import './PageTypeClassificationsPage.css'
 
-const DEFAULT_DOCUMENT_CONTENT = `Website Manager Page Classification Rules
+const DEFAULT_DOCUMENT_CONTENT = `==================================================
+Website Manager Page Classification Rules & Standards
+==================================================
 
-The existing classifications are:
-- Excluded
-- Hub
-- Unclassified
+CORE CLASSIFICATION PRINCIPLE:
+"Page classification is based on SEO purpose, not simply on the technical type of page. Website Manager should classify pages according to their intended search and commercial role. Technical page type, URL structure or CMS type may provide evidence, but must not by itself determine the SEO classification."
 
-Add the following classifications:
-- Landing
-- Topical
+--------------------------------------------------
+1. PAGE TYPES & DEFINITIONS
+--------------------------------------------------
+These are SEO / page-management classifications within Website Manager. They are NOT WordPress post types and NOT Magento entity types.
 
-These classifications are SEO classifications, NOT WordPress post types.
+- EXCLUDED:
+  A page that should not be managed as an SEO target within Website Manager because it exists primarily for website operation, compliance, account management, navigation/filtering or other non-SEO purposes.
 
-----------------------------------------
-Excluded Pages
-----------------------------------------
+- HUB:
+  The primary high-level page for a website or major content structure. Normally the homepage is classified as Hub.
 
-These should automatically be classified as Excluded because they are normally not SEO management targets:
+- LANDING:
+  A commercial page designed to rank for a search term and generate enquiries, leads, sales or conversions.
 
-1. Legal / Policy Pages
+- TOPICAL:
+  Supporting informational content designed to build topical authority, answer questions and support commercial Landing pages through internal linking.
+
+- ARTICLE:
+  A genuine article/blog-style content page. Article pages are informational content but are separately identified where the source/site structure indicates that the page is an actual article.
+
+- UNCLASSIFIED:
+  A page where the system does not have enough confidence to assign a meaningful SEO classification.
+  (IMPORTANT: Do not force uncertain pages into Landing, Topical or Article.)
+
+--------------------------------------------------
+2. EXCLUDED PAGES POLICY
+--------------------------------------------------
+LEGAL / POLICY:
 - Privacy Policy
 - Cookie Policy
 - Terms & Conditions
 - Terms of Service
 - Disclaimer
 - Accessibility Statement
+- Returns Policy
+- Orders & Returns
+- Delivery Information
+- Delivery Details
+- Payment Information
+- Finance
+- Price Match
+- Pay Later With Klarna
 
-2. Website Utility Pages
-- About Us page (/about-us/)
-- Contact page (/contact-us/)
+WEBSITE UTILITY / COMPANY INFORMATION:
+- About Us
+- Contact Us
+- Customer Service
 - Thank You pages
 - Confirmation pages
 - Search results pages
-- 404 page
+- 404 pages
 - Login pages
 - Register pages
 - Lost Password pages
 - My Account pages
+- Enable Cookies
+- Further Resources
 
-3. WordPress/System Pages
+WORDPRESS / SYSTEM PAGES:
 - Author archive pages
 - Date archive pages
-- Category archive pages (unless specifically used as SEO landing pages)
+- Category archive pages unless specifically being used as genuine SEO landing pages
 - Tag archive pages
 - Attachment pages
 - Media attachment URLs
@@ -51,7 +77,7 @@ These should automatically be classified as Excluded because they are normally n
 - RSS feeds
 - XML feeds
 
-4. Ecommerce / Transaction Pages
+ECOMMERCE / TRANSACTION:
 - Cart
 - Checkout
 - Basket
@@ -59,7 +85,7 @@ These should automatically be classified as Excluded because they are normally n
 - Wishlist
 - Compare pages
 
-5. Other Non-SEO Pages
+OTHER NON-SEO PAGES:
 - Internal search pages
 - Duplicate/system-generated pages
 - Test pages
@@ -67,75 +93,137 @@ These should automatically be classified as Excluded because they are normally n
 - Staging pages
 - Empty pages with no meaningful content
 
-Rule:
-If a page exists purely for website operation, compliance, account management, or system functionality, it should be Excluded.
-If it has a genuine search purpose, it should not be excluded and should remain available for Hub / Landing / Topical classification.
+BUSINESS / SUPPORT / NON-SEO CONTENT:
+- Partners
+- Testimonials
+- Store / showroom information pages
+- FAQ / FAQs where they are being used as customer-service/support pages rather than genuine SEO informational content
 
-----------------------------------------
-Landing Pages
-----------------------------------------
+IMPORTANT EXCLUSION PRINCIPLE:
+If a page exists purely for website operation, compliance, account management, transaction processing, customer service, navigation/filtering or system functionality, it should normally be Excluded.
+However: If a page has a genuine search purpose and is intentionally being used as an SEO target, it should NOT automatically be excluded merely because of its name or URL.
 
+--------------------------------------------------
+3. FILTER / SHOP-BY PAGES
+--------------------------------------------------
+Pages such as:
+- Shop By Size
+- Shop By Bed Size
+- Shop By Type
+- Shop By Headboard Type
+- Shop By Headboard Size
+- Shop By Mattress Type
+- Shop By Mattress Size
+- Shop By Divan Type
+- Shop By Divan Size
+- or similar filter/navigation pages
+
+are NOT automatically treated as normal commercial Landing pages.
+They are often navigation/filter mechanisms rather than standalone SEO targets.
+They should therefore be reviewed manually and may be classified as:
+- Excluded  OR
+- Unclassified
+depending on whether the specific page has a genuine independent search purpose. Do not automatically classify every ecommerce category/filter page as a Landing page simply because it contains commercial keywords.
+
+--------------------------------------------------
+4. LANDING PAGES
+--------------------------------------------------
 Definition:
-A Landing page is a page designed to rank for a commercial search term and generate enquiries, leads, sales, or conversions.
+A Landing page is a page designed to rank for a commercial search term and generate enquiries, leads, sales or conversions.
 
-Classify a page as Landing when it matches commercial search intent, including:
-- Main service pages
-- Service variation pages
-- Location pages
+Examples:
+- Main service pages (/loft-conversions/, /house-extensions/)
+- Service variation pages (/bathroom-installations/)
+- Location pages (/builders-surrey/, /kitchen-fitters-london/)
 - Service + location pages
-- Commercial category pages
+- Commercial category pages (/beds/, /memory-foam-beds/, /ottoman-beds/)
+- Ecommerce category pages with genuine search intent
 - Pages targeting a primary customer search term
 
-Examples:
-- /loft-conversions/
-- /house-extensions/
-- /builders-surrey/
-- /bathroom-installations/
-- /kitchen-fitters-london/
-
 Purpose:
-Capture search demand and convert visitors.
+Capture commercial search demand and convert visitors.
 
-----------------------------------------
-Topical Pages
-----------------------------------------
+For Magento / Ecommerce:
+Active genuine commercial category pages can be classified as Landing. Administrative/root/container categories and filter/navigation pages should not automatically be treated as Landing.
 
+--------------------------------------------------
+5. TOPICAL PAGES
+--------------------------------------------------
 Definition:
-A Topical page is supporting content designed to build authority, answer questions, and support Landing pages through internal linking.
-
-Classify a page as Topical when it matches informational search intent, including:
-- Blog articles
-- Knowledge Hub articles
-- Guides
-- FAQs
-- Advice pages
-- Informational resources
-- Supporting content
-- Educational articles
+A Topical page is supporting informational content designed to build authority, answer questions and support Landing pages through internal linking.
 
 Examples:
-- "How much value does a loft conversion add?"
-- "Do I need planning permission for a house extension?"
-- "Best types of home extensions"
+- Knowledge Hub articles
+- Guides & Buying guides ("Types of Mattresses Explained", "Best Mattress for Back Pain")
+- Advice pages ("How much value does a loft conversion add?")
+- Informational resources ("Do I need planning permission for a house extension?")
+- Educational content ("Best types of home extensions")
+- Supporting content & Informational CMS pages
 
 Purpose:
 Build topical authority and support commercial Landing pages.
 
-----------------------------------------
-Classification Rules
-----------------------------------------
+--------------------------------------------------
+6. ARTICLE PAGES
+--------------------------------------------------
+Definition:
+An Article is a genuine blog/article-style content page. Article pages are informational and can support Landing pages through internal linking.
 
-Automatic rules:
-1. Homepage: Always classify as Hub
-2. Excluded pages: Remain Excluded
-3. Commercial intent pages: Classify Landing
-4. Informational/supporting content: Classify Topical
-5. Anything uncertain: Remain Unclassified
+Guidance:
+Use Article where the source data clearly identifies the content as an article/blog post or where the page is clearly structured and intended as an article. Do NOT automatically classify every informational page as Article. Article and Topical are separate SEO classifications.
 
-Do NOT force a classification if confidence is low.
-Do NOT classify based only on WordPress post type, URL structure alone, or Page name alone.`
+--------------------------------------------------
+7. HUB PAGES
+--------------------------------------------------
+Definition:
+A Hub is a high-level page that acts as the main authority/entry point for a website or major subject structure.
+
+Automatic Rule:
+- Homepage -> Hub
+The homepage should normally remain Hub unless there is a specific manual override.
+
+--------------------------------------------------
+8. AUTOMATIC CLASSIFICATION LOGIC
+--------------------------------------------------
+Classification priority order:
+1. Excluded rules
+2. Homepage / Hub rule
+3. Explicit Article identification where supported by source data
+4. Genuine commercial intent -> Landing
+5. Genuine informational/supporting intent -> Topical
+6. Anything uncertain -> Unclassified
+
+IMPORTANT:
+Do NOT force a classification when confidence is low.
+Do NOT classify solely from:
+- WordPress post type
+- Magento entity type
+- URL structure
+- Page title alone
+
+Classification should use the available page information and established rules.
+
+--------------------------------------------------
+9. MAGENTO-SPECIFIC CLASSIFICATION
+--------------------------------------------------
+Magento pages use the same common Website Manager SEO classification framework:
+- Homepage -> Hub
+- Active genuine ecommerce category pages at relevant category levels -> Landing
+- Genuine informational CMS content -> Topical or Article depending on content/source type
+- Root / container categories -> Excluded
+- Inactive categories -> Excluded
+- Utility / policy / support pages -> Excluded
+- Shop By / filter / navigation pages -> manually reviewed and may be Excluded or Unclassified
+
+Do NOT create a separate Magento classification system. Magento pages use the exact same common Website Manager SEO classification framework.`
 
 const DEFAULT_COMMENTS = [
+  {
+    id: 'c4',
+    author: 'System Admin',
+    timestamp: '18-08-2026 10:00',
+    text: 'Updated classification documentation (v1.30): Documented core SEO purpose principle, 6 page types, full exclusion categories, Shop By/filter manual review rules, and Magento common framework integration.'
+  },
   {
     id: 'c3',
     author: 'System Admin',
@@ -146,7 +234,7 @@ const DEFAULT_COMMENTS = [
     id: 'c2',
     author: 'System Admin',
     timestamp: '07-08-2026 14:07',
-    text: 'Expanded Excluded Pages rules: Legal/Policy (Privacy, Cookies, Terms, Disclaimer, Accessibility), Utility (Thank You, Confirmation, Search, 404, Login, Register), System (Author, Date, Tag archives, Attachment, Feed, RSS), Ecommerce (Cart, Checkout, Basket, Wishlist, Compare), and Non-SEO operational pages.'
+    text: 'Expanded Excluded Pages rules: Legal/Policy, Utility, System, Ecommerce, and Non-SEO operational pages.'
   },
   {
     id: 'c1',
@@ -159,7 +247,11 @@ const DEFAULT_COMMENTS = [
 export default function PageTypeClassificationsPage() {
   const [docContent, setDocContent] = useState(() => {
     try {
-      const saved = localStorage.getItem('tse_page_type_classifications_doc_v1')
+      const saved = localStorage.getItem('tse_page_type_classifications_doc_v1.30') || localStorage.getItem('tse_page_type_classifications_doc_v1')
+      // If saved content is old default, use updated DEFAULT_DOCUMENT_CONTENT
+      if (saved && !saved.includes('CORE CLASSIFICATION PRINCIPLE')) {
+        return DEFAULT_DOCUMENT_CONTENT
+      }
       if (saved !== null) return saved
     } catch (e) {
       console.error('Failed to load classifications document:', e)
@@ -169,7 +261,7 @@ export default function PageTypeClassificationsPage() {
 
   const [comments, setComments] = useState(() => {
     try {
-      const saved = localStorage.getItem('tse_page_type_classifications_comments_v1')
+      const saved = localStorage.getItem('tse_page_type_classifications_comments_v1.30') || localStorage.getItem('tse_page_type_classifications_comments_v1')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) return parsed
@@ -185,7 +277,7 @@ export default function PageTypeClassificationsPage() {
 
   const handleSaveDoc = () => {
     try {
-      localStorage.setItem('tse_page_type_classifications_doc_v1', docContent)
+      localStorage.setItem('tse_page_type_classifications_doc_v1.30', docContent)
       setSaveMessage('Saved successfully!')
       setTimeout(() => setSaveMessage(''), 3000)
     } catch (e) {
@@ -198,7 +290,7 @@ export default function PageTypeClassificationsPage() {
     if (window.confirm('Reset classification document back to default rules?')) {
       setDocContent(DEFAULT_DOCUMENT_CONTENT)
       try {
-        localStorage.setItem('tse_page_type_classifications_doc_v1', DEFAULT_DOCUMENT_CONTENT)
+        localStorage.setItem('tse_page_type_classifications_doc_v1.30', DEFAULT_DOCUMENT_CONTENT)
         setSaveMessage('Reset to defaults.')
         setTimeout(() => setSaveMessage(''), 3000)
       } catch (e) {
@@ -230,7 +322,7 @@ export default function PageTypeClassificationsPage() {
     setNewComment('')
 
     try {
-      localStorage.setItem('tse_page_type_classifications_comments_v1', JSON.stringify(updated))
+      localStorage.setItem('tse_page_type_classifications_comments_v1.30', JSON.stringify(updated))
     } catch (err) {
       console.error('Failed to save comment:', err)
     }
@@ -281,7 +373,7 @@ export default function PageTypeClassificationsPage() {
             value={docContent}
             onChange={(e) => setDocContent(e.target.value)}
             placeholder="Type or update classification rules..."
-            rows={22}
+            rows={26}
             id="ptc-doc-editor"
           />
         </div>
