@@ -1,53 +1,80 @@
-import { useState, useEffect, useRef } from 'react'
-import { CURRENT_BUILD_VERSION, CURRENT_BUILD_LABEL } from '../config/version'
+import { useState, useEffect } from 'react'
+import { CURRENT_BUILD_VERSION, CURRENT_BUILD_LABEL, CURRENT_BUILD_HASH, CURRENT_BUILD_TIMESTAMP } from '../config/version'
 import './GlobalDeploymentIndicator.css'
 
 export default function GlobalDeploymentIndicator() {
-  const [deployState, setDeployState] = useState('idle') // 'idle' | 'updating' | 'ready'
-  const [targetVersion, setTargetVersion] = useState(CURRENT_BUILD_VERSION)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  
-  const timerRef = useRef(null)
+  const [deployState, setDeployState] = useState('normal') // 'normal' | 'updating' | 'update_ready'
+  const [serverVersion, setServerVersion] = useState(CURRENT_BUILD_VERSION)
 
   useEffect(() => {
     let isMounted = true
 
-    async function checkLiveVersion() {
+    async function checkDeploymentStatus() {
       try {
-        const res = await fetch(`/version.json?t=${Date.now()}`, {
-          cache: 'no-store',
-          credentials: 'same-origin'
-        })
-        if (res.ok) {
-          const data = await res.json()
-          const liveVer = String(data.version || '').trim()
-          const buildingVer = String(data.building || '').trim()
+        let isUpdating = false
+        let serverHash = CURRENT_BUILD_HASH
+        let serverVer = CURRENT_BUILD_VERSION
+        let serverTimestamp = CURRENT_BUILD_TIMESTAMP
 
-          if (!isMounted) return
-
-          if (buildingVer && buildingVer !== liveVer && buildingVer !== CURRENT_BUILD_VERSION) {
-            // Server build in progress -> UPDATING state with spinner & timer
-            setTargetVersion(buildingVer)
-            setDeployState('updating')
-          } else if (liveVer && liveVer !== CURRENT_BUILD_VERSION) {
-            // Live version deployed on host -> READY state with Ctrl+F5 badge
-            setTargetVersion(liveVer)
-            setDeployState('ready')
-          } else {
-            // Live version matches loaded version -> IDLE / LIVE state
-            setDeployState('idle')
+        // 1. Primary check: Server API /api/deployment/status
+        try {
+          const apiRes = await fetch(`/api/deployment/status?_t=${Date.now()}`, {
+            cache: 'no-store',
+            credentials: 'same-origin'
+          })
+          if (apiRes.ok) {
+            const apiData = await apiRes.json()
+            if (apiData.isDeploymentInProgress === true) {
+              isUpdating = true
+            }
+            if (apiData.version) serverVer = apiData.version
+            if (apiData.buildHash) serverHash = apiData.buildHash
+            if (apiData.buildTimestamp) serverTimestamp = Number(apiData.buildTimestamp)
           }
+        } catch (_e) {}
+
+        // 2. Secondary check: /version.json static file served by web server
+        try {
+          const staticRes = await fetch(`/version.json?_t=${Date.now()}`, {
+            cache: 'no-store',
+            credentials: 'same-origin'
+          })
+          if (staticRes.ok) {
+            const staticData = await staticRes.json()
+            if (staticData.isDeploymentInProgress === true || (staticData.building && staticData.building !== staticData.version)) {
+              isUpdating = true
+            }
+            if (staticData.version) serverVer = staticData.version
+            if (staticData.buildHash) serverHash = staticData.buildHash
+            if (staticData.buildTimestamp) serverTimestamp = Number(staticData.buildTimestamp)
+          }
+        } catch (_e) {}
+
+        if (!isMounted) return
+
+        setServerVersion(serverVer || CURRENT_BUILD_VERSION)
+
+        if (isUpdating) {
+          // STATE 2: UPDATING -> Explicit DO NOT PRESS CTRL+F5
+          setDeployState('updating')
+        } else if (
+          (serverHash && serverHash !== CURRENT_BUILD_HASH) ||
+          (serverTimestamp && serverTimestamp > CURRENT_BUILD_TIMESTAMP) ||
+          (serverVer && serverVer !== CURRENT_BUILD_VERSION)
+        ) {
+          // STATE 3: UPDATE READY -> Explicit PRESS CTRL+F5 - UPDATE READY
+          setDeployState('update_ready')
+        } else {
+          // STATE 1: NORMAL -> Current loaded frontend matches live server
+          setDeployState('normal')
         }
-      } catch (_e) {
-        // Fallback for offline or local dev environment
+      } catch (_err) {
+        // Fallback for offline / network errors
       }
     }
 
-    // Initial check
-    checkLiveVersion()
-
-    // Poll live host URL every 3 seconds for instant deployment updates
-    const interval = setInterval(checkLiveVersion, 3000)
+    checkDeploymentStatus()
+    const interval = setInterval(checkDeploymentStatus, 3000)
 
     return () => {
       isMounted = false
@@ -55,50 +82,39 @@ export default function GlobalDeploymentIndicator() {
     }
   }, [])
 
-  // Elapsed timer when in updating state
-  useEffect(() => {
-    if (deployState === 'updating') {
-      timerRef.current = setInterval(() => {
-        setElapsedSeconds(prev => prev + 1)
-      }, 1000)
-    } else {
-      setElapsedSeconds(0)
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [deployState])
-
-  const formatTimer = (sec) => {
-    const mins = Math.floor(sec / 60)
-    const remSec = sec % 60
-    return `${String(mins).padStart(2, '0')}:${String(remSec).padStart(2, '0')}`
+  const handleManualRefresh = () => {
+    window.location.reload(true)
   }
 
   if (deployState === 'updating') {
     return (
-      <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite">
-        <span className="deploy-spinner" aria-hidden="true" />
-        <span className="deploy-text">Updating V{targetVersion}…</span>
-        <span className="global-deploy-timer">{formatTimer(elapsedSeconds)}</span>
+      <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite" title="Build/Deployment in progress - Do NOT refresh yet">
+        <span className="deploy-spin-icon" aria-hidden="true">⏳</span>
+        <span className="deploy-text-updating">UPDATING — DO NOT PRESS CTRL+F5</span>
       </div>
     )
   }
 
-  if (deployState === 'ready') {
+  if (deployState === 'update_ready') {
     return (
-      <div className="global-deploy-indicator global-deploy-ready" role="status" aria-live="polite">
-        <span className="deploy-ready-dot" aria-hidden="true" />
-        <span className="deploy-text">🟢 V{targetVersion} READY</span>
-        <span className="deploy-action-badge">Ctrl+F5</span>
+      <div 
+        className="global-deploy-indicator global-deploy-ready" 
+        role="button" 
+        tabIndex={0}
+        onClick={handleManualRefresh}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleManualRefresh()}
+        title="New deployment is live! Click or press Ctrl+F5 to reload"
+      >
+        <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
+        <span className="deploy-text-ready">PRESS CTRL+F5 — UPDATE READY</span>
+        <span className="deploy-action-badge">Refresh Now</span>
       </div>
     )
   }
 
-  // Idle state: Permanent live badge in top application header
+  // STATE 1: NORMAL (Idle / Up-to-Date Live Badge)
   return (
-    <div className="global-deploy-indicator global-deploy-idle">
+    <div className="global-deploy-indicator global-deploy-normal">
       <span className="global-deploy-live-badge">
         <span className="deploy-live-dot">●</span> {CURRENT_BUILD_LABEL}
       </span>

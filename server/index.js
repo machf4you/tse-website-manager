@@ -8,9 +8,43 @@ const PORT = process.env.PORT || 3005
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
 
-// Health Check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', database: 'sqlite', timestamp: new Date().toISOString() })
+// Deployment Status Endpoints
+let inMemoryDeploymentStatus = {
+  version: '1.30',
+  buildHash: 'f93e983',
+  isDeploymentInProgress: false,
+  lastDeployedAt: new Date().toISOString()
+}
+
+app.get('/api/deployment/status', (req, res) => {
+  try {
+    const row = db.prepare(`SELECT value FROM global_settings WHERE key = 'deployment_status'`).get()
+    if (row && row.value) {
+      const parsed = JSON.parse(row.value)
+      return res.json({ status: 'ok', ...parsed })
+    }
+  } catch (e) {}
+  res.json({ status: 'ok', ...inMemoryDeploymentStatus })
+})
+
+app.post('/api/deployment/status', (req, res) => {
+  try {
+    const payload = req.body || {}
+    inMemoryDeploymentStatus = {
+      ...inMemoryDeploymentStatus,
+      ...payload,
+      updatedAt: new Date().toISOString()
+    }
+    const stmt = db.prepare(`
+      INSERT INTO global_settings (key, value, updated_at)
+      VALUES ('deployment_status', @value, CURRENT_TIMESTAMP)
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+    `)
+    stmt.run({ value: JSON.stringify(inMemoryDeploymentStatus) })
+    res.json({ status: 'ok', deploymentStatus: inMemoryDeploymentStatus })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
 })
 
 // ==========================================

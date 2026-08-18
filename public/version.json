@@ -1,5 +1,7 @@
 {
   "version": "1.30",
-  "building": "1.30",
-  "buildTimestamp": 1786971300000
+  "buildHash": "f93e983",
+  "building": "",
+  "isDeploymentInProgress": false,
+  "buildTimestamp": 1786972000000
 }

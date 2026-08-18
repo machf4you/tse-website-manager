@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-global-deployment-update-visibility-system',
+    version: 'v1.30-deploy-status',
+    gitTag: 'v1.30-global-deployment-update-visibility-system',
+    commit: '[AUTO]',
+    date: '18-08-2026 12:06',
+    title: 'Add global top header deployment status indicator with NORMAL, UPDATING, and UPDATE READY states (V1.30)',
+    description: 'Added global top header deployment status indicator rendered on every page displaying NORMAL (live version badge), UPDATING (DO NOT PRESS CTRL+F5 warning), and UPDATE READY (PRESS CTRL+F5 - UPDATE READY instruction) based on server-side deployment status.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-global-deployment-update-visibility-system.md'
+  },
+  {
     id: 'v1.30-hf4you-42-unconfigured-target-phrases',
     version: 'v1.30-hf4you-42-target',
     gitTag: 'v1.30-hf4you-42-unconfigured-target-phrases',
-    commit: '[AUTO]',
+    commit: 'f93e983',
     date: '18-08-2026 11:53',
     title: 'Configure 42 unconfigured HF4You Topical pages with concise 3-5 word target phrases in SQLite package (V1.30)',
     description: 'Applied concise 3-5 word target phrases representing core topics for the 42 unconfigured Topical pages in the live HF4You W3 package, increasing total configured pages to 92 while preserving existing configured and excluded pages.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-hf4you-42-unconfigured-target-phrases.md'
   },
   {

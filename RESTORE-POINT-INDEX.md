@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.30-hf4you-42-target | `v1.30-hf4you-42-unconfigured-target-phrases` | `[AUTO]` | 18-08-2026 11:53 | Configure 42 unconfigured HF4You Topical pages with concise 3-5 word target phrases in SQLite package (V1.30). | **Current** |
+| v1.30-deploy-status | `v1.30-global-deployment-update-visibility-system` | `[AUTO]` | 18-08-2026 12:06 | Add global top header deployment status indicator with NORMAL, UPDATING, and UPDATE READY states (V1.30). | **Current** |
+| v1.30-hf4you-42-target | `v1.30-hf4you-42-unconfigured-target-phrases` | `f93e983` | 18-08-2026 11:53 | Configure 42 unconfigured HF4You Topical pages with concise 3-5 word target phrases in SQLite package (V1.30). | Superseded |
 | v1.30-connect-page-auditor | `v1.30-connect-live-page-auditor-api` | `28b5e71` | 18-08-2026 11:24 | Update PAGE_AUDITOR_API_BASE to production HTTPS endpoint https://api-page-auditor.thesearchequation.co.uk/api in pageAuditorApi.js (V1.30). | Superseded |
 | v1.30-row-update | `v1.30-w3-row-audit-status-live-update` | `2699ff7` | 18-08-2026 10:31 | Make W3 table rows visually update to orange Audited and green Last Audit timestamp row-by-row during bulk audit (V1.30). | Superseded |
 | v1.30-progress-fix | `v1.30-w3-bulk-audit-progress-display-fix` | `875f90c` | 18-08-2026 10:28 | Add prominent live Auditing X of Y progress status card and completion banner to W3 (V1.30). | Superseded |
