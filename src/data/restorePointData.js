@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-visual-indicator-v130-ready',
+    version: 'v1.30-ready-label',
+    gitTag: 'v1.30-visual-indicator-v130-ready',
+    commit: '[AUTO]',
+    date: '18-08-2026 12:48',
+    title: 'Update global top header deployment status indicator text label to V1.30 | READY (V1.30)',
+    description: 'Updated normal state label of the global deployment indicator in src/config/version.js to V1.30 | READY so Mac can visually confirm active version readiness upon pressing Ctrl+F5 on the live site.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-visual-indicator-v130-ready.md'
+  },
+  {
     id: 'v1.30-global-deployment-update-visibility-system',
     version: 'v1.30-deploy-status',
     gitTag: 'v1.30-global-deployment-update-visibility-system',
-    commit: '[AUTO]',
+    commit: '2157640',
     date: '18-08-2026 12:06',
     title: 'Add global top header deployment status indicator with NORMAL, UPDATING, and UPDATE READY states (V1.30)',
     description: 'Added global top header deployment status indicator rendered on every page displaying NORMAL (live version badge), UPDATING (DO NOT PRESS CTRL+F5 warning), and UPDATE READY (PRESS CTRL+F5 - UPDATE READY instruction) based on server-side deployment status.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-global-deployment-update-visibility-system.md'
   },
   {
