@@ -407,7 +407,10 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
       'price match', 'price-match',
       'pay later with klarna', 'klarna', 'pay-later',
       'partners',
-      'testimonials'
+      'testimonials',
+      'customer service', 'customer-service',
+      'enable cookies', 'enable-cookies', 'cookie-restriction-mode', 'cookie restriction',
+      'further resources', 'further-resources'
     ]
 
     if (cmsPagesJson && Array.isArray(cmsPagesJson.items)) {

@@ -212,7 +212,10 @@ export function normalizeImportedPage(p, siteUrl = '') {
     'price match', 'price-match',
     'pay later with klarna', 'klarna', 'pay-later',
     'partners',
-    'testimonials'
+    'testimonials',
+    'customer service', 'customer-service',
+    'enable cookies', 'enable-cookies', 'cookie-restriction-mode', 'cookie restriction',
+    'further resources', 'further-resources'
   ]
 
   const matchesExclusion = exclusionPatterns.some(pattern => {
