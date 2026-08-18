@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-internal-linking-rules-doc',
+    version: 'v1.30-link-rules-doc',
+    gitTag: 'v1.30-internal-linking-rules-doc',
+    commit: '[AUTO]',
+    date: '18-08-2026 10:09',
+    title: 'Add Global Settings -> Internal Linking Rules reference documentation and principles (V1.30)',
+    description: 'Added Global Settings -> Internal Linking Rules page documenting 14 sections including min incoming links, recommendation caps, directional SEO hierarchy, contextual placement, relevance scoring, and platform independence.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-internal-linking-rules-doc.md'
+  },
+  {
     id: 'v1.30-page-type-classification-rules-doc',
     version: 'v1.30-class-doc',
     gitTag: 'v1.30-page-type-classification-rules-doc',
-    commit: '[AUTO]',
+    commit: '8a48a5b',
     date: '18-08-2026 10:02',
     title: 'Update Global Settings -> Page Type Classifications reference documentation and core principles (V1.30)',
     description: 'Updated Global Settings -> Page Type Classifications reference document with core SEO purpose principles, 6 page types, full exclusion categories, Shop By/filter manual review rules, and Magento common framework integration.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-page-type-classification-rules-doc.md'
   },
   {
