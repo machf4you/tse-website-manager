@@ -10,7 +10,24 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage) {
   // 2. Homepage -> Hub
   if (isHomePage) return 'Hub'
 
-  // 3. WordPress Post -> Article
+  // 3. Magento Category Rules (Authoritative Hierarchy Node)
+  if (p && (p.post_type === 'category' || p.magentoCategoryId !== undefined)) {
+    // Root container level <= 1 OR inactive category -> Excluded
+    if ((p.level !== undefined && p.level <= 1) || p.is_active === false) {
+      return 'Excluded'
+    }
+    // Active category level >= 2 -> Landing (Priority 2)
+    if (p.level === undefined || p.level >= 2) {
+      return 'Landing'
+    }
+  }
+
+  // 4. Magento CMS Page Rules (Non-homepage, non-excluded -> Topical)
+  if (p && p.post_type === 'cms_page') {
+    return 'Topical'
+  }
+
+  // 5. WordPress Post -> Article
   if (p && (p.post_type === 'post' || p.type === 'post')) return 'Article'
 
   const lowerTitle = title.toLowerCase()
@@ -190,7 +207,10 @@ export function normalizeImportedPage(p, siteUrl = '') {
     return lowerTitle.includes(pattern) || lowerUrl.includes(pattern)
   })
 
-  const isExcluded = p.isExcluded !== undefined ? Boolean(p.isExcluded) : matchesExclusion
+  const isMagentoCategory = p.post_type === 'category' || p.magentoCategoryId !== undefined
+  const isMagentoContainerOrInactive = isMagentoCategory && ((p.level !== undefined && p.level <= 1) || p.is_active === false)
+
+  const isExcluded = p.isExcluded !== undefined ? Boolean(p.isExcluded) : (matchesExclusion || isMagentoContainerOrInactive)
 
   // 4. SEO Page Classification Rules
   const cleanUrlPath = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '')
@@ -198,6 +218,7 @@ export function normalizeImportedPage(p, siteUrl = '') {
   const isHomePage =
     p.isHome === true ||
     p.is_front_page === true ||
+    p.id === 'cms-home' ||
     cleanUrlPath === '' ||
     cleanUrlPath === '/' ||
     (cleanSiteUrl && url.replace(/\/+$/, '') === cleanSiteUrl) ||

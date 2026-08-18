@@ -366,12 +366,18 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
       if (node.name && node.id) {
         const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
         const fullCatUrl = `${cleanSiteUrl}/${catSlug}`
+        const isContainerOrInactive = (node.level !== undefined && node.level <= 1) || Boolean(node.is_active) === false
+        const catType = isContainerOrInactive ? 'Excluded' : 'Landing'
+        const catPriority = isContainerOrInactive ? 0 : 2
+
         pages.push({
           id: `cat-${node.id}`,
           title: node.name,
           url: fullCatUrl,
           link: fullCatUrl,
-          type: 'Landing',
+          type: catType,
+          priority: catPriority,
+          isExcluded: isContainerOrInactive,
           post_type: 'category',
           is_active: Boolean(node.is_active),
           level: node.level,
@@ -387,18 +393,46 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
     }
     if (categoriesJson) processCategoryNode(categoriesJson)
 
-    // 2. Process CMS Pages (Preserves Homepage Hub Classification)
+    // 2. Process CMS Pages (Preserves Homepage Hub Classification & Policy Exclusions)
+    const exclusionPatterns = [
+      'privacy policy', 'privacy-policy', 'terms & conditions', 'terms-and-conditions', 'terms-conditions',
+      'disclaimer', 'accessibility', 'about us', 'about-us', 'contact us', 'contact-us',
+      '404', 'no-route', 'evoque_404', 'cart', 'checkout', 'my-account'
+    ]
+
     if (cmsPagesJson && Array.isArray(cmsPagesJson.items)) {
       cmsPagesJson.items.forEach(p => {
         const slug = p.identifier || ''
+        const title = p.title || p.identifier || ''
+        const lowerTitle = title.toLowerCase()
+        const lowerSlug = slug.toLowerCase()
+
         const pageUrl = slug === 'home' || slug === '' ? cleanSiteUrl : `${cleanSiteUrl}/${slug}`
         const isHome = slug === 'home' || pageUrl === cleanSiteUrl || pageUrl === `${cleanSiteUrl}/`
+        const matchesExclusion = exclusionPatterns.some(pattern => lowerTitle.includes(pattern) || lowerSlug.includes(pattern))
+
+        let pageType = 'Topical'
+        let pagePriority = 3
+        let pageExcluded = false
+
+        if (isHome) {
+          pageType = 'Hub'
+          pagePriority = 1
+          pageExcluded = false
+        } else if (matchesExclusion) {
+          pageType = 'Excluded'
+          pagePriority = 0
+          pageExcluded = true
+        }
+
         pages.push({
           id: `cms-${p.id}`,
-          title: p.title || p.identifier,
+          title: title,
           url: pageUrl,
           link: pageUrl,
-          type: isHome ? 'Hub' : 'Landing',
+          type: pageType,
+          priority: pagePriority,
+          isExcluded: pageExcluded,
           post_type: 'cms_page',
           content: p.content || '',
           meta_title: p.meta_title || p.title,
