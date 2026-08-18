@@ -248,6 +248,7 @@ export async function authorizeMagentoAdminTokenApi(siteId, username, password, 
 
     return {
       success: true,
+      token: data.token,
       message: data.message || 'Magento Bearer token successfully authorized.'
     }
   } catch (err) {

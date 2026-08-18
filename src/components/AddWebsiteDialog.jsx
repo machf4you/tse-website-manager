@@ -462,6 +462,8 @@ export default function AddWebsiteDialog({
         return
       }
 
+      const bearerToken = authRes.token || editingSite?.configData?.wpPass || editingSite?.wpPass || ''
+
       const magentoTile = {
         ...(editingSite || {}),
         id: targetId,
@@ -471,12 +473,12 @@ export default function AddWebsiteDialog({
         portfolio: mgPortfolio || 'tse',
         serverType: mgServerType || 'Unknown',
         wpUser: mgUser.trim(),
-        wpPass: mgPass.trim(),
+        wpPass: bearerToken,
         connectedUser: mgUser.trim(),
         configData: {
           ...(editingSite?.configData || {}),
           wpUser: mgUser.trim(),
-          wpPass: mgPass.trim(),
+          wpPass: bearerToken,
           connectedUser: mgUser.trim(),
           serverType: mgServerType || 'Unknown',
           mgBackendUrl: mgBackend.trim(),

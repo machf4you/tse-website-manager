@@ -299,7 +299,7 @@ app.post('/api/websites/:id/magento-token', async (req, res) => {
     db.prepare('UPDATE websites SET config_data = ?, updated_at = ? WHERE id = ?')
       .run(JSON.stringify(configData), now, id)
 
-    res.json({ success: true, message: 'Magento Admin token successfully authorized and saved.' })
+    res.json({ success: true, token: tokenStr, message: 'Magento Admin token successfully authorized and saved.' })
   } catch (e) {
     res.status(500).json({ success: false, message: e.message })
   }
