@@ -98,12 +98,39 @@ export default function WebsitesDashboard() {
     } catch (e) {}
   }, [sites])
 
-  const handleAddWebsite = (newSite) => {
-    setSites(prev => [newSite, ...prev])
-    saveWebsiteApi(newSite)
+  const handleAddWebsite = async (newSite) => {
+    await saveWebsiteApi(newSite)
+    try {
+      const freshApiSites = await getWebsitesApi()
+      if (Array.isArray(freshApiSites) && freshApiSites.length > 0) {
+        setSites(freshApiSites)
+      }
+    } catch (err) {}
   }
 
-  const handleUpdateWebsite = (updatedSite) => {
+  const handleUpdateWebsite = async (updatedSite) => {
+    // 1. Save updated tile payload to SQLite API
+    await saveWebsiteApi(updatedSite)
+
+    // 2. Authoritative Server-State Re-Hydration: Re-fetch latest sites directly from SQLite database API
+    try {
+      const freshApiSites = await getWebsitesApi()
+      if (Array.isArray(freshApiSites) && freshApiSites.length > 0) {
+        setSites(freshApiSites)
+
+        // Find the fresh authoritative record from SQLite database by ID
+        const freshRecord = freshApiSites.find(s => String(s.id) === String(updatedSite.id))
+        if (freshRecord) {
+          setEditingSite(null)
+          if (managedSite && String(managedSite.id) === String(updatedSite.id)) {
+            setManagedSite(freshRecord)
+          }
+          return
+        }
+      }
+    } catch (err) {}
+
+    // Fallback preserving platform if network fails during re-fetch
     const rawPlatform = String(updatedSite.platform || updatedSite.platform_type || updatedSite.configData?.platform || '').toLowerCase()
     const isMg = rawPlatform === 'magento' || Boolean(updatedSite.configData?.mgBackendUrl) || Boolean(updatedSite.mgBackendUrl)
     const finalSite = {
@@ -111,9 +138,8 @@ export default function WebsitesDashboard() {
       platform: isMg ? 'magento' : (updatedSite.platform || 'wordpress')
     }
     setSites(prev => prev.map(s => s.id === finalSite.id ? finalSite : s))
-    saveWebsiteApi(finalSite)
     setEditingSite(null)
-    if (managedSite && managedSite.id === finalSite.id) {
+    if (managedSite && String(managedSite.id) === String(finalSite.id)) {
       setManagedSite(finalSite)
     }
   }
