@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-connect-live-page-auditor-api',
+    version: 'v1.30-connect-page-auditor',
+    gitTag: 'v1.30-connect-live-page-auditor-api',
+    commit: '[AUTO]',
+    date: '18-08-2026 11:24',
+    title: 'Update PAGE_AUDITOR_API_BASE to production HTTPS endpoint https://api-page-auditor.thesearchequation.co.uk/api in pageAuditorApi.js (V1.30)',
+    description: 'Replaced localhost:8000 constant with production HTTPS endpoint https://api-page-auditor.thesearchequation.co.uk/api with environment variable override support in pageAuditorApi.js.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-connect-live-page-auditor-api.md'
+  },
+  {
     id: 'v1.30-w3-row-audit-status-live-update',
     version: 'v1.30-row-update',
     gitTag: 'v1.30-w3-row-audit-status-live-update',
-    commit: '[AUTO]',
+    commit: '2699ff7',
     date: '18-08-2026 10:31',
     title: 'Make W3 table rows visually update to orange Audited and green Last Audit timestamp row-by-row during bulk audit (V1.30)',
     description: 'Updated W3 bulk audit execution loop so each row visually transitions to orange Audited button and green Last Audit timestamp immediately upon successful completion before advancing to the next URL.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-w3-row-audit-status-live-update.md'
   },
   {

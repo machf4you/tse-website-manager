@@ -2,7 +2,7 @@
  * Service to interface with the separate TSE Page Auditor application engine (FastAPI @ http://localhost:8000/api).
  */
 
-const PAGE_AUDITOR_API_BASE = 'http://localhost:8000/api'
+const PAGE_AUDITOR_API_BASE = (import.meta.env && import.meta.env.VITE_PAGE_AUDITOR_API_URL) || 'https://api-page-auditor.thesearchequation.co.uk/api'
 
 /**
  * Check if TSE Page Auditor API server is reachable

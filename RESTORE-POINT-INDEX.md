@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.30-row-update | `v1.30-w3-row-audit-status-live-update` | `[AUTO]` | 18-08-2026 10:31 | Make W3 table rows visually update to orange Audited and green Last Audit timestamp row-by-row during bulk audit (V1.30). | **Current** |
+| v1.30-connect-page-auditor | `v1.30-connect-live-page-auditor-api` | `[AUTO]` | 18-08-2026 11:24 | Update PAGE_AUDITOR_API_BASE to production HTTPS endpoint https://api-page-auditor.thesearchequation.co.uk/api in pageAuditorApi.js (V1.30). | **Current** |
+| v1.30-row-update | `v1.30-w3-row-audit-status-live-update` | `2699ff7` | 18-08-2026 10:31 | Make W3 table rows visually update to orange Audited and green Last Audit timestamp row-by-row during bulk audit (V1.30). | Superseded |
 | v1.30-progress-fix | `v1.30-w3-bulk-audit-progress-display-fix` | `875f90c` | 18-08-2026 10:28 | Add prominent live Auditing X of Y progress status card and completion banner to W3 (V1.30). | Superseded |
 | v1.30-w3-bulk-audit | `v1.30-w3-run-full-url-audit-button` | `6c24953` | 18-08-2026 10:21 | Add top-right Run Full URL Audit button and orange Audited status buttons to W3 Page Management (V1.30). | Superseded |
 | v1.30-link-rules-doc | `v1.30-internal-linking-rules-doc` | `4a81a93` | 18-08-2026 10:09 | Add Global Settings -> Internal Linking Rules reference documentation and principles (V1.30). | Superseded |
