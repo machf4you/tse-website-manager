@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-hf4you-42-unconfigured-target-phrases',
+    version: 'v1.30-hf4you-42-target',
+    gitTag: 'v1.30-hf4you-42-unconfigured-target-phrases',
+    commit: '[AUTO]',
+    date: '18-08-2026 11:53',
+    title: 'Configure 42 unconfigured HF4You Topical pages with concise 3-5 word target phrases in SQLite package (V1.30)',
+    description: 'Applied concise 3-5 word target phrases representing core topics for the 42 unconfigured Topical pages in the live HF4You W3 package, increasing total configured pages to 92 while preserving existing configured and excluded pages.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-hf4you-42-unconfigured-target-phrases.md'
+  },
+  {
     id: 'v1.30-connect-live-page-auditor-api',
     version: 'v1.30-connect-page-auditor',
     gitTag: 'v1.30-connect-live-page-auditor-api',
-    commit: '[AUTO]',
+    commit: '28b5e71',
     date: '18-08-2026 11:24',
     title: 'Update PAGE_AUDITOR_API_BASE to production HTTPS endpoint https://api-page-auditor.thesearchequation.co.uk/api in pageAuditorApi.js (V1.30)',
     description: 'Replaced localhost:8000 constant with production HTTPS endpoint https://api-page-auditor.thesearchequation.co.uk/api with environment variable override support in pageAuditorApi.js.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-connect-live-page-auditor-api.md'
   },
   {
