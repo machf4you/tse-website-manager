@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.30-w3-bulk-audit-progress-display-fix',
+    version: 'v1.30-progress-fix',
+    gitTag: 'v1.30-w3-bulk-audit-progress-display-fix',
+    commit: '[AUTO]',
+    date: '18-08-2026 10:28',
+    title: 'Add prominent live Auditing X of Y progress status card and completion banner to W3 (V1.30)',
+    description: 'Added dedicated live progress card displaying Auditing X of Y with spinner and animated progress bar, plus explicit completion status banner.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.30-w3-bulk-audit-progress-display-fix.md'
+  },
+  {
     id: 'v1.30-w3-run-full-url-audit-button',
     version: 'v1.30-w3-bulk-audit',
     gitTag: 'v1.30-w3-run-full-url-audit-button',
-    commit: '[AUTO]',
+    commit: '6c24953',
     date: '18-08-2026 10:21',
     title: 'Add top-right Run Full URL Audit button and orange Audited status buttons to W3 Page Management (V1.30)',
     description: 'Added orange top-right Run Full URL Audit button to W3 Page Management with progress tracking, orange Audited buttons, green Last Audit date badges, and server persistence.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.30-w3-run-full-url-audit-button.md'
   },
   {

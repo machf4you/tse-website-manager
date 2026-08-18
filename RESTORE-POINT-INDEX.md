@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.30-w3-bulk-audit | `v1.30-w3-run-full-url-audit-button` | `[AUTO]` | 18-08-2026 10:21 | Add top-right Run Full URL Audit button and orange Audited status buttons to W3 Page Management (V1.30). | **Current** |
+| v1.30-progress-fix | `v1.30-w3-bulk-audit-progress-display-fix` | `[AUTO]` | 18-08-2026 10:28 | Add prominent live Auditing X of Y progress status card and completion banner to W3 (V1.30). | **Current** |
+| v1.30-w3-bulk-audit | `v1.30-w3-run-full-url-audit-button` | `6c24953` | 18-08-2026 10:21 | Add top-right Run Full URL Audit button and orange Audited status buttons to W3 Page Management (V1.30). | Superseded |
 | v1.30-link-rules-doc | `v1.30-internal-linking-rules-doc` | `4a81a93` | 18-08-2026 10:09 | Add Global Settings -> Internal Linking Rules reference documentation and principles (V1.30). | Superseded |
 | v1.30-class-doc | `v1.30-page-type-classification-rules-doc` | `8a48a5b` | 18-08-2026 10:02 | Update Global Settings -> Page Type Classifications reference documentation and core principles (V1.30). | Superseded |
 | v1.30-housekeeping | `v1.30-restore-point-system-sync` | `17a49c5` | 18-08-2026 09:45 | Bring Restore Points UI and RESTORE-POINT-INDEX.md fully in sync with V1.30 project history (V1.30). | Superseded |

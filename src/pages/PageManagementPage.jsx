@@ -450,7 +450,7 @@ export default function PageManagementPage({
         <div className="w3-header-actions">
           <button
             type="button"
-            className="btn-run-full-url-audit"
+            className={`btn-run-full-url-audit ${isBulkAuditing ? 'is-auditing' : ''}`}
             onClick={handleRunFullUrlAudit}
             disabled={isBulkAuditing}
             id="btn-run-full-url-audit"
@@ -458,7 +458,7 @@ export default function PageManagementPage({
             {isBulkAuditing ? (
               <>
                 <span className="icon-spin">⏳</span>
-                <span>Auditing {bulkAuditProgress.current} of {bulkAuditProgress.total}</span>
+                <span>Auditing in Progress...</span>
               </>
             ) : (
               'Run Full URL Audit'
@@ -467,11 +467,31 @@ export default function PageManagementPage({
         </div>
       </div>
 
-      {/* ── Bulk Audit Summary Toast Banner ── */}
-      {bulkAuditSummary && (
-        <div className="w3-audit-summary-banner">
-          <span>
-            <strong>Bulk Audit Complete:</strong> Audited: {bulkAuditSummary.audited} | Failed: {bulkAuditSummary.failed} | Skipped: {bulkAuditSummary.skipped}
+      {/* ── Bulk Audit Live Progress Panel ── */}
+      {isBulkAuditing && (
+        <div className="w3-bulk-audit-progress-card" id="w3-bulk-audit-progress-card">
+          <div className="w3-progress-indicator-header">
+            <span className="w3-spinner-icon">⏳</span>
+            <span className="w3-progress-counter-text">
+              Auditing {bulkAuditProgress.current} of {bulkAuditProgress.total}
+            </span>
+          </div>
+          <div className="w3-progress-bar-track">
+            <div
+              className="w3-progress-bar-fill"
+              style={{ width: `${Math.round((bulkAuditProgress.current / Math.max(bulkAuditProgress.total, 1)) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Bulk Audit Completion Status Banner ── */}
+      {!isBulkAuditing && bulkAuditSummary && (
+        <div className="w3-audit-summary-banner" id="w3-audit-summary-banner">
+          <span className="w3-summary-text">
+            {bulkAuditSummary.failed > 0
+              ? `Audit Complete — ${bulkAuditSummary.audited} of ${bulkAuditProgress.total || (bulkAuditSummary.audited + bulkAuditSummary.failed)} | Failed: ${bulkAuditSummary.failed}`
+              : `Audit Complete — ${bulkAuditSummary.audited} of ${bulkAuditProgress.total || bulkAuditSummary.audited}`}
           </span>
           <button
             type="button"
