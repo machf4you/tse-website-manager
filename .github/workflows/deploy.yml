@@ -19,7 +19,7 @@ jobs:
           echo "Syncing code to /var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current..."
           mkdir -p /var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/shared_db
           mkdir -p /var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current
-          rsync -avz --delete \
+          rsync -avz --delete --no-p --no-t --no-o --no-g \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='node_modules' \
