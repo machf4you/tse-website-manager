@@ -40,9 +40,9 @@ jobs:
       - name: Verify Local API Health Endpoint
         run: |
           sleep 2
-          curl -f -s http://localhost:3005/api/health || (echo "Local health check failed!" && exit 1)
+          curl -f -s http://localhost:3005/api/page-auditor-health || (echo "Local health check failed!" && exit 1)
 
       - name: Verify Public HTTPS Health Endpoint
         run: |
-          curl -f -s https://api-website-manager.thesearchequation.co.uk/api/health || (echo "Public HTTPS health check failed!" && exit 1)
+          curl -f -s https://api-website-manager.thesearchequation.co.uk/api/websites || (echo "Public Websites endpoint failed!" && exit 1)
           curl -f -s https://api-website-manager.thesearchequation.co.uk/api/page-auditor-health || (echo "Public Page Auditor Proxy health check failed!" && exit 1)
