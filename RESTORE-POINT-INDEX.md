@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.31-new-vps-live | `v1.31-page-auditor-new-vps-live` | `2385adb` | 21-08-2026 16:04 | Live Website Manager verified against migrated production Page Auditor on new VPS (77.245.157.66). | **Current** |
+| v1.33-new-vps-live | `v1.33-website-manager-new-vps-live` | `fa29ee1` | 24-08-2026 14:37 | Formal production restore point for completed Website Manager migration to dedicated VPS (77.245.157.66). | **Current** |
+| v1.31-new-vps-live | `v1.31-page-auditor-new-vps-live` | `2385adb` | 21-08-2026 16:04 | Live Website Manager verified against migrated production Page Auditor on new VPS (77.245.157.66). | Superseded |
 | v1.31-page-auditor | `v1.31-page-auditor-working-v1` | `8e6ca60` | 21-08-2026 07:13 | Known-working V1 Page Auditor backend deployed on port 8005 with HTTPS proxy and live W4 audit integration. | Superseded |
 | v1.30-42-phrases | `v1.30-configure-42-hf4you-target-phrases` | `765c85d` | 18-08-2026 12:55 | Configure 42 unconfigured HF4You Topical pages with concise 3-5 word target phrases in SQLite package (V1.30). | Superseded |
 | v1.30-ready-label | `v1.30-visual-indicator-v130-ready` | `19f830c` | 18-08-2026 12:48 | Update global top header deployment status indicator text label to V1.30 \| READY (V1.30). | Superseded |

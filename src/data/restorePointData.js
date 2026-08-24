@@ -4,6 +4,28 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.33-website-manager-new-vps-live',
+    version: 'v1.33-new-vps-live',
+    gitTag: 'v1.33-website-manager-new-vps-live',
+    commit: 'fa29ee1',
+    date: '24-08-2026 14:37',
+    title: 'Website Manager Production Migration Complete on Dedicated VPS (V1.33)',
+    description: 'Formal production restore point for completed TSE Website Manager migration to new dedicated applications VPS (77.245.157.66). Backend website-manager-api (Port 3005) and Page Auditor API (Port 8005) active with HTTPS, Basic Auth, 14 websites loaded, and public DNS updated.',
+    status: 'Superseded',
+    docFile: 'RESTORE-POINT-v1.33-website-manager-new-vps-live.md'
+  },
+  {
+    id: 'v1.31-page-auditor-new-vps-live',
+    version: 'v1.31-new-vps-live',
+    gitTag: 'v1.31-page-auditor-new-vps-live',
+    commit: '2385adb',
+    date: '21-08-2026 16:04',
+    title: 'Migrated Production Page Auditor Verified on New VPS (V1.31)',
+    description: 'Live Website Manager verified against migrated production Page Auditor on new dedicated applications VPS (77.245.157.66).',
+    status: 'Superseded',
+    docFile: 'RESTORE-POINT-v1.31-page-auditor-new-vps-live.md'
+  },
+  {
     id: 'v1.30-configure-42-hf4you-target-phrases',
     version: 'v1.30-42-phrases',
     gitTag: 'v1.30-configure-42-hf4you-target-phrases',
