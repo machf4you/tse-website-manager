@@ -1,6 +1,7 @@
-export const CURRENT_BUILD_VERSION = '1.35'
-export const CURRENT_BUILD_LABEL = 'V1.35 | READY'
-export const CURRENT_BUILD_HASH = 'w4nodropdown35'
-export const CURRENT_BUILD_TIMESTAMP = 1786981500000
+export const CURRENT_BUILD_VERSION = '1.36'
+export const CURRENT_BUILD_LABEL = 'V1.36 | READY'
+export const CURRENT_BUILD_HASH = 'w4toprow36'
+export const CURRENT_BUILD_TIMESTAMP = 1786984500000
+
 
 

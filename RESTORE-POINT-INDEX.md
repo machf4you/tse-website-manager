@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.35-w4-no-dropdown | `v1.35-w4-remove-page-selection-dropdown` | `[AUTO]` | 25-08-2026 08:25 | Remove SELECT PAGE TO REVIEW FROM DROPDOWN section from W4 audit results screen. | **Current** |
+| v1.36-w4-top-row | `v1.36-w4-restructure-top-info-row` | `[AUTO]` | 25-08-2026 08:32 | Restructure W4 top information row into 4 equal horizontal cards (PAGE URL, TARGET PHRASE, PAGE TYPE, AUDIT SCORE). | **Current** |
+| v1.35-w4-no-dropdown | `v1.35-w4-remove-page-selection-dropdown` | `01f6fee` | 25-08-2026 08:25 | Remove SELECT PAGE TO REVIEW FROM DROPDOWN section from W4 audit results screen. | Superseded |
 | v1.34-ascent-phrases | `v1.34-ascent-builders-target-phrases` | `02dff83` | 25-08-2026 07:40 | Ascent Builders W3 Target Phrases Configured (41 Saved, 21 Blank) in SQLite database and verified. | Superseded |
 | v1.33-new-vps-live | `v1.33-website-manager-new-vps-live` | `fa29ee1` | 24-08-2026 14:37 | Formal production restore point for completed Website Manager migration to dedicated VPS (77.245.157.66). | Superseded |
 | v1.31-new-vps-live | `v1.31-page-auditor-new-vps-live` | `2385adb` | 21-08-2026 16:04 | Live Website Manager verified against migrated production Page Auditor on new VPS (77.245.157.66). | Superseded |

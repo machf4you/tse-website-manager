@@ -703,26 +703,7 @@ export default function PageAuditResultsPage({
           <h1 className="w4-main-title">Now We Need To Optimize The SEO Elements Of This Page</h1>
         </div>
 
-        {/* Control Bar: Audit Score */}
-        <div className="w4-controls-card">
-          <div className="w4-score-box" style={{ flex: '1 1 100%' }}>
-            <span className="w4-score-label">AUDIT SCORE</span>
-            <div className="w4-score-value">
-              {isLoadingAudit ? (
-                'Auditing...'
-              ) : liveAuditData ? (
-                <>
-                  {passedCount} / {totalCount} Passed
-                  <span className="w4-score-subtext"> ({failedIssues.length} issues to fix)</span>
-                </>
-              ) : (
-                'Offline'
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Page Info Cards Grid */}
+        {/* Page Info & Audit Score Cards Grid (4 Horizontal Boxes) */}
         <div className="w4-info-grid">
           <div className="w4-info-card">
             <span className="w4-info-label">PAGE URL</span>
@@ -746,6 +727,22 @@ export default function PageAuditResultsPage({
               }`}>
                 {pageType.includes('Page') ? pageType : `${pageType} Page`}
               </span>
+            </div>
+          </div>
+
+          <div className="w4-info-card">
+            <span className="w4-info-label">AUDIT SCORE</span>
+            <div className="w4-score-value">
+              {isLoadingAudit ? (
+                'Auditing...'
+              ) : liveAuditData ? (
+                <>
+                  {passedCount} / {totalCount} Passed
+                  <span className="w4-score-subtext"> ({failedIssues.length} issues to fix)</span>
+                </>
+              ) : (
+                'Offline'
+              )}
             </div>
           </div>
         </div>

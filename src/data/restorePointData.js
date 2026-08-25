@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.36-w4-restructure-top-info-row',
+    version: 'v1.36-w4-top-row',
+    gitTag: 'v1.36-w4-restructure-top-info-row',
+    commit: '[AUTO]',
+    date: '25-08-2026 08:32',
+    title: 'Restructure W4 Top Information Row into 4 Equal Horizontal Cards (V1.36)',
+    description: 'Restructured W4 top information cards into 4 equal, consistent horizontal boxes on one row (PAGE URL, TARGET PHRASE, PAGE TYPE, AUDIT SCORE) with responsive CSS breakpoints for tablet and mobile screens.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.36-w4-restructure-top-info-row.md'
+  },
+  {
     id: 'v1.35-w4-remove-page-selection-dropdown',
     version: 'v1.35-w4-no-dropdown',
     gitTag: 'v1.35-w4-remove-page-selection-dropdown',
-    commit: '[AUTO]',
+    commit: '01f6fee',
     date: '25-08-2026 08:25',
     title: 'Remove Page Selection Dropdown Section from W4 Audit Results Screen (V1.35)',
     description: 'Removed the SELECT PAGE TO REVIEW FROM DROPDOWN section and select element from W4 PageAuditResultsPage. W4 now exclusively renders the selected page audited from W3 alongside its Audit Score, SEO element results, and Action Checklist.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.35-w4-remove-page-selection-dropdown.md'
   },
   {
