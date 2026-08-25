@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.39-w4-actual-vs-proposed-seo-presentation',
+    version: 'v1.39-w4-actual-proposed',
+    gitTag: 'v1.39-w4-actual-vs-proposed-seo-presentation',
+    commit: '[AUTO]',
+    date: '25-08-2026 09:39',
+    title: 'W4 Optimise Page SEO Modal Actual vs Proposed Presentation & Fallback Bug Fix (V1.39)',
+    description: 'Restructured W4 Optimise Page SEO modal with explicit read-only ACTUAL (LIVE) value boxes and PROPOSED (EDITABLE) input controls for Meta Title, Meta Description, and H1. Fixed single-field fallback bug to enforce strict field independence.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.39-w4-actual-vs-proposed-seo-presentation.md'
+  },
+  {
     id: 'v1.38-w4-page-type-badge-labels',
     version: 'v1.38-w4-type-labels',
     gitTag: 'v1.38-w4-page-type-badge-labels',
-    commit: '[AUTO]',
+    commit: 'd7913b4',
     date: '25-08-2026 08:53',
     title: 'Update W4 Page Type Badge Labels to Concise Names (Landing, Topical, Article, Hub) (V1.38)',
     description: 'Updated displayed Page Type badge text labels in PageAuditResultsPage.jsx to concise values (Landing, Topical, Article, Hub) removing the redundant Page suffix since the box header already displays PAGE TYPE.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.38-w4-page-type-badge-labels.md'
   },
   {

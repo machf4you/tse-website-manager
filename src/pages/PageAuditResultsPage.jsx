@@ -134,14 +134,23 @@ export default function PageAuditResultsPage({
 
   const snap = liveAuditData?.page_snapshot || {}
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
+
+  // Strict per-field Actual Live/Synced values (no cross-field fallbacks)
+  const actualMetaTitle = (snap.title || rawCurrentPage.metaTitle || rawCurrentPage.title || '').trim()
+  const actualMetaDescription = (snap.meta_description || rawCurrentPage.metaDescription || '').trim()
+  const actualH1 = ((Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.h1 || '').trim()
+
   const currentPage = {
     ...rawCurrentPage,
     ...overrideObj,
-    title: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title,
-    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || snap.title || rawCurrentPage.title,
-    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || snap.title || rawCurrentPage.title,
-    metaDescription: overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : (rawCurrentPage.metaDescription || snap.meta_description || ''),
-    h1: overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || ''),
+    actualMetaTitle,
+    actualMetaDescription,
+    actualH1,
+    title: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || actualMetaTitle,
+    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || actualMetaTitle,
+    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || actualMetaTitle,
+    metaDescription: overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : (rawCurrentPage.metaDescription || actualMetaDescription),
+    h1: overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || actualH1),
   }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {

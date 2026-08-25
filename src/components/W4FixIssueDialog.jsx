@@ -54,23 +54,22 @@ export default function W4FixIssueDialog({
     setSyncStarted(false)
     setIsSynced(false)
     setIsAudited(false)
+    setPushError(null)
 
-    const initT = page.metaTitle || page.proposedTitle || page.title || ''
-    const initD = page.metaDescription || page.meta_description || page.snippet || ''
-    const initH = page.h1 || page.h1_text || page.title || ''
+    // Actual live values strictly per field without cross-field fallbacks
+    const actT = page.actualMetaTitle || ''
+    const actD = page.actualMetaDescription || ''
+    const actH = page.actualH1 || ''
+
+    // Proposed values initially populated with corresponding Actual value if proposed is not set
+    const initT = page.proposedTitle || page.metaTitle || actT
+    const initD = page.proposedMetaDescription || (page.metaDescription !== undefined ? page.metaDescription : actD)
+    const initH = page.proposedH1 || (page.h1 !== undefined ? page.h1 : actH)
 
     setMetaTitleVal(initT)
     setMetaDescVal(initD)
     setH1Val(initH)
-
-    if (seoType === 'meta_title') {
-      setFieldValue(initT)
-    } else if (seoType === 'meta_desc') {
-      setFieldValue(initD)
-    } else if (seoType === 'h1') {
-      setFieldValue(initH)
-    }
-  }, [isOpen, pageKey, seoType])
+  }, [isOpen, pageKey])
 
   // Prevent background scrolling while modal is open
   useEffect(() => {
@@ -91,86 +90,21 @@ export default function W4FixIssueDialog({
     }
   }, [syncStarted, isSyncing])
 
-  if (!isOpen || !issue) return null
-
-  // Details per element type
-  const elementDetails = {
-    batch_optimization: {
-      label: 'Batch Page Optimisation',
-      why: 'Optimising Meta Title, Meta Description, and H1 tag together ensures maximum SEO relevance and target phrase alignment.',
-      recommended: 'Update Meta Title (50-60 chars), Meta Description (150-160 chars), and H1 heading tag.',
-      idealLengthMin: 50,
-      idealLengthMax: 160,
-    },
-    meta_title: {
-      label: 'Meta Title',
-      why: 'The Meta Title is the primary on-page SEO ranking signal in Google search results and defines the clickable headline in search engine snippets.',
-      recommended: issue.recommendation || 'Include the target phrase near the beginning of the title and keep length between 50–60 characters.',
-      idealLengthMin: 50,
-      idealLengthMax: 60,
-    },
-    meta_desc: {
-      label: 'Meta Description',
-      why: 'The Meta Description drives organic click-through rates (CTR) in Google search snippets and provides crucial context to search crawlers.',
-      recommended: issue.recommendation || 'Include target phrase naturally and aim for 150–160 characters to avoid snippet truncation.',
-      idealLengthMin: 150,
-      idealLengthMax: 160,
-    },
-    h1: {
-      label: 'H1 Header Tag',
-      why: 'The H1 tag establishes the main topic hierarchy for search crawlers and site visitors. Every page should have exactly one descriptive H1.',
-      recommended: issue.recommendation || 'Ensure the H1 header clearly communicates the primary topic and includes the target phrase.',
-      idealLengthMin: 20,
-      idealLengthMax: 70,
-    },
-  }[seoType] || {
-    label: 'SEO Optimisation',
-    why: 'On-page SEO optimization improves search visibility.',
-    recommended: 'Update page SEO fields.',
-    idealLengthMin: 10,
-    idealLengthMax: 160,
-  }
-
-  const charCount = fieldValue.length
-  const minLen = elementDetails.idealLengthMin
-  const maxLen = elementDetails.idealLengthMax
-
-  let lengthBadgeVariant = 'optimal'
-  let lengthBadgeText = `${charCount} characters — Optimal`
-
-  if (seoType !== 'h1' && seoType !== 'batch_optimization') {
-    if (charCount < minLen) {
-      lengthBadgeVariant = 'warning'
-      lengthBadgeText = `${charCount} characters — Below recommended length`
-    } else if (charCount > maxLen) {
-      lengthBadgeVariant = 'warning'
-      lengthBadgeText = `${charCount} characters — Longer than recommended`
-    } else {
-      lengthBadgeVariant = 'optimal'
-      lengthBadgeText = `${charCount} characters — Optimal`
-    }
-  } else {
-    lengthBadgeVariant = 'info'
-    lengthBadgeText = `${charCount} characters`
-  }
+  if (!isOpen || !issue || !page) return null
 
   const handleSave = async () => {
     setIsSaving(true)
     if (onSaveFix) {
       try {
-        if (seoType === 'batch_optimization') {
-          await onSaveFix({
-            page,
-            seoType: 'batch_optimization',
-            fieldValues: {
-              metaTitle: metaTitleVal,
-              metaDescription: metaDescVal,
-              h1: h1Val,
-            },
-          })
-        } else {
-          await onSaveFix({ page, seoType, fieldValue })
-        }
+        await onSaveFix({
+          page,
+          seoType: 'batch_optimization',
+          fieldValues: {
+            metaTitle: metaTitleVal,
+            metaDescription: metaDescVal,
+            h1: h1Val,
+          },
+        })
         setIsSaved(true)
       } catch (err) {
         console.error('Failed to save fix:', err)
@@ -189,9 +123,9 @@ export default function W4FixIssueDialog({
       const res = await updateWordPressSEOFields({
         site,
         page,
-        metaTitle: metaTitleVal || fieldValue,
-        metaDescription: metaDescVal || fieldValue,
-        h1: h1Val || (seoType === 'h1' ? fieldValue : page?.h1),
+        metaTitle: metaTitleVal,
+        metaDescription: metaDescVal,
+        h1: h1Val,
       })
       if (res && res.success) {
         setIsPushed(true)
@@ -239,6 +173,10 @@ export default function W4FixIssueDialog({
     setIsAudited(true)
   }
 
+  const actualMetaTitle = page.actualMetaTitle || ''
+  const actualMetaDescription = page.actualMetaDescription || ''
+  const actualH1 = page.actualH1 || ''
+
   return (
     <div className="w4-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="w4-modal-dialog" onClick={(e) => e.stopPropagation()}>
@@ -247,7 +185,7 @@ export default function W4FixIssueDialog({
         <div className="w4-modal-header">
           <div>
             <span className="w4-modal-code">{issue.issueCode || 'W4 OPTIMISATION'}</span>
-            <h2 className="w4-modal-title">Page Optimisation: {page.title || page.url}</h2>
+            <h2 className="w4-modal-title">Optimise Page SEO: {page.title || page.url}</h2>
           </div>
           <button type="button" className="w4-modal-close" onClick={onClose} aria-label="Close dialog">
             ✕
@@ -256,7 +194,7 @@ export default function W4FixIssueDialog({
 
         <div className="w4-modal-body">
           
-          {/* LEFT COLUMN: Issue Details */}
+          {/* LEFT COLUMN: Page Guidance Context */}
           <div className="w4-panel-left">
             <div className="w4-info-group">
               <span className="w4-info-label">Target Page</span>
@@ -270,27 +208,46 @@ export default function W4FixIssueDialog({
 
             <div className="w4-info-group">
               <span className="w4-info-label">Recommended Action</span>
-              <div className="w4-info-recom-box">{elementDetails.recommended}</div>
+              <div className="w4-info-recom-box">
+                Optimise Meta Title (50–60 chars), Meta Description (150–160 chars), and H1 Tag with primary SEO target phrase.
+              </div>
             </div>
 
             <div className="w4-info-group">
               <span className="w4-info-label">Why This Matters</span>
-              <p className="w4-info-why-text">{elementDetails.why}</p>
+              <p className="w4-info-why-text">
+                Optimising Meta Title, Meta Description, and H1 tag together ensures maximum search engine relevance and alignment with your target keyword phrase.
+              </p>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Editable WordPress Fields */}
+          {/* RIGHT COLUMN: Actual vs Proposed Presentation */}
           <div className="w4-panel-right">
-            {seoType === 'batch_optimization' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              
+              {/* Element 1: Meta Title */}
+              <div className="w4-element-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="w4-field-label" style={{ fontWeight: '700', color: '#f8fafc', fontSize: '0.85rem' }}>
+                    1. Meta Title
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: metaTitleVal.length >= 50 && metaTitleVal.length <= 60 ? '#10b981' : (metaTitleVal.length === 0 ? '#94a3b8' : '#f59e0b') }}>
+                    {metaTitleVal.length} chars (Target: 50–60)
+                  </span>
+                </div>
+
+                {/* Actual Meta Title Box (Read-Only) */}
+                <div className="w4-actual-box">
+                  <span className="w4-actual-tag">ACTUAL (LIVE)</span>
+                  <span className={`w4-actual-text ${!actualMetaTitle ? 'blank' : ''}`}>
+                    {actualMetaTitle || '[Blank / Not Set]'}
+                  </span>
+                </div>
+
+                {/* Proposed Meta Title Input (Editable) */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
-                      Proposed Meta Title
-                    </label>
-                    <span style={{ fontSize: '0.74rem', color: metaTitleVal.length >= 50 && metaTitleVal.length <= 60 ? '#10b981' : '#f59e0b' }}>
-                      {metaTitleVal.length} chars (Target: 50-60)
-                    </span>
+                  <div className="w4-proposed-header">
+                    <span className="w4-proposed-label">PROPOSED META TITLE (EDITABLE)</span>
                   </div>
                   <input
                     type="text"
@@ -300,15 +257,31 @@ export default function W4FixIssueDialog({
                     placeholder="Enter proposed Meta Title..."
                   />
                 </div>
+              </div>
 
+              {/* Element 2: Meta Description */}
+              <div className="w4-element-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="w4-field-label" style={{ fontWeight: '700', color: '#f8fafc', fontSize: '0.85rem' }}>
+                    2. Meta Description
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: metaDescVal.length >= 150 && metaDescVal.length <= 160 ? '#10b981' : (metaDescVal.length === 0 ? '#94a3b8' : '#f59e0b') }}>
+                    {metaDescVal.length} chars (Target: 150–160)
+                  </span>
+                </div>
+
+                {/* Actual Meta Description Box (Read-Only) */}
+                <div className="w4-actual-box">
+                  <span className="w4-actual-tag">ACTUAL (LIVE)</span>
+                  <span className={`w4-actual-text ${!actualMetaDescription ? 'blank' : ''}`}>
+                    {actualMetaDescription || '[Blank / Not Set]'}
+                  </span>
+                </div>
+
+                {/* Proposed Meta Description Textarea (Editable) */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
-                      Proposed Meta Description
-                    </label>
-                    <span style={{ fontSize: '0.74rem', color: metaDescVal.length >= 150 && metaDescVal.length <= 160 ? '#10b981' : '#f59e0b' }}>
-                      {metaDescVal.length} chars (Target: 150-160)
-                    </span>
+                  <div className="w4-proposed-header">
+                    <span className="w4-proposed-label">PROPOSED META DESCRIPTION (EDITABLE)</span>
                   </div>
                   <textarea
                     className="w4-field-textarea"
@@ -318,15 +291,31 @@ export default function W4FixIssueDialog({
                     placeholder="Enter proposed Meta Description..."
                   />
                 </div>
+              </div>
 
+              {/* Element 3: H1 Heading Tag */}
+              <div className="w4-element-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label className="w4-field-label" style={{ fontWeight: '700', color: '#f8fafc', fontSize: '0.85rem' }}>
+                    3. H1 Heading Tag
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                    {h1Val.length} chars
+                  </span>
+                </div>
+
+                {/* Actual H1 Tag Box (Read-Only) */}
+                <div className="w4-actual-box">
+                  <span className="w4-actual-tag">ACTUAL (LIVE)</span>
+                  <span className={`w4-actual-text ${!actualH1 ? 'blank' : ''}`}>
+                    {actualH1 || '[Blank / Not Set]'}
+                  </span>
+                </div>
+
+                {/* Proposed H1 Input (Editable) */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <label className="w4-field-label" style={{ fontWeight: '600', color: '#f8fafc' }}>
-                      Proposed H1 Heading Tag
-                    </label>
-                    <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                      {h1Val.length} chars
-                    </span>
+                  <div className="w4-proposed-header">
+                    <span className="w4-proposed-label">PROPOSED H1 TAG (EDITABLE)</span>
                   </div>
                   <input
                     type="text"
@@ -337,72 +326,24 @@ export default function W4FixIssueDialog({
                   />
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="w4-field-header">
-                  <label htmlFor="w4-fix-input" className="w4-field-label">
-                    Editable WordPress {elementDetails.label}
-                  </label>
-                  <span className={`w4-length-badge ${lengthBadgeVariant}`}>
-                    {lengthBadgeText}
-                  </span>
-                </div>
 
-                {seoType === 'meta_desc' ? (
-                  <textarea
-                    id="w4-fix-input"
-                    className="w4-field-textarea"
-                    rows={3}
-                    value={fieldValue}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setFieldValue(val)
-                      setMetaDescVal(val)
-                    }}
-                    placeholder={`Enter proposed ${elementDetails.label}...`}
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    id="w4-fix-input"
-                    className="w4-field-input"
-                    value={fieldValue}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setFieldValue(val)
-                      if (seoType === 'meta_title') setMetaTitleVal(val)
-                      if (seoType === 'h1') setH1Val(val)
-                    }}
-                    placeholder={`Enter proposed ${elementDetails.label}...`}
-                  />
-                )}
-              </>
-            )}
-
-            <div className="w4-guidance-box" style={{ marginTop: '6px' }}>
-              <div className="w4-guidance-item">
-                <strong>Target Phrase:</strong> <span>{page.target || page.targetPhrase || 'Not set'}</span>
-              </div>
-              <div className="w4-guidance-item">
-                <strong>Page URL:</strong> <code>{page.url}</code>
-              </div>
             </div>
 
             {/* ── HORIZONTAL 4-STEP WORKFLOW ACTIONS STRIP ── */}
-            <div className="w4-workflow-actions-section" style={{ marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '10px' }}>
-              <h4 style={{ color: '#f8fafc', fontSize: '0.82rem', fontWeight: '700', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="w4-workflow-actions-section" style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+              <h4 style={{ color: '#f8fafc', fontSize: '0.8rem', fontWeight: '700', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>🔄 Next Workflow Actions</span>
               </h4>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
 
                 {/* Step 1: Save Changes */}
-                <div style={{ background: 'rgba(30,41,59,0.7)', padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
+                <div style={{ background: 'rgba(30,41,59,0.7)', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>1. Save Changes</strong>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Save fields to database</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>1. Save Changes</strong>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Save fields to database</span>
                   </div>
-                  <div style={{ marginTop: '6px' }}>
+                  <div style={{ marginTop: '4px' }}>
                     {isSaved ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Saved</span>
                     ) : (
@@ -414,17 +355,17 @@ export default function W4FixIssueDialog({
                 </div>
 
                 {/* Step 2: Push Changes to WordPress */}
-                <div style={{ background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: pushError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
+                <div style={{ background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: pushError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>2. Push to WP</strong>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Send fields to live WP page</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>2. Push to WP</strong>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Send fields to live WP page</span>
                   </div>
                   {pushError && (
-                    <div style={{ fontSize: '0.68rem', color: '#ef4444', marginTop: '4px', lineHeight: '1.2' }}>
+                    <div style={{ fontSize: '0.66rem', color: '#ef4444', marginTop: '2px', lineHeight: '1.1' }}>
                       ⚠️ {pushError}
                     </div>
                   )}
-                  <div style={{ marginTop: '6px' }}>
+                  <div style={{ marginTop: '4px' }}>
                     {isPushed ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ WP Updated</span>
                     ) : (
@@ -436,12 +377,12 @@ export default function W4FixIssueDialog({
                 </div>
 
                 {/* Step 3: Sync Website Data */}
-                <div style={{ background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
+                <div style={{ background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>3. Sync Data</strong>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Pull WP data to Manager</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>3. Sync Data</strong>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Pull WP data to Manager</span>
                   </div>
-                  <div style={{ marginTop: '6px' }}>
+                  <div style={{ marginTop: '4px' }}>
                     {isSynced ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Synced</span>
                     ) : (
@@ -453,12 +394,12 @@ export default function W4FixIssueDialog({
                 </div>
 
                 {/* Step 4: Re-run Audit */}
-                <div style={{ background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '8px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '68px' }}>
+                <div style={{ background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.78rem', display: 'block', marginBottom: '2px' }}>4. Re-run Audit</strong>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Re-evaluate page SEO</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>4. Re-run Audit</strong>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Re-evaluate page SEO</span>
                   </div>
-                  <div style={{ marginTop: '6px' }}>
+                  <div style={{ marginTop: '4px' }}>
                     {isAudited ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Audit Complete</span>
                     ) : (
@@ -473,8 +414,8 @@ export default function W4FixIssueDialog({
             </div>
 
             {/* Actions Footer */}
-            <div className="w4-modal-actions" style={{ marginTop: '8px', paddingTop: 0 }}>
-              <button type="button" className="w3-btn-secondary" onClick={onClose} style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
+            <div className="w4-modal-actions" style={{ marginTop: '6px', paddingTop: 0 }}>
+              <button type="button" className="w3-btn-secondary" onClick={onClose} style={{ padding: '5px 12px', fontSize: '0.78rem' }}>
                 {isAudited ? 'Done / Return to Audit' : 'Close Modal'}
               </button>
             </div>

@@ -222,6 +222,69 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+/* Actual vs Proposed Cards Styling */
+.w4-element-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.w4-actual-box {
+  background: #0b1329;
+  border: 1px dashed rgba(148, 163, 184, 0.3);
+  border-radius: 5px;
+  padding: 5px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.w4-actual-tag {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.w4-actual-text {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  word-break: break-word;
+  user-select: text;
+}
+
+.w4-actual-text.blank {
+  color: #64748b;
+  font-style: italic;
+}
+
+.w4-proposed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.w4-proposed-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #38bdf8;
+}
+
 .w4-guidance-box {
   background: #0b1329;
   border: 1px solid #1e293b;
