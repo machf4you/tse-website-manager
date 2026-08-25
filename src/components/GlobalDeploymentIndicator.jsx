@@ -90,7 +90,7 @@ export default function GlobalDeploymentIndicator() {
     return (
       <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite" title="Build/Deployment in progress - Do NOT refresh yet">
         <span className="deploy-spin-icon" aria-hidden="true">⏳</span>
-        <span className="deploy-text-updating">V1.30 | UPDATING — DO NOT PRESS CTRL+F5</span>
+        <span className="deploy-text-updating">V{serverVersion || CURRENT_BUILD_VERSION} | UPDATING — DO NOT PRESS CTRL+F5</span>
       </div>
     )
   }
@@ -106,7 +106,7 @@ export default function GlobalDeploymentIndicator() {
         title="New deployment is live! Click or press Ctrl+F5 to reload"
       >
         <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
-        <span className="deploy-text-ready">V1.30 | PRESS CTRL+F5 — UPDATE READY</span>
+        <span className="deploy-text-ready">V{serverVersion || CURRENT_BUILD_VERSION} | PRESS CTRL+F5 — UPDATE READY</span>
         <span className="deploy-action-badge">Refresh Now</span>
       </div>
     )
