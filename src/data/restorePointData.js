@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.35-w4-remove-page-selection-dropdown',
+    version: 'v1.35-w4-no-dropdown',
+    gitTag: 'v1.35-w4-remove-page-selection-dropdown',
+    commit: '[AUTO]',
+    date: '25-08-2026 08:25',
+    title: 'Remove Page Selection Dropdown Section from W4 Audit Results Screen (V1.35)',
+    description: 'Removed the SELECT PAGE TO REVIEW FROM DROPDOWN section and select element from W4 PageAuditResultsPage. W4 now exclusively renders the selected page audited from W3 alongside its Audit Score, SEO element results, and Action Checklist.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.35-w4-remove-page-selection-dropdown.md'
+  },
+  {
     id: 'v1.34-ascent-builders-target-phrases',
     version: 'v1.34-ascent-phrases',
     gitTag: 'v1.34-ascent-builders-target-phrases',
-    commit: '[AUTO]',
+    commit: '02dff83',
     date: '25-08-2026 07:40',
     title: 'Ascent Builders W3 Target Phrases Configured (41 Saved, 21 Blank) (V1.34)',
     description: 'Applied and verified 41 primary target phrases for Ascent Builders pages in Website Manager live database (SQLite wp_packages & page_configurations). 21 non-commercial/utility/portfolio pages intentionally left blank per SEO rules. Production frontend & API verified.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.34-ascent-builders-target-phrases.md'
   },
   {

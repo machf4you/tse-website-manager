@@ -703,42 +703,9 @@ export default function PageAuditResultsPage({
           <h1 className="w4-main-title">Now We Need To Optimize The SEO Elements Of This Page</h1>
         </div>
 
-        {/* Control Bar: Page Dropdown & Audit Score */}
+        {/* Control Bar: Audit Score */}
         <div className="w4-controls-card">
-          <div className="w4-control-dropdown">
-            <label className="w4-control-label" htmlFor="select-audit-page">
-              SELECT PAGE TO REVIEW FROM DROPDOWN
-            </label>
-            <select
-              id="select-audit-page"
-              className="w4-select-page"
-              value={selectedUrl}
-              onChange={(e) => setSelectedUrl(e.target.value)}
-              disabled={isLoadingAudit}
-            >
-              {(() => {
-                const selectablePages = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.priority !== 0 && p.type !== 'Excluded' && p.type !== 'Unclassified / Excluded')
-                const displayList = selectablePages.length > 0 ? selectablePages : (pagesList.length > 0 ? pagesList.filter(p => p.isConfigured === true) : [])
-                if (displayList.length > 0) {
-                  return displayList.map((p, idx) => {
-                    const formattedPath = getCleanPathname(p.url, site?.url)
-                    return (
-                      <option key={p.id || p.url || idx} value={p.url}>
-                        {formattedPath} ({p.proposedTitle || p.title || 'Untitled'})
-                      </option>
-                    )
-                  })
-                }
-                return (
-                  <option value={currentPage.url || '/'}>
-                    {cleanPath} ({displayTitle})
-                  </option>
-                )
-              })()}
-            </select>
-          </div>
-
-          <div className="w4-score-box">
+          <div className="w4-score-box" style={{ flex: '1 1 100%' }}>
             <span className="w4-score-label">AUDIT SCORE</span>
             <div className="w4-score-value">
               {isLoadingAudit ? (
