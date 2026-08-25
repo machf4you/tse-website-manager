@@ -136,10 +136,10 @@ export default function PageAuditResultsPage({
   const snap = liveAuditData?.page_snapshot || {}
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
 
-  // Strict per-field Actual Live/Synced values (no cross-field fallbacks)
-  const actualMetaTitle = (snap.title || rawCurrentPage.metaTitle || rawCurrentPage.title || '').trim()
-  const actualMetaDescription = (snap.meta_description || rawCurrentPage.metaDescription || '').trim()
-  const actualH1 = ((Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.h1 || '').trim()
+  // Strict per-field Actual Live/Synced values (prioritizes freshly synced WordPress values)
+  const actualMetaTitle = (rawCurrentPage.metaTitle || rawCurrentPage.title || snap.title || '').trim()
+  const actualMetaDescription = (rawCurrentPage.metaDescription !== undefined ? rawCurrentPage.metaDescription : (snap.meta_description || '')).trim()
+  const actualH1 = (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.title || '').trim()
 
   // Generate deterministic SEO recommendations
   const recTargetPhrase = (rawCurrentPage.targetPhrase || rawCurrentPage.target || '').trim()

@@ -45,6 +45,11 @@ export default function W4FixIssueDialog({
 
   const pageKey = page?.id || page?.url
 
+  // Dynamic Actual live values computed directly from page prop for real-time post-sync refresh
+  const actualMetaTitle = page?.actualMetaTitle || page?.metaTitle || ''
+  const actualMetaDescription = page?.actualMetaDescription || page?.metaDescription || ''
+  const actualH1 = page?.actualH1 || page?.h1 || ''
+
   // Pre-fill initial text from page object & reset workflow on open
   useEffect(() => {
     if (!isOpen || !page) return
@@ -57,7 +62,6 @@ export default function W4FixIssueDialog({
     setIsAudited(false)
     setPushError(null)
 
-    // Actual live values strictly per field without cross-field fallbacks
     const actT = page.actualMetaTitle || ''
     const actD = page.actualMetaDescription || ''
     const actH = page.actualH1 || ''
@@ -183,10 +187,6 @@ export default function W4FixIssueDialog({
     }
     setIsAudited(true)
   }
-
-  const actualMetaTitle = page.actualMetaTitle || ''
-  const actualMetaDescription = page.actualMetaDescription || ''
-  const actualH1 = page.actualH1 || ''
 
   return (
     <div className="w4-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -380,8 +380,21 @@ export default function W4FixIssueDialog({
                     {isPushed ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ WP Updated</span>
                     ) : (
-                      <button type="button" className={`w3-btn-blue ${!isSaved || isPushing ? 'btn-disabled' : ''}`} onClick={handlePushToWordPress} disabled={!isSaved || isPushing} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
-                        {isPushing ? 'Pushing...' : 'Push to WP'}
+                      <button
+                        type="button"
+                        className={`w3-btn-blue ${isPushing ? 'btn-loading' : (!isSaved ? 'btn-disabled' : '')}`}
+                        onClick={handlePushToWordPress}
+                        disabled={!isSaved || isPushing}
+                        style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        {isPushing ? (
+                          <>
+                            <span className="w4-spinner" />
+                            <span>Pushing to WP...</span>
+                          </>
+                        ) : (
+                          'Push to WP'
+                        )}
                       </button>
                     )}
                   </div>

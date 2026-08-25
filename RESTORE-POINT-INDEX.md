@@ -7,7 +7,9 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.45-w4-endpoint-fix | `v1.45-w4-generic-push-to-wp-endpoint-fix` | `[AUTO]` | 25-08-2026 11:00 | Generic WordPress REST endpoint resolution for Pages, Posts, and Custom Post Types (projects, portfolio, services). | **Current** |
+| v1.47-w4-sync-freshness-fix | `v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix` | `[AUTO]` | 25-08-2026 11:43 | Step 3 Sync Data real-time refresh of ACTUAL (LIVE) fields in open W4 modal. | **Current** |
+| v1.46-w4-h1-push-fix | `v1.46-w4-h1-replacement-and-push-loading-indicator-fix` | `01fbbfe` | 25-08-2026 11:21 | H1 single-heading replacement (post_title update & duplicate cleanup) and Push to WP animated loading spinner. | Superseded |
+| v1.45-w4-endpoint-fix | `v1.45-w4-generic-push-to-wp-endpoint-fix` | `37d29be` | 25-08-2026 11:00 | Generic WordPress REST endpoint resolution for Pages, Posts, and Custom Post Types (projects, portfolio, services). | Superseded |
 | v1.44-w4-title-brand-fix | `v1.44-w4-legacy-title-brand-suffix-detection-fix` | `01fbbfe` | 25-08-2026 10:50 | Ignore legacy database proposedTitle snapshots differing only by brand suffix in favor of generated recommendations. | Superseded |
 | v1.43-w4-snapshot-fix | `v1.43-w4-legacy-proposed-snapshot-override-fix` | `e4cd1af` | 25-08-2026 10:31 | Ignore unedited legacy proposedTitle database snapshots in favor of generated recommendations while preserving user edits. | Superseded |
 | v1.42-w4-title-fallback-fix | `v1.42-w4-proposed-title-fallback-order-fix` | `ba80331` | 25-08-2026 10:19 | Fix W4 Proposed Meta Title fallback order to prioritize generated recommendations over Actual Live values. | Superseded |

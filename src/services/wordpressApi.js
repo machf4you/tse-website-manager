@@ -273,13 +273,17 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
 
   if (h1 && typeof h1 === 'string' && h1.trim()) {
     const cleanH1 = h1.trim()
-    if (existingContent && /<h1[^>]*>[\s\S]*?<\/h1>/i.test(existingContent)) {
-      updatedContent = existingContent.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/i, `<h1$1>${cleanH1}</h1>`)
-    } else if (existingContent) {
-      updatedContent = `<h1>${cleanH1}</h1>\n` + existingContent
-    } else {
-      updatedContent = `<h1>${cleanH1}</h1>`
+    // Strip prepended H1 tags that were previously inserted at the beginning of post_content
+    let contentToProcess = existingContent.replace(/^(\s*<h1[^>]*>[\s\S]*?<\/h1>\s*)+/i, '')
+
+    if (/<h1[^>]*>[\s\S]*?<\/h1>/i.test(contentToProcess)) {
+      // Replace existing inline H1 tag
+      updatedContent = contentToProcess.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/i, `<h1$1>${cleanH1}</h1>`)
+    } else if (existingContent !== contentToProcess) {
+      // If a prepended duplicate H1 was stripped and no inline H1 remains, update with cleaned content
+      updatedContent = contentToProcess
     }
+    // Note: Do NOT prepend a new <h1> when content has no inline <h1>; updating payload.title handles the theme H1.
   }
 
   // ── 2. Elementor JSON Document Tree Updating ──
@@ -312,7 +316,7 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
 
   // ── 3. Build Payload for WP REST, Yoast & Elementor ──
   const payload = {
-    title: page.title?.rendered || page.title || metaTitle,
+    title: (h1 && typeof h1 === 'string' && h1.trim()) ? h1.trim() : (page.title?.rendered || page.title || metaTitle),
     ...(updatedContent !== undefined ? { content: updatedContent } : {}),
     yoast_wpseo_title: metaTitle,
     yoast_wpseo_metadesc: metaDescription,

@@ -1,10 +1,12 @@
 {
-  "version": "1.45",
-  "buildHash": "w4pushendpointfix45",
+  "version": "1.47",
+  "buildHash": "w4syncdatafreshnessfix47",
   "building": "",
   "isDeploymentInProgress": false,
-  "buildTimestamp": 1787007600000
+  "buildTimestamp": 1787012400000
 }
+
+
 
 
 

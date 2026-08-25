@@ -455,3 +455,28 @@ button[disabled] {
   pointer-events: none !important;
   box-shadow: none !important;
 }
+
+.btn-loading {
+  background: rgba(14, 165, 233, 0.25) !important;
+  border: 1px solid #0284c7 !important;
+  color: #38bdf8 !important;
+  opacity: 0.95 !important;
+  cursor: wait !important;
+  pointer-events: none !important;
+}
+
+@keyframes w4-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.w4-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(56, 189, 248, 0.3);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: w4-spin 0.75s linear infinite;
+  margin-right: 4px;
+}

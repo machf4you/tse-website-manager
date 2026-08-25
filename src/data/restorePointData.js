@@ -4,14 +4,36 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix',
+    version: 'v1.47-w4-sync-freshness-fix',
+    gitTag: 'v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix',
+    commit: '[AUTO]',
+    date: '25-08-2026 11:43',
+    title: 'Step 3 Sync Data Real-Time Actual (Live) Field Refresh (V1.47)',
+    description: 'Updated PageAuditResultsPage.jsx to prioritize freshly synced WordPress package data over stale pre-sync audit snapshots. Updated W4FixIssueDialog.jsx to dynamically compute actual values from page props so ACTUAL (LIVE) boxes immediately reflect live WordPress values post-sync.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix.md'
+  },
+  {
+    id: 'v1.46-w4-h1-replacement-and-push-loading-indicator-fix',
+    version: 'v1.46-w4-h1-push-fix',
+    gitTag: 'v1.46-w4-h1-replacement-and-push-loading-indicator-fix',
+    commit: '01fbbfe',
+    date: '25-08-2026 11:21',
+    title: 'H1 Single-Heading Replacement & Push to WP Animated Loading Indicator (V1.46)',
+    description: 'Updated updateWordPressSEOFields in wordpressApi.js to update post_title for theme H1 and strip duplicate prepended H1s without prepending new body H1 tags. Enhanced Step 2 Push to WP button in W4FixIssueDialog.jsx with an animated spinner and clear Pushing to WP... loading state.',
+    status: 'Superseded',
+    docFile: 'RESTORE-POINT-v1.46-w4-h1-replacement-and-push-loading-indicator-fix.md'
+  },
+  {
     id: 'v1.45-w4-generic-push-to-wp-endpoint-fix',
     version: 'v1.45-w4-endpoint-fix',
     gitTag: 'v1.45-w4-generic-push-to-wp-endpoint-fix',
-    commit: '[AUTO]',
+    commit: '37d29be',
     date: '25-08-2026 11:00',
     title: 'Generic WordPress REST Endpoint Resolution for Custom Post Types (V1.45)',
     description: 'Implemented resolveWpEndpoint in wordpressApi.js supporting standard Pages, Posts, and Custom Post Types (projects, portfolio, services, gallery, case_studies). Dynamically resolves post_type and probes WP REST API endpoint before write, resolving 404 invalid post ID errors.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.45-w4-generic-push-to-wp-endpoint-fix.md'
   },
   {
