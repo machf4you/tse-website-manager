@@ -157,9 +157,9 @@ export default function PageAuditResultsPage({
   const rawSavedDesc = overrideObj.proposedMetaDescription || rawCurrentPage.proposedMetaDescription
   const rawSavedH1 = overrideObj.proposedH1 || rawCurrentPage.proposedH1
 
-  const finalProposedTitle = resolveProposedField(rawSavedTitle, actualMetaTitle, recommendations.proposedTitle)
-  const finalProposedDesc = resolveProposedField(rawSavedDesc, actualMetaDescription, recommendations.proposedMetaDescription)
-  const finalProposedH1 = resolveProposedField(rawSavedH1, actualH1, recommendations.proposedH1)
+  const finalProposedTitle = resolveProposedField(rawSavedTitle, actualMetaTitle, recommendations.proposedTitle, site?.name)
+  const finalProposedDesc = resolveProposedField(rawSavedDesc, actualMetaDescription, recommendations.proposedMetaDescription, site?.name)
+  const finalProposedH1 = resolveProposedField(rawSavedH1, actualH1, recommendations.proposedH1, site?.name)
 
   const currentPage = {
     ...rawCurrentPage,

@@ -73,9 +73,9 @@ export default function W4FixIssueDialog({
     })
 
     // Proposed values initially populated with genuine saved overrides or generated recommendations
-    const initT = resolveProposedField(page.proposedTitle, actT, recs.proposedTitle)
-    const initD = resolveProposedField(page.proposedMetaDescription, actD, recs.proposedMetaDescription)
-    const initH = resolveProposedField(page.proposedH1, actH, recs.proposedH1)
+    const initT = resolveProposedField(page.proposedTitle, actT, recs.proposedTitle, site?.name)
+    const initD = resolveProposedField(page.proposedMetaDescription, actD, recs.proposedMetaDescription, site?.name)
+    const initH = resolveProposedField(page.proposedH1, actH, recs.proposedH1, site?.name)
 
     setMetaTitleVal(initT)
     setMetaDescVal(initD)

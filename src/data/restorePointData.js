@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.44-w4-legacy-title-brand-suffix-detection-fix',
+    version: 'v1.44-w4-title-brand-fix',
+    gitTag: 'v1.44-w4-legacy-title-brand-suffix-detection-fix',
+    commit: '[AUTO]',
+    date: '25-08-2026 10:50',
+    title: 'Ignore Legacy Database Title Snapshots Differing Only by Brand Suffix in Favor of Generated Recommendations (V1.44)',
+    description: 'Updated resolveProposedField in seoRecommendationGenerator.js to strip brand suffix from actual live title before comparing against legacy database proposedTitle. Ensures legacy title snapshots lacking brand suffix are correctly recognized and ignored, allowing generated recommendations to populate.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.44-w4-legacy-title-brand-suffix-detection-fix.md'
+  },
+  {
     id: 'v1.43-w4-legacy-proposed-snapshot-override-fix',
     version: 'v1.43-w4-snapshot-fix',
     gitTag: 'v1.43-w4-legacy-proposed-snapshot-override-fix',
-    commit: '[AUTO]',
+    commit: 'e4cd1af',
     date: '25-08-2026 10:31',
     title: 'Ignore Unedited Legacy Proposed Title Snapshots in Database in Favor of Generated Recommendations (V1.43)',
     description: 'Updated resolveProposedField in seoRecommendationGenerator.js to distinguish unedited legacy title snapshots from genuine user overrides. Legacy database values matching Actual Live values are ignored so generated recommendations take authority, while user edits remain preserved.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.43-w4-legacy-proposed-snapshot-override-fix.md'
   },
   {

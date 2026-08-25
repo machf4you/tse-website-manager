@@ -43,17 +43,27 @@ function containsPhrase(text = '', phrase = '') {
 
 /**
  * Resolves whether a saved proposed value is a genuine user edit or an unedited legacy snapshot.
- * - If saved value is identical to actual live value (ignoring case & extra spaces), it is a legacy snapshot -> IGNORED.
+ * - If saved value matches actual live value (exact or with brand suffix stripped), it is a legacy snapshot -> IGNORED.
  * - If saved value is empty, returns recommendation (or actual fallback).
  * - If saved value is DIFFERENT from actual live value -> preserved as a genuine user override!
  */
-export function resolveProposedField(savedVal, actualVal, recVal) {
+export function resolveProposedField(savedVal, actualVal, recVal, siteName = '') {
   const saved = (savedVal || '').replace(/\s+/g, ' ').trim()
   const actual = (actualVal || '').replace(/\s+/g, ' ').trim()
   const rec = (recVal || '').trim()
 
   if (!saved) return rec || actual
-  if (saved.toLowerCase() === actual.toLowerCase()) return rec || actual
+
+  let cleanActual = actual
+  if (siteName) {
+    const brandRegex = new RegExp(`\\s*[-|–—]\\s*${siteName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}.*`, 'i')
+    cleanActual = cleanActual.replace(brandRegex, '')
+  }
+  cleanActual = cleanActual.replace(/\s*[-|–—]\s*(Ascent Builders|HF4You|TSE).*$/i, '').replace(/\s+/g, ' ').trim()
+
+  if (saved.toLowerCase() === actual.toLowerCase() || saved.toLowerCase() === cleanActual.toLowerCase()) {
+    return rec || actual
+  }
   return saved
 }
 

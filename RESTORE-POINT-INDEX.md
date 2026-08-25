@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.43-w4-snapshot-fix | `v1.43-w4-legacy-proposed-snapshot-override-fix` | `[AUTO]` | 25-08-2026 10:31 | Ignore unedited legacy proposedTitle database snapshots in favor of generated recommendations while preserving user edits. | **Current** |
+| v1.44-w4-title-brand-fix | `v1.44-w4-legacy-title-brand-suffix-detection-fix` | `[AUTO]` | 25-08-2026 10:50 | Ignore legacy database proposedTitle snapshots differing only by brand suffix in favor of generated recommendations. | **Current** |
+| v1.43-w4-snapshot-fix | `v1.43-w4-legacy-proposed-snapshot-override-fix` | `e4cd1af` | 25-08-2026 10:31 | Ignore unedited legacy proposedTitle database snapshots in favor of generated recommendations while preserving user edits. | Superseded |
 | v1.42-w4-title-fallback-fix | `v1.42-w4-proposed-title-fallback-order-fix` | `ba80331` | 25-08-2026 10:19 | Fix W4 Proposed Meta Title fallback order to prioritize generated recommendations over Actual Live values. | Superseded |
 | v1.41-w4-seo-generator | `v1.41-w4-deterministic-seo-recommendation-generator` | `f3a321b` | 25-08-2026 10:08 | Deterministic W4 SEO Recommendation Generator for Proposed Meta Title, Description & H1. | Superseded |
 | v1.40-w4-settings-sync | `v1.40-w4-global-settings-restore-point-sync` | `d4adf1b` | 25-08-2026 09:51 | Sync Application Restore Points display in Global Settings for all W4 restore points (v1.35–v1.39). | Superseded |
