@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.37-w4-top-info-row-proportions',
+    version: 'v1.37-w4-proportions',
+    gitTag: 'v1.37-w4-top-info-row-proportions',
+    commit: '[AUTO]',
+    date: '25-08-2026 08:36',
+    title: 'Adjust W4 Top Information Row Proportions (35% URL / 30% Target / 10% Type / 25% Score) (V1.37)',
+    description: 'Adjusted W4 top information cards grid layout to proportional column distribution (3.5fr 3fr 1fr 2.5fr) giving PAGE URL 35% width for longer URLs/titles while keeping PAGE TYPE compact at 10%. Retained responsive breakpoints.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.37-w4-top-info-row-proportions.md'
+  },
+  {
     id: 'v1.36-w4-restructure-top-info-row',
     version: 'v1.36-w4-top-row',
     gitTag: 'v1.36-w4-restructure-top-info-row',
-    commit: '[AUTO]',
+    commit: '8d3632d',
     date: '25-08-2026 08:32',
     title: 'Restructure W4 Top Information Row into 4 Equal Horizontal Cards (V1.36)',
     description: 'Restructured W4 top information cards into 4 equal, consistent horizontal boxes on one row (PAGE URL, TARGET PHRASE, PAGE TYPE, AUDIT SCORE) with responsive CSS breakpoints for tablet and mobile screens.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.36-w4-restructure-top-info-row.md'
   },
   {
