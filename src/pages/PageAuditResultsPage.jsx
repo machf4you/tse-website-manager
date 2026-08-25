@@ -141,8 +141,17 @@ export default function PageAuditResultsPage({
   const actualMetaDescription = (rawCurrentPage.metaDescription !== undefined ? rawCurrentPage.metaDescription : (snap.meta_description || '')).trim()
   const actualH1 = (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.title || '').trim()
 
-  // Generate deterministic SEO recommendations
-  const recTargetPhrase = (rawCurrentPage.targetPhrase || rawCurrentPage.target || '').trim()
+  // Target Phrase MUST come from Website Manager configuration data
+  const recTargetPhrase = (
+    overrideObj.targetPhrase ||
+    overrideObj.target ||
+    overrideObj.target_phrase ||
+    rawCurrentPage.targetPhrase ||
+    rawCurrentPage.target ||
+    rawCurrentPage.target_phrase ||
+    ''
+  ).trim()
+
   const recommendations = generateSeoRecommendations({
     targetPhrase: recTargetPhrase,
     actualMetaTitle,
@@ -164,6 +173,8 @@ export default function PageAuditResultsPage({
   const currentPage = {
     ...rawCurrentPage,
     ...overrideObj,
+    targetPhrase: recTargetPhrase,
+    target: recTargetPhrase,
     actualMetaTitle,
     actualMetaDescription,
     actualH1,
@@ -193,10 +204,24 @@ export default function PageAuditResultsPage({
 
     const existingConfig = savedConfigs[pageKey] || (targetPage.url ? savedConfigs[targetPage.url] : {}) || {}
 
+    const targetPhraseToKeep = (
+      existingConfig.targetPhrase ||
+      existingConfig.target ||
+      targetPage.targetPhrase ||
+      targetPage.target ||
+      recTargetPhrase ||
+      ''
+    ).trim()
+
     const updatedConfig = {
       ...existingConfig,
       pageId: pageKey,
       url: targetPage.url,
+      targetPhrase: targetPhraseToKeep,
+      target: targetPhraseToKeep,
+      type: existingConfig.type || targetPage.seoPageType || targetPage.type || 'Topical',
+      seoPageType: existingConfig.seoPageType || targetPage.seoPageType || targetPage.type || 'Topical',
+      priority: existingConfig.priority !== undefined ? existingConfig.priority : (targetPage.priority !== undefined ? targetPage.priority : 3),
       isConfigured: true,
       isManualOverride: true,
     }

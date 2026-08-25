@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.48-w4-target-phrase-config-preservation-during-sync-fix',
+    version: 'v1.48-w4-config-preservation-fix',
+    gitTag: 'v1.48-w4-target-phrase-config-preservation-during-sync-fix',
+    commit: '[AUTO]',
+    date: '25-08-2026 11:53',
+    title: 'Website Manager Target Phrase & Configuration Preservation During WP Sync (V1.48)',
+    description: 'Updated ManageWebsitePage.jsx and PageAuditResultsPage.jsx so targetPhrase, seoPageType, priority, and Website Manager page configuration data are strictly preserved from Website Manager configuration data during WordPress content syncs. Ensured handleSaveFix explicitly retains targetPhrase in page_configurations.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.48-w4-target-phrase-config-preservation-during-sync-fix.md'
+  },
+  {
     id: 'v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix',
     version: 'v1.47-w4-sync-freshness-fix',
     gitTag: 'v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix',
-    commit: '[AUTO]',
+    commit: '952b4f3',
     date: '25-08-2026 11:43',
     title: 'Step 3 Sync Data Real-Time Actual (Live) Field Refresh (V1.47)',
     description: 'Updated PageAuditResultsPage.jsx to prioritize freshly synced WordPress package data over stale pre-sync audit snapshots. Updated W4FixIssueDialog.jsx to dynamically compute actual values from page props so ACTUAL (LIVE) boxes immediately reflect live WordPress values post-sync.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix.md'
   },
   {

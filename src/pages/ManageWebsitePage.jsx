@@ -219,9 +219,26 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
 
   const exportedPages = rawExportedPages.map(page => {
     const pageKey = page.id || page.url
-    const override = savedConfigs[pageKey] || (page.url ? savedConfigs[page.url] : null)
-    const targetPhraseStr = (override?.targetPhrase || override?.target || page.targetPhrase || page.target || '').trim()
+    const rawUrl = page.url || ''
+    const urlPath = rawUrl.replace(/^https?:\/\/[^\/]+/, '')
+    const override = savedConfigs[pageKey] ||
+                     (page.url ? savedConfigs[page.url] : null) ||
+                     (urlPath ? savedConfigs[urlPath] : null) ||
+                     (page.id ? savedConfigs[String(page.id)] : null)
+
+    const targetPhraseStr = (
+      override?.targetPhrase ||
+      override?.target ||
+      override?.target_phrase ||
+      page.targetPhrase ||
+      page.target ||
+      page.target_phrase ||
+      ''
+    ).trim()
+
     const isConfigured = Boolean(targetPhraseStr.length > 0)
+    const pageType = override?.type || override?.seoPageType || page.type || page.seoPageType || 'Unassigned'
+    const pagePriority = override?.priority !== undefined ? override.priority : (page.priority !== undefined ? page.priority : 3)
 
     if (override) {
       return {
@@ -230,9 +247,9 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         proposedTitle: override.proposedTitle || page.title,
         target: targetPhraseStr,
         targetPhrase: targetPhraseStr,
-        type: override.type || page.type,
-        seoPageType: override.type || page.type,
-        priority: override.priority !== undefined ? override.priority : page.priority,
+        type: pageType,
+        seoPageType: pageType,
+        priority: pagePriority,
         isManualOverride: override.isManualOverride !== undefined ? override.isManualOverride : page.isManualOverride,
         isConfigured,
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
@@ -242,6 +259,9 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
       ...page,
       target: targetPhraseStr,
       targetPhrase: targetPhraseStr,
+      type: pageType,
+      seoPageType: pageType,
+      priority: pagePriority,
       isConfigured
     }
   })
