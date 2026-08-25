@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.45-w4-generic-push-to-wp-endpoint-fix',
+    version: 'v1.45-w4-endpoint-fix',
+    gitTag: 'v1.45-w4-generic-push-to-wp-endpoint-fix',
+    commit: '[AUTO]',
+    date: '25-08-2026 11:00',
+    title: 'Generic WordPress REST Endpoint Resolution for Custom Post Types (V1.45)',
+    description: 'Implemented resolveWpEndpoint in wordpressApi.js supporting standard Pages, Posts, and Custom Post Types (projects, portfolio, services, gallery, case_studies). Dynamically resolves post_type and probes WP REST API endpoint before write, resolving 404 invalid post ID errors.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.45-w4-generic-push-to-wp-endpoint-fix.md'
+  },
+  {
     id: 'v1.44-w4-legacy-title-brand-suffix-detection-fix',
     version: 'v1.44-w4-title-brand-fix',
     gitTag: 'v1.44-w4-legacy-title-brand-suffix-detection-fix',
-    commit: '[AUTO]',
+    commit: '01fbbfe',
     date: '25-08-2026 10:50',
     title: 'Ignore Legacy Database Title Snapshots Differing Only by Brand Suffix in Favor of Generated Recommendations (V1.44)',
     description: 'Updated resolveProposedField in seoRecommendationGenerator.js to strip brand suffix from actual live title before comparing against legacy database proposedTitle. Ensures legacy title snapshots lacking brand suffix are correctly recognized and ignored, allowing generated recommendations to populate.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.44-w4-legacy-title-brand-suffix-detection-fix.md'
   },
   {

@@ -139,6 +139,81 @@ export async function resolveSiteCredentials(site, pageOrUrl) {
   return { username, password }
 }
 
+/**
+ * Generic REST endpoint resolver supporting standard Pages, Posts, and Custom Post Types (projects, portfolio, etc.)
+ */
+export async function resolveWpEndpoint(base, page, authHeader, numericId) {
+  let postType = (page?.post_type || page?.postType || page?.type || '').trim()
+
+  // Standardize common types
+  if (postType === 'page' || (page?.seoPageType === 'Landing' && !page?.post_type)) postType = 'page'
+  if (postType === 'post' || page?.seoPageType === 'Article') postType = 'post'
+
+  // Map post_type to candidate REST endpoint
+  let candidateEndpoint = ''
+  if (postType === 'post') candidateEndpoint = 'posts'
+  else if (postType === 'page') candidateEndpoint = 'pages'
+  else if (postType) candidateEndpoint = postType
+
+  // 1. Probe candidateEndpoint if numericId is provided
+  if (candidateEndpoint && !isNaN(numericId)) {
+    try {
+      const probeRes = await fetch(`${base}/wp-json/wp/v2/${candidateEndpoint}/${numericId}?context=edit`, {
+        headers: { Authorization: authHeader, Accept: 'application/json' }
+      })
+      if (probeRes.status !== 404) {
+        return candidateEndpoint
+      }
+    } catch (_e) {}
+  }
+
+  // 2. Fetch registered post types from WP REST API (/wp-json/wp/v2/types)
+  try {
+    const typesRes = await fetch(`${base}/wp-json/wp/v2/types`, {
+      headers: { Authorization: authHeader, Accept: 'application/json' }
+    })
+    if (typesRes.ok) {
+      const typesData = await typesRes.json()
+
+      // If postType is in registered types, use its rest_base
+      if (postType && typesData[postType] && typesData[postType].rest_base) {
+        const restBase = typesData[postType].rest_base
+        if (!isNaN(numericId)) {
+          try {
+            const probeRes = await fetch(`${base}/wp-json/wp/v2/${restBase}/${numericId}?context=edit`, {
+              headers: { Authorization: authHeader, Accept: 'application/json' }
+            })
+            if (probeRes.status !== 404) return restBase
+          } catch (_e) {}
+        } else {
+          return restBase
+        }
+      }
+
+      // Probe all registered post types with numericId to discover endpoint
+      if (!isNaN(numericId)) {
+        for (const [tKey, tObj] of Object.entries(typesData)) {
+          const rBase = tObj.rest_base || tKey
+          if (['media', 'blocks', 'templates', 'template-parts', 'navigation'].includes(rBase)) continue
+          try {
+            const idProbeRes = await fetch(`${base}/wp-json/wp/v2/${rBase}/${numericId}?context=edit`, {
+              headers: { Authorization: authHeader, Accept: 'application/json' }
+            })
+            if (idProbeRes.status !== 404) {
+              return rBase
+            }
+          } catch (_e) {}
+        }
+      }
+    }
+  } catch (_err) {}
+
+  // 3. Ultimate Fallback
+  if (postType === 'post') return 'posts'
+  if (postType && postType !== 'page') return postType
+  return 'pages'
+}
+
 export async function updateWordPressSEOFields({ site, page, metaTitle, metaDescription, h1 }) {
   if (!site || !page) return { success: false, message: 'Site or Page object missing' }
   let base = (site?.url || page?.url || '').trim().replace(/\/+$/, '')
@@ -153,10 +228,8 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
 
   const authHeader = 'Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)
 
-  const isPost = Boolean(page.post_type === 'post' || page.type === 'post' || page.seoPageType === 'Article' || page.type === 'Article')
-  const endpoint = isPost ? 'posts' : 'pages'
-
   let numericId = parseInt(page.id || page.ID || page.pageId || page.numericId, 10)
+  const endpoint = await resolveWpEndpoint(base, page, authHeader, numericId)
 
   // If numeric ID is missing from page object, attempt to resolve via slug
   if (isNaN(numericId) && page.url) {
@@ -395,10 +468,8 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
 
   const authHeader = 'Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)
 
-  const isPost = Boolean(sourcePage.post_type === 'post' || sourcePage.type === 'post' || sourcePage.seoPageType === 'Article' || sourcePage.type === 'Article')
-  const endpoint = isPost ? 'posts' : 'pages'
-
   let numericId = parseInt(sourcePage.id || sourcePage.ID || sourcePage.pageId || sourcePage.numericId, 10)
+  const endpoint = await resolveWpEndpoint(base, sourcePage, authHeader, numericId)
 
   // If numeric ID is missing, attempt resolution via slug
   if (isNaN(numericId) && sourcePage.url) {

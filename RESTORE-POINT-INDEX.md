@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.44-w4-title-brand-fix | `v1.44-w4-legacy-title-brand-suffix-detection-fix` | `[AUTO]` | 25-08-2026 10:50 | Ignore legacy database proposedTitle snapshots differing only by brand suffix in favor of generated recommendations. | **Current** |
+| v1.45-w4-endpoint-fix | `v1.45-w4-generic-push-to-wp-endpoint-fix` | `[AUTO]` | 25-08-2026 11:00 | Generic WordPress REST endpoint resolution for Pages, Posts, and Custom Post Types (projects, portfolio, services). | **Current** |
+| v1.44-w4-title-brand-fix | `v1.44-w4-legacy-title-brand-suffix-detection-fix` | `01fbbfe` | 25-08-2026 10:50 | Ignore legacy database proposedTitle snapshots differing only by brand suffix in favor of generated recommendations. | Superseded |
 | v1.43-w4-snapshot-fix | `v1.43-w4-legacy-proposed-snapshot-override-fix` | `e4cd1af` | 25-08-2026 10:31 | Ignore unedited legacy proposedTitle database snapshots in favor of generated recommendations while preserving user edits. | Superseded |
 | v1.42-w4-title-fallback-fix | `v1.42-w4-proposed-title-fallback-order-fix` | `ba80331` | 25-08-2026 10:19 | Fix W4 Proposed Meta Title fallback order to prioritize generated recommendations over Actual Live values. | Superseded |
 | v1.41-w4-seo-generator | `v1.41-w4-deterministic-seo-recommendation-generator` | `f3a321b` | 25-08-2026 10:08 | Deterministic W4 SEO Recommendation Generator for Proposed Meta Title, Description & H1. | Superseded |
