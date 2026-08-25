@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.38-w4-page-type-badge-labels',
+    version: 'v1.38-w4-type-labels',
+    gitTag: 'v1.38-w4-page-type-badge-labels',
+    commit: '[AUTO]',
+    date: '25-08-2026 08:53',
+    title: 'Update W4 Page Type Badge Labels to Concise Names (Landing, Topical, Article, Hub) (V1.38)',
+    description: 'Updated displayed Page Type badge text labels in PageAuditResultsPage.jsx to concise values (Landing, Topical, Article, Hub) removing the redundant Page suffix since the box header already displays PAGE TYPE.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.38-w4-page-type-badge-labels.md'
+  },
+  {
     id: 'v1.37-w4-top-info-row-proportions',
     version: 'v1.37-w4-proportions',
     gitTag: 'v1.37-w4-top-info-row-proportions',
-    commit: '[AUTO]',
+    commit: '6d1b777',
     date: '25-08-2026 08:36',
     title: 'Adjust W4 Top Information Row Proportions (35% URL / 30% Target / 10% Type / 25% Score) (V1.37)',
     description: 'Adjusted W4 top information cards grid layout to proportional column distribution (3.5fr 3fr 1fr 2.5fr) giving PAGE URL 35% width for longer URLs/titles while keeping PAGE TYPE compact at 10%. Retained responsive breakpoints.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.37-w4-top-info-row-proportions.md'
   },
   {

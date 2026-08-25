@@ -725,7 +725,7 @@ export default function PageAuditResultsPage({
                 pageType === 'Topical' || pageType === 'Topical Page' ? 'topical' :
                 pageType === 'Article' || pageType === 'Article Page' ? 'article' : 'unclassified'
               }`}>
-                {pageType.includes('Page') ? pageType : `${pageType} Page`}
+                {pageType.replace(/\s+Page$/i, '')}
               </span>
             </div>
           </div>

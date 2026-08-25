@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.37-w4-proportions | `v1.37-w4-top-info-row-proportions` | `[AUTO]` | 25-08-2026 08:36 | Adjust W4 top info row proportions to 35% URL / 30% Target / 10% Type / 25% Score. | **Current** |
+| v1.38-w4-type-labels | `v1.38-w4-page-type-badge-labels` | `[AUTO]` | 25-08-2026 08:53 | Update W4 Page Type badge labels to concise names (Landing, Topical, Article, Hub). | **Current** |
+| v1.37-w4-proportions | `v1.37-w4-top-info-row-proportions` | `6d1b777` | 25-08-2026 08:36 | Adjust W4 top info row proportions to 35% URL / 30% Target / 10% Type / 25% Score. | Superseded |
 | v1.36-w4-top-row | `v1.36-w4-restructure-top-info-row` | `8d3632d` | 25-08-2026 08:32 | Restructure W4 top information row into 4 equal horizontal cards (PAGE URL, TARGET PHRASE, PAGE TYPE, AUDIT SCORE). | Superseded |
 | v1.35-w4-no-dropdown | `v1.35-w4-remove-page-selection-dropdown` | `01f6fee` | 25-08-2026 08:25 | Remove SELECT PAGE TO REVIEW FROM DROPDOWN section from W4 audit results screen. | Superseded |
 | v1.34-ascent-phrases | `v1.34-ascent-builders-target-phrases` | `02dff83` | 25-08-2026 07:40 | Ascent Builders W3 Target Phrases Configured (41 Saved, 21 Blank) in SQLite database and verified. | Superseded |
