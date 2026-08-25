@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.40-w4-global-settings-restore-point-sync',
+    version: 'v1.40-w4-settings-sync',
+    gitTag: 'v1.40-w4-global-settings-restore-point-sync',
+    commit: '[AUTO]',
+    date: '25-08-2026 09:51',
+    title: 'Sync Application Restore Points Display in Global Settings (V1.40)',
+    description: 'Updated restorePointService.js and restorePointData.js to ensure all project restore points (including v1.35 through v1.39) are automatically merged and visibly rendered in Global Settings without stale localStorage cache suppression.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.40-w4-global-settings-restore-point-sync.md'
+  },
+  {
     id: 'v1.39-w4-actual-vs-proposed-seo-presentation',
     version: 'v1.39-w4-actual-proposed',
     gitTag: 'v1.39-w4-actual-vs-proposed-seo-presentation',
-    commit: '[AUTO]',
+    commit: '0196bb4',
     date: '25-08-2026 09:39',
     title: 'W4 Optimise Page SEO Modal Actual vs Proposed Presentation & Fallback Bug Fix (V1.39)',
     description: 'Restructured W4 Optimise Page SEO modal with explicit read-only ACTUAL (LIVE) value boxes and PROPOSED (EDITABLE) input controls for Meta Title, Meta Description, and H1. Fixed single-field fallback bug to enforce strict field independence.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.39-w4-actual-vs-proposed-seo-presentation.md'
   },
   {

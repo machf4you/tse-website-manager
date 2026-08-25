@@ -6,30 +6,31 @@ import { restorePointIndexData } from '../data/restorePointData'
 const STORAGE_KEY = 'tse_restore_point_index_v1'
 
 export function getRestorePointIndex() {
+  let userCreated = []
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
       const parsed = JSON.parse(saved)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Always merge code master restore points with any user-created items
-        const codeTags = new Set(restorePointIndexData.map(item => item.gitTag || item.id))
-        const userCreated = parsed.filter(item => !codeTags.has(item.gitTag || item.id))
+        const codeIds = new Set(restorePointIndexData.map(item => item.id))
+        const codeTags = new Set(restorePointIndexData.map(item => item.gitTag).filter(Boolean))
 
-        const merged = [...restorePointIndexData, ...userCreated]
-        merged.forEach((item, idx) => {
-          item.status = idx === 0 ? 'Current' : 'Superseded'
+        userCreated = parsed.filter(item => {
+          const hasId = item.id && codeIds.has(item.id)
+          const hasTag = item.gitTag && codeTags.has(item.gitTag)
+          return !hasId && !hasTag
         })
-        return merged
       }
     }
   } catch (e) {
     console.error('Error reading restore points from localStorage:', e)
   }
-  const res = [...restorePointIndexData]
-  res.forEach((item, idx) => {
+
+  const merged = [...restorePointIndexData, ...userCreated]
+  merged.forEach((item, idx) => {
     item.status = idx === 0 ? 'Current' : 'Superseded'
   })
-  return res
+  return merged
 }
 
 export function saveRestorePointIndex(items) {

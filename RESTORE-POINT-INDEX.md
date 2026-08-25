@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.39-w4-actual-proposed | `v1.39-w4-actual-vs-proposed-seo-presentation` | `[AUTO]` | 25-08-2026 09:39 | W4 Optimise Page SEO Modal Actual vs Proposed presentation & fallback bug fix. | **Current** |
+| v1.40-w4-settings-sync | `v1.40-w4-global-settings-restore-point-sync` | `[AUTO]` | 25-08-2026 09:51 | Sync Application Restore Points display in Global Settings for all W4 restore points (v1.35–v1.39). | **Current** |
+| v1.39-w4-actual-proposed | `v1.39-w4-actual-vs-proposed-seo-presentation` | `0196bb4` | 25-08-2026 09:39 | W4 Optimise Page SEO Modal Actual vs Proposed presentation & fallback bug fix. | Superseded |
 | v1.38-w4-type-labels | `v1.38-w4-page-type-badge-labels` | `d7913b4` | 25-08-2026 08:53 | Update W4 Page Type badge labels to concise names (Landing, Topical, Article, Hub). | Superseded |
 | v1.37-w4-proportions | `v1.37-w4-top-info-row-proportions` | `6d1b777` | 25-08-2026 08:36 | Adjust W4 top info row proportions to 35% URL / 30% Target / 10% Type / 25% Score. | Superseded |
 | v1.36-w4-top-row | `v1.36-w4-restructure-top-info-row` | `8d3632d` | 25-08-2026 08:32 | Restructure W4 top information row into 4 equal horizontal cards (PAGE URL, TARGET PHRASE, PAGE TYPE, AUDIT SCORE). | Superseded |
