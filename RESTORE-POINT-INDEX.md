@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.41-w4-seo-generator | `v1.41-w4-deterministic-seo-recommendation-generator` | `[AUTO]` | 25-08-2026 10:08 | Deterministic W4 SEO Recommendation Generator for Proposed Meta Title, Description & H1. | **Current** |
+| v1.42-w4-title-fallback-fix | `v1.42-w4-proposed-title-fallback-order-fix` | `[AUTO]` | 25-08-2026 10:19 | Fix W4 Proposed Meta Title fallback order to prioritize generated recommendations over Actual Live values. | **Current** |
+| v1.41-w4-seo-generator | `v1.41-w4-deterministic-seo-recommendation-generator` | `f3a321b` | 25-08-2026 10:08 | Deterministic W4 SEO Recommendation Generator for Proposed Meta Title, Description & H1. | Superseded |
 | v1.40-w4-settings-sync | `v1.40-w4-global-settings-restore-point-sync` | `d4adf1b` | 25-08-2026 09:51 | Sync Application Restore Points display in Global Settings for all W4 restore points (v1.35–v1.39). | Superseded |
 | v1.39-w4-actual-proposed | `v1.39-w4-actual-vs-proposed-seo-presentation` | `0196bb4` | 25-08-2026 09:39 | W4 Optimise Page SEO Modal Actual vs Proposed presentation & fallback bug fix. | Superseded |
 | v1.38-w4-type-labels | `v1.38-w4-page-type-badge-labels` | `d7913b4` | 25-08-2026 08:53 | Update W4 Page Type badge labels to concise names (Landing, Topical, Article, Hub). | Superseded |

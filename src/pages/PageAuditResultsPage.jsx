@@ -153,19 +153,23 @@ export default function PageAuditResultsPage({
     siteName: site?.name || '',
   })
 
+  const explicitProposedTitle = overrideObj.proposedTitle || rawCurrentPage.proposedTitle
+  const explicitProposedMetaDescription = overrideObj.proposedMetaDescription || rawCurrentPage.proposedMetaDescription
+  const explicitProposedH1 = overrideObj.proposedH1 || rawCurrentPage.proposedH1
+
   const currentPage = {
     ...rawCurrentPage,
     ...overrideObj,
     actualMetaTitle,
     actualMetaDescription,
     actualH1,
-    title: overrideObj.proposedTitle || overrideObj.metaTitle || recommendations.proposedTitle,
-    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || recommendations.proposedTitle,
-    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || recommendations.proposedTitle,
-    proposedMetaDescription: overrideObj.proposedMetaDescription || overrideObj.metaDescription || recommendations.proposedMetaDescription,
-    metaDescription: overrideObj.metaDescription || overrideObj.proposedMetaDescription || recommendations.proposedMetaDescription,
-    proposedH1: overrideObj.proposedH1 || overrideObj.h1 || recommendations.proposedH1,
-    h1: overrideObj.h1 || overrideObj.proposedH1 || recommendations.proposedH1,
+    title: explicitProposedTitle || recommendations.proposedTitle || actualMetaTitle,
+    proposedTitle: explicitProposedTitle || recommendations.proposedTitle || actualMetaTitle,
+    metaTitle: explicitProposedTitle || recommendations.proposedTitle || actualMetaTitle,
+    proposedMetaDescription: explicitProposedMetaDescription || recommendations.proposedMetaDescription || actualMetaDescription,
+    metaDescription: explicitProposedMetaDescription || recommendations.proposedMetaDescription || actualMetaDescription,
+    proposedH1: explicitProposedH1 || recommendations.proposedH1 || actualH1,
+    h1: explicitProposedH1 || recommendations.proposedH1 || actualH1,
   }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {

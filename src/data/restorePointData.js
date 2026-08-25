@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.42-w4-proposed-title-fallback-order-fix',
+    version: 'v1.42-w4-title-fallback-fix',
+    gitTag: 'v1.42-w4-proposed-title-fallback-order-fix',
+    commit: '[AUTO]',
+    date: '25-08-2026 10:19',
+    title: 'Fix W4 Proposed Meta Title Fallback Order to Prioritize Generated Recommendations (V1.42)',
+    description: 'Updated PageAuditResultsPage.jsx and W4FixIssueDialog.jsx fallback resolution order so explicit user proposed overrides take first priority, generated recommendations take second priority, and Actual Live values serve only as ultimate fallbacks.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.42-w4-proposed-title-fallback-order-fix.md'
+  },
+  {
     id: 'v1.41-w4-deterministic-seo-recommendation-generator',
     version: 'v1.41-w4-seo-generator',
     gitTag: 'v1.41-w4-deterministic-seo-recommendation-generator',
-    commit: '[AUTO]',
+    commit: 'f3a321b',
     date: '25-08-2026 10:08',
     title: 'Deterministic W4 SEO Recommendation Generator for Proposed Meta Title, Description & H1 (V1.41)',
     description: 'Implemented pure JavaScript deterministic SEO recommendation engine constructing initial proposed Meta Title (50-60 chars), Proposed Meta Description (150-160 chars), and Proposed H1 (20-70 chars) incorporating target phrase, page context, and brand name without external AI APIs.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.41-w4-deterministic-seo-recommendation-generator.md'
   },
   {
