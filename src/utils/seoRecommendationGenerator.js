@@ -41,6 +41,22 @@ function containsPhrase(text = '', phrase = '') {
   return text.toLowerCase().includes(phrase.toLowerCase())
 }
 
+/**
+ * Resolves whether a saved proposed value is a genuine user edit or an unedited legacy snapshot.
+ * - If saved value is identical to actual live value (ignoring case & extra spaces), it is a legacy snapshot -> IGNORED.
+ * - If saved value is empty, returns recommendation (or actual fallback).
+ * - If saved value is DIFFERENT from actual live value -> preserved as a genuine user override!
+ */
+export function resolveProposedField(savedVal, actualVal, recVal) {
+  const saved = (savedVal || '').replace(/\s+/g, ' ').trim()
+  const actual = (actualVal || '').replace(/\s+/g, ' ').trim()
+  const rec = (recVal || '').trim()
+
+  if (!saved) return rec || actual
+  if (saved.toLowerCase() === actual.toLowerCase()) return rec || actual
+  return saved
+}
+
 export function generateSeoRecommendations({
   targetPhrase = '',
   actualMetaTitle = '',

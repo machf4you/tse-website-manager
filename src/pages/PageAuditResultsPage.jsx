@@ -4,7 +4,7 @@ import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi, getPageConfigsApi } from '../services/websiteManagerApi'
 import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import { normalizeUrlForMatching } from '../utils/urlUtils'
-import { generateSeoRecommendations } from '../utils/seoRecommendationGenerator'
+import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import './PageAuditResultsPage.css'
 
@@ -153,9 +153,13 @@ export default function PageAuditResultsPage({
     siteName: site?.name || '',
   })
 
-  const explicitProposedTitle = overrideObj.proposedTitle || rawCurrentPage.proposedTitle
-  const explicitProposedMetaDescription = overrideObj.proposedMetaDescription || rawCurrentPage.proposedMetaDescription
-  const explicitProposedH1 = overrideObj.proposedH1 || rawCurrentPage.proposedH1
+  const rawSavedTitle = overrideObj.proposedTitle || rawCurrentPage.proposedTitle
+  const rawSavedDesc = overrideObj.proposedMetaDescription || rawCurrentPage.proposedMetaDescription
+  const rawSavedH1 = overrideObj.proposedH1 || rawCurrentPage.proposedH1
+
+  const finalProposedTitle = resolveProposedField(rawSavedTitle, actualMetaTitle, recommendations.proposedTitle)
+  const finalProposedDesc = resolveProposedField(rawSavedDesc, actualMetaDescription, recommendations.proposedMetaDescription)
+  const finalProposedH1 = resolveProposedField(rawSavedH1, actualH1, recommendations.proposedH1)
 
   const currentPage = {
     ...rawCurrentPage,
@@ -163,13 +167,13 @@ export default function PageAuditResultsPage({
     actualMetaTitle,
     actualMetaDescription,
     actualH1,
-    title: explicitProposedTitle || recommendations.proposedTitle || actualMetaTitle,
-    proposedTitle: explicitProposedTitle || recommendations.proposedTitle || actualMetaTitle,
-    metaTitle: explicitProposedTitle || recommendations.proposedTitle || actualMetaTitle,
-    proposedMetaDescription: explicitProposedMetaDescription || recommendations.proposedMetaDescription || actualMetaDescription,
-    metaDescription: explicitProposedMetaDescription || recommendations.proposedMetaDescription || actualMetaDescription,
-    proposedH1: explicitProposedH1 || recommendations.proposedH1 || actualH1,
-    h1: explicitProposedH1 || recommendations.proposedH1 || actualH1,
+    title: finalProposedTitle,
+    proposedTitle: finalProposedTitle,
+    metaTitle: finalProposedTitle,
+    proposedMetaDescription: finalProposedDesc,
+    metaDescription: finalProposedDesc,
+    proposedH1: finalProposedH1,
+    h1: finalProposedH1,
   }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {

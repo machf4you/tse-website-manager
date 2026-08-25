@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { updateWordPressSEOFields } from '../services/wordpressApi'
-import { generateSeoRecommendations } from '../utils/seoRecommendationGenerator'
+import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
 import './W4FixIssueDialog.css'
 
 export default function W4FixIssueDialog({
@@ -72,10 +72,10 @@ export default function W4FixIssueDialog({
       siteName: site?.name || '',
     })
 
-    // Proposed values initially populated with saved proposed overrides or generated recommendations
-    const initT = page.proposedTitle || recs.proposedTitle || actT
-    const initD = page.proposedMetaDescription || recs.proposedMetaDescription || actD
-    const initH = page.proposedH1 || recs.proposedH1 || actH
+    // Proposed values initially populated with genuine saved overrides or generated recommendations
+    const initT = resolveProposedField(page.proposedTitle, actT, recs.proposedTitle)
+    const initD = resolveProposedField(page.proposedMetaDescription, actD, recs.proposedMetaDescription)
+    const initH = resolveProposedField(page.proposedH1, actH, recs.proposedH1)
 
     setMetaTitleVal(initT)
     setMetaDescVal(initD)

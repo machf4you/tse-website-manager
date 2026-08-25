@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.43-w4-legacy-proposed-snapshot-override-fix',
+    version: 'v1.43-w4-snapshot-fix',
+    gitTag: 'v1.43-w4-legacy-proposed-snapshot-override-fix',
+    commit: '[AUTO]',
+    date: '25-08-2026 10:31',
+    title: 'Ignore Unedited Legacy Proposed Title Snapshots in Database in Favor of Generated Recommendations (V1.43)',
+    description: 'Updated resolveProposedField in seoRecommendationGenerator.js to distinguish unedited legacy title snapshots from genuine user overrides. Legacy database values matching Actual Live values are ignored so generated recommendations take authority, while user edits remain preserved.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.43-w4-legacy-proposed-snapshot-override-fix.md'
+  },
+  {
     id: 'v1.42-w4-proposed-title-fallback-order-fix',
     version: 'v1.42-w4-title-fallback-fix',
     gitTag: 'v1.42-w4-proposed-title-fallback-order-fix',
-    commit: '[AUTO]',
+    commit: 'ba80331',
     date: '25-08-2026 10:19',
     title: 'Fix W4 Proposed Meta Title Fallback Order to Prioritize Generated Recommendations (V1.42)',
     description: 'Updated PageAuditResultsPage.jsx and W4FixIssueDialog.jsx fallback resolution order so explicit user proposed overrides take first priority, generated recommendations take second priority, and Actual Live values serve only as ultimate fallbacks.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.42-w4-proposed-title-fallback-order-fix.md'
   },
   {
