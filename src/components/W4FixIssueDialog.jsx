@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { updateWordPressSEOFields } from '../services/wordpressApi'
+import { generateSeoRecommendations } from '../utils/seoRecommendationGenerator'
 import './W4FixIssueDialog.css'
 
 export default function W4FixIssueDialog({
@@ -61,10 +62,20 @@ export default function W4FixIssueDialog({
     const actD = page.actualMetaDescription || ''
     const actH = page.actualH1 || ''
 
-    // Proposed values initially populated with corresponding Actual value if proposed is not set
-    const initT = page.proposedTitle || page.metaTitle || actT
-    const initD = page.proposedMetaDescription || (page.metaDescription !== undefined ? page.metaDescription : actD)
-    const initH = page.proposedH1 || (page.h1 !== undefined ? page.h1 : actH)
+    const recs = generateSeoRecommendations({
+      targetPhrase: page.targetPhrase || page.target || '',
+      actualMetaTitle: actT,
+      actualMetaDescription: actD,
+      actualH1: actH,
+      pageUrl: page.url || '',
+      pageTitle: page.title || '',
+      siteName: site?.name || '',
+    })
+
+    // Proposed values initially populated with saved proposed overrides or generated recommendations
+    const initT = page.proposedTitle || page.metaTitle || recs.proposedTitle
+    const initD = page.proposedMetaDescription || page.metaDescription || recs.proposedMetaDescription
+    const initH = page.proposedH1 || page.h1 || recs.proposedH1
 
     setMetaTitleVal(initT)
     setMetaDescVal(initD)

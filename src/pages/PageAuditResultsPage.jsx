@@ -4,6 +4,7 @@ import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi, getPageConfigsApi } from '../services/websiteManagerApi'
 import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import { normalizeUrlForMatching } from '../utils/urlUtils'
+import { generateSeoRecommendations } from '../utils/seoRecommendationGenerator'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import './PageAuditResultsPage.css'
 
@@ -140,17 +141,31 @@ export default function PageAuditResultsPage({
   const actualMetaDescription = (snap.meta_description || rawCurrentPage.metaDescription || '').trim()
   const actualH1 = ((Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.h1 || '').trim()
 
+  // Generate deterministic SEO recommendations
+  const recTargetPhrase = (rawCurrentPage.targetPhrase || rawCurrentPage.target || '').trim()
+  const recommendations = generateSeoRecommendations({
+    targetPhrase: recTargetPhrase,
+    actualMetaTitle,
+    actualMetaDescription,
+    actualH1,
+    pageUrl: rawCurrentPage.url || '',
+    pageTitle: rawCurrentPage.title || '',
+    siteName: site?.name || '',
+  })
+
   const currentPage = {
     ...rawCurrentPage,
     ...overrideObj,
     actualMetaTitle,
     actualMetaDescription,
     actualH1,
-    title: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || actualMetaTitle,
-    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || actualMetaTitle,
-    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || rawCurrentPage.metaTitle || actualMetaTitle,
-    metaDescription: overrideObj.metaDescription !== undefined ? overrideObj.metaDescription : (rawCurrentPage.metaDescription || actualMetaDescription),
-    h1: overrideObj.h1 !== undefined ? overrideObj.h1 : (rawCurrentPage.h1 || actualH1),
+    title: overrideObj.proposedTitle || overrideObj.metaTitle || recommendations.proposedTitle,
+    proposedTitle: overrideObj.proposedTitle || overrideObj.metaTitle || recommendations.proposedTitle,
+    metaTitle: overrideObj.metaTitle || overrideObj.proposedTitle || recommendations.proposedTitle,
+    proposedMetaDescription: overrideObj.proposedMetaDescription || overrideObj.metaDescription || recommendations.proposedMetaDescription,
+    metaDescription: overrideObj.metaDescription || overrideObj.proposedMetaDescription || recommendations.proposedMetaDescription,
+    proposedH1: overrideObj.proposedH1 || overrideObj.h1 || recommendations.proposedH1,
+    h1: overrideObj.h1 || overrideObj.proposedH1 || recommendations.proposedH1,
   }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {

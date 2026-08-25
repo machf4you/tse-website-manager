@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.41-w4-deterministic-seo-recommendation-generator',
+    version: 'v1.41-w4-seo-generator',
+    gitTag: 'v1.41-w4-deterministic-seo-recommendation-generator',
+    commit: '[AUTO]',
+    date: '25-08-2026 10:08',
+    title: 'Deterministic W4 SEO Recommendation Generator for Proposed Meta Title, Description & H1 (V1.41)',
+    description: 'Implemented pure JavaScript deterministic SEO recommendation engine constructing initial proposed Meta Title (50-60 chars), Proposed Meta Description (150-160 chars), and Proposed H1 (20-70 chars) incorporating target phrase, page context, and brand name without external AI APIs.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.41-w4-deterministic-seo-recommendation-generator.md'
+  },
+  {
     id: 'v1.40-w4-global-settings-restore-point-sync',
     version: 'v1.40-w4-settings-sync',
     gitTag: 'v1.40-w4-global-settings-restore-point-sync',
-    commit: '[AUTO]',
+    commit: 'd4adf1b',
     date: '25-08-2026 09:51',
     title: 'Sync Application Restore Points Display in Global Settings (V1.40)',
     description: 'Updated restorePointService.js and restorePointData.js to ensure all project restore points (including v1.35 through v1.39) are automatically merged and visibly rendered in Global Settings without stale localStorage cache suppression.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.40-w4-global-settings-restore-point-sync.md'
   },
   {

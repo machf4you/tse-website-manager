@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.40-w4-settings-sync | `v1.40-w4-global-settings-restore-point-sync` | `[AUTO]` | 25-08-2026 09:51 | Sync Application Restore Points display in Global Settings for all W4 restore points (v1.35–v1.39). | **Current** |
+| v1.41-w4-seo-generator | `v1.41-w4-deterministic-seo-recommendation-generator` | `[AUTO]` | 25-08-2026 10:08 | Deterministic W4 SEO Recommendation Generator for Proposed Meta Title, Description & H1. | **Current** |
+| v1.40-w4-settings-sync | `v1.40-w4-global-settings-restore-point-sync` | `d4adf1b` | 25-08-2026 09:51 | Sync Application Restore Points display in Global Settings for all W4 restore points (v1.35–v1.39). | Superseded |
 | v1.39-w4-actual-proposed | `v1.39-w4-actual-vs-proposed-seo-presentation` | `0196bb4` | 25-08-2026 09:39 | W4 Optimise Page SEO Modal Actual vs Proposed presentation & fallback bug fix. | Superseded |
 | v1.38-w4-type-labels | `v1.38-w4-page-type-badge-labels` | `d7913b4` | 25-08-2026 08:53 | Update W4 Page Type badge labels to concise names (Landing, Topical, Article, Hub). | Superseded |
 | v1.37-w4-proportions | `v1.37-w4-top-info-row-proportions` | `6d1b777` | 25-08-2026 08:36 | Adjust W4 top info row proportions to 35% URL / 30% Target / 10% Type / 25% Score. | Superseded |
