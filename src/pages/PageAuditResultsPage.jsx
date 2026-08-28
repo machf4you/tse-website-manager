@@ -74,10 +74,30 @@ export default function PageAuditResultsPage({
   }, [selectedUrl, selectedUrlStorageKey])
 
   const [liveAuditData, setLiveAuditData] = useState(null)
+  const [apiAuditRecord, setApiAuditRecord] = useState(null)
   const [isLoadingAudit, setIsLoadingAudit] = useState(false)
   const [auditError, setAuditError] = useState(null)
   const [activeFixIssue, setActiveFixIssue] = useState(null)
   const [localOverrides, setLocalOverrides] = useState({})
+
+  // Load page audit record from SQLite API for authoritative timestamps
+  useEffect(() => {
+    let isMounted = true
+    if (site?.id && (page?.url || page?.id)) {
+      const pKey = page.url || page.id
+      getPageAuditsApi(site.id)
+        .then(apiAudits => {
+          if (isMounted && apiAudits && typeof apiAudits === 'object') {
+            const rec = apiAudits[pKey] ||
+                        (page.url ? apiAudits[page.url] : null) ||
+                        (page.id ? apiAudits[page.id] : null)
+            if (rec) setApiAuditRecord(rec)
+          }
+        })
+        .catch(() => {})
+    }
+    return () => { isMounted = false }
+  }, [site?.id, page?.url, page?.id])
 
   // Load stored page configurations from SQLite backend DB on mount
   useEffect(() => {
@@ -201,12 +221,32 @@ export default function PageAuditResultsPage({
     }
   })()
 
-  const lastAuditTimestampStr =
+  const formatAuditDisplayTimestamp = (ts) => {
+    if (!ts || typeof ts !== 'string') return null
+    const trimmed = ts.trim()
+    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}\s+\d{1,2}:\d{2}$/.test(trimmed)) {
+      return trimmed
+    }
+    const ms = Date.parse(trimmed)
+    if (!isNaN(ms) && ms > 0) {
+      const d = new Date(ms)
+      const pad = n => String(n).padStart(2, '0')
+      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+    }
+    return trimmed
+  }
+
+  const rawLastAuditTs =
+    apiAuditRecord?.lastAuditTimestamp ||
     storedAuditRecord?.lastAuditTimestamp ||
     liveAuditData?.lastAuditTimestamp ||
     liveAuditData?.audit_timestamp ||
     liveAuditData?.timestamp ||
+    liveAuditData?.created_at ||
+    liveAuditData?.date ||
     null
+
+  const lastAuditTimestampStr = formatAuditDisplayTimestamp(rawLastAuditTs)
 
   const lastSyncTimestampStr =
     site?.lastSyncTimestamp ||
@@ -418,12 +458,8 @@ export default function PageAuditResultsPage({
       // If re-run is NOT explicitly requested, check for cached audit result
       if (!isRerunRequested) {
         try {
-          const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-          let record = storedAudits[pageKey] ||
-                       (currentPage.url ? storedAudits[currentPage.url] : null) ||
-                       (currentPage.id ? storedAudits[currentPage.id] : null)
-
-          if (!record && site?.id) {
+          let record = null
+          if (site?.id) {
             try {
               const apiAudits = await getPageAuditsApi(site.id)
               record = apiAudits[pageKey] ||
@@ -431,11 +467,20 @@ export default function PageAuditResultsPage({
                        (currentPage.id ? apiAudits[currentPage.id] : null)
             } catch (err) {}
           }
+          if (!record) {
+            const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+            record = storedAudits[pageKey] ||
+                     (currentPage.url ? storedAudits[currentPage.url] : null) ||
+                     (currentPage.id ? storedAudits[currentPage.id] : null)
+          }
 
-          if (record && record.isAudited && record.auditResult) {
-            cachedAudit = record.auditResult
-            isStaleRecord = Boolean(record.isStale)
-            staleReason = record.staleReason || null
+          if (record) {
+            if (isMounted) setApiAuditRecord(record)
+            if (record.isAudited && record.auditResult) {
+              cachedAudit = record.auditResult
+              isStaleRecord = Boolean(record.isStale)
+              staleReason = record.staleReason || null
+            }
           }
         } catch (e) {
           console.error('Failed to read stored audit data:', e)
@@ -498,6 +543,7 @@ export default function PageAuditResultsPage({
               fingerprint: currentFingerprint,
               auditResult: result,
             }
+            setApiAuditRecord(auditRecord)
             storedAudits[pageKey] = auditRecord
             if (currentPage.url && currentPage.url !== pageKey) {
               storedAudits[currentPage.url] = auditRecord

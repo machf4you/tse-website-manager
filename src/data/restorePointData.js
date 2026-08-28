@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.53-w4-last-audit-timestamp-api-outer-record-fix',
+    version: 'v1.53-w4-last-audit-timestamp-fix',
+    gitTag: 'v1.53-w4-last-audit-timestamp-api-outer-record-fix',
+    commit: '[AUTO]',
+    date: '28-08-2026 14:35',
+    title: 'W4 LAST AUDIT Timestamp API Outer-Record Resolution Fix (V1.53)',
+    description: 'Updated PageAuditResultsPage.jsx so LAST AUDIT resolves from the outer API audit record (apiAuditRecord.lastAuditTimestamp) returned by getPageAuditsApi(), removing sole reliance on browser localStorage and supporting created_at/date fallbacks. Restored exact W4 header timestamp display for audited pages.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.53-w4-last-audit-timestamp-api-outer-record-fix.md'
+  },
+  {
     id: 'v1.52-w4-elementor-h1-safety-tree-update-fix',
     version: 'v1.52-w4-elementor-h1-safety-fix',
     gitTag: 'v1.52-w4-elementor-h1-safety-tree-update-fix',
-    commit: '[AUTO]',
+    commit: 'b4a1290',
     date: '28-08-2026 10:30',
     title: 'W4 Elementor H1 Scope Safety & Single-Widget Update Fix (V1.52)',
     description: 'Updated updateWordPressSEOFields in src/services/wordpressApi.js to inspect header_size property of Elementor heading nodes during Push to WP. Ensures ONLY genuine H1 widgets (header_size: h1) are targeted, preserving all existing H2, H3, H4, counter, and paragraph section headings and heading levels untouched. Leaves Elementor tree untouched when no explicit H1 widget exists.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.52-w4-elementor-h1-safety-tree-update-fix.md'
   },
   {
