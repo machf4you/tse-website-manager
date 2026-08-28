@@ -518,6 +518,7 @@ export default function PageAuditResultsPage({
           siteId: site?.id || 'site-1',
           pageId: currentPage.id || currentPage.url,
           url: currentPage.url,
+          siteUrl: site?.url || 'https://www.ascentbuilders.co.uk/',
           targetPhrase: effectiveTarget,
           seoPageType: currentPage.type || currentPage.seoPageType || pageType,
         })

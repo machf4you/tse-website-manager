@@ -24,7 +24,7 @@ export async function checkPageAuditorHealth() {
  * Execute audit on TSE Page Auditor engine
  * Sends: websiteId, pageId, pageUrl, targetPhrase, seoPageType
  */
-export async function executePageAudit({ siteId, pageId, url, targetPhrase, seoPageType }) {
+export async function executePageAudit({ siteId, pageId, url, siteUrl, targetPhrase, seoPageType }) {
   let rulesConfig = null
   try {
     const raw = localStorage.getItem('tse_page_auditor_rules_v1') || localStorage.getItem('tse_global_rules_config')
@@ -33,10 +33,18 @@ export async function executePageAudit({ siteId, pageId, url, targetPhrase, seoP
     // ignore
   }
 
+  // Resolve relative URL (e.g. "/") against connected website domain URL
+  let resolvedUrl = (url || '').trim()
+  if (resolvedUrl && !resolvedUrl.startsWith('http://') && !resolvedUrl.startsWith('https://')) {
+    const baseDomain = (siteUrl || 'https://www.ascentbuilders.co.uk').replace(/\/+$/, '')
+    const relPath = resolvedUrl.startsWith('/') ? resolvedUrl : `/${resolvedUrl}`
+    resolvedUrl = `${baseDomain}${relPath}`
+  }
+
   const payload = {
     site_id: siteId || 'site-1',
     page_id: pageId || url,
-    url: url,
+    url: resolvedUrl,
     primary_phrase: targetPhrase || '',
     assigned_type: seoPageType || 'Unclassified',
     secondary_phrases: [],
