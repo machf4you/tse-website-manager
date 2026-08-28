@@ -188,6 +188,61 @@ export default function PageAuditResultsPage({
     h1: finalProposedH1,
   }
 
+  // ── Timestamps & Audit Freshness Resolution ──
+  const storedAuditRecord = (() => {
+    try {
+      const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+      const pKey = rawCurrentPage.url || rawCurrentPage.id
+      return storedAudits[pKey] ||
+             (rawCurrentPage.url ? storedAudits[rawCurrentPage.url] : null) ||
+             (rawCurrentPage.id ? storedAudits[rawCurrentPage.id] : null)
+    } catch (e) {
+      return null
+    }
+  })()
+
+  const lastAuditTimestampStr =
+    storedAuditRecord?.lastAuditTimestamp ||
+    liveAuditData?.lastAuditTimestamp ||
+    liveAuditData?.audit_timestamp ||
+    liveAuditData?.timestamp ||
+    null
+
+  const lastSyncTimestampStr =
+    site?.lastSyncTimestamp ||
+    site?.lastSyncDate ||
+    rawCurrentPage?.lastSyncTimestamp ||
+    (() => {
+      try {
+        const pkgKey = site?.id ? `tse_wp_package_${site.id}` : null
+        if (pkgKey) {
+          const rawPkg = localStorage.getItem(pkgKey)
+          if (rawPkg) {
+            const parsed = JSON.parse(rawPkg)
+            return parsed.lastSyncTimestamp || null
+          }
+        }
+      } catch (e) {}
+      return null
+    })() ||
+    null
+
+  const parseTimestampToMs = (str) => {
+    if (!str || typeof str !== 'string') return 0
+    const trimmed = str.trim()
+    const ddmmyyyyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s+(\d{1,2}):(\d{2})$/)
+    if (ddmmyyyyMatch) {
+      const [, day, month, year, hours, minutes] = ddmmyyyyMatch
+      return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10), parseInt(hours, 10), parseInt(minutes, 10)).getTime()
+    }
+    const isoTime = Date.parse(trimmed)
+    return isNaN(isoTime) ? 0 : isoTime
+  }
+
+  const lastAuditMs = parseTimestampToMs(lastAuditTimestampStr)
+  const lastSyncMs = parseTimestampToMs(lastSyncTimestampStr)
+  const isSyncNewerThanAudit = Boolean(lastSyncMs > 0 && lastAuditMs > 0 && lastSyncMs > lastAuditMs)
+
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {
     if (!targetPage || !site?.id) return
     const pageKey = targetPage.id || targetPage.url
@@ -719,13 +774,18 @@ export default function PageAuditResultsPage({
           </button>
         </div>
 
-        {/* Audit Stale Banner */}
-        {isCurrentPageStale && (
-          <div style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.4)', color: '#fbbf24', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <strong style={{ fontSize: '0.95rem' }}>🟡 Audit Required ?</strong>
-              <div style={{ fontSize: '0.82rem', marginTop: '4px', color: '#fef08a' }}>
-                {staleReasonText || 'Page content or SEO elements were modified in WordPress after the last audit.'} Click "Re-run Audit ▷" to update audit results.
+        {/* Audit Stale Banner (when Last Sync is newer than Last Audit or content changed) */}
+        {(isSyncNewerThanAudit || isCurrentPageStale) && (
+          <div style={{ backgroundColor: 'rgba(245,158,11,0.14)', border: '1px solid rgba(245,158,11,0.5)', color: '#fbbf24', padding: '14px 18px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 0 16px rgba(245,158,11,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.4rem' }}>⚠️</span>
+              <div>
+                <strong style={{ fontSize: '0.96rem', display: 'block', color: '#fef08a' }}>Live data has changed since this audit. Re-run Audit for current results.</strong>
+                <div style={{ fontSize: '0.83rem', marginTop: '3px', color: '#fde68a' }}>
+                  {isSyncNewerThanAudit
+                    ? `Latest WordPress Sync (${lastSyncTimestampStr || 'Recent'}) is newer than Last Audit (${lastAuditTimestampStr || 'Previous'}).`
+                    : (staleReasonText || 'Page content or SEO elements were modified after the last audit.')}
+                </div>
               </div>
             </div>
             <button
@@ -733,7 +793,7 @@ export default function PageAuditResultsPage({
               className="w3-btn-emerald"
               onClick={() => setIsRerunRequested(true)}
               disabled={isLoadingAudit}
-              style={{ backgroundColor: '#f59e0b', borderColor: '#f59e0b', padding: '6px 14px', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+              style={{ backgroundColor: '#f59e0b', borderColor: '#d97706', padding: '8px 18px', fontSize: '0.85rem', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 0 12px rgba(245,158,11,0.4)', cursor: 'pointer' }}
             >
               {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
             </button>
@@ -742,7 +802,7 @@ export default function PageAuditResultsPage({
 
         {/* Page Title & Pill Badge */}
         <div className="w4-header-block">
-          <div className="w4-pill-row" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div className="w4-pill-row" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <span className="w4-pill-badge">W4 | LATEST PAGE AUDIT RESULTS</span>
             {liveAuditData ? (
               <span className="w4-status-connected" style={{ fontSize: '0.7rem', fontWeight: '700', color: '#10b981', backgroundColor: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
@@ -759,6 +819,19 @@ export default function PageAuditResultsPage({
             )}
           </div>
           <h1 className="w4-main-title">Now We Need To Optimize The SEO Elements Of This Page</h1>
+
+          {/* Timestamps Status Bar */}
+          <div className="w4-timestamps-bar" style={{ display: 'flex', gap: '18px', alignItems: 'center', backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '8px 14px', marginTop: '12px', width: 'fit-content', fontSize: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#94a3b8', fontWeight: '600', letterSpacing: '0.03em' }}>LAST AUDIT:</span>
+              <span style={{ color: '#f8fafc', fontWeight: '700' }}>{lastAuditTimestampStr || 'Not Audited Yet'}</span>
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.2)' }}>|</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#94a3b8', fontWeight: '600', letterSpacing: '0.03em' }}>LAST SYNC:</span>
+              <span style={{ color: '#f8fafc', fontWeight: '700' }}>{lastSyncTimestampStr || 'Not Synced Yet'}</span>
+            </div>
+          </div>
         </div>
 
         {/* Page Info & Audit Score Cards Grid (4 Horizontal Boxes) */}

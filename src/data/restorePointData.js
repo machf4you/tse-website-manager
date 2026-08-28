@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.51-w4-audit-freshness-and-timestamps-indicators-fix',
+    version: 'v1.51-w4-freshness-indicators-fix',
+    gitTag: 'v1.51-w4-audit-freshness-and-timestamps-indicators-fix',
+    commit: '[AUTO]',
+    date: '28-08-2026 09:28',
+    title: 'W4 Audit Freshness & Timestamps Indicators (LAST AUDIT vs LAST SYNC) (V1.51)',
+    description: 'Updated PageAuditResultsPage.jsx to explicitly display LAST AUDIT and LAST SYNC timestamps in the header. Added stale warning banner ("Live data has changed since this audit. Re-run Audit for current results.") with visually prominent Re-run Audit button when Last Sync is newer than Last Audit.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.51-w4-audit-freshness-and-timestamps-indicators-fix.md'
+  },
+  {
     id: 'v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix',
     version: 'v1.50-w4-package-source-of-truth-fix',
     gitTag: 'v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix',
-    commit: '[AUTO]',
+    commit: '6337728',
     date: '28-08-2026 08:46',
     title: 'Synced WordPress Package Data as Authoritative Source of Truth for W4 ACTUAL (LIVE) Fields (V1.50)',
     description: 'Updated normalizeImportedPage in packageExtractor.js to extract and normalize metaTitle, metaDescription, and h1 (including theme/template post_title fallback) for every synced page/post/project. Updated PageAuditResultsPage.jsx so W4 ACTUAL (LIVE) fields use latest synced package data as source of truth while keeping previous audit score/results intact until manual Step 4 re-audit.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix.md'
   },
   {
