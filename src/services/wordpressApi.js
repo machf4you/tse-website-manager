@@ -393,27 +393,20 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     // ── 4. Call TSE Site Exporter Dedicated Endpoint for Meta Title & Description ──
     try {
       console.log('[WP_WRITE_TRACE] Writing Meta Title & Description via TSE Site Exporter endpoint...')
-      await fetch(`${base}/wp-json/tse-site-exporter/v1/update-page`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: authHeader,
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          post_id: numericId,
-          page_id: numericId,
-          id: numericId,
-          metaTitle: metaTitle,
-          metaDescription: metaDescription,
-          meta_title: metaTitle,
-          meta_description: metaDescription,
-          yoast_title: metaTitle,
-          yoast_meta_desc: metaDescription,
-          _yoast_wpseo_title: metaTitle,
-          _yoast_wpseo_metadesc: metaDescription
+      if (metaTitle) {
+        await fetch(`${base}/wp-json/tse-site-exporter/v1/update-page`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: authHeader, Accept: 'application/json' },
+          body: JSON.stringify({ post_id: numericId, field: 'seo_title', value: metaTitle })
         })
-      })
+      }
+      if (metaDescription) {
+        await fetch(`${base}/wp-json/tse-site-exporter/v1/update-page`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: authHeader, Accept: 'application/json' },
+          body: JSON.stringify({ post_id: numericId, field: 'meta_description', value: metaDescription })
+        })
+      }
     } catch (_tseErr) {
       console.warn('[WP_WRITE_TRACE] TSE Site Exporter update-page call warning:', _tseErr)
     }
