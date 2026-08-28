@@ -45,10 +45,12 @@ export default function W4FixIssueDialog({
 
   const pageKey = page?.id || page?.url
 
-  // Dynamic Actual live values computed directly from page prop for real-time post-sync refresh
-  const actualMetaTitle = page?.actualMetaTitle || page?.metaTitle || ''
-  const actualMetaDescription = page?.actualMetaDescription || page?.metaDescription || ''
-  const actualH1 = page?.actualH1 || page?.h1 || ''
+  const [pushedActuals, setPushedActuals] = useState(null)
+
+  // Dynamic Actual live values computed directly from page prop or optimistic post-push state
+  const actualMetaTitle = pushedActuals?.metaTitle || page?.actualMetaTitle || page?.metaTitle || ''
+  const actualMetaDescription = pushedActuals?.metaDescription || page?.actualMetaDescription || page?.metaDescription || ''
+  const actualH1 = pushedActuals?.h1 || page?.actualH1 || page?.h1 || ''
 
   // Pre-fill initial text from page object & reset workflow on open
   useEffect(() => {
@@ -61,6 +63,7 @@ export default function W4FixIssueDialog({
     setIsSynced(false)
     setIsAudited(false)
     setPushError(null)
+    setPushedActuals(null)
 
     const actT = page.actualMetaTitle || ''
     const actD = page.actualMetaDescription || ''
@@ -145,6 +148,25 @@ export default function W4FixIssueDialog({
       if (res && res.success) {
         setIsPushed(true)
         setPushError(null)
+        setPushedActuals({
+          metaTitle: metaTitleVal,
+          metaDescription: metaDescVal,
+          h1: h1Val,
+        })
+        if (onSaveFix) {
+          onSaveFix({
+            page,
+            seoType: 'batch_optimization',
+            fieldValues: {
+              metaTitle: metaTitleVal,
+              metaDescription: metaDescVal,
+              h1: h1Val,
+              pushedActualMetaTitle: metaTitleVal,
+              pushedActualMetaDescription: metaDescVal,
+              pushedActualH1: h1Val,
+            }
+          })
+        }
       } else {
         setPushError(res?.message || 'WordPress update failed. Please check credentials and server connection.')
         setIsPushed(false)

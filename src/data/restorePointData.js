@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.49-w4-post-push-actual-fields-realtime-refresh-fix',
+    version: 'v1.49-w4-post-push-refresh-fix',
+    gitTag: 'v1.49-w4-post-push-actual-fields-realtime-refresh-fix',
+    commit: '[AUTO]',
+    date: '28-08-2026 08:16',
+    title: 'W4 Post-Push Real-Time ACTUAL (LIVE) Field Refresh & Target Phrase Locking (V1.49)',
+    description: 'Updated W4FixIssueDialog.jsx so that upon successful Push to WP (updateWordPressSEOFields res.success), ACTUAL (LIVE) Meta Title, Meta Description, and H1 fields immediately update on screen in real time. Locked targetPhrase in SQLite DB and local state.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.49-w4-post-push-actual-fields-realtime-refresh-fix.md'
+  },
+  {
     id: 'v1.48-w4-target-phrase-config-preservation-during-sync-fix',
     version: 'v1.48-w4-config-preservation-fix',
     gitTag: 'v1.48-w4-target-phrase-config-preservation-during-sync-fix',
-    commit: '[AUTO]',
+    commit: '3d97d3f',
     date: '25-08-2026 11:53',
     title: 'Website Manager Target Phrase & Configuration Preservation During WP Sync (V1.48)',
     description: 'Updated ManageWebsitePage.jsx and PageAuditResultsPage.jsx so targetPhrase, seoPageType, priority, and Website Manager page configuration data are strictly preserved from Website Manager configuration data during WordPress content syncs. Ensured handleSaveFix explicitly retains targetPhrase in page_configurations.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.48-w4-target-phrase-config-preservation-during-sync-fix.md'
   },
   {

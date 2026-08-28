@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.48-w4-config-preservation-fix | `v1.48-w4-target-phrase-config-preservation-during-sync-fix` | `[AUTO]` | 25-08-2026 11:53 | Website Manager target phrase & targeting configuration preservation during WordPress content sync. | **Current** |
+| v1.49-w4-post-push-refresh-fix | `v1.49-w4-post-push-actual-fields-realtime-refresh-fix` | `[AUTO]` | 28-08-2026 08:16 | W4 post-push real-time refresh of ACTUAL (LIVE) fields & target phrase locking. | **Current** |
+| v1.48-w4-config-preservation-fix | `v1.48-w4-target-phrase-config-preservation-during-sync-fix` | `3d97d3f` | 25-08-2026 11:53 | Website Manager target phrase & targeting configuration preservation during WordPress content sync. | Superseded |
 | v1.47-w4-sync-freshness-fix | `v1.47-w4-step-3-sync-data-realtime-actual-refresh-fix` | `952b4f3` | 25-08-2026 11:43 | Step 3 Sync Data real-time refresh of ACTUAL (LIVE) fields in open W4 modal. | Superseded |
 | v1.46-w4-h1-push-fix | `v1.46-w4-h1-replacement-and-push-loading-indicator-fix` | `01fbbfe` | 25-08-2026 11:21 | H1 single-heading replacement (post_title update & duplicate cleanup) and Push to WP animated loading spinner. | Superseded |
 | v1.45-w4-endpoint-fix | `v1.45-w4-generic-push-to-wp-endpoint-fix` | `37d29be` | 25-08-2026 11:00 | Generic WordPress REST endpoint resolution for Pages, Posts, and Custom Post Types (projects, portfolio, services). | Superseded |

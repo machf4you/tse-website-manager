@@ -136,10 +136,10 @@ export default function PageAuditResultsPage({
   const snap = liveAuditData?.page_snapshot || {}
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
 
-  // Strict per-field Actual Live/Synced values (prioritizes freshly synced WordPress values)
-  const actualMetaTitle = (rawCurrentPage.metaTitle || rawCurrentPage.title || snap.title || '').trim()
-  const actualMetaDescription = (rawCurrentPage.metaDescription !== undefined ? rawCurrentPage.metaDescription : (snap.meta_description || '')).trim()
-  const actualH1 = (rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.title || '').trim()
+  // Strict per-field Actual Live/Synced values (prioritizes pushed/synced values over stale pre-push snapshot)
+  const actualMetaTitle = (overrideObj.pushedActualMetaTitle || overrideObj.actualMetaTitle || rawCurrentPage.metaTitle || rawCurrentPage.title || snap.title || '').trim()
+  const actualMetaDescription = (overrideObj.pushedActualMetaDescription || overrideObj.actualMetaDescription || (rawCurrentPage.metaDescription !== undefined ? rawCurrentPage.metaDescription : (snap.meta_description || ''))).trim()
+  const actualH1 = (overrideObj.pushedActualH1 || overrideObj.actualH1 || rawCurrentPage.h1 || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || rawCurrentPage.title || '').trim()
 
   // Target Phrase MUST come from Website Manager configuration data
   const recTargetPhrase = (
