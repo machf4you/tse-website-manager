@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix',
+    version: 'v1.50-w4-package-source-of-truth-fix',
+    gitTag: 'v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix',
+    commit: '[AUTO]',
+    date: '28-08-2026 08:46',
+    title: 'Synced WordPress Package Data as Authoritative Source of Truth for W4 ACTUAL (LIVE) Fields (V1.50)',
+    description: 'Updated normalizeImportedPage in packageExtractor.js to extract and normalize metaTitle, metaDescription, and h1 (including theme/template post_title fallback) for every synced page/post/project. Updated PageAuditResultsPage.jsx so W4 ACTUAL (LIVE) fields use latest synced package data as source of truth while keeping previous audit score/results intact until manual Step 4 re-audit.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix.md'
+  },
+  {
     id: 'v1.49-w4-post-push-actual-fields-realtime-refresh-fix',
     version: 'v1.49-w4-post-push-refresh-fix',
     gitTag: 'v1.49-w4-post-push-actual-fields-realtime-refresh-fix',
-    commit: '[AUTO]',
+    commit: 'd75167c',
     date: '28-08-2026 08:16',
     title: 'W4 Post-Push Real-Time ACTUAL (LIVE) Field Refresh & Target Phrase Locking (V1.49)',
     description: 'Updated W4FixIssueDialog.jsx so that upon successful Push to WP (updateWordPressSEOFields res.success), ACTUAL (LIVE) Meta Title, Meta Description, and H1 fields immediately update on screen in real time. Locked targetPhrase in SQLite DB and local state.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.49-w4-post-push-actual-fields-realtime-refresh-fix.md'
   },
   {

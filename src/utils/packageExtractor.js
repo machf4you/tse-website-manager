@@ -278,6 +278,60 @@ export function normalizeImportedPage(p, siteUrl = '') {
 
   const contentText = extractContentText(p)
 
+  // 6. Meta Title Resolution
+  let metaTitle = ''
+  if (typeof p.metaTitle === 'string' && p.metaTitle.trim()) metaTitle = p.metaTitle.trim()
+  if (!metaTitle && typeof p.meta_title === 'string' && p.meta_title.trim()) metaTitle = p.meta_title.trim()
+  if (!metaTitle && typeof p.seoTitle === 'string' && p.seoTitle.trim()) metaTitle = p.seoTitle.trim()
+  if (!metaTitle && typeof p.seo_title === 'string' && p.seo_title.trim()) metaTitle = p.seo_title.trim()
+  if (!metaTitle && typeof p.seo?.title === 'string' && p.seo.title.trim()) metaTitle = p.seo.title.trim()
+  if (!metaTitle && typeof p.yoast_wpseo_title === 'string' && p.yoast_wpseo_title.trim()) metaTitle = p.yoast_wpseo_title.trim()
+  if (!metaTitle && typeof p.meta?._yoast_wpseo_title === 'string' && p.meta._yoast_wpseo_title.trim()) metaTitle = p.meta._yoast_wpseo_title.trim()
+  if (!metaTitle && typeof p.meta?.yoast_wpseo_title === 'string' && p.meta.yoast_wpseo_title.trim()) metaTitle = p.meta.yoast_wpseo_title.trim()
+  if (!metaTitle && typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) metaTitle = p._yoast_wpseo_title.trim()
+  if (!metaTitle && typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) metaTitle = p.yoast_head_json.title.trim()
+  if (!metaTitle) metaTitle = title
+
+  // 7. Meta Description Resolution
+  let metaDescription = ''
+  if (typeof p.metaDescription === 'string' && p.metaDescription.trim()) metaDescription = p.metaDescription.trim()
+  if (!metaDescription && typeof p.meta_description === 'string' && p.meta_description.trim()) metaDescription = p.meta_description.trim()
+  if (!metaDescription && typeof p.seoDescription === 'string' && p.seoDescription.trim()) metaDescription = p.seoDescription.trim()
+  if (!metaDescription && typeof p.seo?.description === 'string' && p.seo.description.trim()) metaDescription = p.seo.description.trim()
+  if (!metaDescription && typeof p.yoast_wpseo_metadesc === 'string' && p.yoast_wpseo_metadesc.trim()) metaDescription = p.yoast_wpseo_metadesc.trim()
+  if (!metaDescription && typeof p.meta?._yoast_wpseo_metadesc === 'string' && p.meta._yoast_wpseo_metadesc.trim()) metaDescription = p.meta._yoast_wpseo_metadesc.trim()
+  if (!metaDescription && typeof p.meta?.yoast_wpseo_metadesc === 'string' && p.meta.yoast_wpseo_metadesc.trim()) metaDescription = p.meta.yoast_wpseo_metadesc.trim()
+  if (!metaDescription && typeof p._yoast_wpseo_metadesc === 'string' && p._yoast_wpseo_metadesc.trim()) metaDescription = p._yoast_wpseo_metadesc.trim()
+  if (!metaDescription && typeof p.yoast_head_json?.description === 'string' && p.yoast_head_json.description.trim()) metaDescription = p.yoast_head_json.description.trim()
+  if (!metaDescription && typeof p.yoast_head_json?.og_description === 'string' && p.yoast_head_json.og_description.trim()) metaDescription = p.yoast_head_json.og_description.trim()
+  if (!metaDescription && typeof p.post_excerpt === 'string' && p.post_excerpt.trim()) metaDescription = p.post_excerpt.trim()
+  if (!metaDescription && typeof p.excerpt?.rendered === 'string' && p.excerpt.rendered.trim()) metaDescription = p.excerpt.rendered.replace(/<[^>]+>/g, '').trim()
+  if (!metaDescription && typeof p.excerpt === 'string' && p.excerpt.trim()) metaDescription = p.excerpt.replace(/<[^>]+>/g, '').trim()
+
+  // 8. H1 Resolution (Explicit H1, inline <h1> tag, or theme post_title fallback)
+  let h1 = ''
+  if (typeof p.h1 === 'string' && p.h1.trim()) {
+    h1 = p.h1.trim()
+  } else if (Array.isArray(p.h1) && typeof p.h1[0] === 'string' && p.h1[0].trim()) {
+    h1 = p.h1[0].trim()
+  } else if (Array.isArray(p.content?.h1) && typeof p.content.h1[0] === 'string' && p.content.h1[0].trim()) {
+    h1 = p.content.h1[0].trim()
+  } else if (typeof p.content?.h1 === 'string' && p.content.h1.trim()) {
+    h1 = p.content.h1.trim()
+  }
+
+  if (!h1 && contentText) {
+    const inlineH1Match = contentText.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+    if (inlineH1Match && inlineH1Match[1]) {
+      const cleanInlineH1 = inlineH1Match[1].replace(/<[^>]+>/g, '').trim()
+      if (cleanInlineH1) h1 = cleanInlineH1
+    }
+  }
+
+  if (!h1) {
+    h1 = title
+  }
+
   // Remove heavy WP REST AST objects (yoast_head_json, _links, acf) to ensure quota-safe localStorage persistence
   const cleanPage = { ...p }
   delete cleanPage.yoast_head_json
@@ -293,6 +347,9 @@ export function normalizeImportedPage(p, siteUrl = '') {
     title,
     url,
     link: url,
+    metaTitle,
+    metaDescription,
+    h1,
     content: contentText,
     body_text: contentText,
     type,
