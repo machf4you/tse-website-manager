@@ -524,35 +524,52 @@ export default function PageAuditResultsPage({
         })
 
         if (isMounted) {
-          setLiveAuditData(result)
-          setIsLoadingAudit(false)
-          setIsRerunRequested(false)
-
-          // Persist audit completion timestamp, fingerprint, and payload
           const now = new Date()
           const pad = n => String(n).padStart(2, '0')
           const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
           const currentFingerprint = generatePageSeoFingerprint(currentPage)
 
+          const enrichedResult = {
+            ...result,
+            lastAuditTimestamp: formattedTimestamp
+          }
+
+          const auditRecord = {
+            isAudited: true,
+            isStale: false,
+            staleReason: null,
+            lastAuditTimestamp: formattedTimestamp,
+            fingerprint: currentFingerprint,
+            auditResult: enrichedResult,
+          }
+
+          setLiveAuditData(enrichedResult)
+          setApiAuditRecord(auditRecord)
+          setIsCurrentPageStale(false)
+          setStaleReasonText(null)
+          setIsLoadingAudit(false)
+          setIsRerunRequested(false)
+
+          // Persist audit completion timestamp, fingerprint, and payload under all lookup keys
           try {
             const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-            const auditRecord = {
-              isAudited: true,
-              isStale: false,
-              staleReason: null,
-              lastAuditTimestamp: formattedTimestamp,
-              fingerprint: currentFingerprint,
-              auditResult: result,
-            }
-            setApiAuditRecord(auditRecord)
+            
             storedAudits[pageKey] = auditRecord
-            if (currentPage.url && currentPage.url !== pageKey) {
-              storedAudits[currentPage.url] = auditRecord
-            }
+            if (currentPage.id) storedAudits[String(currentPage.id)] = auditRecord
+            if (currentPage.url) storedAudits[currentPage.url] = auditRecord
+            if (rawCurrentPage.id) storedAudits[String(rawCurrentPage.id)] = auditRecord
+            if (rawCurrentPage.url) storedAudits[rawCurrentPage.url] = auditRecord
+
             localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
 
             if (site?.id) {
               savePageAuditApi(site.id, pageKey, auditRecord)
+              if (currentPage.id && String(currentPage.id) !== String(pageKey)) {
+                savePageAuditApi(site.id, String(currentPage.id), auditRecord)
+              }
+              if (currentPage.url && currentPage.url !== pageKey) {
+                savePageAuditApi(site.id, currentPage.url, auditRecord)
+              }
             }
           } catch (e) {
             console.error('Failed to save page audit result:', e)
