@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.52-w4-elementor-h1-safety-tree-update-fix',
+    version: 'v1.52-w4-elementor-h1-safety-fix',
+    gitTag: 'v1.52-w4-elementor-h1-safety-tree-update-fix',
+    commit: '[AUTO]',
+    date: '28-08-2026 10:30',
+    title: 'W4 Elementor H1 Scope Safety & Single-Widget Update Fix (V1.52)',
+    description: 'Updated updateWordPressSEOFields in src/services/wordpressApi.js to inspect header_size property of Elementor heading nodes during Push to WP. Ensures ONLY genuine H1 widgets (header_size: h1) are targeted, preserving all existing H2, H3, H4, counter, and paragraph section headings and heading levels untouched. Leaves Elementor tree untouched when no explicit H1 widget exists.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.52-w4-elementor-h1-safety-tree-update-fix.md'
+  },
+  {
     id: 'v1.51-w4-audit-freshness-and-timestamps-indicators-fix',
     version: 'v1.51-w4-freshness-indicators-fix',
     gitTag: 'v1.51-w4-audit-freshness-and-timestamps-indicators-fix',
-    commit: '[AUTO]',
+    commit: 'a518fa2',
     date: '28-08-2026 09:28',
     title: 'W4 Audit Freshness & Timestamps Indicators (LAST AUDIT vs LAST SYNC) (V1.51)',
     description: 'Updated PageAuditResultsPage.jsx to explicitly display LAST AUDIT and LAST SYNC timestamps in the header. Added stale warning banner ("Live data has changed since this audit. Re-run Audit for current results.") with visually prominent Re-run Audit button when Last Sync is newer than Last Audit.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.51-w4-audit-freshness-and-timestamps-indicators-fix.md'
   },
   {

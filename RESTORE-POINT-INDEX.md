@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.51-w4-freshness-indicators-fix | `v1.51-w4-audit-freshness-and-timestamps-indicators-fix` | `[AUTO]` | 28-08-2026 09:28 | W4 audit freshness & timestamps indicators (LAST AUDIT vs LAST SYNC & stale warning banner). | **Current** |
+| v1.52-w4-elementor-h1-safety-fix | `v1.52-w4-elementor-h1-safety-tree-update-fix` | `[AUTO]` | 28-08-2026 10:30 | W4 Elementor H1 Scope Safety & Single-Widget Update Fix. | **Current** |
+| v1.51-w4-freshness-indicators-fix | `v1.51-w4-audit-freshness-and-timestamps-indicators-fix` | `a518fa2` | 28-08-2026 09:28 | W4 audit freshness & timestamps indicators (LAST AUDIT vs LAST SYNC & stale warning banner). | Superseded |
 | v1.50-w4-package-source-of-truth-fix | `v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix` | `6337728` | 28-08-2026 08:46 | Synced WordPress package data as authoritative source of truth for W4 ACTUAL (LIVE) fields. | Superseded |
 | v1.49-w4-post-push-refresh-fix | `v1.49-w4-post-push-actual-fields-realtime-refresh-fix` | `d75167c` | 28-08-2026 08:16 | W4 post-push real-time refresh of ACTUAL (LIVE) fields & target phrase locking. | Superseded |
 | v1.48-w4-config-preservation-fix | `v1.48-w4-target-phrase-config-preservation-during-sync-fix` | `3d97d3f` | 25-08-2026 11:53 | Website Manager target phrase & targeting configuration preservation during WordPress content sync. | Superseded |

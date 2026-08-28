@@ -292,26 +292,45 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
     try {
       const tree = typeof existingElementorData === 'string' ? JSON.parse(existingElementorData) : existingElementorData
       if (Array.isArray(tree)) {
-        function updateElementorHeadingNodes(nodes) {
-          if (!Array.isArray(nodes)) return
+        let targetH1Node = null
+
+        function findAndTargetElementorH1Widget(nodes) {
+          if (!Array.isArray(nodes) || targetH1Node) return
           for (const node of nodes) {
             const wType = String(node.widgetType || '').toLowerCase()
-            const isHeadingNode = wType === 'heading' || wType === 'elementskit-heading' || wType === 'ekit-heading' || wType === 'theme-page-title' || (node.settings && (node.settings.title !== undefined || node.settings.ekit_heading_title !== undefined))
+            const settings = node.settings || {}
+            const hSize = String(settings.header_size || settings.tag || settings.html_tag || '').toLowerCase()
 
-            if (isHeadingNode && node.settings) {
-              node.settings.title = h1
-              node.settings.ekit_heading_title = h1
-              node.settings.header_title = h1
-              node.settings.ekit_heading_title_title = h1
-              node.settings.heading_title = h1
+            const isHeadingWidget = wType === 'heading' || wType === 'elementskit-heading' || wType === 'ekit-heading' || wType === 'theme-page-title' || Boolean(node.settings)
+            if (isHeadingWidget && node.settings && hSize === 'h1') {
+              targetH1Node = node
+              return
             }
-            if (Array.isArray(node.elements)) updateElementorHeadingNodes(node.elements)
+            if (Array.isArray(node.elements)) findAndTargetElementorH1Widget(node.elements)
           }
         }
-        updateElementorHeadingNodes(tree)
-        updatedElementorJson = JSON.stringify(tree)
+
+        findAndTargetElementorH1Widget(tree)
+
+        if (targetH1Node && targetH1Node.settings) {
+          if (targetH1Node.settings.title !== undefined) targetH1Node.settings.title = h1
+          if (targetH1Node.settings.ekit_heading_title !== undefined) targetH1Node.settings.ekit_heading_title = h1
+          if (targetH1Node.settings.header_title !== undefined) targetH1Node.settings.header_title = h1
+          if (targetH1Node.settings.ekit_heading_title_title !== undefined) targetH1Node.settings.ekit_heading_title_title = h1
+          if (targetH1Node.settings.heading_title !== undefined) targetH1Node.settings.heading_title = h1
+
+          if (targetH1Node.settings.title === undefined && targetH1Node.settings.heading_title === undefined) {
+            targetH1Node.settings.title = h1
+          }
+
+          updatedElementorJson = JSON.stringify(tree)
+        } else {
+          console.warn('[WORDPRESS_API] Elementor page present but no safe H1 widget (header_size: h1) was found. Leaving Elementor headings untouched.')
+        }
       }
-    } catch (_eErr) {}
+    } catch (_eErr) {
+      console.error('[WORDPRESS_API] Error parsing Elementor JSON tree:', _eErr)
+    }
   }
 
   // ── 3. Build Payload for WP REST, Yoast & Elementor ──
