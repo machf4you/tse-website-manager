@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.58',
-  buildHash: 'w4permanentrerunauditbutton58',
-  buildTimestamp: 1787995000000,
+  version: '1.59',
+  buildHash: 'w4savepageauditapiendpointfix59',
+  buildTimestamp: 1788000000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -621,11 +621,12 @@ app.get('/api/websites/:id/audits', (req, res) => {
   }
 })
 
-// Save page audit record
-app.post('/api/websites/:id/audits', (req, res) => {
+// Save page audit record (supports body { pageKey, auditRecord } or param /:pageKey)
+function handleSaveAuditRecord(req, res) {
   try {
-    const { id } = req.params
-    const { pageKey, auditRecord } = req.body
+    const { id, pageKey: paramPageKey } = req.params
+    const pageKey = paramPageKey ? decodeURIComponent(paramPageKey) : req.body?.pageKey
+    const auditRecord = req.body?.auditRecord || req.body
     if (!pageKey || !auditRecord) {
       return res.status(400).json({ error: 'pageKey and auditRecord required' })
     }
@@ -663,7 +664,10 @@ app.post('/api/websites/:id/audits', (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
-})
+}
+
+app.post('/api/websites/:id/audits', handleSaveAuditRecord)
+app.post('/api/websites/:id/audits/:pageKey(*)', handleSaveAuditRecord)
 
 // Bulk save audits
 app.post('/api/websites/:id/audits/batch', (req, res) => {

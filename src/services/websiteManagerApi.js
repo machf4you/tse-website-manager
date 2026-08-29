@@ -229,9 +229,9 @@ export async function getPageAuditsApi(rawSiteId) {
 export async function savePageAuditApi(rawSiteId, pageKey, auditRecord) {
   const siteId = normalizeSiteId(rawSiteId)
   try {
-    await fetchJson(`${API_BASE_URL}/websites/${siteId}/audits/${encodeURIComponent(pageKey)}`, {
+    await fetchJson(`${API_BASE_URL}/websites/${siteId}/audits`, {
       method: 'POST',
-      body: JSON.stringify(auditRecord)
+      body: JSON.stringify({ pageKey, auditRecord })
     })
   } catch (e) {}
   try {
