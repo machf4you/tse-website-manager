@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi, getPageConfigsApi } from '../services/websiteManagerApi'
+import { syncSingleWordPressPage } from '../services/wordpressApi'
 import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import { normalizeUrlForMatching } from '../utils/urlUtils'
 import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
@@ -79,6 +80,9 @@ export default function PageAuditResultsPage({
   const [auditError, setAuditError] = useState(null)
   const [activeFixIssue, setActiveFixIssue] = useState(null)
   const [localOverrides, setLocalOverrides] = useState({})
+  const [localSyncTimestamp, setLocalSyncTimestamp] = useState(null)
+  const [isSyncingPage, setIsSyncingPage] = useState(false)
+  const [_pageSyncError, setPageSyncError] = useState(null)
 
   // Load page audit record from SQLite API for authoritative timestamps
   useEffect(() => {
@@ -249,6 +253,8 @@ export default function PageAuditResultsPage({
   const lastAuditTimestampStr = formatAuditDisplayTimestamp(rawLastAuditTs)
 
   const lastSyncTimestampStr =
+    localSyncTimestamp ||
+    overrideObj.lastSyncTimestamp ||
     site?.lastSyncTimestamp ||
     site?.lastSyncDate ||
     rawCurrentPage?.lastSyncTimestamp ||
@@ -282,6 +288,63 @@ export default function PageAuditResultsPage({
   const lastAuditMs = parseTimestampToMs(lastAuditTimestampStr)
   const lastSyncMs = parseTimestampToMs(lastSyncTimestampStr)
   const isSyncNewerThanAudit = Boolean(lastSyncMs > 0 && lastAuditMs > 0 && lastSyncMs > lastAuditMs)
+
+  const handleSyncPageClick = async () => {
+    if (isSyncingPage || !currentPage) return
+    setIsSyncingPage(true)
+    setPageSyncError(null)
+
+    try {
+      const res = await syncSingleWordPressPage({ site, page: currentPage })
+      if (!res.success) {
+        setPageSyncError(res.message || 'Failed to sync page from WordPress')
+        setIsSyncingPage(false)
+        return
+      }
+
+      setLocalSyncTimestamp(res.lastSyncTimestamp)
+
+      // Update override with fresh live actuals and save to SQLite / localStorage
+      const pageKey = currentPage.id || currentPage.url
+      const currentConfig = localOverrides[pageKey] || localOverrides[currentPage.url] || {}
+      const updatedConfig = {
+        ...currentConfig,
+        pageId: pageKey,
+        url: currentPage.url,
+        pushedActualMetaTitle: res.actualMetaTitle || currentConfig.pushedActualMetaTitle || '',
+        pushedActualMetaDescription: res.actualMetaDescription || currentConfig.pushedActualMetaDescription || '',
+        pushedActualH1: res.actualH1 || currentConfig.pushedActualH1 || '',
+        actualMetaTitle: res.actualMetaTitle || currentConfig.actualMetaTitle || '',
+        actualMetaDescription: res.actualMetaDescription || currentConfig.actualMetaDescription || '',
+        actualH1: res.actualH1 || currentConfig.actualH1 || '',
+        lastSyncTimestamp: res.lastSyncTimestamp,
+        updatedAt: new Date().toISOString()
+      }
+
+      setLocalOverrides(prev => ({
+        ...prev,
+        [pageKey]: updatedConfig,
+        ...(currentPage.url ? { [currentPage.url]: updatedConfig } : {}),
+        ...(currentPage.id ? { [String(currentPage.id)]: updatedConfig } : {})
+      }))
+
+      if (site?.id) {
+        try {
+          const siteConfigs = await getPageConfigsApi(site.id)
+          const merged = { ...siteConfigs, [pageKey]: updatedConfig }
+          if (currentPage.url) merged[currentPage.url] = updatedConfig
+          if (currentPage.id) merged[String(currentPage.id)] = updatedConfig
+          await savePageConfigsApi(site.id, merged)
+        } catch (_err) {}
+      }
+
+      setIsSyncingPage(false)
+    } catch (err) {
+      console.error('Sync page error:', err)
+      setPageSyncError(err.message || 'Failed to sync page')
+      setIsSyncingPage(false)
+    }
+  }
 
   const handleSaveFix = async ({ page: targetPage, seoType, fieldValue, fieldValues }) => {
     if (!targetPage || !site?.id) return
@@ -884,8 +947,8 @@ export default function PageAuditResultsPage({
           </div>
           <h1 className="w4-main-title">Now We Need To Optimize The SEO Elements Of This Page</h1>
 
-          {/* Timestamps Status Bar with Permanent Re-run Audit Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '12px', flexWrap: 'wrap' }}>
+          {/* Timestamps Status Bar with Permanent Buttons: Sync Page & Re-run Audit */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '12px', flexWrap: 'wrap' }}>
             <div className="w4-timestamps-bar" style={{ display: 'flex', gap: '18px', alignItems: 'center', backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '8px 14px', fontSize: '0.8rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ color: '#94a3b8', fontWeight: '600', letterSpacing: '0.03em' }}>LAST AUDIT:</span>
@@ -898,11 +961,47 @@ export default function PageAuditResultsPage({
               </div>
             </div>
 
+            {/* Sync Page Button */}
+            <button
+              type="button"
+              id="btn-w4-sync-page"
+              onClick={handleSyncPageClick}
+              disabled={isSyncingPage || isLoadingAudit}
+              title="Synchronise this page directly from WordPress"
+              style={{
+                backgroundColor: '#2563eb',
+                borderColor: '#1d4ed8',
+                color: '#ffffff',
+                padding: '7px 16px',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid',
+                cursor: (isSyncingPage || isLoadingAudit) ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 0 10px rgba(37,99,235,0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {isSyncingPage ? (
+                <>
+                  <span className="w4-spinner" style={{ width: '12px', height: '12px', borderWidth: '2px' }} />
+                  <span>Syncing Page...</span>
+                </>
+              ) : (
+                <span>🔄 Sync Page</span>
+              )}
+            </button>
+
+            {/* Re-run Audit Button */}
             <button
               type="button"
               id="btn-w4-permanent-rerun-audit"
               onClick={() => setIsRerunRequested(true)}
-              disabled={isLoadingAudit}
+              disabled={isLoadingAudit || isSyncingPage}
+              title="Re-crawl and audit this page live"
               style={{
                 backgroundColor: isSyncNewerThanAudit || isCurrentPageStale ? '#f59e0b' : '#059669',
                 borderColor: isSyncNewerThanAudit || isCurrentPageStale ? '#d97706' : '#047857',
@@ -912,7 +1011,7 @@ export default function PageAuditResultsPage({
                 fontWeight: '700',
                 borderRadius: '6px',
                 border: '1px solid',
-                cursor: isLoadingAudit ? 'not-allowed' : 'pointer',
+                cursor: (isLoadingAudit || isSyncingPage) ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',

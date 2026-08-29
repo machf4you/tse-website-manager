@@ -582,3 +582,105 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
   }
 }
 
+/**
+ * Synchronises a single page directly from WordPress REST API / live frontend.
+ * Updates actualMetaTitle, actualMetaDescription, actualH1, and returns updated page payload.
+ */
+export async function syncSingleWordPressPage({ site, page }) {
+  if (!site || !page) return { success: false, message: 'Site or Page object missing' }
+  let base = (site?.url || page?.url || '').trim().replace(/\/+$/, '')
+  if (!/^https?:\/\//i.test(base)) {
+    base = 'https://' + base
+  }
+
+  const { username, password } = await resolveSiteCredentials(site, page)
+  const authHeader = (username && password) ? ('Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)) : null
+
+  let numericId = parseInt(page.id || page.ID || page.pageId || page.numericId, 10)
+  const endpoint = await resolveWpEndpoint(base, page, authHeader, numericId)
+
+  // 1. Fetch REST endpoint data if auth and numericId are available
+  let restData = null
+  if (numericId && authHeader) {
+    try {
+      const res = await fetch(`${base}/wp-json/wp/v2/${endpoint}/${numericId}?context=edit`, {
+        headers: {
+          Authorization: authHeader,
+          Accept: 'application/json'
+        }
+      })
+      if (res.ok) {
+        restData = await res.json()
+      }
+    } catch (_e) {}
+  }
+
+  // 2. Fetch live public HTML directly with cache-buster to parse live rendered title, meta description, and h1
+  let liveTitle = ''
+  let liveDesc = ''
+  let liveH1 = ''
+
+  let targetUrl = page.url || ''
+  if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+    const rel = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`
+    targetUrl = `${base}${rel}`
+  }
+
+  try {
+    const fetchUrl = `${targetUrl}${targetUrl.includes('?') ? '&' : '?'}tse_sync=${Date.now()}`
+    const pubRes = await fetch(fetchUrl, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+    if (pubRes.ok) {
+      const html = await pubRes.text()
+
+      // Extract <title>...</title>
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+      if (titleMatch && titleMatch[1]) {
+        liveTitle = titleMatch[1].trim()
+      }
+
+      // Extract <meta name="description" content="...">
+      const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
+                        html.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i)
+      if (descMatch && descMatch[1]) {
+        liveDesc = descMatch[1].trim()
+      }
+
+      // Extract first <h1>...</h1>
+      const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+      if (h1Match && h1Match[1]) {
+        liveH1 = h1Match[1].replace(/<[^>]+>/g, '').trim()
+      }
+    }
+  } catch (_fetchErr) {
+    console.warn('[WP_SINGLE_SYNC] Live HTML fetch warning:', _fetchErr)
+  }
+
+  // Fallbacks from REST data if live HTML did not resolve
+  if (!liveTitle && restData) {
+    liveTitle = restData.meta?._yoast_wpseo_title || restData.yoast_head_json?.title || restData.title?.raw || restData.title?.rendered || ''
+  }
+  if (!liveDesc && restData) {
+    liveDesc = restData.meta?._yoast_wpseo_metadesc || restData.yoast_head_json?.description || ''
+  }
+
+  const now = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+
+  return {
+    success: true,
+    pageId: page.id || numericId || page.url,
+    actualMetaTitle: liveTitle,
+    actualMetaDescription: liveDesc,
+    actualH1: liveH1,
+    lastSyncTimestamp: formattedTimestamp,
+    restData
+  }
+}
+
