@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.60-w4-full-sync-audit-push-workflow-complete',
+    version: 'v1.60-w4-sync-audit-push-workflow',
+    gitTag: 'v1.60-w4-full-sync-audit-push-workflow-complete',
+    commit: '[AUTO]',
+    date: '29-08-2026 10:55',
+    title: 'W4 Complete Sync Page, Re-run Audit, Timestamps, Stale Alerts & Live Push Workflow (V1.60)',
+    description: 'Permanent W4 header action buttons (Sync Page & Re-run Audit), independent single-page WordPress sync (syncSingleWordPressPage), reliable domain URL resolution for Page Auditor crawler, live SQLite multi-key persistence, real-time stale warning alert/clearance, and verified Yoast/Elementor live Push to WP.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.60-w4-full-sync-audit-push-workflow-complete.md'
+  },
+  {
     id: 'v1.53-w4-last-audit-timestamp-api-outer-record-fix',
     version: 'v1.53-w4-last-audit-timestamp-fix',
     gitTag: 'v1.53-w4-last-audit-timestamp-api-outer-record-fix',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '28-08-2026 14:35',
     title: 'W4 LAST AUDIT Timestamp API Outer-Record Resolution Fix (V1.53)',
     description: 'Updated PageAuditResultsPage.jsx so LAST AUDIT resolves from the outer API audit record (apiAuditRecord.lastAuditTimestamp) returned by getPageAuditsApi(), removing sole reliance on browser localStorage and supporting created_at/date fallbacks. Restored exact W4 header timestamp display for audited pages.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.53-w4-last-audit-timestamp-api-outer-record-fix.md'
   },
   {

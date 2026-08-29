@@ -7,7 +7,8 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.53-w4-last-audit-timestamp-fix | `v1.53-w4-last-audit-timestamp-api-outer-record-fix` | `[AUTO]` | 28-08-2026 14:35 | W4 LAST AUDIT Timestamp API Outer-Record Resolution Fix. | **Current** |
+| v1.60-w4-sync-audit-push-workflow | `v1.60-w4-full-sync-audit-push-workflow-complete` | `[AUTO]` | 29-08-2026 10:55 | W4 Complete Sync Page, Re-run Audit, Timestamps, Stale Alerts & Live Push Workflow. | **Current** |
+| v1.53-w4-last-audit-timestamp-fix | `v1.53-w4-last-audit-timestamp-api-outer-record-fix` | `[AUTO]` | 28-08-2026 14:35 | W4 LAST AUDIT Timestamp API Outer-Record Resolution Fix. | Superseded |
 | v1.52-w4-elementor-h1-safety-fix | `v1.52-w4-elementor-h1-safety-tree-update-fix` | `b4a1290` | 28-08-2026 10:30 | W4 Elementor H1 Scope Safety & Single-Widget Update Fix. | Superseded |
 | v1.51-w4-freshness-indicators-fix | `v1.51-w4-audit-freshness-and-timestamps-indicators-fix` | `a518fa2` | 28-08-2026 09:28 | W4 audit freshness & timestamps indicators (LAST AUDIT vs LAST SYNC & stale warning banner). | Superseded |
 | v1.50-w4-package-source-of-truth-fix | `v1.50-w4-synced-package-data-as-authoritative-actuals-source-of-truth-fix` | `6337728` | 28-08-2026 08:46 | Synced WordPress package data as authoritative source of truth for W4 ACTUAL (LIVE) fields. | Superseded |
