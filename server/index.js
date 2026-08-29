@@ -667,7 +667,7 @@ function handleSaveAuditRecord(req, res) {
 }
 
 app.post('/api/websites/:id/audits', handleSaveAuditRecord)
-app.post('/api/websites/:id/audits/:pageKey(*)', handleSaveAuditRecord)
+app.post('/api/websites/:id/audits/:pageKey', handleSaveAuditRecord)
 
 // Bulk save audits
 app.post('/api/websites/:id/audits/batch', (req, res) => {
