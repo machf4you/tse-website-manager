@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import ConfigurePageDialog from '../components/ConfigurePageDialog'
+import BulkConfigureTargetPhrasesDialog from '../components/BulkConfigureTargetPhrasesDialog'
 import { getPageConfigsApi, savePageConfigsApi, getPageAuditsApi, savePageAuditApi } from '../services/websiteManagerApi'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
@@ -19,6 +20,7 @@ export default function PageManagementPage({
   const [sortColumn, setSortColumn] = useState('priority') // 'priority' | 'page' | 'type'
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' | 'desc'
   const [editingPage, setEditingPage] = useState(null)
+  const [isBulkTargetDialogOpen, setIsBulkTargetDialogOpen] = useState(false)
   const [isBulkAuditing, setIsBulkAuditing] = useState(false)
   const [currentlyAuditingKey, setCurrentlyAuditingKey] = useState(null)
   const [bulkAuditProgress, setBulkAuditProgress] = useState({ current: 0, total: 0 })
@@ -98,6 +100,32 @@ export default function PageManagementPage({
       console.error('Failed to save page configuration:', e)
     }
     setEditingPage(null)
+  }
+
+  const handleSaveBulkConfigs = async (newConfigsMap) => {
+    if (!newConfigsMap || Object.keys(newConfigsMap).length === 0) return
+
+    const updatedMap = {
+      ...configurations,
+      ...newConfigsMap
+    }
+
+    setConfigurations(updatedMap)
+
+    if (site?.id) {
+      try {
+        await savePageConfigsApi(site.id, updatedMap)
+      } catch (err) {
+        console.error('Failed to save bulk page configs to API:', err)
+      }
+    }
+
+    try {
+      const siteIdKey = getSiteConfigsStorageKey(site)
+      localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
+    } catch (e) {
+      console.error('Failed to save bulk page configs to localStorage:', e)
+    }
   }
 
   const handleExcludePage = (page) => {
@@ -560,40 +588,69 @@ export default function PageManagementPage({
         </button>
       </div>
 
-      {/* ── Filter Tabs ── */}
-      <div className="w3-filter-tabs">
-        <button
-          type="button"
-          className={`w3-filter-btn ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
-          id="filter-all"
-        >
-          All ({allCount})
-        </button>
-        <button
-          type="button"
-          className={`w3-filter-btn ${filter === 'configured' ? 'active' : ''}`}
-          onClick={() => setFilter('configured')}
-          id="filter-configured"
-        >
-          Configured ({configuredCount})
-        </button>
-        <button
-          type="button"
-          className={`w3-filter-btn ${filter === 'action_required' ? 'active' : ''}`}
-          onClick={() => setFilter('action_required')}
-          id="filter-action-required"
-        >
-          Action Required ({actionRequiredCount})
-        </button>
-        <button
-          type="button"
-          className={`w3-filter-btn ${filter === 'excluded' ? 'active' : ''}`}
-          onClick={() => setFilter('excluded')}
-          id="filter-excluded"
-        >
-          Excluded ({excludedCount})
-        </button>
+      {/* ── Filter Tabs & Bulk Actions ── */}
+      <div className="w3-filter-tabs" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <button
+            type="button"
+            className={`w3-filter-btn ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+            id="filter-all"
+          >
+            All ({allCount})
+          </button>
+          <button
+            type="button"
+            className={`w3-filter-btn ${filter === 'configured' ? 'active' : ''}`}
+            onClick={() => setFilter('configured')}
+            id="filter-configured"
+          >
+            Configured ({configuredCount})
+          </button>
+          <button
+            type="button"
+            className={`w3-filter-btn ${filter === 'action_required' ? 'active' : ''}`}
+            onClick={() => setFilter('action_required')}
+            id="filter-action-required"
+          >
+            Action Required ({actionRequiredCount})
+          </button>
+          <button
+            type="button"
+            className={`w3-filter-btn ${filter === 'excluded' ? 'active' : ''}`}
+            onClick={() => setFilter('excluded')}
+            id="filter-excluded"
+          >
+            Excluded ({excludedCount})
+          </button>
+        </div>
+
+        {actionRequiredCount > 0 && (
+          <button
+            type="button"
+            className="w3-btn-configure-targets"
+            onClick={() => setIsBulkTargetDialogOpen(true)}
+            id="btn-w3-bulk-configure-targets"
+            style={{
+              backgroundColor: '#2563eb',
+              borderColor: '#1d4ed8',
+              color: '#ffffff',
+              padding: '6px 14px',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              borderRadius: '6px',
+              border: '1px solid',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 0 10px rgba(37,99,235,0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>🎯 Configure Target Phrases ({actionRequiredCount})</span>
+          </button>
+        )}
       </div>
 
       {/* ── Exported Pages Table ── */}
@@ -794,6 +851,17 @@ export default function PageManagementPage({
           page={editingPage}
           onClose={() => setEditingPage(null)}
           onSave={handleSavePageConfig}
+        />
+      )}
+
+      {/* ── Bulk Configure Target Phrases Modal ── */}
+      {isBulkTargetDialogOpen && (
+        <BulkConfigureTargetPhrasesDialog
+          isOpen={isBulkTargetDialogOpen}
+          pages={pagesList}
+          site={site}
+          onClose={() => setIsBulkTargetDialogOpen(false)}
+          onSave={handleSaveBulkConfigs}
         />
       )}
 
