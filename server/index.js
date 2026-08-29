@@ -10,17 +10,18 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.30',
-  buildHash: 'f93e983',
+  version: '1.57',
+  buildHash: 'w4postauditrefreshstateresolution57',
+  buildTimestamp: 1787990400000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
 
 app.get('/api/deployment/status', (req, res) => {
   try {
-    const row = db.prepare(`SELECT value FROM global_settings WHERE key = 'deployment_status'`).get()
-    if (row && row.value) {
-      const parsed = JSON.parse(row.value)
+    const row = db.prepare(`SELECT value_json FROM global_settings WHERE key = 'deployment_status'`).get()
+    if (row && row.value_json) {
+      const parsed = JSON.parse(row.value_json)
       return res.json({ status: 'ok', ...parsed })
     }
   } catch (e) {}
@@ -36,11 +37,11 @@ app.post('/api/deployment/status', (req, res) => {
       updatedAt: new Date().toISOString()
     }
     const stmt = db.prepare(`
-      INSERT INTO global_settings (key, value, updated_at)
-      VALUES ('deployment_status', @value, CURRENT_TIMESTAMP)
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+      INSERT INTO global_settings (key, value_json, updated_at)
+      VALUES ('deployment_status', @value_json, CURRENT_TIMESTAMP)
+      ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = CURRENT_TIMESTAMP
     `)
-    stmt.run({ value: JSON.stringify(inMemoryDeploymentStatus) })
+    stmt.run({ value_json: JSON.stringify(inMemoryDeploymentStatus) })
     res.json({ status: 'ok', deploymentStatus: inMemoryDeploymentStatus })
   } catch (e) {
     res.status(500).json({ error: e.message })
