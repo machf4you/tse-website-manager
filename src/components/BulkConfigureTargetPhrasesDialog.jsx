@@ -164,10 +164,10 @@ export default function BulkConfigureTargetPhrasesDialog({
               <thead>
                 <tr>
                   <th style={{ width: '44px', textAlign: 'center' }}>Approve</th>
-                  <th style={{ width: '32%' }}>Page URL & Title</th>
-                  <th style={{ width: '12%' }}>Type</th>
-                  <th style={{ width: '22%' }}>Detected Signals</th>
-                  <th style={{ width: '30%' }}>Proposed Target Phrase</th>
+                  <th style={{ width: '25%' }}>Page URL & Title</th>
+                  <th style={{ width: '10%' }}>Type</th>
+                  <th style={{ width: '19%' }}>Detected Signals</th>
+                  <th style={{ width: '46%' }}>Proposed Target Phrase</th>
                 </tr>
               </thead>
               <tbody>
