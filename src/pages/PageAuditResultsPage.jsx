@@ -884,17 +884,51 @@ export default function PageAuditResultsPage({
           </div>
           <h1 className="w4-main-title">Now We Need To Optimize The SEO Elements Of This Page</h1>
 
-          {/* Timestamps Status Bar */}
-          <div className="w4-timestamps-bar" style={{ display: 'flex', gap: '18px', alignItems: 'center', backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '8px 14px', marginTop: '12px', width: 'fit-content', fontSize: '0.8rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#94a3b8', fontWeight: '600', letterSpacing: '0.03em' }}>LAST AUDIT:</span>
-              <span style={{ color: '#f8fafc', fontWeight: '700' }}>{lastAuditTimestampStr || 'Not Audited Yet'}</span>
+          {/* Timestamps Status Bar with Permanent Re-run Audit Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '12px', flexWrap: 'wrap' }}>
+            <div className="w4-timestamps-bar" style={{ display: 'flex', gap: '18px', alignItems: 'center', backgroundColor: 'rgba(30,41,59,0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '8px 14px', fontSize: '0.8rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#94a3b8', fontWeight: '600', letterSpacing: '0.03em' }}>LAST AUDIT:</span>
+                <span style={{ color: '#f8fafc', fontWeight: '700' }}>{lastAuditTimestampStr || 'Not Audited Yet'}</span>
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.2)' }}>|</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#94a3b8', fontWeight: '600', letterSpacing: '0.03em' }}>LAST SYNC:</span>
+                <span style={{ color: '#f8fafc', fontWeight: '700' }}>{lastSyncTimestampStr || 'Not Synced Yet'}</span>
+              </div>
             </div>
-            <div style={{ color: 'rgba(255,255,255,0.2)' }}>|</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#94a3b8', fontWeight: '600', letterSpacing: '0.03em' }}>LAST SYNC:</span>
-              <span style={{ color: '#f8fafc', fontWeight: '700' }}>{lastSyncTimestampStr || 'Not Synced Yet'}</span>
-            </div>
+
+            <button
+              type="button"
+              id="btn-w4-permanent-rerun-audit"
+              onClick={() => setIsRerunRequested(true)}
+              disabled={isLoadingAudit}
+              style={{
+                backgroundColor: isSyncNewerThanAudit || isCurrentPageStale ? '#f59e0b' : '#059669',
+                borderColor: isSyncNewerThanAudit || isCurrentPageStale ? '#d97706' : '#047857',
+                color: '#ffffff',
+                padding: '7px 16px',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid',
+                cursor: isLoadingAudit ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: isSyncNewerThanAudit || isCurrentPageStale ? '0 0 12px rgba(245,158,11,0.3)' : '0 0 10px rgba(16,185,129,0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {isLoadingAudit ? (
+                <>
+                  <span className="w4-spinner" style={{ width: '12px', height: '12px', borderWidth: '2px' }} />
+                  <span>Auditing...</span>
+                </>
+              ) : (
+                <span>Re-run Audit ▷</span>
+              )}
+            </button>
           </div>
         </div>
 
