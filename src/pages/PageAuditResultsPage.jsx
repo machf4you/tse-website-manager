@@ -1133,7 +1133,7 @@ export default function PageAuditResultsPage({
                 <div>
                   <h3 className="w4-checklist-title">Action Checklist: What to Fix</h3>
                   <p className="w4-checklist-subtitle">
-                    Staff Action Required: Fix issues or click Optimise Page SEO to edit page metadata.
+                    Staff Action Required: Fix issues or click Optimise Metadata & H1 to edit page metadata.
                   </p>
                 </div>
               </div>
@@ -1144,7 +1144,7 @@ export default function PageAuditResultsPage({
                 onClick={() => setActiveFixIssue({ id: 'batch_optimization', name: 'Batch Page Optimization', recommendation: 'Optimize Meta Title, Meta Description, and H1 tags.' })}
                 id="btn-optimise-page-seo"
               >
-                Optimise Page SEO ▷
+                Optimise Metadata & H1 ▷
               </button>
             </div>
 
