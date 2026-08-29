@@ -65,7 +65,7 @@ export default function PageManagementPage({
 
       getPageAuditsApi(site.id).then(apiAudits => {
         if (isMounted && apiAudits && Object.keys(apiAudits).length > 0) {
-          setPageAudits(prev => ({ ...apiAudits, ...prev }))
+          setPageAudits(prev => ({ ...prev, ...apiAudits }))
         }
       }).catch(() => {})
     }
@@ -200,10 +200,19 @@ export default function PageManagementPage({
                         (page.url ? pageAudits[page.url] : null) ||
                         Object.values(pageAudits).find(a => (a?.auditResult?.url === urlKey || a?.url === urlKey))
 
-    const isAudited = Boolean(auditRecord && (auditRecord.isAudited || auditRecord.lastAuditTimestamp || auditRecord.auditResult))
+    const isAudited = Boolean(auditRecord && (auditRecord.isAudited || auditRecord.lastAuditTimestamp || auditRecord.auditResult || auditRecord.overall_score !== undefined))
     const isStale = Boolean(auditRecord && auditRecord.isStale)
     const staleReason = auditRecord?.staleReason || null
     const lastAuditDate = isAudited ? (auditRecord.lastAuditTimestamp || 'Audited ✓') : (override?.lastAuditDate || page.lastAuditDate || 'Never')
+
+    const rawScore = auditRecord?.overall_score ??
+                     auditRecord?.score ??
+                     auditRecord?.auditResult?.overall_score ??
+                     auditRecord?.auditResult?.score ??
+                     null
+    const auditScore = (rawScore !== null && rawScore !== undefined && !isNaN(Number(rawScore)))
+      ? Math.round(Number(rawScore))
+      : null
 
     const autoType = override?.autoType || page.type || page.seoPageType || 'Unclassified'
     const isManualOverride = Boolean(override && override.isManualOverride === true)
@@ -244,6 +253,7 @@ export default function PageManagementPage({
         isStale,
         staleReason,
         lastAuditDate,
+        auditScore,
         auditResult: auditRecord?.auditResult || null,
       }
     }
@@ -260,6 +270,7 @@ export default function PageManagementPage({
       isStale,
       staleReason,
       lastAuditDate,
+      auditScore,
       auditResult: auditRecord?.auditResult || null,
     }
   })
@@ -305,9 +316,14 @@ export default function PageManagementPage({
     }
 
     if (sortColumn === 'auditPage') {
-      const valA = (a.isAudited ? 'Audited' : (a.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
-      const valB = (b.isAudited ? 'Audited' : (b.isConfigured ? 'Audit Page' : 'Available')).toLowerCase()
-      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+      const scoreA = a.auditScore !== null ? a.auditScore : (a.isAudited ? 0 : -1)
+      const scoreB = b.auditScore !== null ? b.auditScore : (b.isAudited ? 0 : -1)
+      if (scoreA !== scoreB) {
+        return sortDirection === 'asc' ? scoreA - scoreB : scoreB - scoreA
+      }
+      const valA = (a.title || '').toLowerCase()
+      const valB = (b.title || '').toLowerCase()
+      return valA.localeCompare(valB)
     }
 
     if (sortColumn === 'actions') {
@@ -688,19 +704,23 @@ export default function PageManagementPage({
                           className="btn-audit-stale-action"
                           onClick={() => onViewAudit && onViewAudit(page)}
                           id={`btn-audit-page-${page.id || idx}`}
-                          title="WordPress content modified after audit - Re-audit recommended"
+                          title={`WordPress content modified after audit - Re-audit recommended (${page.auditScore !== null ? `${page.auditScore} / 100` : 'Stale'})`}
                         >
-                          Audit Required ?
+                          {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audit Required ?'}
                         </button>
                       ) : (
                         <button
                           type="button"
-                          className="btn-audited-success"
+                          className={`btn-table-audit-action ${
+                            page.auditScore !== null
+                              ? (page.auditScore >= 70 ? 'btn-audit-score-green' : page.auditScore >= 50 ? 'btn-audit-score-amber' : 'btn-audit-score-red')
+                              : 'btn-audit-score-green'
+                          }`}
                           onClick={() => onViewAudit && onViewAudit(page)}
                           id={`btn-audit-page-${page.id || idx}`}
                           title="View completed audit results"
                         >
-                          Audited ✓
+                          {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audited ✓'}
                         </button>
                       )
                     ) : page.isConfigured ? (
@@ -710,10 +730,17 @@ export default function PageManagementPage({
                         onClick={() => onViewAudit && onViewAudit(page)}
                         id={`btn-audit-page-${page.id || idx}`}
                       >
-                        Audit Page
+                        Audit Page ▷
                       </button>
                     ) : (
-                      <span className="w3-text-plain">Available</span>
+                      <button
+                        type="button"
+                        className="btn-table-audit-action btn-audit-faded"
+                        onClick={() => onViewAudit && onViewAudit(page)}
+                        id={`btn-audit-page-${page.id || idx}`}
+                      >
+                        Audit Page ▷
+                      </button>
                     )}
                   </td>
                   <td className="col-actions">

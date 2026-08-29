@@ -569,6 +569,64 @@
   transform: translateY(-1px);
 }
 
+/* Audit Score Buttons in Audit Page column */
+.btn-audit-score-green {
+  background-color: #059669;
+  border: 1px solid #047857;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.btn-audit-score-green:hover {
+  background-color: #047857;
+  border-color: #065f46;
+  transform: translateY(-1px);
+}
+
+.btn-audit-score-amber {
+  background-color: #d97706;
+  border: 1px solid #b45309;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.btn-audit-score-amber:hover {
+  background-color: #b45309;
+  border-color: #92400e;
+  transform: translateY(-1px);
+}
+
+.btn-audit-score-red {
+  background-color: #dc2626;
+  border: 1px solid #b91c1c;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-block;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.btn-audit-score-red:hover {
+  background-color: #b91c1c;
+  border-color: #991b1b;
+  transform: translateY(-1px);
+}
+
 /* Orange button style for Audit Page -> Audited once completed */
 .btn-audited-success {
   opacity: 1;
