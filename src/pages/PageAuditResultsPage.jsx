@@ -786,14 +786,17 @@ export default function PageAuditResultsPage({
         return {
           status: 'Pass',
           hasTargetPhrase: true,
-          recommendation: '—'
+          recommendation: '—',
+          recommendationType: 'default'
         }
       }
 
+      // 1 or more H2s present = Pass (Structure is healthy), with soft advisory recommendation
       return {
-        status: 'Fail',
+        status: 'Pass',
         hasTargetPhrase: false,
-        recommendation: `Add the target phrase "${targetPhrase}" (or natural variation) to at least one H2 heading.`
+        recommendation: `${h2Count} H2 headings found. Consider referencing "${targetPhrase}" (or natural variation) in an H2 if appropriate.`,
+        recommendationType: 'default'
       }
     }
 
