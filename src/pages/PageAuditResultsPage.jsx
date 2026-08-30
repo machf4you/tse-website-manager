@@ -7,6 +7,7 @@ import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/site
 import { normalizeUrlForMatching } from '../utils/urlUtils'
 import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
+import OptimizeAltTextDialog from '../components/OptimizeAltTextDialog'
 import './PageAuditResultsPage.css'
 
 function getCleanPathname(fullUrl, siteBaseUrl) {
@@ -79,6 +80,7 @@ export default function PageAuditResultsPage({
   const [isLoadingAudit, setIsLoadingAudit] = useState(false)
   const [auditError, setAuditError] = useState(null)
   const [activeFixIssue, setActiveFixIssue] = useState(null)
+  const [isAltTextModalOpen, setIsAltTextModalOpen] = useState(false)
   const [localOverrides, setLocalOverrides] = useState({})
   const [localSyncTimestamp, setLocalSyncTimestamp] = useState(null)
   const [isSyncingPage, setIsSyncingPage] = useState(false)
@@ -1279,9 +1281,17 @@ export default function PageAuditResultsPage({
                     <button
                       type="button"
                       className="w4-btn-fix-issue"
-                      onClick={() => setActiveFixIssue(issue)}
+                      style={issue.id === 'missing_alt' || (issue.name || '').toLowerCase().includes('alt text') ? { backgroundColor: '#0284c7', borderColor: '#0284c7' } : {}}
+                      onClick={() => {
+                        if (issue.id === 'missing_alt' || (issue.name || '').toLowerCase().includes('alt text') || (issue.id || '').includes('images_alt')) {
+                          setIsAltTextModalOpen(true)
+                        } else {
+                          setActiveFixIssue(issue)
+                        }
+                      }}
+                      id={`btn-fix-issue-${issue.id}`}
                     >
-                      Fix Issue ▷
+                      {issue.id === 'missing_alt' || (issue.name || '').toLowerCase().includes('alt text') ? 'Fix Alt Text ▷' : 'Fix Issue ▷'}
                     </button>
                   </div>
                 ))}
@@ -1300,6 +1310,19 @@ export default function PageAuditResultsPage({
           onSaveFix={handleSaveFix}
           onSyncWebsiteData={onSyncFromWordPress}
           onRerunAudit={() => setIsRerunRequested(true)}
+        />
+
+        {/* Dedicated Optimize Image Alt Text Modal */}
+        <OptimizeAltTextDialog
+          isOpen={isAltTextModalOpen}
+          page={currentPage}
+          site={site}
+          targetPhrase={targetPhrase}
+          images={snap.images || liveAuditData?.page_snapshot?.images || []}
+          onClose={() => setIsAltTextModalOpen(false)}
+          onSuccess={(_res) => {
+            setIsAltTextModalOpen(false)
+          }}
         />
 
       </div>

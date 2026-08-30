@@ -684,3 +684,89 @@ export async function syncSingleWordPressPage({ site, page }) {
   }
 }
 
+/**
+ * Update Alt Text for images in WordPress Media Library
+ */
+export async function updateWordPressMediaAltText({ site, updates = [] }) {
+  if (!updates || updates.length === 0) return { success: true, updatedCount: 0 }
+
+  let base = (site?.url || '').trim().replace(/\/+$/, '')
+  if (!/^https?:\/\//i.test(base)) {
+    base = 'https://' + base
+  }
+
+  // Get credentials
+  let username = (site?.wpUsername || site?.username || '').trim()
+  let password = (site?.wpAppPassword || site?.appPassword || site?.applicationPassword || '').trim()
+
+  if (!username || !password) {
+    try {
+      const websites = await getWebsitesApi()
+      const currentSite = websites.find(s => String(s.id) === String(site?.id))
+      if (currentSite) {
+        username = (currentSite.wpUsername || currentSite.username || '').trim()
+        password = (currentSite.wpAppPassword || currentSite.appPassword || '').trim()
+      }
+    } catch (_e) {}
+  }
+
+  const authHeader = 'Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)
+
+  let updatedCount = 0
+  const errors = []
+
+  for (const item of updates) {
+    const newAlt = (item.newAlt || item.altText || '').trim()
+    const imgSrc = item.src || item.url || ''
+    let mediaId = item.id || item.mediaId
+
+    try {
+      // If mediaId is not directly known, search media library by filename slug
+      if (!mediaId && imgSrc) {
+        const rawFilename = imgSrc.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
+        if (rawFilename) {
+          const searchRes = await fetch(`${base}/wp-json/wp/v2/media?search=${encodeURIComponent(rawFilename)}&per_page=5`, {
+            headers: { Authorization: authHeader, Accept: 'application/json' }
+          })
+          if (searchRes.ok) {
+            const results = await searchRes.json()
+            if (Array.isArray(results) && results.length > 0) {
+              const match = results.find(m => m.source_url === imgSrc || m.slug === rawFilename.toLowerCase()) || results[0]
+              mediaId = match?.id
+            }
+          }
+        }
+      }
+
+      // Update attachment alt_text in WordPress Media Library
+      if (mediaId) {
+        const updateRes = await fetch(`${base}/wp-json/wp/v2/media/${mediaId}`, {
+          method: 'POST',
+          headers: {
+            Authorization: authHeader,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ alt_text: newAlt })
+        })
+        if (updateRes.ok) {
+          updatedCount++
+        } else {
+          errors.push(`Media ${mediaId} returned status ${updateRes.status}`)
+        }
+      } else {
+        errors.push(`Could not resolve media ID for ${imgSrc}`)
+      }
+    } catch (err) {
+      errors.push(`Failed updating image ${imgSrc}: ${err.message}`)
+    }
+  }
+
+  return {
+    success: updatedCount > 0 || errors.length === 0,
+    updatedCount,
+    errors
+  }
+}
+
+
