@@ -219,10 +219,7 @@ export default function OptimizeAltTextDialog({
     }
   }
 
-  const missingOrGenericRows = imageRows.filter(r => r.isMissing || r.isGeneric)
-  const displayedRows = filterMode === 'missing_generic' ? missingOrGenericRows : imageRows
-
-  const missingGenericCount = missingOrGenericRows.length
+  const missingGenericCount = imageRows.filter(r => r.isMissing || r.isGeneric).length
   const totalCount = imageRows.length
   const selectedCount = imageRows.filter(r => r.isSelected && r.newAlt.trim().length > 0).length
 
@@ -236,30 +233,21 @@ export default function OptimizeAltTextDialog({
             <div className="oat-badge">W4 | IMAGE ALT TEXT OPTIMIZATION</div>
             <h2 className="oat-title">Optimise Image Alt Text</h2>
             <p className="oat-subtitle">
-              Review and configure descriptive, keyword-aligned alt text for page imagery. Changes push directly to WordPress media attachments.
+              Review and configure descriptive, keyword-aligned alt text for genuine page content imagery.
             </p>
           </div>
           <button type="button" className="oat-close-btn" onClick={onClose}>✕</button>
         </div>
 
-        {/* Toolbar & Filters */}
+        {/* Toolbar with Counter and Selection Actions */}
         <div className="oat-toolbar">
           <div className="oat-toolbar-left">
-            <div className="oat-filter-group">
-              <button
-                type="button"
-                className={`oat-filter-btn ${filterMode === 'missing_generic' ? 'active' : ''}`}
-                onClick={() => setFilterMode('missing_generic')}
-              >
-                Missing / Generic Alt Text ({missingGenericCount})
-              </button>
-              <button
-                type="button"
-                className={`oat-filter-btn ${filterMode === 'all' ? 'active' : ''}`}
-                onClick={() => setFilterMode('all')}
-              >
-                All Content Images ({totalCount})
-              </button>
+            <div className="oat-counter-pill">
+              <strong style={{ color: '#f8fafc' }}>{totalCount} Content Images</strong>
+              <span style={{ color: 'rgba(255,255,255,0.25)' }}>|</span>
+              <span style={{ color: missingGenericCount > 0 ? '#f87171' : '#34d399', fontWeight: '600' }}>
+                {missingGenericCount} Missing / Generic
+              </span>
             </div>
           </div>
           <div className="oat-toolbar-right">
@@ -293,15 +281,11 @@ export default function OptimizeAltTextDialog({
           {isLoadingImages ? (
             <div className="oat-loading-state">
               <div className="oat-spinner" />
-              <span>Scanning page images...</span>
+              <span>Scanning page content images...</span>
             </div>
-          ) : displayedRows.length === 0 ? (
+          ) : imageRows.length === 0 ? (
             <div className="oat-empty-state">
-              <p>
-                {filterMode === 'missing_generic'
-                  ? 'All images on this page have descriptive Alt Text configured!'
-                  : 'No images detected on this page.'}
-              </p>
+              <p>No content images detected on this page.</p>
             </div>
           ) : (
             <table className="oat-table">
@@ -310,12 +294,12 @@ export default function OptimizeAltTextDialog({
                   <th style={{ width: '44px', textAlign: 'center' }}>Push</th>
                   <th style={{ width: '115px', textAlign: 'center' }}>Preview</th>
                   <th style={{ width: '28%' }}>Image Filename / URL</th>
-                  <th style={{ width: '24%' }}>Current Status & Live Alt Text</th>
-                  <th style={{ width: '44%' }}>New Alt Text (Editable)</th>
+                  <th style={{ width: '24%' }}>CURRENT ALT TEXT</th>
+                  <th style={{ width: '44%' }}>PROPOSED ALT TEXT</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedRows.map(row => (
+                {imageRows.map(row => (
                   <tr key={row.id} className={row.isSelected ? 'row-selected' : ''}>
                     <td style={{ textAlign: 'center' }}>
                       <input
@@ -379,7 +363,7 @@ export default function OptimizeAltTextDialog({
         {/* Footer */}
         <div className="oat-footer">
           <div className="oat-footer-summary">
-            <span>{totalCount} Total Images</span>
+            <span>{totalCount} Content Images</span>
             <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
             <span style={{ color: missingGenericCount > 0 ? '#f87171' : '#34d399', fontWeight: '600' }}>
               {missingGenericCount} Missing / Generic
