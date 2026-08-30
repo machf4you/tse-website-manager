@@ -712,12 +712,93 @@ export default function PageAuditResultsPage({
       ? Math.round((1 - snap.image_alt_coverage) * snap.image_count)
       : 0
 
-    const hasH2Target = breakdown.h2 === 'Yes' || (
-      Array.isArray(snap.h2) && targetPhrase && snap.h2.some(h => {
-        const text = typeof h === 'string' ? h : (h?.text || '')
-        return text.toLowerCase().includes(targetPhrase.toLowerCase())
+    // Core Token Coverage for H2 Evaluation
+    const H2_STOP_WORDS = new Set([
+      'in', 'on', 'at', 'for', 'of', 'the', 'and', 'with', 'across', 'near', 'to', 'by', 'from', 'a', 'an', 'our', 'your', 'uk'
+    ])
+
+    const normalizeStem = (word) => {
+      let w = (word || '').toLowerCase().trim()
+      if (w.endsWith('ies') && w.length > 4) return w.slice(0, -3) + 'y'
+      if (w.endsWith('es') && w.length > 4) return w.slice(0, -2)
+      if (w.endsWith('s') && !w.endsWith('ss') && w.length > 3) return w.slice(0, -1)
+      if (w.endsWith('ing') && w.length > 5) return w.slice(0, -3)
+      return w
+    }
+
+    const extractCoreTokens = (phrase) => {
+      if (!phrase) return []
+      return phrase
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w && w.length > 1 && !H2_STOP_WORDS.has(w))
+        .map(normalizeStem)
+    }
+
+    const evaluateH2Check = () => {
+      const h2Count = Array.isArray(snap.h2) ? snap.h2.length : (Number(snap.h2) || 0)
+      if (h2Count === 0 || !Array.isArray(snap.h2) || snap.h2.length === 0) {
+        return {
+          status: 'Fail',
+          hasTargetPhrase: false,
+          recommendation: 'Add H2 headings to structure the page content.'
+        }
+      }
+
+      if (breakdown.h2 === 'Yes') {
+        return {
+          status: 'Pass',
+          hasTargetPhrase: true,
+          recommendation: '—'
+        }
+      }
+
+      if (!targetPhrase || !targetPhrase.trim()) {
+        return {
+          status: 'Pass',
+          hasTargetPhrase: false,
+          recommendation: '—'
+        }
+      }
+
+      const targetTokens = extractCoreTokens(targetPhrase)
+      if (targetTokens.length === 0) {
+        return {
+          status: 'Pass',
+          hasTargetPhrase: true,
+          recommendation: '—'
+        }
+      }
+
+      const lowerPhrase = targetPhrase.toLowerCase()
+      const hasMatchingH2 = snap.h2.some(h => {
+        const rawText = typeof h === 'string' ? h : (h?.text || '')
+        if (!rawText) return false
+        const lowerText = rawText.toLowerCase()
+        if (lowerText.includes(lowerPhrase)) return true
+
+        const h2Tokens = new Set(extractCoreTokens(rawText))
+        return targetTokens.every(tok => h2Tokens.has(tok))
       })
-    )
+
+      if (hasMatchingH2) {
+        return {
+          status: 'Pass',
+          hasTargetPhrase: true,
+          recommendation: '—'
+        }
+      }
+
+      return {
+        status: 'Fail',
+        hasTargetPhrase: false,
+        recommendation: `Add the target phrase "${targetPhrase}" (or natural variation) to at least one H2 heading.`
+      }
+    }
+
+    const h2Eval = evaluateH2Check()
+    const hasH2Target = h2Eval.hasTargetPhrase
 
     const hasTitleTarget = breakdown.title === 'Yes' || (
       snap.title && targetPhrase && snap.title.toLowerCase().includes(targetPhrase.toLowerCase())
@@ -797,10 +878,10 @@ export default function PageAuditResultsPage({
         id: 'h2_count',
         name: 'H2 Count',
         currentValue: `${Array.isArray(snap.h2) ? snap.h2.length : (snap.h2 || 0)} H2 headings`,
-        hasTargetPhrase: hasH2Target,
-        status: hasH2Target ? 'Pass' : 'Fail',
-        recommendation: hasH2Target ? '—' : 'Add the target phrase to at least one H2 heading.',
-        recommendationType: hasH2Target ? 'default' : 'fail',
+        hasTargetPhrase: h2Eval.hasTargetPhrase,
+        status: h2Eval.status,
+        recommendation: h2Eval.recommendation,
+        recommendationType: h2Eval.status === 'Pass' ? 'default' : 'fail',
       },
 
       {

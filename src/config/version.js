@@ -1,7 +1,7 @@
-export const CURRENT_BUILD_VERSION = '1.67'
-export const CURRENT_BUILD_LABEL = 'V1.67 | READY'
-export const CURRENT_BUILD_HASH = 'w3manualoverrideflagtargetphrasebugfix67'
-export const CURRENT_BUILD_TIMESTAMP = 1788040000000
+export const CURRENT_BUILD_VERSION = '1.68'
+export const CURRENT_BUILD_LABEL = 'V1.68 | READY'
+export const CURRENT_BUILD_HASH = 'w4h2coretokencoverageauditrule68'
+export const CURRENT_BUILD_TIMESTAMP = 1788045000000
 
 
 
