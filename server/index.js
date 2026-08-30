@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.73',
-  buildHash: 'w4serversideimageextractionfix73',
-  buildTimestamp: 1788070000000,
+  version: '1.74',
+  buildHash: 'w4contentimagesextractorgallery74',
+  buildTimestamp: 1788075000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -48,7 +48,7 @@ app.post('/api/deployment/status', (req, res) => {
   }
 })
 
-// Extract images server-side without CORS limitations
+// Extract genuine content images server-side (excludes logos, badges, background sliders, and third-party placeholders)
 app.get('/api/images/extract', async (req, res) => {
   try {
     const targetUrl = (req.query.url || '').trim()
@@ -70,9 +70,31 @@ app.get('/api/images/extract', async (req, res) => {
     }
 
     const html = await fetchRes.text()
+
+    const isExcluded = (src, alt, rawAttrs) => {
+      const lowerSrc = (src || '').toLowerCase()
+      const lowerAlt = (alt || '').toLowerCase()
+      const lowerAttrs = (rawAttrs || '').toLowerCase()
+
+      // Third party assets & placeholders
+      if (/i\.ytimg\.com|youtube\.com|wp-rocket|plugins\/|gravatar\.com|svg\+xml/.test(lowerSrc)) return true
+
+      // Logos (header, footer, mobile, branding)
+      if (/logo|site-logo|brand-logo|custom-logo/.test(lowerSrc) || /logo/.test(lowerAlt) || /custom-logo|site-branding/.test(lowerAttrs)) return true
+
+      // Trust badges & certifications
+      if (/checkatrade|trustmark|master-builder|master-tradesman|google\.webp|accreditation|badge|client-logo/.test(lowerSrc) ||
+          /checkatrade|trustmark|master builder|master tradesman|fmb|accreditation/.test(lowerAlt)) {
+        return true
+      }
+
+      return false
+    }
+
     const images = []
     const seen = new Set()
 
+    // 1. Standard <img> elements
     const imgRegex = /<img\b([^>]+)>/gi
     let match
     while ((match = imgRegex.exec(html)) !== null) {
@@ -88,11 +110,40 @@ app.get('/api/images/extract', async (req, res) => {
       } catch (e) {}
 
       if (seen.has(absUrl)) continue
-      seen.add(absUrl)
 
       const altMatch = attrs.match(/\balt=["']([^"']*)["']/i)
       const alt = altMatch ? altMatch[1].trim() : ''
-      images.push({ src: absUrl, alt })
+
+      if (isExcluded(absUrl, alt, attrs)) continue
+
+      seen.add(absUrl)
+      images.push({ src: absUrl, alt, source: 'img' })
+    }
+
+    // 2. Elementor Gallery items (.e-gallery-image[data-thumbnail])
+    const galRegex = /<div\b([^>]*class=["'][^"']*e-gallery-image[^"']*["'][^>]*)>/gi
+    while ((match = galRegex.exec(html)) !== null) {
+      const attrs = match[1]
+      const thumbMatch = attrs.match(/\bdata-thumbnail=["']([^"']+)["']/i)
+      if (!thumbMatch || !thumbMatch[1]) continue
+      const src = thumbMatch[1].trim()
+      if (!src || src.startsWith('data:')) continue
+
+      let absUrl = src
+      try {
+        absUrl = new URL(src, targetUrl).href
+      } catch (e) {}
+
+      if (seen.has(absUrl)) continue
+
+      const ariaMatch = attrs.match(/\baria-label=["']([^"']*)["']/i)
+      const aria = ariaMatch ? ariaMatch[1].trim() : ''
+      const alt = aria && !aria.toLowerCase().startsWith('ascent') ? aria : ''
+
+      if (isExcluded(absUrl, alt, attrs)) continue
+
+      seen.add(absUrl)
+      images.push({ src: absUrl, alt, source: 'gallery' })
     }
 
     res.json({ success: true, count: images.length, images })

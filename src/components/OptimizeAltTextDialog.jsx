@@ -14,8 +14,7 @@ const GENERIC_ALT_PATTERNS = [
   /^thumbnail$/i,
   /^placeholder$/i,
   /^untitled$/i,
-  /^ascent-logo-\d+$/i,
-  /^logo-dark/i,
+  /^ascent\d*$/i, // e.g. ascent1, ascent2
   /^\d+_\d+.*$/i, // e.g. 20180211_102751
 ]
 
@@ -27,29 +26,40 @@ function isAltGenericOrMissing(altText = '') {
   return { isMissing: false, isGeneric }
 }
 
+const SPECIFIC_GALLERY_PROPOSALS = {
+  'ascent1.jpg': 'Rear House Extension Project with Bi-fold Doors',
+  'ascent2.jpg': 'Completed Dormer Loft Conversion Interior with Skylights',
+  'ascent3.jpg': 'Open-Plan Kitchen and Living Space Extension',
+  'ascent5.jpg': 'Velux Rooflight Loft Conversion Master Bedroom',
+  'ascent6.jpg': 'Luxury Ensuite Bathroom in Converted Loft Space',
+  'ascent7.jpg': 'Custom Hardwood Staircase Installation for Loft Access',
+  'ascent8.jpg': 'Contemporary Loft Conversion Master Bedroom with Fitted Wardrobes',
+  'ascent9.jpg': 'Exterior Elevation of High-Specification Dormer Loft Conversion',
+}
+
 function generateSmartProposedAlt(src = '', currentAlt = '', targetPhrase = '') {
   const cleanAlt = (currentAlt || '').trim()
   const lowerSrc = src.toLowerCase()
 
-  // Trust & accreditation badges
-  if (lowerSrc.includes('checkatrade')) return 'Checkatrade Approved Builders'
-  if (lowerSrc.includes('trustmark')) return 'TrustMark Accredited Building Contractors'
-  if (lowerSrc.includes('master-builders') || lowerSrc.includes('master-tradesman')) return 'Federation of Master Builders Member'
-  if (lowerSrc.includes('google')) return 'Google 5-Star Rated Customer Reviews'
-  if (lowerSrc.includes('logo')) return 'Ascent Builders - Architectural & Construction Specialists'
+  // Match known portfolio gallery photos if alt is missing or generic
+  for (const [filename, proposal] of Object.entries(SPECIFIC_GALLERY_PROPOSALS)) {
+    if (lowerSrc.includes(filename.toLowerCase())) {
+      return proposal
+    }
+  }
 
   // Service specific imagery
-  if (lowerSrc.includes('garden-office')) return 'Bespoke Garden Office Installation'
-  if (lowerSrc.includes('renovations')) return 'Complete Home Renovation Project'
-  if (lowerSrc.includes('conservatory')) return 'Modern Home Extension and Conservatory'
-  if (lowerSrc.includes('loft') || lowerSrc.includes('20180211')) return 'High-Specification Loft Conversion'
-  if (lowerSrc.includes('extension') || lowerSrc.includes('20180111')) return 'Double-Storey Home Extension'
+  if (lowerSrc.includes('garden-office')) return 'Insulated Bespoke Garden Office Building Installation'
+  if (lowerSrc.includes('renovations')) return 'Complete Residential Property Renovation & Refurbishment'
+  if (lowerSrc.includes('conservatory')) return 'Contemporary Glass Home Extension and Conservatory'
+  if (lowerSrc.includes('loft') || lowerSrc.includes('20180211')) return 'High-Specification Master Bedroom Loft Conversion'
+  if (lowerSrc.includes('extension') || lowerSrc.includes('20180111')) return 'Double-Storey Brick House Extension Project'
 
   if (cleanAlt && !isAltGenericOrMissing(cleanAlt).isGeneric) {
     return cleanAlt
   }
 
-  // Filename derivation
+  // Fallback derivation
   try {
     const filename = src.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
     const cleanWords = filename
@@ -63,7 +73,7 @@ function generateSmartProposedAlt(src = '', currentAlt = '', targetPhrase = '') 
     }
   } catch (e) {}
 
-  return targetPhrase || 'Ascent Builders Project Image'
+  return targetPhrase ? `${targetPhrase} Project` : 'Ascent Builders Project Image'
 }
 
 export default function OptimizeAltTextDialog({
@@ -248,7 +258,7 @@ export default function OptimizeAltTextDialog({
                 className={`oat-filter-btn ${filterMode === 'all' ? 'active' : ''}`}
                 onClick={() => setFilterMode('all')}
               >
-                All Images ({totalCount})
+                All Content Images ({totalCount})
               </button>
             </div>
           </div>
@@ -298,7 +308,7 @@ export default function OptimizeAltTextDialog({
               <thead>
                 <tr>
                   <th style={{ width: '44px', textAlign: 'center' }}>Push</th>
-                  <th style={{ width: '70px', textAlign: 'center' }}>Preview</th>
+                  <th style={{ width: '115px', textAlign: 'center' }}>Preview</th>
                   <th style={{ width: '28%' }}>Image Filename / URL</th>
                   <th style={{ width: '24%' }}>Current Status & Live Alt Text</th>
                   <th style={{ width: '44%' }}>New Alt Text (Editable)</th>
