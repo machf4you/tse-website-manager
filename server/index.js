@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.72',
-  buildHash: 'w4alttextmodalcompleterobustsync72',
-  buildTimestamp: 1788065000000,
+  version: '1.73',
+  buildHash: 'w4serversideimageextractionfix73',
+  buildTimestamp: 1788070000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -45,6 +45,59 @@ app.post('/api/deployment/status', (req, res) => {
     res.json({ status: 'ok', deploymentStatus: inMemoryDeploymentStatus })
   } catch (e) {
     res.status(500).json({ error: e.message })
+  }
+})
+
+// Extract images server-side without CORS limitations
+app.get('/api/images/extract', async (req, res) => {
+  try {
+    const targetUrl = (req.query.url || '').trim()
+    if (!targetUrl) {
+      return res.status(400).json({ success: false, error: 'URL parameter is required' })
+    }
+
+    const fetchRes = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+      },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(12000)
+    })
+
+    if (!fetchRes.ok) {
+      return res.status(fetchRes.status).json({ success: false, error: `Failed to fetch URL (${fetchRes.status})` })
+    }
+
+    const html = await fetchRes.text()
+    const images = []
+    const seen = new Set()
+
+    const imgRegex = /<img\b([^>]+)>/gi
+    let match
+    while ((match = imgRegex.exec(html)) !== null) {
+      const attrs = match[1]
+      const srcMatch = attrs.match(/\b(?:data-lazy-src|data-src|src)=["']([^"']+)["']/i)
+      if (!srcMatch || !srcMatch[1]) continue
+      const src = srcMatch[1].trim()
+      if (!src || src.startsWith('data:')) continue
+
+      let absUrl = src
+      try {
+        absUrl = new URL(src, targetUrl).href
+      } catch (e) {}
+
+      if (seen.has(absUrl)) continue
+      seen.add(absUrl)
+
+      const altMatch = attrs.match(/\balt=["']([^"']*)["']/i)
+      const alt = altMatch ? altMatch[1].trim() : ''
+      images.push({ src: absUrl, alt })
+    }
+
+    res.json({ success: true, count: images.length, images })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
   }
 })
 

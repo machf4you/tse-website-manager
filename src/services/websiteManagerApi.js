@@ -320,3 +320,17 @@ export async function migrateLocalStorageApi() {
 export async function triggerLocalStorageMigrationApi() {
   return migrateLocalStorageApi()
 }
+
+/**
+ * Server-side image extraction (bypasses browser CORS)
+ */
+export async function extractPageImagesApi(targetUrl) {
+  if (!targetUrl) return []
+  try {
+    const res = await fetchJson(`${API_BASE_URL}/images/extract?url=${encodeURIComponent(targetUrl)}`, { method: 'GET' }, 12000)
+    return res.images || []
+  } catch (err) {
+    console.warn('[WM_API] Server-side image extraction warning:', err)
+    return []
+  }
+}

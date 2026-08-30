@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { updateWordPressMediaAltText } from '../services/wordpressApi'
+import { extractPageImagesApi } from '../services/websiteManagerApi'
 import './OptimizeAltTextDialog.css'
 
 const GENERIC_ALT_PATTERNS = [
@@ -86,39 +87,17 @@ export default function OptimizeAltTextDialog({
     async function loadImages() {
       let candidateImages = Array.isArray(images) && images.length > 0 ? images : []
 
-      // If candidate images from audit snapshot is empty, fallback to live HTML extraction
+      // If candidate images from audit snapshot is empty, query server-side image extraction endpoint
       if (candidateImages.length === 0 && (page?.url || site?.url)) {
         setIsLoadingImages(true)
         try {
           const fetchUrl = page?.url || site?.url
-          const res = await fetch(fetchUrl, { headers: { 'Accept': 'text/html' } })
-          if (res.ok) {
-            const html = await res.text()
-            const parser = new DOMParser()
-            const doc = parser.parseFromString(html, 'text/html')
-            const seen = new Set()
-            const extracted = []
-
-            doc.querySelectorAll('img').forEach(img => {
-              const src = (img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || '').trim()
-              if (!src || src.startsWith('data:')) return
-              let absoluteUrl = src
-              try {
-                absoluteUrl = new URL(src, fetchUrl).href
-              } catch (e) {}
-              if (seen.has(absoluteUrl)) return
-              seen.add(absoluteUrl)
-
-              const alt = (img.getAttribute('alt') || '').trim()
-              extracted.push({ src: absoluteUrl, alt })
-            })
-
-            if (extracted.length > 0) {
-              candidateImages = extracted
-            }
+          const extracted = await extractPageImagesApi(fetchUrl)
+          if (Array.isArray(extracted) && extracted.length > 0) {
+            candidateImages = extracted
           }
         } catch (err) {
-          console.warn('[AltTextDialog] Live HTML image fallback fetch failed:', err)
+          console.warn('[AltTextDialog] Server-side image extraction failed:', err)
         } finally {
           setIsLoadingImages(false)
         }
