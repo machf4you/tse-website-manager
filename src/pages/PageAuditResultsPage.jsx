@@ -692,10 +692,6 @@ export default function PageAuditResultsPage({
     const titleCheck = getCheck('Title Tag') || getCheck('Meta Title')
     const descCheck = getCheck('Meta Description')
     const h1Check = getCheck('H1 Tag') || getCheck('H1 Heading') || getCheck('H1 Presence') || getCheck('H1')
-    const hasH1Target = breakdown.h1 === 'Yes' || (
-      snap.h1 && (Array.isArray(snap.h1) ? snap.h1.length > 0 : Boolean(snap.h1))
-    )
-    const h1Status = (hasH1Target && h1Check?.status !== 'fail') ? 'Pass' : 'Fail'
     const h2Check = getCheck('H2 Count') || getCheck('H2')
     const wordCheck = getCheck('Word Count')
     const imgCheck = getCheck('Image Count')
@@ -803,51 +799,92 @@ export default function PageAuditResultsPage({
     const h2Eval = evaluateH2Check()
     const hasH2Target = h2Eval.hasTargetPhrase
 
+    const cleanType = (pageType || currentPage.type || currentPage.seoPageType || 'Topical').replace(/\s+Page$/i, '')
+    const minWordCountMap = {
+      'Hub': 300,
+      'Landing': 400,
+      'Topical': 500,
+      'Article': 800
+    }
+    const minWords = minWordCountMap[cleanType] || 500
+
+    const wordCount = snap.word_count !== undefined ? snap.word_count : 0
+    const wordCountStatus = wordCount >= minWords ? 'Pass' : 'Fail'
+    
+    let wordCountRec = '—'
+    if (wordCountStatus === 'Pass') {
+      wordCountRec = `Pass — ${wordCount} words. Minimum: ${minWords} words.`
+    } else {
+      wordCountRec = `Fail — ${wordCount} words. ${cleanType} pages require a minimum of ${minWords} words.`
+    }
+
+    const titleLen = (snap.title || displayTitle || '').length
     const hasTitleTarget = breakdown.title === 'Yes' || (
       snap.title && targetPhrase && snap.title.toLowerCase().includes(targetPhrase.toLowerCase())
     )
-    const titleStatus = (!hasTitleTarget || titleCheck?.status === 'fail') ? 'Fail' : 'Pass'
+    const titleStatus = (hasTitleTarget && titleCheck?.status !== 'fail') ? 'Pass' : 'Fail'
+    let titleRec = '—'
+    if (titleStatus === 'Pass') {
+      titleRec = `Pass — Contains target phrase (${titleLen} chars).`
+    } else if (!snap.title && !displayTitle) {
+      titleRec = `Fail — Missing Meta Title. Add a title between 30–65 characters containing "${targetPhrase}".`
+    } else if (!hasTitleTarget) {
+      titleRec = `Fail — Target phrase "${targetPhrase}" not found in Meta Title.`
+    } else {
+      titleRec = titleCheck?.detail || `Fail — Meta Title length (${titleLen} chars) outside optimal 30–65 range.`
+    }
 
+    const descLen = (snap.meta_description || '').length
+    const descLenOk = descLen >= 120 && descLen <= 160
     const hasDescTarget = breakdown.description === 'Yes' || (
       snap.meta_description && targetPhrase && snap.meta_description.toLowerCase().includes(targetPhrase.toLowerCase())
     )
-    const descLen = (snap.meta_description || '').length
-    const descLenOk = descLen >= 120 && descLen <= 160
     const descStatus = (hasDescTarget && descLenOk && descCheck?.status !== 'fail') ? 'Pass' : 'Fail'
-
     let descRec = '—'
-    if (descStatus === 'Fail') {
-      if (!snap.meta_description) {
-        descRec = 'Add meta description containing target phrase'
-      } else if (!hasDescTarget) {
-        descRec = `Add target phrase "${targetPhrase}" to meta description`
-      } else if (descLen < 120) {
-        descRec = `Increase meta description length to at least 120 characters (currently ${descLen} characters)`
-      } else if (descLen > 160) {
-        descRec = `Reduce meta description length to under 160 characters (currently ${descLen} characters)`
-      } else if (descCheck?.detail) {
-        descRec = descCheck.detail
-      } else {
-        descRec = `Add target phrase "${targetPhrase}" to meta description (120-160 characters)`
-      }
+    if (descStatus === 'Pass') {
+      descRec = `Pass — Contains target phrase and length is optimal (${descLen} chars).`
+    } else if (!snap.meta_description) {
+      descRec = `Fail — Missing Meta Description. Add a description (120–160 chars) containing "${targetPhrase}".`
+    } else if (!hasDescTarget) {
+      descRec = `Fail — Target phrase "${targetPhrase}" not found in Meta Description.`
+    } else if (descLen < 120) {
+      descRec = `Fail — Description too short (${descLen} chars). Optimal range is 120–160 characters.`
+    } else if (descLen > 160) {
+      descRec = `Fail — Description too long (${descLen} chars). Optimal range is 120–160 characters.`
+    } else {
+      descRec = descCheck?.detail || `Fail — Meta Description requires optimization.`
     }
 
-    const wordCount = snap.word_count !== undefined ? snap.word_count : 0
-    const hasContentTarget = breakdown.content === 'Yes'
-    const wordCountStatus = (wordCount >= 300 && hasContentTarget) ? 'Pass' : 'Fail'
-    
-    let wordCountRec = '—'
-    if (wordCountStatus === 'Fail') {
-      if (wordCount < 300) {
-        wordCountRec = `Increase content length to at least 300 words (currently ${wordCount} words)`
-      } else if (!hasContentTarget) {
-        wordCountRec = `Add target phrase "${targetPhrase}" naturally within body content`
-      } else if (wordCheck?.detail) {
-        wordCountRec = wordCheck.detail
-      } else {
-        wordCountRec = `Increase content length to at least 300 words and add target phrase "${targetPhrase}"`
-      }
+    const h1Value = (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || ''
+    const h1Count = Array.isArray(snap.h1) ? snap.h1.length : (snap.h1 ? 1 : 0)
+    const hasH1Target = breakdown.h1 === 'Yes' || (
+      h1Value && targetPhrase && h1Value.toLowerCase().includes(targetPhrase.toLowerCase())
+    )
+    const h1Status = (h1Count === 1 && hasH1Target && h1Check?.status !== 'fail') ? 'Pass' : 'Fail'
+    let h1Rec = '—'
+    if (h1Status === 'Pass') {
+      h1Rec = `Pass — Exactly 1 H1 heading present and aligns with target topic.`
+    } else if (h1Count === 0 || !h1Value) {
+      h1Rec = `Fail — Missing H1 heading. Add exactly one H1 containing "${targetPhrase}".`
+    } else if (h1Count > 1) {
+      h1Rec = `Fail — ${h1Count} H1 headings found. Pages must have exactly one H1 heading.`
+    } else if (!hasH1Target) {
+      h1Rec = `Fail — Target phrase "${targetPhrase}" not found in H1 heading.`
+    } else {
+      h1Rec = h1Check?.detail || `Fail — H1 heading requires optimization.`
     }
+
+    const imgCount = snap.image_count !== undefined ? snap.image_count : 0
+    const imgStatus = imgCount > 0 ? 'Pass' : 'Fail'
+    const imgRec = imgStatus === 'Pass'
+      ? `Pass — ${imgCount} image(s) present.`
+      : `Fail — 0 images found. Add relevant images with descriptive alt text.`
+
+    const altStatus = missingAltCount === 0 ? 'Pass' : 'Fail'
+    const altRec = altStatus === 'Pass'
+      ? `Pass — All ${imgCount} image(s) have descriptive alt text.`
+      : `Fail — ${missingAltCount} image(s) missing alt text. Add descriptive alt tags.`
+
     auditElements = [
       {
         id: 'meta_title',
@@ -855,7 +892,7 @@ export default function PageAuditResultsPage({
         currentValue: snap.title || displayTitle,
         hasTargetPhrase: hasTitleTarget,
         status: titleStatus,
-        recommendation: titleStatus === 'Pass' ? '—' : (titleCheck?.detail || `Add target phrase "${targetPhrase}" to Meta Title`),
+        recommendation: titleRec,
         recommendationType: titleStatus === 'Pass' ? 'default' : 'fail',
       },
       {
@@ -870,10 +907,10 @@ export default function PageAuditResultsPage({
       {
         id: 'h1',
         name: 'H1',
-        currentValue: (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '—',
-        hasTargetPhrase: breakdown.h1 === 'Yes',
+        currentValue: h1Value || '—',
+        hasTargetPhrase: hasH1Target,
         status: h1Status,
-        recommendation: h1Status === 'Pass' ? '—' : (h1Check?.detail || `Add target phrase "${targetPhrase}" to H1 heading`),
+        recommendation: h1Rec,
         recommendationType: h1Status === 'Pass' ? 'default' : 'fail',
         issueCode: 'ISSUE 1: H1',
       },
@@ -886,12 +923,11 @@ export default function PageAuditResultsPage({
         recommendation: h2Eval.recommendation,
         recommendationType: h2Eval.status === 'Pass' ? 'default' : 'fail',
       },
-
       {
         id: 'word_count',
         name: 'Word Count',
-        currentValue: `${wordCount} words`,
-        hasTargetPhrase: hasContentTarget,
+        currentValue: `${wordCount} words (Minimum: ${minWords} words for ${cleanType} pages)`,
+        hasTargetPhrase: breakdown.content === 'Yes',
         status: wordCountStatus,
         recommendation: wordCountRec,
         recommendationType: wordCountStatus === 'Pass' ? 'default' : 'fail',
@@ -899,20 +935,20 @@ export default function PageAuditResultsPage({
       {
         id: 'image_count',
         name: 'Image Count',
-        currentValue: `${snap.image_count !== undefined ? snap.image_count : 0} images`,
+        currentValue: `${imgCount} images`,
         hasTargetPhrase: false,
-        status: (snap.image_count > 0) ? 'Pass' : 'Fail',
-        recommendation: (snap.image_count > 0) ? '—' : 'Add relevant images that support the page content. Ensure every image has descriptive alt text.',
-        recommendationType: (snap.image_count > 0) ? 'default' : 'fail',
+        status: imgStatus,
+        recommendation: imgRec,
+        recommendationType: imgStatus === 'Pass' ? 'default' : 'fail',
       },
       {
         id: 'missing_alt',
         name: 'Images Missing Alt Text',
-        currentValue: `${missingAltCount} images with missing/generic alt text`,
+        currentValue: `${missingAltCount} of ${imgCount} images missing alt text`,
         hasTargetPhrase: 'N/A',
-        status: missingAltCount === 0 ? 'Pass' : 'Fail',
-        recommendation: missingAltCount === 0 ? '—' : `Add meaningful alt tags to ${missingAltCount} images missing them.`,
-        recommendationType: missingAltCount === 0 ? 'default' : 'fail',
+        status: altStatus,
+        recommendation: altRec,
+        recommendationType: altStatus === 'Pass' ? 'default' : 'fail',
       },
     ]
 
