@@ -383,12 +383,34 @@ export default function PageManagementPage({
   }
 
   const handleRunFullUrlAudit = async () => {
-    // 1. Identify all active configured SEO pages in W3 (Hub, Landing, Topical, Article)
-    const activeSeoPages = pagesList.filter(p => {
-      const typeStr = (p.type || p.seoPageType || '').trim()
-      const isSeoType = ['Hub', 'Landing', 'Topical', 'Article'].includes(typeStr)
-      return isSeoType && !p.isExcluded && typeStr !== 'Excluded'
-    })
+    const typePriorityMap = {
+      'Hub': 1,
+      'Landing': 2,
+      'Topical': 3,
+      'Article': 4
+    }
+
+    // 1. Identify all active configured SEO pages in W3 ordered by Priority: Hub -> Landing -> Topical -> Article
+    const activeSeoPages = pagesList
+      .filter(p => {
+        const typeStr = (p.type || p.seoPageType || '').trim()
+        const isSeoType = ['Hub', 'Landing', 'Topical', 'Article'].includes(typeStr)
+        return isSeoType && !p.isExcluded && typeStr !== 'Excluded'
+      })
+      .sort((a, b) => {
+        const typeA = (a.type || a.seoPageType || '').trim()
+        const typeB = (b.type || b.seoPageType || '').trim()
+        const prioA = typePriorityMap[typeA] || (a.priority !== undefined && Number(a.priority) > 0 ? Number(a.priority) : 999)
+        const prioB = typePriorityMap[typeB] || (b.priority !== undefined && Number(b.priority) > 0 ? Number(b.priority) : 999)
+
+        if (prioA !== prioB) {
+          return prioA - prioB
+        }
+
+        const titleA = (a.title || '').toLowerCase()
+        const titleB = (b.title || '').toLowerCase()
+        return titleA.localeCompare(titleB)
+      })
 
     if (activeSeoPages.length === 0) {
       alert('No active SEO pages (Hub, Landing, Topical, Article) found in W3 to audit.')
