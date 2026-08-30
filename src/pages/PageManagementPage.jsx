@@ -243,8 +243,10 @@ export default function PageManagementPage({
       : null
 
     const autoType = override?.autoType || page.type || page.seoPageType || 'Unclassified'
-    const isManualOverride = Boolean(override && override.isManualOverride === true)
-    const effectiveType = isManualOverride ? (override.type || override.seoPageType) : autoType
+    const overrideType = override?.type || override?.seoPageType || ''
+    const isTypeActuallyOverridden = Boolean(override && override.isManualOverride === true && overrideType && overrideType !== (page.autoType || page.type || page.seoPageType))
+    const isManualOverride = isTypeActuallyOverridden
+    const effectiveType = overrideType || autoType
 
     const getPriorityForType = (t, fallback) => {
       if (t === 'Hub') return 1

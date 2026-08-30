@@ -97,7 +97,7 @@ export default function BulkConfigureTargetPhrasesDialog({
         type: it.type || 'Topical',
         seoPageType: it.type || 'Topical',
         isConfigured: true,
-        isManualOverride: true,
+        isManualOverride: Boolean(it.rawPage?.isManualOverride),
         updatedAt: new Date().toISOString()
       }
     })
