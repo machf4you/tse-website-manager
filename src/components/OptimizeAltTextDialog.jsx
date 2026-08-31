@@ -3,63 +3,48 @@ import { updateWordPressMediaAltText } from '../services/wordpressApi'
 import { extractPageImagesApi } from '../services/websiteManagerApi'
 import './OptimizeAltTextDialog.css'
 
-const GENERIC_ALT_PATTERNS = [
-  /^image\d*$/i,
-  /^img\d*$/i,
-  /^dsc\d*$/i,
-  /^photo\d*$/i,
-  /^picture\d*$/i,
-  /^logo$/i,
-  /^icon$/i,
-  /^thumbnail$/i,
-  /^placeholder$/i,
-  /^untitled$/i,
-  /^ascent\d*$/i, // e.g. ascent1, ascent2
-  /^\d+_\d+.*$/i, // e.g. 20180211_102751
-]
-
-function isAltGenericOrMissing(altText = '') {
-  const clean = (altText || '').trim()
-  if (!clean) return { isMissing: true, isGeneric: false }
-  
-  const isGeneric = GENERIC_ALT_PATTERNS.some(pat => pat.test(clean))
-  return { isMissing: false, isGeneric }
-}
-
 const SPECIFIC_GALLERY_PROPOSALS = {
-  'ascent1.jpg': 'Rear House Extension Project with Bi-fold Doors',
-  'ascent2.jpg': 'Completed Dormer Loft Conversion Interior with Skylights',
-  'ascent3.jpg': 'Open-Plan Kitchen and Living Space Extension',
-  'ascent5.jpg': 'Velux Rooflight Loft Conversion Master Bedroom',
-  'ascent6.jpg': 'Luxury Ensuite Bathroom in Converted Loft Space',
-  'ascent7.jpg': 'Custom Hardwood Staircase Installation for Loft Access',
-  'ascent8.jpg': 'Contemporary Loft Conversion Master Bedroom with Fitted Wardrobes',
-  'ascent9.jpg': 'Exterior Elevation of High-Specification Dormer Loft Conversion',
+  'ascent1.jpg': 'Rear House Extension Project with Bi-fold Doors in Surrey',
+  'ascent2.jpg': 'Completed Dormer Loft Conversion Interior with Skylights in Surrey',
+  'ascent3.jpg': 'Open-Plan Kitchen and Living Space Extension in Surrey',
+  'ascent5.jpg': 'Velux Rooflight Loft Conversion Master Bedroom in Surrey',
+  'ascent6.jpg': 'Luxury Ensuite Bathroom in Converted Loft Space in Surrey',
+  'ascent7.jpg': 'Custom Hardwood Staircase Installation for Loft Conversion',
+  'ascent8.jpg': 'Contemporary Master Bedroom Loft Conversion in Surrey',
+  'ascent9.jpg': 'Exterior Elevation of High-Specification Dormer Loft Conversion in Surrey',
 }
 
 function generateSmartProposedAlt(src = '', currentAlt = '', targetPhrase = '') {
   const cleanAlt = (currentAlt || '').trim()
   const lowerSrc = src.toLowerCase()
 
-  // Match known portfolio gallery photos if alt is missing or generic
+  // Match known portfolio gallery photos
   for (const [filename, proposal] of Object.entries(SPECIFIC_GALLERY_PROPOSALS)) {
     if (lowerSrc.includes(filename.toLowerCase())) {
       return proposal
     }
   }
 
-  // Service specific imagery
-  if (lowerSrc.includes('garden-office')) return 'Insulated Bespoke Garden Office Building Installation'
-  if (lowerSrc.includes('renovations')) return 'Complete Residential Property Renovation & Refurbishment'
-  if (lowerSrc.includes('conservatory')) return 'Contemporary Glass Home Extension and Conservatory'
-  if (lowerSrc.includes('loft') || lowerSrc.includes('20180211')) return 'High-Specification Master Bedroom Loft Conversion'
-  if (lowerSrc.includes('extension') || lowerSrc.includes('20180111')) return 'Double-Storey Brick House Extension Project'
+  // Specific content imagery & service cards
+  if (lowerSrc.includes('garden-office')) return 'Bespoke Insulated Garden Office Installation in Surrey'
+  if (lowerSrc.includes('renovations')) return 'Full Home Renovation and Refurbishment in Surrey'
+  if (lowerSrc.includes('conservatory')) return 'Contemporary Home Extension and Modern Conservatory Guide in Surrey'
+  if (lowerSrc.includes('loft-conversions')) return 'Planning Permission Guide for Loft Conversions in Surrey'
+  if (lowerSrc.includes('loft') || lowerSrc.includes('20180211')) return 'High-Specification Dormer Loft Conversion in Surrey'
+  if (lowerSrc.includes('extension') || lowerSrc.includes('20180111')) return 'Double-Storey Brick House Extension in Surrey'
 
-  if (cleanAlt && !isAltGenericOrMissing(cleanAlt).isGeneric) {
+  // Enhance existing short alt text naturally
+  if (cleanAlt) {
+    if (cleanAlt.toLowerCase() === 'loft conversion') return 'High-Specification Dormer Loft Conversion in Surrey'
+    if (cleanAlt.toLowerCase() === 'house extensions') return 'Double-Storey Brick House Extension in Surrey'
+    if (cleanAlt.toLowerCase() === 'garden office') return 'Bespoke Insulated Garden Office Installation in Surrey'
+    if (cleanAlt.toLowerCase() === 'home renovations') return 'Full Home Renovation and Refurbishment in Surrey'
+    if (cleanAlt.toLowerCase().includes('loft') && !cleanAlt.toLowerCase().includes('surrey')) return `${cleanAlt} in Surrey`
+    if (cleanAlt.toLowerCase().includes('extension') && !cleanAlt.toLowerCase().includes('surrey')) return `${cleanAlt} in Surrey`
     return cleanAlt
   }
 
-  // Fallback derivation
+  // Fallback derivation from filename
   try {
     const filename = src.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
     const cleanWords = filename
@@ -69,11 +54,12 @@ function generateSmartProposedAlt(src = '', currentAlt = '', targetPhrase = '') 
       .trim()
 
     if (cleanWords && cleanWords.length > 3) {
-      return cleanWords.replace(/\b\w/g, l => l.toUpperCase())
+      const titleCase = cleanWords.replace(/\b\w/g, l => l.toUpperCase())
+      return `${titleCase} by Ascent Builders in Surrey`
     }
   } catch (e) {}
 
-  return targetPhrase ? `${targetPhrase} Project` : 'Ascent Builders Project Image'
+  return targetPhrase ? `${targetPhrase} Project in Surrey` : 'Ascent Builders Project in Surrey'
 }
 
 export default function OptimizeAltTextDialog({
@@ -85,7 +71,6 @@ export default function OptimizeAltTextDialog({
   onClose,
   onSuccess
 }) {
-  const [filterMode, setFilterMode] = useState('missing_generic') // 'missing_generic' | 'all'
   const [imageRows, setImageRows] = useState([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -116,10 +101,7 @@ export default function OptimizeAltTextDialog({
       const rows = candidateImages.map((img, idx) => {
         const src = typeof img === 'string' ? img : (img?.src || img?.url || '')
         const currentAlt = (typeof img === 'string' ? '' : (img?.alt || '')).trim()
-        const { isMissing, isGeneric } = isAltGenericOrMissing(currentAlt)
-        const proposedAlt = (isMissing || isGeneric)
-          ? generateSmartProposedAlt(src, currentAlt, targetPhrase)
-          : currentAlt
+        const proposedAlt = generateSmartProposedAlt(src, currentAlt, targetPhrase)
 
         let filename = 'image.jpg'
         try {
@@ -132,9 +114,7 @@ export default function OptimizeAltTextDialog({
           filename,
           currentAlt,
           newAlt: proposedAlt,
-          isMissing,
-          isGeneric,
-          isSelected: isMissing || isGeneric, // preselect missing/generic
+          isSelected: true, // Selected for push by default
           originalAlt: currentAlt
         }
       })
@@ -173,7 +153,7 @@ export default function OptimizeAltTextDialog({
   const handlePush = async () => {
     const selected = imageRows.filter(r => r.isSelected && r.newAlt.trim().length > 0)
     if (selected.length === 0) {
-      alert('Please select at least one image with a valid Alt Text to push.')
+      alert('Please select at least one image with a valid Proposed Alt Text to push.')
       return
     }
 
@@ -219,7 +199,6 @@ export default function OptimizeAltTextDialog({
     }
   }
 
-  const missingGenericCount = imageRows.filter(r => r.isMissing || r.isGeneric).length
   const totalCount = imageRows.length
   const selectedCount = imageRows.filter(r => r.isSelected && r.newAlt.trim().length > 0).length
 
@@ -233,7 +212,7 @@ export default function OptimizeAltTextDialog({
             <div className="oat-badge">W4 | IMAGE ALT TEXT OPTIMIZATION</div>
             <h2 className="oat-title">Optimise Image Alt Text</h2>
             <p className="oat-subtitle">
-              Review and configure descriptive, keyword-aligned alt text for genuine page content imagery.
+              Review current alt text and configure descriptive, keyword-aligned proposed alt text for genuine page content imagery.
             </p>
           </div>
           <button type="button" className="oat-close-btn" onClick={onClose}>✕</button>
@@ -244,10 +223,6 @@ export default function OptimizeAltTextDialog({
           <div className="oat-toolbar-left">
             <div className="oat-counter-pill">
               <strong style={{ color: '#f8fafc' }}>{totalCount} Content Images</strong>
-              <span style={{ color: 'rgba(255,255,255,0.25)' }}>|</span>
-              <span style={{ color: missingGenericCount > 0 ? '#f87171' : '#34d399', fontWeight: '600' }}>
-                {missingGenericCount} Missing / Generic
-              </span>
             </div>
           </div>
           <div className="oat-toolbar-right">
@@ -293,8 +268,8 @@ export default function OptimizeAltTextDialog({
                 <tr>
                   <th style={{ width: '44px', textAlign: 'center' }}>Push</th>
                   <th style={{ width: '115px', textAlign: 'center' }}>Preview</th>
-                  <th style={{ width: '28%' }}>Image Filename / URL</th>
-                  <th style={{ width: '24%' }}>CURRENT ALT TEXT</th>
+                  <th style={{ width: '26%' }}>Image Filename / URL</th>
+                  <th style={{ width: '26%' }}>CURRENT ALT TEXT</th>
                   <th style={{ width: '44%' }}>PROPOSED ALT TEXT</th>
                 </tr>
               </thead>
@@ -327,29 +302,20 @@ export default function OptimizeAltTextDialog({
                       <div className="oat-filepath" title={row.src}>{row.src}</div>
                     </td>
                     <td>
-                      {row.isMissing ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span className="oat-badge-status missing">🔴 Missing Alt Text</span>
+                      <div className="oat-current-alt-cell">
+                        {row.currentAlt ? (
+                          <span className="oat-current-alt-text">"{row.currentAlt}"</span>
+                        ) : (
                           <span className="oat-alt-empty">&lt;Empty / Not Set&gt;</span>
-                        </div>
-                      ) : row.isGeneric ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span className="oat-badge-status generic">🟡 Generic Alt Text</span>
-                          <span className="oat-current-alt">"{row.currentAlt}"</span>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <span className="oat-badge-status configured">🟢 Configured</span>
-                          <span className="oat-current-alt">"{row.currentAlt}"</span>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                     <td>
                       <input
                         type="text"
                         className="oat-input-alt"
                         value={row.newAlt}
-                        placeholder="Enter descriptive alt text..."
+                        placeholder="Enter descriptive proposed alt text..."
                         onChange={e => handleAltChange(row.id, e.target.value)}
                       />
                     </td>
@@ -365,8 +331,8 @@ export default function OptimizeAltTextDialog({
           <div className="oat-footer-summary">
             <span>{totalCount} Content Images</span>
             <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-            <span style={{ color: missingGenericCount > 0 ? '#f87171' : '#34d399', fontWeight: '600' }}>
-              {missingGenericCount} Missing / Generic
+            <span style={{ color: selectedCount > 0 ? '#38bdf8' : '#94a3b8', fontWeight: '600' }}>
+              {selectedCount} Selected for Push
             </span>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
