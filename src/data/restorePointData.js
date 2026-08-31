@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.83-w4-alt-text-operational',
+    version: 'v1.83-w4-alt-text-operational',
+    gitTag: 'v1.83-w4-alt-text-operational',
+    commit: '[AUTO]',
+    date: '31-08-2026 16:50',
+    title: 'W4 Image Alt Text Operational & Live Push Pipeline (V1.83)',
+    description: 'Stable W4 Image Alt Text workflow. Content-image filtering excludes logos, badges and decorative images. Current and Proposed Alt Text fields work correctly. Proposed text is pushed to WordPress and Elementor, including live-page HTML updates. Exact Media ID matching prevents duplicate filename errors. Green pushed-status ticks persist across sessions, pushed images reopen unchecked, and the audit status/checklist recalculates correctly after changes.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.83-w4-alt-text-operational.md'
+  },
+  {
     id: 'v1.60-w4-full-sync-audit-push-workflow-complete',
     version: 'v1.60-w4-sync-audit-push-workflow',
     gitTag: 'v1.60-w4-full-sync-audit-push-workflow-complete',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '29-08-2026 10:55',
     title: 'W4 Complete Sync Page, Re-run Audit, Timestamps, Stale Alerts & Live Push Workflow (V1.60)',
     description: 'Permanent W4 header action buttons (Sync Page & Re-run Audit), independent single-page WordPress sync (syncSingleWordPressPage), reliable domain URL resolution for Page Auditor crawler, live SQLite multi-key persistence, real-time stale warning alert/clearance, and verified Yoast/Elementor live Push to WP.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.60-w4-full-sync-audit-push-workflow-complete.md'
   },
   {
