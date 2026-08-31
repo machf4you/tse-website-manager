@@ -7,7 +7,7 @@
  * Status values: 'loading' | 'done' | 'error'
  */
 
-import { getWebsitesApi, API_BASE_URL } from './websiteManagerApi.js'
+import { getWebsitesApi, API_BASE_URL, pushMediaAltTextApi } from './websiteManagerApi.js'
 
 export const WP_STEPS = [
   { id: 'api',   label: 'Checking WordPress REST API'  },
@@ -694,20 +694,15 @@ export async function updateWordPressMediaAltText({ site, page, updates = [] }) 
 
   // 1. Try pushing via backend API endpoint (handles CORS, Elementor JSON parsing & DB credentials)
   try {
-    const res = await fetch(`${API_BASE_URL}/wordpress/media/alt-text`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        siteId: site?.id,
-        siteUrl: site?.url,
-        pageId: page?.id || page?.wpId,
-        pageUrl: page?.url || page?.link,
-        updates
-      })
+    const data = await pushMediaAltTextApi({
+      siteId: site?.id,
+      siteUrl: site?.url,
+      pageId: page?.id || page?.wpId,
+      pageUrl: page?.url || page?.link,
+      updates
     })
 
-    if (res.ok) {
-      const data = await res.json()
+    if (data && (data.success || data.updatedCount > 0 || (data.successUpdates && data.successUpdates.length > 0))) {
       return {
         success: data.success,
         updatedCount: data.updatedCount || 0,

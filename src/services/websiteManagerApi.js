@@ -39,6 +39,13 @@ async function fetchJson(url, options = {}, timeoutMs = 2500) {
 }
 
 // 1. CONNECTED WEBSITES
+export async function pushMediaAltTextApi({ siteId, siteUrl, pageId, pageUrl, updates = [] }) {
+  return await fetchJson(`${API_BASE_URL}/wordpress/media/alt-text`, {
+    method: 'POST',
+    body: JSON.stringify({ siteId, siteUrl, pageId, pageUrl, updates })
+  }, 60000)
+}
+
 export async function getWebsitesApi() {
   try {
     const list = await fetchJson(`${API_BASE_URL}/websites`)
