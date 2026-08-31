@@ -1321,11 +1321,8 @@ export default function PageAuditResultsPage({
           images={snap.images || liveAuditData?.page_snapshot?.images || []}
           onClose={() => setIsAltTextModalOpen(false)}
           onSuccess={(res) => {
-            if (res?.hasChanges) {
-              if (onSyncFromWordPress) {
-                onSyncFromWordPress()
-              }
-              setIsRerunRequested(true)
+            if (res?.hasChanges && onSyncFromWordPress) {
+              onSyncFromWordPress()
             }
           }}
         />

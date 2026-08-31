@@ -84,6 +84,40 @@ export function isExcludedContentImage(src = '', alt = '') {
   return false
 }
 
+function getPersistenceKey(site, page) {
+  const siteKey = site?.id || site?.domain || site?.url || '1'
+  const pageKey = page?.id || page?.slug || page?.url || 'page'
+  return `tse_w4_pushed_alt_${siteKey}_${pageKey}`
+}
+
+function getStoredPushedImages(site, page) {
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(getPersistenceKey(site, page)) : null
+    return raw ? JSON.parse(raw) : {}
+  } catch (e) {
+    return {}
+  }
+}
+
+function savePushedImagesToStorage(site, page, successfulUpdates) {
+  try {
+    if (typeof localStorage === 'undefined') return
+    const key = getPersistenceKey(site, page)
+    const stored = getStoredPushedImages(site, page)
+    successfulUpdates.forEach(s => {
+      const src = s.src || ''
+      const filename = src.split('/').pop() || ''
+      const record = { pushedAlt: s.newAlt, timestamp: Date.now() }
+      if (src) stored[src] = record
+      if (filename) stored[filename] = record
+      if (s.id) stored[s.id] = record
+    })
+    localStorage.setItem(key, JSON.stringify(stored))
+  } catch (e) {
+    console.warn('[AltTextDialog] Failed to save pushed state:', e)
+  }
+}
+
 export default function OptimizeAltTextDialog({
   isOpen,
   page,
@@ -145,23 +179,30 @@ export default function OptimizeAltTextDialog({
         return !isExcludedContentImage(src, alt)
       })
 
+      // 4. Retrieve persistent pushed records for this site/page
+      const storedPushed = getStoredPushedImages(site, page)
+
       const rows = filtered.map((img, idx) => {
         const src = typeof img === 'string' ? img : (img?.src || img?.url || '')
-        const currentAlt = (typeof img === 'string' ? '' : (img?.alt || '')).trim()
+        const filename = src.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0] + (src.includes('.') ? '.' + src.split('.').pop().split('?')[0] : '')
+        const rawFilename = src.split('/').pop() || ''
+        const imgId = img?.id || `img-${idx}`
+
+        const pushedRecord = storedPushed[src] || storedPushed[rawFilename] || storedPushed[filename] || storedPushed[imgId]
+        const isAlreadyPushed = Boolean(pushedRecord)
+
+        const liveAlt = (typeof img === 'string' ? '' : (img?.alt || '')).trim()
+        const currentAlt = liveAlt || (pushedRecord ? pushedRecord.pushedAlt : '')
         const proposedAlt = generateSmartProposedAlt(src, currentAlt, targetPhrase)
 
-        let filename = 'image.jpg'
-        try {
-          filename = src.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0] + (src.includes('.') ? '.' + src.split('.').pop().split('?')[0] : '')
-        } catch (e) {}
-
         return {
-          id: img?.id || `img-${idx}`,
+          id: imgId,
           src,
           filename,
           currentAlt,
           newAlt: proposedAlt,
-          isSelected: true,
+          isSelected: !isAlreadyPushed, // Pushed images reopen UNCHECKED; unpushed reopen CHECKED
+          isPushedSuccess: isAlreadyPushed,
           originalAlt: currentAlt
         }
       })
@@ -227,6 +268,8 @@ export default function OptimizeAltTextDialog({
 
       if (pushedCount > 0) {
         setHasPushedChanges(true)
+        savePushedImagesToStorage(site, page, successfulList)
+
         // Update local table state: set currentAlt = newAlt, uncheck ONLY successful images, and mark isPushedSuccess
         setImageRows(prev => prev.map(row => {
           const isSuccess = successfulList.some(s => s.id === row.id || s.src === row.src)
