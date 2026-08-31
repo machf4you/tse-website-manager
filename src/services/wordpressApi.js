@@ -685,43 +685,61 @@ export async function syncSingleWordPressPage({ site, page }) {
 }
 
 /**
- * Update Alt Text for images in WordPress Media Library
+ * Update Alt Text for images in WordPress Media Library & Elementor structured page data
  */
-export async function updateWordPressMediaAltText({ site, updates = [] }) {
-  if (!updates || updates.length === 0) return { success: true, updatedCount: 0 }
+export async function updateWordPressMediaAltText({ site, page, updates = [] }) {
+  if (!updates || updates.length === 0) {
+    return { success: true, updatedCount: 0, successUpdates: [], failedUpdates: [] }
+  }
 
+  // 1. Try pushing via backend API endpoint (handles CORS, Elementor JSON parsing & DB credentials)
+  try {
+    const res = await fetch(`${API_BASE_URL}/wordpress/media/alt-text`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        siteId: site?.id,
+        siteUrl: site?.url,
+        pageId: page?.id || page?.wpId,
+        pageUrl: page?.url || page?.link,
+        updates
+      })
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      return {
+        success: data.success,
+        updatedCount: data.updatedCount || 0,
+        successUpdates: data.successUpdates || [],
+        failedUpdates: data.failedUpdates || [],
+        elementorUpdated: data.elementorUpdated || false,
+        errors: data.failedUpdates ? data.failedUpdates.map(f => `${f.src}: ${f.error}`) : []
+      }
+    }
+  } catch (backendErr) {
+    console.warn('[WP_MEDIA] Backend push failed, falling back to direct REST client:', backendErr)
+  }
+
+  // 2. Client-side fallback with resolved credentials
+  const { username, password } = await resolveSiteCredentials(site, page)
   let base = (site?.url || '').trim().replace(/\/+$/, '')
   if (!/^https?:\/\//i.test(base)) {
     base = 'https://' + base
   }
 
-  // Get credentials
-  let username = (site?.wpUsername || site?.username || '').trim()
-  let password = (site?.wpAppPassword || site?.appPassword || site?.applicationPassword || '').trim()
-
-  if (!username || !password) {
-    try {
-      const websites = await getWebsitesApi()
-      const currentSite = websites.find(s => String(s.id) === String(site?.id))
-      if (currentSite) {
-        username = (currentSite.wpUsername || currentSite.username || '').trim()
-        password = (currentSite.wpAppPassword || currentSite.appPassword || '').trim()
-      }
-    } catch (_e) {}
-  }
-
   const authHeader = 'Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)
-
-  let updatedCount = 0
-  const errors = []
+  const successUpdates = []
+  const failedUpdates = []
 
   for (const item of updates) {
     const newAlt = (item.newAlt || item.altText || '').trim()
     const imgSrc = item.src || item.url || ''
     let mediaId = item.id || item.mediaId
 
+    if (!newAlt) continue
+
     try {
-      // If mediaId is not directly known, search media library by filename slug
       if (!mediaId && imgSrc) {
         const rawFilename = imgSrc.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
         if (rawFilename) {
@@ -738,7 +756,6 @@ export async function updateWordPressMediaAltText({ site, updates = [] }) {
         }
       }
 
-      // Update attachment alt_text in WordPress Media Library
       if (mediaId) {
         const updateRes = await fetch(`${base}/wp-json/wp/v2/media/${mediaId}`, {
           method: 'POST',
@@ -747,25 +764,30 @@ export async function updateWordPressMediaAltText({ site, updates = [] }) {
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },
-          body: JSON.stringify({ alt_text: newAlt })
+          body: JSON.stringify({
+            alt_text: newAlt,
+            title: newAlt
+          })
         })
         if (updateRes.ok) {
-          updatedCount++
+          successUpdates.push({ id: item.id || mediaId, mediaId, src: imgSrc, newAlt })
         } else {
-          errors.push(`Media ${mediaId} returned status ${updateRes.status}`)
+          failedUpdates.push({ src: imgSrc, error: `Media ${mediaId} returned status ${updateRes.status}` })
         }
       } else {
-        errors.push(`Could not resolve media ID for ${imgSrc}`)
+        failedUpdates.push({ src: imgSrc, error: `Could not resolve media ID for ${imgSrc}` })
       }
     } catch (err) {
-      errors.push(`Failed updating image ${imgSrc}: ${err.message}`)
+      failedUpdates.push({ src: imgSrc, error: `Failed updating image: ${err.message}` })
     }
   }
 
   return {
-    success: updatedCount > 0 || errors.length === 0,
-    updatedCount,
-    errors
+    success: successUpdates.length > 0,
+    updatedCount: successUpdates.length,
+    successUpdates,
+    failedUpdates,
+    errors: failedUpdates.map(f => `${f.src}: ${f.error}`)
   }
 }
 

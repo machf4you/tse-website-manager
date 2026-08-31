@@ -152,6 +152,192 @@ app.get('/api/images/extract', async (req, res) => {
   }
 })
 
+// Dual-update Alt Text Push Pipeline: Updates WordPress Media Attachments & Structured Elementor Page Data
+app.post('/api/wordpress/media/alt-text', async (req, res) => {
+  try {
+    const { siteId, siteUrl, pageId, pageUrl, updates = [] } = req.body || {}
+    if (!updates || !Array.isArray(updates) || updates.length === 0) {
+      return res.json({ success: true, updatedCount: 0, successUpdates: [], failedUpdates: [] })
+    }
+
+    // 1. Resolve site & credentials from DB
+    let targetSite = null
+    if (siteId) {
+      targetSite = db.prepare(`SELECT * FROM websites WHERE id = ?`).get(siteId)
+    }
+    if (!targetSite && siteUrl) {
+      const cleanUrl = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+      targetSite = db.prepare(`SELECT * FROM websites WHERE url LIKE ?`).get(`%${cleanUrl}%`)
+    }
+
+    const config = targetSite?.config_data ? JSON.parse(targetSite.config_data) : {}
+    const wpUser = config.wpUser || targetSite?.wpUser || ''
+    const wpPass = config.wpPass || targetSite?.wpPass || ''
+
+    if (!wpUser || !wpPass) {
+      return res.status(400).json({ success: false, error: 'WordPress credentials not found for this site.' })
+    }
+
+    const base = (targetSite?.url || siteUrl || '').replace(/\/+$/, '')
+    const authHeader = 'Basic ' + Buffer.from(`${wpUser}:${wpPass.replace(/\s/g, '')}`).toString('base64')
+
+    const successUpdates = []
+    const failedUpdates = []
+
+    // 2. Update Media Attachments
+    for (const item of updates) {
+      const newAlt = (item.newAlt || item.altText || '').trim()
+      const imgSrc = item.src || item.url || ''
+      let mediaId = item.id || item.mediaId
+
+      if (!newAlt) continue
+
+      try {
+        // Resolve mediaId if missing by filename search
+        if (!mediaId && imgSrc) {
+          const rawFilename = imgSrc.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
+          if (rawFilename) {
+            const sRes = await fetch(`${base}/wp-json/wp/v2/media?search=${encodeURIComponent(rawFilename)}&per_page=5`, {
+              headers: { Authorization: authHeader, Accept: 'application/json' }
+            })
+            if (sRes.ok) {
+              const sData = await sRes.json()
+              if (Array.isArray(sData) && sData.length > 0) {
+                const match = sData.find(m => m.source_url === imgSrc || m.slug === rawFilename.toLowerCase()) || sData[0]
+                mediaId = match?.id
+              }
+            }
+          }
+        }
+
+        if (mediaId) {
+          const mRes = await fetch(`${base}/wp-json/wp/v2/media/${mediaId}`, {
+            method: 'POST',
+            headers: {
+              Authorization: authHeader,
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify({
+              alt_text: newAlt,
+              title: newAlt
+            })
+          })
+
+          if (mRes.ok) {
+            successUpdates.push({ id: item.id || mediaId, mediaId, src: imgSrc, newAlt })
+          } else {
+            const errText = await mRes.text()
+            failedUpdates.push({ src: imgSrc, error: `WordPress Media API returned ${mRes.status}: ${errText.slice(0, 100)}` })
+          }
+        } else {
+          failedUpdates.push({ src: imgSrc, error: 'Could not resolve WordPress Media ID' })
+        }
+      } catch (err) {
+        failedUpdates.push({ src: imgSrc, error: err.message })
+      }
+    }
+
+    // 3. Update Structured Elementor Page Data if applicable
+    let elementorUpdated = false
+    let resolvedPageId = pageId
+    if (!resolvedPageId && pageUrl) {
+      const pSlug = pageUrl.replace(/\/+$/, '').split('/').pop()
+      if (pSlug) {
+        try {
+          const pLookup = await fetch(`${base}/wp-json/wp/v2/pages?slug=${encodeURIComponent(pSlug)}&context=edit`, {
+            headers: { Authorization: authHeader, Accept: 'application/json' }
+          })
+          if (pLookup.ok) {
+            const pList = await pLookup.json()
+            if (Array.isArray(pList) && pList.length > 0 && pList[0].id) {
+              resolvedPageId = pList[0].id
+            }
+          }
+        } catch (_e) {}
+      }
+    }
+
+    if (resolvedPageId && successUpdates.length > 0) {
+      try {
+        const pageRes = await fetch(`${base}/wp-json/wp/v2/pages/${resolvedPageId}?context=edit`, {
+          headers: { Authorization: authHeader, Accept: 'application/json' }
+        })
+        if (pageRes.ok) {
+          const pageData = await pageRes.json()
+          const elemRaw = pageData.meta?._elementor_data || pageData._elementor_data
+          if (elemRaw) {
+            const tree = typeof elemRaw === 'string' ? JSON.parse(elemRaw) : elemRaw
+            let modified = false
+
+            function updateTreeImages(nodes) {
+              if (!Array.isArray(nodes)) return
+              for (const node of nodes) {
+                if (typeof node === 'object' && node !== null) {
+                  const st = node.settings || {}
+                  // Gallery widgets
+                  if (Array.isArray(st.gallery)) {
+                    for (const gItem of st.gallery) {
+                      const match = successUpdates.find(u => u.mediaId === gItem.id || (gItem.url && gItem.url.includes(u.src.split('/').pop())))
+                      if (match) {
+                        gItem.alt = match.newAlt
+                        gItem.title = match.newAlt
+                        modified = true
+                      }
+                    }
+                  }
+                  // Standalone image widgets
+                  if (st.image && typeof st.image === 'object') {
+                    const match = successUpdates.find(u => u.mediaId === st.image.id || (st.image.url && st.image.url.includes(u.src.split('/').pop())))
+                    if (match) {
+                      st.image.alt = match.newAlt
+                      modified = true
+                    }
+                  }
+                  if (Array.isArray(node.elements)) {
+                    updateTreeImages(node.elements)
+                  }
+                }
+              }
+            }
+
+            updateTreeImages(tree)
+
+            if (modified) {
+              await fetch(`${base}/wp-json/wp/v2/pages/${resolvedPageId}`, {
+                method: 'POST',
+                headers: {
+                  Authorization: authHeader,
+                  'Content-Type': 'application/json',
+                  Accept: 'application/json'
+                },
+                body: JSON.stringify({
+                  meta: {
+                    _elementor_data: JSON.stringify(tree)
+                  }
+                })
+              })
+              elementorUpdated = true
+            }
+          }
+        }
+      } catch (elemErr) {
+        console.warn('[WM_API] Elementor structured update error:', elemErr)
+      }
+    }
+
+    res.json({
+      success: successUpdates.length > 0,
+      updatedCount: successUpdates.length,
+      successUpdates,
+      failedUpdates,
+      elementorUpdated
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // ==========================================
 // 1. CONNECTED WEBSITES ENDPOINTS
 // ==========================================

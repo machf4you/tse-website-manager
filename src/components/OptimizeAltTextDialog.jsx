@@ -162,6 +162,7 @@ export default function OptimizeAltTextDialog({
 
     try {
       const updates = selected.map(r => ({
+        id: r.id,
         src: r.src,
         newAlt: r.newAlt.trim()
       }))
@@ -172,27 +173,45 @@ export default function OptimizeAltTextDialog({
         updates
       })
 
-      if (result.success) {
+      if (result.success && (result.updatedCount > 0 || (result.successUpdates && result.successUpdates.length > 0))) {
+        const pushedCount = result.updatedCount || result.successUpdates?.length || selected.length
+        
+        // Update local table state: set currentAlt = newAlt and uncheck pushed images
+        setImageRows(prev => prev.map(row => {
+          const wasPushed = selected.some(s => s.id === row.id || s.src === row.src)
+          if (wasPushed) {
+            return {
+              ...row,
+              currentAlt: row.newAlt,
+              isSelected: false
+            }
+          }
+          return row
+        }))
+
         setSaveStatus({
           type: 'success',
-          message: `Successfully pushed Alt Text for ${result.updatedCount || selected.length} image(s) to WordPress media attachments!`
+          message: `✓ ${pushedCount} Image${pushedCount > 1 ? 's' : ''} Pushed Successfully to WordPress!`
         })
+
         if (onSuccess) {
           onSuccess(result)
         }
-        setTimeout(() => {
-          onClose()
-        }, 1500)
       } else {
+        const failedCount = result.failedUpdates?.length || selected.length
+        const errorDetails = result.errors?.length > 0
+          ? result.errors.join('; ')
+          : result.error || 'WordPress rejected the media update.'
+        
         setSaveStatus({
           type: 'error',
-          message: result.errors?.join('; ') || 'Failed to update Alt Text in WordPress.'
+          message: `❌ Failed to push ${failedCount} image(s): ${errorDetails}`
         })
       }
     } catch (err) {
       setSaveStatus({
         type: 'error',
-        message: err.message || 'An error occurred during WordPress push.'
+        message: `❌ Error pushing to WordPress: ${err.message || 'Network request failed'}`
       })
     } finally {
       setIsSaving(false)
@@ -281,6 +300,7 @@ export default function OptimizeAltTextDialog({
                         type="checkbox"
                         className="oat-checkbox"
                         checked={row.isSelected}
+                        disabled={isSaving}
                         onChange={() => handleToggleSelect(row.id)}
                       />
                     </td>
@@ -315,6 +335,7 @@ export default function OptimizeAltTextDialog({
                         type="text"
                         className="oat-input-alt"
                         value={row.newAlt}
+                        disabled={isSaving}
                         placeholder="Enter descriptive proposed alt text..."
                         onChange={e => handleAltChange(row.id, e.target.value)}
                       />
@@ -345,7 +366,7 @@ export default function OptimizeAltTextDialog({
               disabled={selectedCount === 0 || isSaving}
               onClick={handlePush}
             >
-              {isSaving ? 'Pushing to WordPress...' : `Push Alt Text to WordPress (${selectedCount}) ▷`}
+              {isSaving ? '⟳ Pushing to WordPress...' : `Push Proposed Alt Text to WordPress (${selectedCount}) ▷`}
             </button>
           </div>
         </div>
