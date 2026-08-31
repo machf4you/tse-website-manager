@@ -186,7 +186,8 @@ export default function OptimizeAltTextDialog({
         const src = typeof img === 'string' ? img : (img?.src || img?.url || '')
         const filename = src.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0] + (src.includes('.') ? '.' + src.split('.').pop().split('?')[0] : '')
         const rawFilename = src.split('/').pop() || ''
-        const imgId = img?.id || `img-${idx}`
+        const mediaId = img?.mediaId || (img?.id && /^\d+$/.test(String(img.id)) ? parseInt(img.id, 10) : null)
+        const imgId = mediaId ? String(mediaId) : (img?.id || `img-${idx}`)
 
         const pushedRecord = storedPushed[src] || storedPushed[rawFilename] || storedPushed[filename] || storedPushed[imgId]
         const isAlreadyPushed = Boolean(pushedRecord)
@@ -197,6 +198,7 @@ export default function OptimizeAltTextDialog({
 
         return {
           id: imgId,
+          mediaId,
           src,
           filename,
           currentAlt,
@@ -252,6 +254,7 @@ export default function OptimizeAltTextDialog({
     try {
       const updates = selected.map(r => ({
         id: r.id,
+        mediaId: r.mediaId,
         src: r.src,
         newAlt: r.newAlt.trim()
       }))

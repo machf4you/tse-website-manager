@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.81',
-  buildHash: 'w4alttextpersistv81',
-  buildTimestamp: 1788150000000,
+  version: '1.82',
+  buildHash: 'w4exactmediaid82',
+  buildTimestamp: 1788160000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -116,8 +116,12 @@ app.get('/api/images/extract', async (req, res) => {
 
       if (isExcluded(absUrl, alt, attrs)) continue
 
+      // Extract numeric WordPress Media ID directly from wp-image-(ID) class
+      const wpImageMatch = attrs.match(/\bwp-image-(\d+)\b/i) || attrs.match(/\bclass=["'][^"']*wp-image-(\d+)[^"']*["']/i)
+      const mediaId = wpImageMatch ? parseInt(wpImageMatch[1], 10) : null
+
       seen.add(absUrl)
-      images.push({ src: absUrl, alt, source: 'img' })
+      images.push({ id: mediaId ? String(mediaId) : undefined, mediaId, src: absUrl, alt, source: 'img' })
     }
 
     // 2. Elementor Gallery items (.e-gallery-image[data-thumbnail])
@@ -142,8 +146,11 @@ app.get('/api/images/extract', async (req, res) => {
 
       if (isExcluded(absUrl, alt, attrs)) continue
 
+      const attachMatch = attrs.match(/\bdata-attachment-id=["'](\d+)["']/i) || attrs.match(/\bwp-image-(\d+)\b/i)
+      const mediaId = attachMatch ? parseInt(attachMatch[1], 10) : null
+
       seen.add(absUrl)
-      images.push({ src: absUrl, alt, source: 'gallery' })
+      images.push({ id: mediaId ? String(mediaId) : undefined, mediaId, src: absUrl, alt, source: 'gallery' })
     }
 
     res.json({ success: true, count: images.length, images })
@@ -207,18 +214,27 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
       if (!newAlt) continue
 
       try {
-        // Resolve mediaId if missing by filename search
+        // Resolve mediaId if missing by strict exact filename matching
         if (!mediaId && imgSrc) {
-          const rawFilename = imgSrc.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
-          if (rawFilename) {
-            const sRes = await fetch(`${base}/wp-json/wp/v2/media?search=${encodeURIComponent(rawFilename)}&per_page=10`, {
+          const parsedUrl = new URL(imgSrc, 'https://dummy.local')
+          const fullFilename = parsedUrl.pathname.split('/').pop() || ''
+          const baseSlug = fullFilename.replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
+
+          if (baseSlug) {
+            const sRes = await fetch(`${base}/wp-json/wp/v2/media?search=${encodeURIComponent(baseSlug)}&per_page=20`, {
               headers: { Authorization: authHeader, Accept: 'application/json' }
             })
             if (sRes.ok) {
               const sData = await sRes.json()
               if (Array.isArray(sData) && sData.length > 0) {
-                const match = sData.find(m => m.source_url === imgSrc || m.slug === rawFilename.toLowerCase() || (m.source_url && m.source_url.includes(rawFilename))) || sData[0]
-                mediaId = match?.id
+                // Strict exact match: exact source_url, exact filename with extension, or exact base slug
+                const exactMatch = sData.find(m => {
+                  if (!m.source_url) return false
+                  const mFilename = m.source_url.split('/').pop() || ''
+                  const mClean = mFilename.replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
+                  return m.source_url === imgSrc || mFilename.toLowerCase() === fullFilename.toLowerCase() || mClean.toLowerCase() === baseSlug.toLowerCase()
+                })
+                mediaId = exactMatch?.id || null
               }
             }
           }
