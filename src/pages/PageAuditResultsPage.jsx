@@ -1320,8 +1320,13 @@ export default function PageAuditResultsPage({
           targetPhrase={targetPhrase}
           images={snap.images || liveAuditData?.page_snapshot?.images || []}
           onClose={() => setIsAltTextModalOpen(false)}
-          onSuccess={(_res) => {
-            setIsAltTextModalOpen(false)
+          onSuccess={(res) => {
+            if (res?.hasChanges) {
+              if (onSyncFromWordPress) {
+                onSyncFromWordPress()
+              }
+              setIsRerunRequested(true)
+            }
           }}
         />
 

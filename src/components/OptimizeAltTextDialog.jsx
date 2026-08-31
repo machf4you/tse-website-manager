@@ -75,9 +75,24 @@ export default function OptimizeAltTextDialog({
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState(null)
+  const [hasPushedChanges, setHasPushedChanges] = useState(false)
+
+  const handleCloseDialog = () => {
+    if (isSaving) return
+    if (hasPushedChanges && onSuccess) {
+      onSuccess({ hasChanges: true })
+    }
+    if (onClose) {
+      onClose()
+    }
+  }
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      setSaveStatus(null)
+      setHasPushedChanges(false)
+      return
+    }
 
     async function loadImages() {
       let candidateImages = Array.isArray(images) && images.length > 0 ? images : []
@@ -178,6 +193,7 @@ export default function OptimizeAltTextDialog({
       const pushedCount = result.updatedCount || successfulList.length
 
       if (pushedCount > 0) {
+        setHasPushedChanges(true)
         // Update local table state: set currentAlt = newAlt and uncheck ONLY successful images
         setImageRows(prev => prev.map(row => {
           const isSuccess = successfulList.some(s => s.id === row.id || s.src === row.src)
@@ -201,10 +217,6 @@ export default function OptimizeAltTextDialog({
             type: 'error',
             message: `✓ ${pushedCount} Image(s) Pushed | ❌ ${failedList.length} Failed: ${failedList.map(f => f.error || f.src).join('; ')}`
           })
-        }
-
-        if (onSuccess) {
-          onSuccess(result)
         }
       } else {
         const failedCount = failedList.length || selected.length
@@ -231,7 +243,7 @@ export default function OptimizeAltTextDialog({
   const selectedCount = imageRows.filter(r => r.isSelected && r.newAlt.trim().length > 0).length
 
   return (
-    <div className="oat-overlay" onClick={onClose}>
+    <div className="oat-overlay" onClick={handleCloseDialog}>
       <div className="oat-modal" onClick={e => e.stopPropagation()}>
         
         {/* Header */}
@@ -243,7 +255,7 @@ export default function OptimizeAltTextDialog({
               Review current alt text and configure descriptive, keyword-aligned proposed alt text for genuine page content imagery.
             </p>
           </div>
-          <button type="button" className="oat-close-btn" onClick={onClose}>✕</button>
+          <button type="button" className="oat-close-btn" onClick={handleCloseDialog}>✕</button>
         </div>
 
         {/* Toolbar with Counter and Selection Actions */}
@@ -366,8 +378,8 @@ export default function OptimizeAltTextDialog({
             </span>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button type="button" className="oat-btn-cancel" onClick={onClose} disabled={isSaving}>
-              Cancel
+            <button type="button" className="oat-btn-cancel" onClick={handleCloseDialog} disabled={isSaving}>
+              {hasPushedChanges ? '✓ Done' : 'Close'}
             </button>
             <button
               type="button"
