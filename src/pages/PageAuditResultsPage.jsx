@@ -81,6 +81,7 @@ export default function PageAuditResultsPage({
   const [auditError, setAuditError] = useState(null)
   const [activeFixIssue, setActiveFixIssue] = useState(null)
   const [isAltTextModalOpen, setIsAltTextModalOpen] = useState(false)
+  const [altUpdateTick, setAltUpdateTick] = useState(0)
   const [localOverrides, setLocalOverrides] = useState({})
   const [localSyncTimestamp, setLocalSyncTimestamp] = useState(null)
   const [isSyncingPage, setIsSyncingPage] = useState(false)
@@ -706,9 +707,71 @@ export default function PageAuditResultsPage({
       return 'Pass'
     }
 
-    const missingAltCount = snap.image_count !== undefined && snap.image_alt_coverage !== undefined
-      ? Math.round((1 - snap.image_alt_coverage) * snap.image_count)
-      : 0
+    // Persisted W4 pushed state for this site & page
+    const w4StorageKey = `tse_w4_pushed_alt_${site?.id || site?.domain || site?.url || '1'}_${rawCurrentPage?.id || rawCurrentPage?.slug || rawCurrentPage?.url || 'page'}`
+    const storedPushed = (() => {
+      try {
+        const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(w4StorageKey) : null
+        return raw ? JSON.parse(raw) : {}
+      } catch (e) {
+        return {}
+      }
+    })()
+
+    const isExcludedContentImg = (src = '', alt = '') => {
+      const lowerSrc = (src || '').toLowerCase()
+      const lowerAlt = (alt || '').toLowerCase()
+      if (/i\.ytimg\.com|youtube\.com|wp-rocket|plugins\/|gravatar\.com|svg\+xml/.test(lowerSrc)) return true
+      if (/logo|site-logo|brand-logo|custom-logo/.test(lowerSrc) || /\blogo\b/.test(lowerAlt)) return true
+      if (/checkatrade|trustmark|master-builder|master-tradesman|google\.webp|accreditation|badge|client-logo|review/.test(lowerSrc) ||
+          /checkatrade|trustmark|master builder|master tradesman|fmb|accreditation|badge/.test(lowerAlt)) return true
+      if (/background|bg-|slider|slideshow|hero/.test(lowerSrc)) return true
+      return false
+    }
+
+    const isMissingOrWeak = (alt = '', src = '') => {
+      const clean = (alt || '').trim().toLowerCase()
+      if (!clean) return true
+      const filename = (src || '').split('/').pop().replace(/\.[^/.]+$/, '').toLowerCase()
+      if (clean === filename) return true
+      if (['image', 'img', 'photo', 'picture', 'logo', 'icon', 'banner', 'untitled', 'ascent'].includes(clean)) return true
+      return false
+    }
+
+    const rawImgs = Array.isArray(snap.images) ? snap.images : []
+    const genuineContentImgs = rawImgs.filter(img => {
+      const src = typeof img === 'string' ? img : (img?.src || img?.url || '')
+      const alt = typeof img === 'string' ? '' : (img?.alt || '')
+      return !isExcludedContentImg(src, alt)
+    })
+
+    let missingAltCount = 0
+    const totalContentImages = genuineContentImgs.length
+
+    if (totalContentImages > 0) {
+      missingAltCount = genuineContentImgs.filter(img => {
+        const src = typeof img === 'string' ? img : (img?.src || img?.url || '')
+        const filename = src.split('/').pop() || ''
+        const rawAlt = typeof img === 'string' ? '' : (img?.alt || '')
+        if (storedPushed[src] || storedPushed[filename]) return false
+        return isMissingOrWeak(rawAlt, src)
+      }).length
+    } else {
+      const initialMissing = snap.image_count !== undefined && snap.image_alt_coverage !== undefined
+        ? Math.round((1 - snap.image_alt_coverage) * snap.image_count)
+        : 0
+      const pushedCount = Object.keys(storedPushed).length
+      missingAltCount = Math.max(0, initialMissing - pushedCount)
+    }
+
+    const totalAuditedImages = totalContentImages > 0 ? totalContentImages : (snap.image_count || 0)
+    const altStatus = missingAltCount === 0 ? 'Pass' : 'Fail'
+    const altRec = altStatus === 'Pass'
+      ? `Pass — All ${totalAuditedImages} content image(s) have descriptive alt text.`
+      : `Fail — ${missingAltCount} image(s) missing alt text. Add descriptive alt tags.`
+    const altCurrentVal = altStatus === 'Pass'
+      ? `0 of ${totalAuditedImages} images missing alt text`
+      : `${missingAltCount} of ${totalAuditedImages} images missing alt text`
 
     // Core Token Coverage for H2 Evaluation
     const H2_STOP_WORDS = new Set([
@@ -882,11 +945,6 @@ export default function PageAuditResultsPage({
       ? `Pass — ${imgCount} image(s) present.`
       : `Fail — 0 images found. Add relevant images with descriptive alt text.`
 
-    const altStatus = missingAltCount === 0 ? 'Pass' : 'Fail'
-    const altRec = altStatus === 'Pass'
-      ? `Pass — All ${imgCount} image(s) have descriptive alt text.`
-      : `Fail — ${missingAltCount} image(s) missing alt text. Add descriptive alt tags.`
-
     auditElements = [
       {
         id: 'meta_title',
@@ -946,7 +1004,7 @@ export default function PageAuditResultsPage({
       {
         id: 'missing_alt',
         name: 'Images Missing Alt Text',
-        currentValue: `${missingAltCount} of ${imgCount} images missing alt text`,
+        currentValue: altCurrentVal,
         hasTargetPhrase: 'N/A',
         status: altStatus,
         recommendation: altRec,
@@ -1321,8 +1379,11 @@ export default function PageAuditResultsPage({
           images={snap.images || liveAuditData?.page_snapshot?.images || []}
           onClose={() => setIsAltTextModalOpen(false)}
           onSuccess={(res) => {
-            if (res?.hasChanges && onSyncFromWordPress) {
-              onSyncFromWordPress()
+            if (res?.hasChanges) {
+              setAltUpdateTick(t => t + 1)
+              if (onSyncFromWordPress) {
+                onSyncFromWordPress()
+              }
             }
           }}
         />
