@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.78',
-  buildHash: 'w4alttextpersistdone78',
-  buildTimestamp: 1788120000000,
+  version: '1.79',
+  buildHash: 'w4alttextlivepurge79',
+  buildTimestamp: 1788130000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -280,9 +280,12 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
         if (pageRes.ok) {
           const pageData = await pageRes.json()
           const elemRaw = pageData.meta?._elementor_data || pageData._elementor_data
+          let contentRaw = pageData.content?.raw || pageData.content?.rendered || ''
+          let tree = null
+          let modified = false
+
           if (elemRaw) {
-            const tree = typeof elemRaw === 'string' ? JSON.parse(elemRaw) : elemRaw
-            let modified = false
+            tree = typeof elemRaw === 'string' ? JSON.parse(elemRaw) : elemRaw
 
             function updateTreeImages(nodes) {
               if (!Array.isArray(nodes)) return
@@ -316,24 +319,65 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
             }
 
             updateTreeImages(tree)
+          }
 
-            if (modified) {
-              await fetch(`${base}/wp-json/wp/v2/pages/${resolvedPageId}`, {
-                method: 'POST',
-                headers: {
-                  Authorization: authHeader,
-                  'Content-Type': 'application/json',
-                  Accept: 'application/json'
-                },
-                body: JSON.stringify({
-                  meta: {
-                    _elementor_data: JSON.stringify(tree)
-                  }
-                })
+          // Also update static HTML in post_content for live visitor rendering
+          if (contentRaw) {
+            for (const item of successUpdates) {
+              const filename = item.src.split('/').pop()
+              const cleanFilename = filename.split('-scaled')[0].split(/-\d+x\d+$/)[0]
+              const targetAlt = item.newAlt
+
+              // 1. Replace aria-label in e-gallery-image divs
+              contentRaw = contentRaw.replace(new RegExp(`(<div[^>]*class="[^"]*e-gallery-image[^"]*"[^>]*data-thumbnail="[^"]*(${cleanFilename}|${filename})[^"]*"[^>]*>)`, 'gi'), (tag) => {
+                if (/aria-label="[^"]*"/i.test(tag)) {
+                  return tag.replace(/aria-label="[^"]*"/i, `aria-label="${targetAlt}"`)
+                }
+                return tag.replace(/data-thumbnail=/i, `aria-label="${targetAlt}" data-thumbnail=`)
               })
-              elementorUpdated = true
+
+              // 2. Replace lightbox title in <a> tags
+              contentRaw = contentRaw.replace(new RegExp(`(<a[^>]*data-elementor-lightbox-title="[^"]*"[^>]*(${cleanFilename}|${filename})[^"]*>)`, 'gi'), (tag) => {
+                return tag.replace(/data-elementor-lightbox-title="[^"]*"/i, `data-elementor-lightbox-title="${targetAlt}"`)
+              })
+
+              // 3. Replace alt in <img> tags
+              contentRaw = contentRaw.replace(new RegExp(`(<img[^>]*(${cleanFilename}|${filename})[^>]*>)`, 'gi'), (tag) => {
+                if (/alt="[^"]*"/i.test(tag)) {
+                  return tag.replace(/alt="[^"]*"/i, `alt="${targetAlt}"`)
+                }
+                return tag.replace(/<img\s+/i, `<img alt="${targetAlt}" `)
+              })
             }
           }
+
+          // Save page with both updated post_content and updated _elementor_data
+          const pageSavePayload = { content: contentRaw }
+          if (tree && modified) {
+            pageSavePayload.meta = { _elementor_data: JSON.stringify(tree) }
+          }
+
+          const saveRes = await fetch(`${base}/wp-json/wp/v2/pages/${resolvedPageId}`, {
+            method: 'POST',
+            headers: {
+              Authorization: authHeader,
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify(pageSavePayload)
+          })
+
+          if (saveRes.ok) {
+            elementorUpdated = true
+          }
+
+          // Purge Elementor CSS/render cache so changes immediately show on live frontend
+          try {
+            await fetch(`${base}/wp-json/elementor/v1/cache`, {
+              method: 'DELETE',
+              headers: { Authorization: authHeader }
+            })
+          } catch (_cErr) {}
         }
       } catch (elemErr) {
         console.warn('[WM_API] Elementor structured update error:', elemErr)

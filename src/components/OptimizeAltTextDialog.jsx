@@ -194,14 +194,15 @@ export default function OptimizeAltTextDialog({
 
       if (pushedCount > 0) {
         setHasPushedChanges(true)
-        // Update local table state: set currentAlt = newAlt and uncheck ONLY successful images
+        // Update local table state: set currentAlt = newAlt, uncheck ONLY successful images, and mark isPushedSuccess
         setImageRows(prev => prev.map(row => {
           const isSuccess = successfulList.some(s => s.id === row.id || s.src === row.src)
           if (isSuccess) {
             return {
               ...row,
               currentAlt: row.newAlt,
-              isSelected: false
+              isSelected: false,
+              isPushedSuccess: true
             }
           }
           return row
@@ -316,14 +317,21 @@ export default function OptimizeAltTextDialog({
               <tbody>
                 {imageRows.map(row => (
                   <tr key={row.id} className={row.isSelected ? 'row-selected' : ''}>
-                    <td style={{ textAlign: 'center' }}>
-                      <input
-                        type="checkbox"
-                        className="oat-checkbox"
-                        checked={row.isSelected}
-                        disabled={isSaving}
-                        onChange={() => handleToggleSelect(row.id)}
-                      />
+                    <td style={{ textAlign: 'center', verticalAlign: 'middle' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <input
+                          type="checkbox"
+                          className="oat-checkbox"
+                          checked={row.isSelected}
+                          disabled={isSaving}
+                          onChange={() => handleToggleSelect(row.id)}
+                        />
+                        {row.isPushedSuccess && (
+                          <span className="oat-row-pushed-badge" title="Proposed Alt Text successfully pushed to WordPress & live page">
+                            ✓
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <div className="oat-thumb-wrapper">
@@ -379,7 +387,7 @@ export default function OptimizeAltTextDialog({
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button type="button" className="oat-btn-cancel" onClick={handleCloseDialog} disabled={isSaving}>
-              {hasPushedChanges ? '✓ Done' : 'Close'}
+              Close
             </button>
             <button
               type="button"

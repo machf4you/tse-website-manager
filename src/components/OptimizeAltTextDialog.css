@@ -187,6 +187,28 @@
   cursor: pointer;
 }
 
+.oat-row-pushed-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background-color: #059669;
+  color: #ffffff;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  animation: oatBadgePop 0.25s ease-out;
+  cursor: default;
+}
+
+@keyframes oatBadgePop {
+  0% { transform: scale(0.4); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .oat-thumb-wrapper {
   width: 100px;
   height: 80px;
