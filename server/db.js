@@ -87,4 +87,15 @@ db.exec(`
   );
 `)
 
+export const getAllWebsitesStmt = db.prepare('SELECT * FROM websites')
+export const getWebsiteByIdStmt = db.prepare('SELECT * FROM websites WHERE id = ?')
+
+export function getAllWebsitesFromDb() {
+  return getAllWebsitesStmt.all()
+}
+
+export function getWebsiteByIdFromDb(id) {
+  return getWebsiteByIdStmt.get(String(id))
+}
+
 export default db

@@ -1,6 +1,6 @@
 import express from 'express'
 import cors from 'cors'
-import db from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
 
 const app = express()
 const PORT = process.env.PORT || 3005
@@ -161,23 +161,20 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
     }
 
     // 1. Resolve site & credentials from DB
-    let targetSite = null
-    const allSites = db.prepare(`SELECT * FROM websites`).all()
-    for (const s of allSites) {
-      if (siteId && String(s.id) === String(siteId)) {
-        targetSite = s
-        break
+    let targetSite = siteId ? getWebsiteByIdFromDb(siteId) : null
+    if (!targetSite) {
+      const allSites = getAllWebsitesFromDb()
+      for (const s of allSites) {
+        const sUrl = (s.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+        const cleanUrl = (siteUrl || pageUrl || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+        if (cleanUrl && sUrl && (sUrl === cleanUrl || sUrl.includes(cleanUrl) || cleanUrl.includes(sUrl))) {
+          targetSite = s
+          break
+        }
       }
-      const sUrl = (s.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
-      const cleanUrl = (siteUrl || pageUrl || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
-      if (cleanUrl && sUrl && (sUrl === cleanUrl || sUrl.includes(cleanUrl) || cleanUrl.includes(sUrl))) {
-        targetSite = s
-        break
+      if (!targetSite && allSites.length > 0) {
+        targetSite = allSites[0]
       }
-    }
-
-    if (!targetSite && allSites.length > 0) {
-      targetSite = allSites[0]
     }
 
     const config = targetSite?.config_data ? JSON.parse(targetSite.config_data) : {}
