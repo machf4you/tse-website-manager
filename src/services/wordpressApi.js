@@ -7,7 +7,7 @@
  * Status values: 'loading' | 'done' | 'error'
  */
 
-import { getWebsitesApi } from './websiteManagerApi.js'
+import { getWebsitesApi, API_BASE_URL } from './websiteManagerApi.js'
 
 export const WP_STEPS = [
   { id: 'api',   label: 'Checking WordPress REST API'  },

@@ -162,20 +162,30 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
 
     // 1. Resolve site & credentials from DB
     let targetSite = null
-    if (siteId) {
-      targetSite = db.prepare(`SELECT * FROM websites WHERE id = ?`).get(siteId)
+    const allSites = db.prepare(`SELECT * FROM websites`).all()
+    for (const s of allSites) {
+      if (siteId && String(s.id) === String(siteId)) {
+        targetSite = s
+        break
+      }
+      const sUrl = (s.url || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+      const cleanUrl = (siteUrl || pageUrl || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+      if (cleanUrl && sUrl && (sUrl === cleanUrl || sUrl.includes(cleanUrl) || cleanUrl.includes(sUrl))) {
+        targetSite = s
+        break
+      }
     }
-    if (!targetSite && siteUrl) {
-      const cleanUrl = siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
-      targetSite = db.prepare(`SELECT * FROM websites WHERE url LIKE ?`).get(`%${cleanUrl}%`)
+
+    if (!targetSite && allSites.length > 0) {
+      targetSite = allSites[0]
     }
 
     const config = targetSite?.config_data ? JSON.parse(targetSite.config_data) : {}
-    const wpUser = config.wpUser || targetSite?.wpUser || ''
+    const wpUser = config.wpUser || targetSite?.wpUser || targetSite?.connectedUser || ''
     const wpPass = config.wpPass || targetSite?.wpPass || ''
 
     if (!wpUser || !wpPass) {
-      return res.status(400).json({ success: false, error: 'WordPress credentials not found for this site.' })
+      return res.status(400).json({ success: false, error: 'WordPress credentials not found for this site in database.' })
     }
 
     const base = (targetSite?.url || siteUrl || '').replace(/\/+$/, '')

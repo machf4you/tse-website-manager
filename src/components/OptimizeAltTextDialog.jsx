@@ -173,13 +173,15 @@ export default function OptimizeAltTextDialog({
         updates
       })
 
-      if (result.success && (result.updatedCount > 0 || (result.successUpdates && result.successUpdates.length > 0))) {
-        const pushedCount = result.updatedCount || result.successUpdates?.length || selected.length
-        
-        // Update local table state: set currentAlt = newAlt and uncheck pushed images
+      const successfulList = result.successUpdates || []
+      const failedList = result.failedUpdates || []
+      const pushedCount = result.updatedCount || successfulList.length
+
+      if (pushedCount > 0) {
+        // Update local table state: set currentAlt = newAlt and uncheck ONLY successful images
         setImageRows(prev => prev.map(row => {
-          const wasPushed = selected.some(s => s.id === row.id || s.src === row.src)
-          if (wasPushed) {
+          const isSuccess = successfulList.some(s => s.id === row.id || s.src === row.src)
+          if (isSuccess) {
             return {
               ...row,
               currentAlt: row.newAlt,
@@ -189,16 +191,23 @@ export default function OptimizeAltTextDialog({
           return row
         }))
 
-        setSaveStatus({
-          type: 'success',
-          message: `✓ ${pushedCount} Image${pushedCount > 1 ? 's' : ''} Pushed Successfully to WordPress!`
-        })
+        if (failedList.length === 0) {
+          setSaveStatus({
+            type: 'success',
+            message: `✓ ${pushedCount} Image${pushedCount > 1 ? 's' : ''} Pushed Successfully to WordPress!`
+          })
+        } else {
+          setSaveStatus({
+            type: 'error',
+            message: `✓ ${pushedCount} Image(s) Pushed | ❌ ${failedList.length} Failed: ${failedList.map(f => f.error || f.src).join('; ')}`
+          })
+        }
 
         if (onSuccess) {
           onSuccess(result)
         }
       } else {
-        const failedCount = result.failedUpdates?.length || selected.length
+        const failedCount = failedList.length || selected.length
         const errorDetails = result.errors?.length > 0
           ? result.errors.join('; ')
           : result.error || 'WordPress rejected the media update.'
