@@ -195,7 +195,14 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
     for (const item of updates) {
       const newAlt = (item.newAlt || item.altText || '').trim()
       const imgSrc = item.src || item.url || ''
-      let mediaId = item.id || item.mediaId
+      const rawId = item.mediaId || item.id
+      let mediaId = null
+
+      if (typeof rawId === 'number' && !isNaN(rawId) && rawId > 0) {
+        mediaId = rawId
+      } else if (typeof rawId === 'string' && /^\d+$/.test(rawId.trim())) {
+        mediaId = parseInt(rawId.trim(), 10)
+      }
 
       if (!newAlt) continue
 
@@ -204,13 +211,13 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
         if (!mediaId && imgSrc) {
           const rawFilename = imgSrc.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
           if (rawFilename) {
-            const sRes = await fetch(`${base}/wp-json/wp/v2/media?search=${encodeURIComponent(rawFilename)}&per_page=5`, {
+            const sRes = await fetch(`${base}/wp-json/wp/v2/media?search=${encodeURIComponent(rawFilename)}&per_page=10`, {
               headers: { Authorization: authHeader, Accept: 'application/json' }
             })
             if (sRes.ok) {
               const sData = await sRes.json()
               if (Array.isArray(sData) && sData.length > 0) {
-                const match = sData.find(m => m.source_url === imgSrc || m.slug === rawFilename.toLowerCase()) || sData[0]
+                const match = sData.find(m => m.source_url === imgSrc || m.slug === rawFilename.toLowerCase() || (m.source_url && m.source_url.includes(rawFilename))) || sData[0]
                 mediaId = match?.id
               }
             }

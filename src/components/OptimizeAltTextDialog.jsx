@@ -371,11 +371,18 @@ export default function OptimizeAltTextDialog({
             </button>
             <button
               type="button"
-              className="oat-btn-push"
+              className={`oat-btn-push ${isSaving ? 'is-pushing' : ''}`}
               disabled={selectedCount === 0 || isSaving}
               onClick={handlePush}
             >
-              {isSaving ? '⟳ Pushing to WordPress...' : `Push Proposed Alt Text to WordPress (${selectedCount}) ▷`}
+              {isSaving ? (
+                <>
+                  <span className="oat-btn-spinner" />
+                  <span style={{ color: '#ffffff', fontWeight: '700' }}>⟳ Pushing to WordPress...</span>
+                </>
+              ) : (
+                <span>Push Proposed Alt Text to WordPress ({selectedCount}) ▷</span>
+              )}
             </button>
           </div>
         </div>

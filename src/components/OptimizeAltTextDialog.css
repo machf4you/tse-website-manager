@@ -345,7 +345,7 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   box-shadow: 0 0 12px rgba(2, 132, 199, 0.3);
   transition: all 0.15s ease;
 }
@@ -355,7 +355,25 @@
   transform: translateY(-1px);
 }
 
-.oat-btn-push:disabled {
+.oat-btn-push.is-pushing {
+  background-color: #0369a1 !important;
+  opacity: 1 !important;
+  color: #ffffff !important;
+  cursor: wait !important;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.5) !important;
+}
+
+.oat-btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: oatSpin 0.7s linear infinite;
+  display: inline-block;
+}
+
+.oat-btn-push:disabled:not(.is-pushing) {
   opacity: 0.4;
   cursor: not-allowed;
   box-shadow: none;
