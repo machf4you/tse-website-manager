@@ -62,6 +62,28 @@ function generateSmartProposedAlt(src = '', currentAlt = '', targetPhrase = '') 
   return targetPhrase ? `${targetPhrase} Project in Surrey` : 'Ascent Builders Project in Surrey'
 }
 
+export function isExcludedContentImage(src = '', alt = '') {
+  const lowerSrc = (src || '').toLowerCase()
+  const lowerAlt = (alt || '').toLowerCase()
+
+  // Third party assets & placeholders
+  if (/i\.ytimg\.com|youtube\.com|wp-rocket|plugins\/|gravatar\.com|svg\+xml/.test(lowerSrc)) return true
+
+  // Logos (header, footer, mobile, branding)
+  if (/logo|site-logo|brand-logo|custom-logo/.test(lowerSrc) || /\blogo\b/.test(lowerAlt)) return true
+
+  // Trust badges, certifications & reviews
+  if (/checkatrade|trustmark|master-builder|master-tradesman|google\.webp|accreditation|badge|client-logo|review/.test(lowerSrc) ||
+      /checkatrade|trustmark|master builder|master tradesman|fmb|accreditation|badge/.test(lowerAlt)) {
+    return true
+  }
+
+  // Hero / background slideshow images
+  if (/background|bg-|slider|slideshow|hero/.test(lowerSrc)) return true
+
+  return false
+}
+
 export default function OptimizeAltTextDialog({
   isOpen,
   page,
@@ -95,32 +117,42 @@ export default function OptimizeAltTextDialog({
     }
 
     async function loadImages() {
-      let candidateImages = Array.isArray(images) && images.length > 0 ? images : []
+      setIsLoadingImages(true)
+      let candidateImages = []
 
-      // If candidate images from audit snapshot is empty, query server-side image extraction endpoint
-      if (candidateImages.length === 0 && (page?.url || site?.url)) {
-        setIsLoadingImages(true)
+      // 1. Primary: Server-side content image extractor
+      const fetchUrl = page?.url || site?.url
+      if (fetchUrl) {
         try {
-          const fetchUrl = page?.url || site?.url
           const extracted = await extractPageImagesApi(fetchUrl)
           if (Array.isArray(extracted) && extracted.length > 0) {
             candidateImages = extracted
           }
         } catch (err) {
-          console.warn('[AltTextDialog] Server-side image extraction failed:', err)
-        } finally {
-          setIsLoadingImages(false)
+          console.warn('[AltTextDialog] Server-side image extraction warning:', err)
         }
       }
 
-      const rows = candidateImages.map((img, idx) => {
+      // 2. Secondary fallback: audit snapshot images
+      if (candidateImages.length === 0 && Array.isArray(images) && images.length > 0) {
+        candidateImages = images
+      }
+
+      // 3. Strictly filter out logos, badges, and background slideshows
+      const filtered = candidateImages.filter(img => {
+        const src = typeof img === 'string' ? img : (img?.src || img?.url || '')
+        const alt = typeof img === 'string' ? '' : (img?.alt || '')
+        return !isExcludedContentImage(src, alt)
+      })
+
+      const rows = filtered.map((img, idx) => {
         const src = typeof img === 'string' ? img : (img?.src || img?.url || '')
         const currentAlt = (typeof img === 'string' ? '' : (img?.alt || '')).trim()
         const proposedAlt = generateSmartProposedAlt(src, currentAlt, targetPhrase)
 
         let filename = 'image.jpg'
         try {
-          filename = src.split('/').pop() || 'image.jpg'
+          filename = src.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0] + (src.includes('.') ? '.' + src.split('.').pop().split('?')[0] : '')
         } catch (e) {}
 
         return {
@@ -129,17 +161,18 @@ export default function OptimizeAltTextDialog({
           filename,
           currentAlt,
           newAlt: proposedAlt,
-          isSelected: true, // Selected for push by default
+          isSelected: true,
           originalAlt: currentAlt
         }
       })
 
       setImageRows(rows)
+      setIsLoadingImages(false)
       setSaveStatus(null)
     }
 
     loadImages()
-  }, [isOpen, images, page?.url, site?.url, targetPhrase])
+  }, [isOpen, page?.url, site?.url, images, targetPhrase])
 
   if (!isOpen) return null
 
