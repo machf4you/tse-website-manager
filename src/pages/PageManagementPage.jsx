@@ -5,6 +5,7 @@ import BulkConfigureTargetPhrasesDialog from '../components/BulkConfigureTargetP
 import { getPageConfigsApi, savePageConfigsApi, getPageAuditsApi, savePageAuditApi } from '../services/websiteManagerApi'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
+import { formatReadableDateTime } from '../utils/dateFormatter'
 import './PageManagementPage.css'
 
 export default function PageManagementPage({
@@ -245,8 +246,8 @@ export default function PageManagementPage({
 
     const isAudited = Boolean(auditRecord && (auditRecord.isAudited || auditRecord.lastAuditTimestamp || auditRecord.auditResult || auditRecord.overall_score !== undefined))
     const isStale = Boolean(auditRecord && auditRecord.isStale)
-    const staleReason = auditRecord?.staleReason || null
-    const lastAuditDate = isAudited ? (auditRecord.lastAuditTimestamp || 'Audited ✓') : (override?.lastAuditDate || page.lastAuditDate || 'Never')
+    const rawLastAuditDate = isAudited ? (auditRecord.lastAuditTimestamp || 'Audited ✓') : (override?.lastAuditDate || page.lastAuditDate || 'Never')
+    const lastAuditDate = rawLastAuditDate === 'Never' || rawLastAuditDate === 'Audited ✓' ? rawLastAuditDate : (formatReadableDateTime(rawLastAuditDate) || rawLastAuditDate)
 
     const rawScore = auditRecord?.overall_score ??
                      auditRecord?.score ??
@@ -451,9 +452,7 @@ export default function PageManagementPage({
     let successfulCount = 0
     let failedCount = 0
 
-    const now = new Date()
-    const pad = n => String(n).padStart(2, '0')
-    const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+    const formattedTimestamp = formatReadableDateTime(new Date())
 
     for (let i = 0; i < activeSeoPages.length; i++) {
       const page = activeSeoPages[i]

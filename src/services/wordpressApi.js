@@ -8,6 +8,7 @@
  */
 
 import { getWebsitesApi, API_BASE_URL, pushMediaAltTextApi } from './websiteManagerApi.js'
+import { formatReadableDateTime } from '../utils/dateFormatter.js'
 
 export const WP_STEPS = [
   { id: 'api',   label: 'Checking WordPress REST API'  },
@@ -669,9 +670,7 @@ export async function syncSingleWordPressPage({ site, page }) {
     liveDesc = restData.meta?._yoast_wpseo_metadesc || restData.yoast_head_json?.description || ''
   }
 
-  const now = new Date()
-  const pad = n => String(n).padStart(2, '0')
-  const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+  const formattedTimestamp = formatReadableDateTime(new Date())
 
   return {
     success: true,

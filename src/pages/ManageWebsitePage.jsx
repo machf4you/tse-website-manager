@@ -12,6 +12,7 @@ import {
   savePageConfigsApi
 } from '../services/websiteManagerApi'
 import { getSiteConfigsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
+import { formatReadableDateTime } from '../utils/dateFormatter'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -789,11 +790,11 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
               <>
                 <div className="act-row">
                   <span className="act-label">{platformName} sync completed</span>
-                  <span className="act-time">{lastSyncDate || '07-08-2026 08:15'}</span>
+                  <span className="act-time">{formatReadableDateTime(lastSyncDate) || lastSyncDate || 'Not Synced Yet'}</span>
                 </div>
                 <div className="act-row">
                   <span className="act-label">{exportedPages.length} pages discovered</span>
-                  <span className="act-time">{lastSyncDate || '07-08-2026 08:15'}</span>
+                  <span className="act-time">{formatReadableDateTime(lastSyncDate) || lastSyncDate || 'Not Synced Yet'}</span>
                 </div>
               </>
             ) : (
@@ -857,7 +858,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
                 {site.topIndicator ? site.topIndicator.charAt(0).toUpperCase() + site.topIndicator.slice(1) : 'Connected'}
               </span>
               <span className="status-sub">
-                {isSynced ? `Last sync: ${lastSyncDate || '07-08-2026 08:15'}` : 'Sync: Pending'}
+                {isSynced ? `Last sync: ${formatReadableDateTime(lastSyncDate) || lastSyncDate || 'Not Synced Yet'}` : 'Sync: Pending'}
               </span>
               <span className="status-sub">
                 {isSynced ? `Pages crawled: ${exportedPages.length}` : 'Pages: Not extracted'}

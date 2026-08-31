@@ -6,6 +6,7 @@ import { syncSingleWordPressPage } from '../services/wordpressApi'
 import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
 import { normalizeUrlForMatching } from '../utils/urlUtils'
 import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
+import { formatReadableDateTime } from '../utils/dateFormatter'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import OptimizeAltTextDialog from '../components/OptimizeAltTextDialog'
 import './PageAuditResultsPage.css'
@@ -228,21 +229,6 @@ export default function PageAuditResultsPage({
     }
   })()
 
-  const formatAuditDisplayTimestamp = (ts) => {
-    if (!ts || typeof ts !== 'string') return null
-    const trimmed = ts.trim()
-    if (/^\d{1,2}[-/]\d{1,2}[-/]\d{4}\s+\d{1,2}:\d{2}$/.test(trimmed)) {
-      return trimmed
-    }
-    const ms = Date.parse(trimmed)
-    if (!isNaN(ms) && ms > 0) {
-      const d = new Date(ms)
-      const pad = n => String(n).padStart(2, '0')
-      return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-    }
-    return trimmed
-  }
-
   const rawLastAuditTs =
     apiAuditRecord?.lastAuditTimestamp ||
     storedAuditRecord?.lastAuditTimestamp ||
@@ -253,9 +239,9 @@ export default function PageAuditResultsPage({
     liveAuditData?.date ||
     null
 
-  const lastAuditTimestampStr = formatAuditDisplayTimestamp(rawLastAuditTs)
+  const lastAuditTimestampStr = formatReadableDateTime(rawLastAuditTs)
 
-  const lastSyncTimestampStr =
+  const rawLastSyncTs =
     localSyncTimestamp ||
     overrideObj.lastSyncTimestamp ||
     site?.lastSyncTimestamp ||
@@ -276,20 +262,41 @@ export default function PageAuditResultsPage({
     })() ||
     null
 
+  const lastSyncTimestampStr = formatReadableDateTime(rawLastSyncTs)
+
   const parseTimestampToMs = (str) => {
-    if (!str || typeof str !== 'string') return 0
+    if (!str) return 0
+    if (typeof str === 'number') return str > 1e11 ? str : str * 1000
+    if (typeof str !== 'string') return 0
     const trimmed = str.trim()
-    const ddmmyyyyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s+(\d{1,2}):(\d{2})$/)
+
+    // 1. "31 August 2026 12:56"
+    const readableMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/)
+    if (readableMatch) {
+      const [, day, monthName, year, hours = '00', minutes = '00'] = readableMatch
+      const monthNames = [
+        'january', 'february', 'march', 'april', 'may', 'june',
+        'july', 'august', 'september', 'october', 'november', 'december'
+      ]
+      const monthIdx = monthNames.indexOf(monthName.toLowerCase())
+      if (monthIdx !== -1) {
+        return new Date(parseInt(year, 10), monthIdx, parseInt(day, 10), parseInt(hours, 10), parseInt(minutes, 10)).getTime()
+      }
+    }
+
+    // 2. DD-MM-YYYY HH:MM
+    const ddmmyyyyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:\s+(\d{1,2}):(\d{2}))?$/)
     if (ddmmyyyyMatch) {
-      const [, day, month, year, hours, minutes] = ddmmyyyyMatch
+      const [, day, month, year, hours = '00', minutes = '00'] = ddmmyyyyMatch
       return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10), parseInt(hours, 10), parseInt(minutes, 10)).getTime()
     }
+
     const isoTime = Date.parse(trimmed)
     return isNaN(isoTime) ? 0 : isoTime
   }
 
-  const lastAuditMs = parseTimestampToMs(lastAuditTimestampStr)
-  const lastSyncMs = parseTimestampToMs(lastSyncTimestampStr)
+  const lastAuditMs = parseTimestampToMs(rawLastAuditTs || lastAuditTimestampStr)
+  const lastSyncMs = parseTimestampToMs(rawLastSyncTs || lastSyncTimestampStr)
   const isSyncNewerThanAudit = Boolean(lastSyncMs > 0 && lastAuditMs > 0 && lastSyncMs > lastAuditMs)
 
   const handleSyncPageClick = async () => {
@@ -590,9 +597,7 @@ export default function PageAuditResultsPage({
         })
 
         if (isMounted) {
-          const now = new Date()
-          const pad = n => String(n).padStart(2, '0')
-          const formattedTimestamp = `${pad(now.getDate())}-${pad(now.getMonth() + 1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`
+          const formattedTimestamp = formatReadableDateTime(new Date())
           const currentFingerprint = generatePageSeoFingerprint(currentPage)
 
           const enrichedResult = {
