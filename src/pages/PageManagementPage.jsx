@@ -206,10 +206,25 @@ export default function PageManagementPage({
       isManualOverride: true,
       priority: getPriorityForType(newType),
       isConfigured: isConfigured,
+      isStarred: Boolean(existingConfig.isStarred || page.isStarred),
       isExcluded,
       status: isConfigured ? 'configured' : 'unconfigured',
     }
 
+    handleSavePageConfig(updatedConfig)
+  }
+
+  const handleToggleStar = (page) => {
+    const pageKey = page.id || page.url || page.pageUrl
+    const urlKey = page.url || page.pageUrl || ''
+    const existingConfig = configurations[pageKey] || (urlKey ? configurations[urlKey] : {}) || {}
+    const newStarred = !page.isStarred
+    const updatedConfig = {
+      ...existingConfig,
+      pageId: page.id,
+      url: urlKey || pageKey,
+      isStarred: newStarred,
+    }
     handleSavePageConfig(updatedConfig)
   }
 
@@ -263,6 +278,7 @@ export default function PageManagementPage({
 
     const targetPhraseStr = (override?.targetPhrase || override?.target || page.targetPhrase || page.target || '').trim()
     const isConfigured = Boolean(targetPhraseStr.length > 0)
+    const isStarred = Boolean(override?.isStarred)
 
     if (override) {
       return {
@@ -278,6 +294,7 @@ export default function PageManagementPage({
         priority: effectivePriority,
         isManualOverride,
         isConfigured,
+        isStarred,
         isExcluded: override.isExcluded !== undefined ? override.isExcluded : (effectiveType === 'Excluded' || page.isExcluded),
         isAudited,
         isStale,
@@ -296,6 +313,7 @@ export default function PageManagementPage({
       targetPhrase: targetPhraseStr,
       isManualOverride: false,
       isConfigured,
+      isStarred,
       isAudited,
       isStale,
       staleReason,
@@ -307,6 +325,7 @@ export default function PageManagementPage({
 
   // Filter pages based on filter tab selection
   const filteredPages = pagesList.filter(p => {
+    if (filter === 'starred') return p.isStarred === true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'configured') return p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'action_required') return p.isConfigured !== true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'excluded') return p.isExcluded === true || p.type === 'Excluded'
@@ -368,6 +387,11 @@ export default function PageManagementPage({
     if (pA !== pB) {
       return sortDirection === 'asc' ? pA - pB : pB - pA
     }
+    const starA = a.isStarred ? 1 : 0
+    const starB = b.isStarred ? 1 : 0
+    if (starA !== starB) {
+      return sortDirection === 'asc' ? starB - starA : starA - starB
+    }
     const tA = (a.title || '').toLowerCase()
     const tB = (b.title || '').toLowerCase()
     return tA.localeCompare(tB)
@@ -375,6 +399,7 @@ export default function PageManagementPage({
 
   // Calculate filter tab counts (All = Excluded + Configured + Action Required)
   const allCount = pagesList.length
+  const starredCount = pagesList.filter(p => p.isStarred === true && !p.isExcluded && p.type !== 'Excluded').length
   const configuredCount = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
   const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded && p.type !== 'Excluded').length
   const excludedCount = pagesList.filter(p => p.isExcluded === true || p.type === 'Excluded').length
@@ -625,6 +650,15 @@ export default function PageManagementPage({
           </button>
           <button
             type="button"
+            className={`w3-filter-btn ${filter === 'starred' ? 'active' : ''}`}
+            onClick={() => setFilter('starred')}
+            id="filter-starred"
+            style={starredCount > 0 ? { color: '#facc15' } : {}}
+          >
+            ⭐ Starred ({starredCount})
+          </button>
+          <button
+            type="button"
             className={`w3-filter-btn ${filter === 'configured' ? 'active' : ''}`}
             onClick={() => setFilter('configured')}
             id="filter-configured"
@@ -733,7 +767,19 @@ export default function PageManagementPage({
                       )}
                     </div>
                   </td>
-                  <td className="col-priority">{page.priority !== undefined ? page.priority : 0}</td>
+                  <td className="col-priority">
+                    <div className="w3-priority-cell">
+                      <span className="w3-priority-number">{page.priority !== undefined ? page.priority : 0}</span>
+                      <button
+                        type="button"
+                        className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
+                        onClick={() => handleToggleStar(page)}
+                        title={page.isStarred ? 'Remove work-priority star' : 'Set as work-priority star'}
+                      >
+                        {page.isStarred ? '⭐' : '☆'}
+                      </button>
+                    </div>
+                  </td>
                   <td className="col-target">
                     {(page.target || page.targetPhrase || '').trim() ? (
                       page.target || page.targetPhrase

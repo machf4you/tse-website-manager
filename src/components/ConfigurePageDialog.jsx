@@ -76,6 +76,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
       isManualOverride: isTypeChanged || Boolean(page.isManualOverride),
       priority: priorityNum,
       isConfigured,
+      isStarred: Boolean(page.isStarred),
       isExcluded: normalizedType === 'Excluded',
       status: isConfigured ? 'configured' : 'unconfigured',
     }
