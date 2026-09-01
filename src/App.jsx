@@ -66,6 +66,7 @@ const SlidersIcon = () => (
 )
 
 import GlobalDeploymentIndicator from './components/GlobalDeploymentIndicator'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   const [activeNavTab, setActiveNavTab] = useState(() => {
@@ -149,8 +150,10 @@ function App() {
         role="main"
         aria-label="Main content"
       >
-        {activeNavTab === 'websites' && <WebsitesDashboard />}
-        {activeNavTab === 'global-settings' && <GlobalSettings />}
+        <ErrorBoundary>
+          {activeNavTab === 'websites' && <WebsitesDashboard />}
+          {activeNavTab === 'global-settings' && <GlobalSettings />}
+        </ErrorBoundary>
       </main>
     </div>
   )

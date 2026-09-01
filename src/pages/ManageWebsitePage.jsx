@@ -202,8 +202,9 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   const savedConfigs = (() => {
     try {
       const saved = localStorage.getItem(siteIdKey)
-      const localMap = saved ? JSON.parse(saved) : {}
-      const apiMap = apiConfigs || {}
+      const parsedLocal = saved ? JSON.parse(saved) : {}
+      const localMap = (parsedLocal && typeof parsedLocal === 'object' && !Array.isArray(parsedLocal)) ? parsedLocal : {}
+      const apiMap = (apiConfigs && typeof apiConfigs === 'object' && !Array.isArray(apiConfigs)) ? apiConfigs : {}
 
       const merged = { ...apiMap }
       Object.keys(localMap).forEach(key => {
@@ -215,7 +216,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
       })
       return merged
     } catch (e) {
-      return apiConfigs || {}
+      return (apiConfigs && typeof apiConfigs === 'object') ? apiConfigs : {}
     }
   })()
 
@@ -519,10 +520,22 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   }
 
   if (activeTab === 'w3') {
+    if (!isPackageHydrated && !storedPackageData && !site?.storedPackageData) {
+      return (
+        <div className="manage-website-page" style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+          <div className="w2-header-card" style={{ padding: '28px', background: 'rgba(30,41,59,0.7)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '480px', margin: '40px auto' }}>
+            <div className="deploy-spinner" style={{ margin: '0 auto 14px auto', width: '26px', height: '26px', borderWidth: '3px' }} />
+            <h3 style={{ color: '#f8fafc', fontSize: '1.05rem', marginBottom: '6px' }}>Loading W3 Page Management...</h3>
+            <p style={{ fontSize: '0.84rem', color: '#94a3b8', margin: 0 }}>Restoring pages and website configuration.</p>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <PageManagementPage
         site={site}
-        storedPackageData={storedPackageData || site.storedPackageData}
+        storedPackageData={storedPackageData || site?.storedPackageData}
         onBack={() => {
           try {
             localStorage.setItem(activeTabStorageKey, 'w2')

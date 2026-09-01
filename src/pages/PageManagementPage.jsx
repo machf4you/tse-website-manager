@@ -31,7 +31,10 @@ export default function PageManagementPage({
     try {
       const siteIdKey = getSiteConfigsStorageKey(site)
       const saved = localStorage.getItem(siteIdKey)
-      if (saved) return JSON.parse(saved)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed
+      }
     } catch (e) {
       console.error('Failed to load page configurations:', e)
     }
@@ -42,7 +45,10 @@ export default function PageManagementPage({
     try {
       const siteIdKey = getSiteAuditsStorageKey(site)
       const saved = localStorage.getItem(siteIdKey)
-      if (saved) return JSON.parse(saved)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed
+      }
     } catch (e) {
       console.error('Failed to load page audits:', e)
     }
@@ -234,15 +240,18 @@ export default function PageManagementPage({
   const rawPagesList = extractPagesFromPackage(pkg, site?.url)
   const _postsList = extractPostsFromPackage(pkg)
 
+  const safeConfigs = (configurations && typeof configurations === 'object') ? configurations : {}
+  const safeAudits = (pageAudits && typeof pageAudits === 'object') ? pageAudits : {}
+
   const pagesList = rawPagesList.map(page => {
     const pageKey = page.id || page.url || page.pageUrl
     const urlKey = page.url || page.pageUrl || ''
-    const override = configurations[pageKey] || (urlKey ? configurations[urlKey] : null)
-    const auditRecord = pageAudits[pageKey] ||
-                        (urlKey ? pageAudits[urlKey] : null) ||
-                        (page.id ? pageAudits[page.id] : null) ||
-                        (page.url ? pageAudits[page.url] : null) ||
-                        Object.values(pageAudits).find(a => (a?.auditResult?.url === urlKey || a?.url === urlKey))
+    const override = safeConfigs[pageKey] || (urlKey ? safeConfigs[urlKey] : null)
+    const auditRecord = safeAudits[pageKey] ||
+                        (urlKey ? safeAudits[urlKey] : null) ||
+                        (page.id ? safeAudits[page.id] : null) ||
+                        (page.url ? safeAudits[page.url] : null) ||
+                        Object.values(safeAudits).find(a => (a?.auditResult?.url === urlKey || a?.url === urlKey))
 
     const isAudited = Boolean(auditRecord && (auditRecord.isAudited || auditRecord.lastAuditTimestamp || auditRecord.auditResult || auditRecord.overall_score !== undefined))
     const isStale = Boolean(auditRecord && auditRecord.isStale)
@@ -544,15 +553,17 @@ export default function PageManagementPage({
       <div className="w3-header">
         <div className="w3-header-meta">
           <span className="w3-pill-badge">W3 | PAGE MANAGEMENT</span>
-          <h1 className="w3-site-name">{site.name}</h1>
-          <a
-            href={site.url}
-            target="_blank"
-            rel="noreferrer"
-            className="w3-site-url"
-          >
-            {site.url}
-          </a>
+          <h1 className="w3-site-name">{site?.name || site?.title || site?.siteName || 'Website Management'}</h1>
+          {site?.url && (
+            <a
+              href={site.url}
+              target="_blank"
+              rel="noreferrer"
+              className="w3-site-url"
+            >
+              {site.url}
+            </a>
+          )}
         </div>
 
         <div className="w3-header-actions">
