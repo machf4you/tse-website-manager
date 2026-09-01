@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.89',
-  buildHash: 'w3stalereasonfix89',
-  buildTimestamp: 1788230000000,
+  version: '1.90',
+  buildHash: 'mgsyncauthurl90',
+  buildTimestamp: 1788240000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -726,71 +726,142 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
     const apiBaseUrl = (configData.apiBaseUrl || `${cleanSiteUrl}/rest/all/V1`).trim().replace(/\/+$/, '')
     const storeCode = configData.mgStore || 'default'
 
-    // Server-side token read from SQLite database (never exposed to browser)
-    const token = siteRow.wp_pass || configData.wpPass || ''
+    const user = configData.wpUser || siteRow.connected_user || 'tse_audit'
+    const rawPassOrToken = siteRow.wp_pass || configData.wpPass || ''
 
     if (!cleanSiteUrl) {
       return res.status(400).json({ success: false, error: 'MISSING_URL', message: 'Website URL is missing from website record.' })
     }
 
-    const headers = { 'Accept': 'application/json' }
-    if (token) {
-      headers['Authorization'] = `Bearer ${token.trim()}`
+    // 2. Acquire or validate Admin Bearer Token
+    let bearerToken = rawPassOrToken
+    if (user && rawPassOrToken) {
+      try {
+        const tokenRes = await fetch(`${apiBaseUrl}/integration/admin/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0'
+          },
+          body: JSON.stringify({ username: user, password: rawPassOrToken })
+        })
+        if (tokenRes.ok) {
+          const acquiredToken = await tokenRes.json()
+          if (typeof acquiredToken === 'string' && acquiredToken.trim()) {
+            bearerToken = acquiredToken.trim()
+          }
+        }
+      } catch (tokenErr) {
+        console.warn('Magento token acquisition attempt error:', tokenErr.message)
+      }
     }
 
-    // Issue server-side HTTP requests to Magento REST API (Categories & CMS pages only)
-    const [catRes, cmsRes] = await Promise.all([
+    const headers = {
+      'Accept': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    }
+    if (bearerToken) {
+      headers['Authorization'] = `Bearer ${bearerToken.trim()}`
+    }
+
+    // Issue server-side HTTP requests to Magento REST API (Categories list & CMS pages)
+    const [catListRes, catTreeRes, cmsRes] = await Promise.all([
+      fetch(`${apiBaseUrl}/categories/list?searchCriteria[pageSize]=250`, { method: 'GET', headers }).catch(() => null),
       fetch(`${apiBaseUrl}/categories`, { method: 'GET', headers }).catch(() => null),
       fetch(`${apiBaseUrl}/cmsPage/search?searchCriteria[pageSize]=100`, { method: 'GET', headers }).catch(() => null)
     ])
 
     // Check for HTTP 401 Unauthorized
-    if (catRes?.status === 401 || cmsRes?.status === 401) {
+    if (catListRes?.status === 401 && catTreeRes?.status === 401) {
       return res.status(401).json({
         success: false,
         status: 401,
         error: 'MAGENTO_AUTH_FAILED',
-        message: 'Magento REST API Authentication Failed (HTTP 401). Bearer token rejected by Magento.'
+        message: 'Magento REST API Authentication Failed (HTTP 401). Please verify Magento admin credentials in Global Settings.'
       })
     }
 
-    const categoriesJson = catRes && catRes.ok ? await catRes.json() : null
+    const catListData = catListRes && catListRes.ok ? await catListRes.json() : null
+    const catTreeData = catTreeRes && catTreeRes.ok ? await catTreeRes.json() : null
     const cmsPagesJson = cmsRes && cmsRes.ok ? await cmsRes.json() : null
 
+    const rawCats = catListData?.items || []
     const pages = []
 
-    // 1. Process Categories Structure
-    function processCategoryNode(node, parentName = '') {
-      if (!node) return
-      if (node.name && node.id) {
-        const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-        const fullCatUrl = `${cleanSiteUrl}/${catSlug}`
-        const isContainerOrInactive = (node.level !== undefined && node.level <= 1) || Boolean(node.is_active) === false
+    if (rawCats.length > 0) {
+      // Process detailed categories list with genuine Magento URL paths and attributes
+      rawCats.forEach(cat => {
+        if (!cat.id || !cat.name) return
+        const attrs = {}
+        if (Array.isArray(cat.custom_attributes)) {
+          cat.custom_attributes.forEach(a => {
+            if (a && a.attribute_code) attrs[a.attribute_code] = a.value
+          })
+        }
+
+        const urlPath = attrs.url_path || attrs.url_key || ''
+        const cleanPath = urlPath.trim().replace(/^\/+/, '').replace(/\/+$/, '')
+        const slug = cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        const fullCatUrl = cleanPath ? `${cleanSiteUrl}/${cleanPath}` : `${cleanSiteUrl}/${slug}`
+
+        const isContainerOrInactive = (cat.level !== undefined && cat.level <= 1) || Boolean(cat.is_active) === false
         const catType = isContainerOrInactive ? 'Excluded' : 'Landing'
         const catPriority = isContainerOrInactive ? 0 : 2
 
         pages.push({
-          id: `cat-${node.id}`,
-          title: node.name,
+          id: `cat-${cat.id}`,
+          title: cat.name,
           url: fullCatUrl,
           link: fullCatUrl,
           type: catType,
           priority: catPriority,
           isExcluded: isContainerOrInactive,
           post_type: 'category',
-          is_active: Boolean(node.is_active),
-          level: node.level,
-          magentoCategoryId: node.id,
-          parentId: node.parent_id,
-          parentName: parentName || null,
-          position: node.position
+          is_active: Boolean(cat.is_active),
+          level: cat.level,
+          magentoCategoryId: cat.id,
+          parentId: cat.parent_id,
+          position: cat.position,
+          meta_title: attrs.meta_title || cat.name,
+          meta_description: attrs.meta_description || '',
+          content: attrs.description || attrs.category_top_custom_text || ''
         })
+      })
+    } else if (catTreeData) {
+      // Fallback to recursive category tree if /categories/list is unavailable
+      function processCategoryNode(node, parentName = '') {
+        if (!node) return
+        if (node.name && node.id) {
+          const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+          const fullCatUrl = `${cleanSiteUrl}/${catSlug}`
+          const isContainerOrInactive = (node.level !== undefined && node.level <= 1) || Boolean(node.is_active) === false
+          const catType = isContainerOrInactive ? 'Excluded' : 'Landing'
+          const catPriority = isContainerOrInactive ? 0 : 2
+
+          pages.push({
+            id: `cat-${node.id}`,
+            title: node.name,
+            url: fullCatUrl,
+            link: fullCatUrl,
+            type: catType,
+            priority: catPriority,
+            isExcluded: isContainerOrInactive,
+            post_type: 'category',
+            is_active: Boolean(node.is_active),
+            level: node.level,
+            magentoCategoryId: node.id,
+            parentId: node.parent_id,
+            parentName: parentName || null,
+            position: node.position
+          })
+        }
+        if (Array.isArray(node.children_data)) {
+          node.children_data.forEach(child => processCategoryNode(child, node.name))
+        }
       }
-      if (Array.isArray(node.children_data)) {
-        node.children_data.forEach(child => processCategoryNode(child, node.name))
-      }
+      processCategoryNode(catTreeData)
     }
-    if (categoriesJson) processCategoryNode(categoriesJson)
 
     // 2. Process CMS Pages (Preserves Homepage Hub Classification & Policy Exclusions)
     const exclusionPatterns = [
@@ -860,7 +931,7 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
         store_code: storeCode
       },
       pages,
-      categories: categoriesJson,
+      categories: catTreeData || catListData,
       cms_pages: cmsPagesJson?.items || []
     }
 
