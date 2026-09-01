@@ -255,6 +255,7 @@ export default function PageManagementPage({
 
     const isAudited = Boolean(auditRecord && (auditRecord.isAudited || auditRecord.lastAuditTimestamp || auditRecord.auditResult || auditRecord.overall_score !== undefined))
     const isStale = Boolean(auditRecord && auditRecord.isStale)
+    const staleReason = auditRecord?.staleReason || null
     const rawLastAuditDate = isAudited
       ? (auditRecord?.lastAuditTimestamp || 'Audited ✓')
       : (override?.lastAuditDate || page.lastAuditDate || 'Never')
