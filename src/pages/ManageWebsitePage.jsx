@@ -12,6 +12,7 @@ import {
   savePageConfigsApi
 } from '../services/websiteManagerApi'
 import { getSiteConfigsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
+import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { formatReadableDateTime } from '../utils/dateFormatter'
 import './ManageWebsitePage.css'
 
@@ -490,7 +491,12 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         site={site}
         page={activeAuditPage}
         pagesList={exportedPages}
-        onBack={() => setActiveTab('w3')}
+        onBack={() => {
+          try {
+            localStorage.setItem(activeTabStorageKey, 'w3')
+          } catch (e) {}
+          setActiveTab('w3')
+        }}
         onSyncFromWordPress={handleSynchroniseClick}
         isSyncing={isSyncing}
         onNavigateToInternalLinking={(url) => {
@@ -503,6 +509,9 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
               } catch (e) {}
             }
           }
+          try {
+            localStorage.setItem(activeTabStorageKey, 'w4_internal_linking')
+          } catch (e) {}
           setActiveTab('w4_internal_linking')
         }}
       />
@@ -514,8 +523,18 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
       <PageManagementPage
         site={site}
         storedPackageData={storedPackageData || site.storedPackageData}
-        onBack={() => setActiveTab('w2')}
-        onTabChange={(tab) => setActiveTab(tab)}
+        onBack={() => {
+          try {
+            localStorage.setItem(activeTabStorageKey, 'w2')
+          } catch (e) {}
+          setActiveTab('w2')
+        }}
+        onTabChange={(tab) => {
+          try {
+            localStorage.setItem(activeTabStorageKey, tab)
+          } catch (e) {}
+          setActiveTab(tab)
+        }}
         onSyncFromWordPress={handleSynchroniseClick}
         isSyncing={isSyncing}
         onViewAudit={(page) => {
@@ -527,6 +546,9 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
               // ignore
             }
           }
+          try {
+            localStorage.setItem(activeTabStorageKey, 'w3_audit_results')
+          } catch (e) {}
           setActiveTab('w3_audit_results')
         }}
       />

@@ -246,8 +246,19 @@ export default function PageManagementPage({
 
     const isAudited = Boolean(auditRecord && (auditRecord.isAudited || auditRecord.lastAuditTimestamp || auditRecord.auditResult || auditRecord.overall_score !== undefined))
     const isStale = Boolean(auditRecord && auditRecord.isStale)
-    const rawLastAuditDate = isAudited ? (auditRecord.lastAuditTimestamp || 'Audited ✓') : (override?.lastAuditDate || page.lastAuditDate || 'Never')
-    const lastAuditDate = rawLastAuditDate === 'Never' || rawLastAuditDate === 'Audited ✓' ? rawLastAuditDate : (formatReadableDateTime(rawLastAuditDate) || rawLastAuditDate)
+    const rawLastAuditDate = isAudited
+      ? (auditRecord?.lastAuditTimestamp || 'Audited ✓')
+      : (override?.lastAuditDate || page.lastAuditDate || 'Never')
+
+    let lastAuditDate = 'Never'
+    if (rawLastAuditDate === 'Never' || rawLastAuditDate === 'Audited ✓') {
+      lastAuditDate = rawLastAuditDate
+    } else if (rawLastAuditDate) {
+      const formatted = formatReadableDateTime(rawLastAuditDate)
+      lastAuditDate = typeof formatted === 'string' && formatted.trim()
+        ? formatted.trim()
+        : (typeof rawLastAuditDate === 'string' ? rawLastAuditDate : 'Audited ✓')
+    }
 
     const rawScore = auditRecord?.overall_score ??
                      auditRecord?.score ??
@@ -360,8 +371,8 @@ export default function PageManagementPage({
     }
 
     if (sortColumn === 'lastAudit') {
-      const valA = (a.lastAuditDate || 'Never').toLowerCase()
-      const valB = (b.lastAuditDate || 'Never').toLowerCase()
+      const valA = String(a.lastAuditDate || 'Never').toLowerCase()
+      const valB = String(b.lastAuditDate || 'Never').toLowerCase()
       return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
     }
 
@@ -796,7 +807,7 @@ export default function PageManagementPage({
                           id={`btn-last-audit-${page.id || idx}`}
                           title={page.staleReason || 'WordPress data changed after last audit'}
                         >
-                          🟡 Audit Stale ({page.lastAuditDate})
+                          🟡 Audit Stale ({String(page.lastAuditDate || 'Stale')})
                         </button>
                       ) : (
                         <button
@@ -806,7 +817,7 @@ export default function PageManagementPage({
                           id={`btn-last-audit-${page.id || idx}`}
                           title="View completed audit results"
                         >
-                          🟢 {page.lastAuditDate}
+                          🟢 {String(page.lastAuditDate || 'Audited ✓')}
                         </button>
                       )
                     ) : (
