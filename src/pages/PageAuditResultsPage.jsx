@@ -1028,12 +1028,34 @@ export default function PageAuditResultsPage({
         name: el.name,
       }))
 
+    // Filter extra weaknesses from liveAuditData.weaknesses to exclude duplicate checks already covered in auditElements
+    const isDuplicateAuditWeakness = (label = '', key = '') => {
+      const l = (label || '').toLowerCase()
+      const k = (key || '').toLowerCase()
+
+      // Meta Title duplicates (e.g. Phrase Missing From Meta Title, Title Tag Length Outside Optimal Range)
+      if (l.includes('title') || k.includes('title')) return true
+
+      // Meta Description duplicates (e.g. Phrase Missing From Meta Description, Meta Description Length)
+      if (l.includes('description') || k.includes('description') || l.includes('meta desc') || k.includes('meta_desc')) return true
+
+      // H1 duplicates (e.g. H1 Does Not Reference The Phrase, Missing H1 Tag)
+      if (/\bh1\b/.test(l) || /\bh1\b/.test(k) || l.includes('h1 heading') || k.includes('h1_heading')) return true
+
+      // Internal links
+      if (l.includes('internal link') || k.includes('internal_link')) return true
+
+      // Alt text / Image checks
+      if (l.includes('alt text') || k.includes('alt_text') || l.includes('images missing') || k.includes('images_missing')) return true
+
+      return false
+    }
+
     const extraWeaknesses = (liveAuditData.weaknesses || [])
       .filter(w => {
         const l = (w.label || '').toLowerCase()
         const k = (w.key || '').toLowerCase()
-        if (l.includes('internal link') || k.includes('internal_link')) return false
-        if (l.includes('title tag') || k.includes('title_tag') || l === 'title tag') return false
+        if (isDuplicateAuditWeakness(l, k)) return false
         return !auditElements.some(el => (el.name || '').toLowerCase() === l)
       })
       .map((w, idx) => ({
