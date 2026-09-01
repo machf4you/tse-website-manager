@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.89-stable-w3-w4-navigation',
+    version: 'v1.89-stable',
+    gitTag: 'v1.89-stable',
+    commit: '[AUTO]',
+    date: '01-09-2026 09:10',
+    title: 'Stable W3 & W4 Navigation, Work-Priority, Alt Text Pipeline & Error Resilience (V1.89)',
+    description: 'Complete verified stable build of Website Manager (V1.89). Includes W3 Page Management, manual ⭐ work-priority toggling, W4 Alt Text push pipeline with exact Media ID resolution, green push checkmark persistence, Action Checklist deduplication, readable date/time formatting, W4 to W3 seamless back navigation, browser refresh persistence, type-safe localStorage state parsing, and global React ErrorBoundary.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.89-stable-w3-w4-navigation.md'
+  },
+  {
     id: 'v1.83-w4-alt-text-operational',
     version: 'v1.83-w4-alt-text-operational',
     gitTag: 'v1.83-w4-alt-text-operational',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '31-08-2026 16:50',
     title: 'W4 Image Alt Text Operational & Live Push Pipeline (V1.83)',
     description: 'Stable W4 Image Alt Text workflow. Content-image filtering excludes logos, badges and decorative images. Current and Proposed Alt Text fields work correctly. Proposed text is pushed to WordPress and Elementor, including live-page HTML updates. Exact Media ID matching prevents duplicate filename errors. Green pushed-status ticks persist across sessions, pushed images reopen unchecked, and the audit status/checklist recalculates correctly after changes.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.83-w4-alt-text-operational.md'
   },
   {
