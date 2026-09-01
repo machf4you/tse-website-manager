@@ -279,11 +279,11 @@ export default function PageManagementPage({
       ? Math.round(Number(rawScore))
       : null
 
-    const autoType = override?.autoType || page.type || page.seoPageType || 'Unclassified'
+    const autoType = page.type || page.seoPageType || override?.autoType || 'Unclassified'
     const overrideType = override?.type || override?.seoPageType || ''
     const isTypeActuallyOverridden = Boolean(override && override.isManualOverride === true && overrideType && overrideType !== (page.autoType || page.type || page.seoPageType))
     const isManualOverride = isTypeActuallyOverridden
-    const effectiveType = overrideType || autoType
+    const effectiveType = isManualOverride ? overrideType : (overrideType || autoType)
 
     const getPriorityForType = (t, fallback) => {
       if (t === 'Hub') return 1
@@ -296,7 +296,11 @@ export default function PageManagementPage({
 
     const effectivePriority = isManualOverride
       ? (override?.priority !== undefined ? override.priority : getPriorityForType(effectiveType, 0))
-      : (override?.priority !== undefined ? override.priority : getPriorityForType(autoType, page.priority))
+      : getPriorityForType(autoType, page.priority)
+
+    const effectiveIsExcluded = isManualOverride
+      ? (override?.isExcluded !== undefined ? Boolean(override.isExcluded) : effectiveType === 'Excluded')
+      : (effectiveType === 'Excluded' || Boolean(page.isExcluded))
 
     const targetPhraseStr = (override?.targetPhrase || override?.target || page.targetPhrase || page.target || '').trim()
     const isConfigured = Boolean(targetPhraseStr.length > 0)
@@ -317,7 +321,7 @@ export default function PageManagementPage({
         isManualOverride,
         isConfigured,
         isStarred,
-        isExcluded: override.isExcluded !== undefined ? override.isExcluded : (effectiveType === 'Excluded' || page.isExcluded),
+        isExcluded: effectiveIsExcluded,
         isAudited,
         isStale,
         staleReason,

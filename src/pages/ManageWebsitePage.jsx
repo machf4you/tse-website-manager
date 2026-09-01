@@ -240,8 +240,25 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     ).trim()
 
     const isConfigured = Boolean(targetPhraseStr.length > 0)
-    const pageType = override?.type || override?.seoPageType || page.type || page.seoPageType || 'Unassigned'
-    const pagePriority = override?.priority !== undefined ? override.priority : (page.priority !== undefined ? page.priority : 3)
+    const isManualOverride = Boolean(override && override.isManualOverride === true && override.type && override.type !== (page.autoType || page.type))
+    const pageType = isManualOverride ? (override.type || override.seoPageType) : (override?.type || override?.seoPageType || page.type || page.seoPageType || 'Unassigned')
+
+    const getPriorityForType = (t, fallback) => {
+      if (t === 'Hub') return 1
+      if (t === 'Landing') return 2
+      if (t === 'Topical') return 3
+      if (t === 'Article') return 4
+      if (t === 'Excluded') return 0
+      return fallback !== undefined ? fallback : 0
+    }
+
+    const pagePriority = isManualOverride
+      ? (override?.priority !== undefined ? override.priority : getPriorityForType(pageType, 0))
+      : getPriorityForType(page.type || pageType, page.priority)
+
+    const isExcluded = isManualOverride
+      ? (override?.isExcluded !== undefined ? Boolean(override.isExcluded) : pageType === 'Excluded')
+      : (pageType === 'Excluded' || Boolean(page.isExcluded))
 
     if (override) {
       return {
@@ -253,9 +270,9 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         type: pageType,
         seoPageType: pageType,
         priority: pagePriority,
-        isManualOverride: override.isManualOverride !== undefined ? override.isManualOverride : page.isManualOverride,
+        isManualOverride,
         isConfigured,
-        isExcluded: override.isExcluded !== undefined ? override.isExcluded : page.isExcluded,
+        isExcluded,
       }
     }
     return {
