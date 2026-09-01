@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.90',
-  buildHash: 'mgsyncauthurl90',
-  buildTimestamp: 1788240000000,
+  version: '1.91',
+  buildHash: 'mgtreescope91',
+  buildTimestamp: 1788250000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -800,6 +800,13 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
           })
         }
 
+        // Hierarchy filter: ONLY include categories that belong to the HF4You store tree (path starting with '1/2/' or equal to '1/2')
+        // Exclude foreign stores like Cheap Bed Sale ('1/226/...') or Mattress Time ('1/225/...')
+        const catPath = attrs.path || (cat.path ? String(cat.path) : '')
+        if (catPath && !catPath.startsWith('1/2/') && catPath !== '1/2') {
+          return // Skip foreign store category
+        }
+
         const urlPath = attrs.url_path || attrs.url_key || ''
         const cleanPath = urlPath.trim().replace(/^\/+/, '').replace(/\/+$/, '')
         const slug = cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
@@ -830,9 +837,18 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
       })
     } else if (catTreeData) {
       // Fallback to recursive category tree if /categories/list is unavailable
+      // Find the HF4You root store tree node (ID: 2 or name: 'hf4you')
+      let hf4youTreeNode = catTreeData
+      if (catTreeData.id === 1 && Array.isArray(catTreeData.children_data)) {
+        hf4youTreeNode = catTreeData.children_data.find(ch => String(ch.id) === '2' || ch.name?.toLowerCase() === 'hf4you') || catTreeData
+      }
+
       function processCategoryNode(node, parentName = '') {
         if (!node) return
         if (node.name && node.id) {
+          if (node.path && !String(node.path).startsWith('1/2/') && String(node.path) !== '1/2') {
+            return
+          }
           const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
           const fullCatUrl = `${cleanSiteUrl}/${catSlug}`
           const isContainerOrInactive = (node.level !== undefined && node.level <= 1) || Boolean(node.is_active) === false
@@ -860,7 +876,7 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
           node.children_data.forEach(child => processCategoryNode(child, node.name))
         }
       }
-      processCategoryNode(catTreeData)
+      processCategoryNode(hf4youTreeNode)
     }
 
     // 2. Process CMS Pages (Preserves Homepage Hub Classification & Policy Exclusions)
