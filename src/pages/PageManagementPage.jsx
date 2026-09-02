@@ -235,15 +235,23 @@ export default function PageManagementPage({
     handleSavePageConfig(updatedConfig)
   }
 
-  // Extract exported pages and merge user custom configurations and audit data
+  // Extract exported pages and separate visual Shop By navigation categories from SEO-managed pages
   const pkg = storedPackageData || site?.storedPackageData
   const rawPagesList = extractPagesFromPackage(pkg, site?.url)
   const _postsList = extractPostsFromPackage(pkg)
 
+  const isShopBySeparator = (p) => {
+    const title = (p.title || p.name || '').trim().toLowerCase()
+    return p.post_type === 'category' && (title.startsWith('shop by') || title.startsWith('shop-by'))
+  }
+
+  const rawSeoPages = rawPagesList.filter(p => !isShopBySeparator(p))
+  const shopBySeparators = rawPagesList.filter(p => isShopBySeparator(p))
+
   const safeConfigs = (configurations && typeof configurations === 'object') ? configurations : {}
   const safeAudits = (pageAudits && typeof pageAudits === 'object') ? pageAudits : {}
 
-  const pagesList = rawPagesList.map(page => {
+  const pagesList = rawSeoPages.map(page => {
     const pageKey = page.id || page.url || page.pageUrl
     const urlKey = page.url || page.pageUrl || ''
     const override = safeConfigs[pageKey] || (urlKey ? safeConfigs[urlKey] : null)
@@ -359,6 +367,13 @@ export default function PageManagementPage({
     return !p.isExcluded && p.type !== 'Excluded'
   })
 
+  // Helper to identify top-level product category
+  const isTopCategory = (p) => {
+    if (p.post_type !== 'category') return false
+    const pid = String(p.parentId || '')
+    return (p.level === 2 || pid === '1' || pid === '2' || !p.parentId) && !isShopBySeparator(p)
+  }
+
   // Sort filtered pages
   const sortedPages = [...filteredPages].sort((a, b) => {
     if (sortColumn === 'type') {
@@ -423,7 +438,111 @@ export default function PageManagementPage({
     return tA.localeCompare(tB)
   })
 
-  // Calculate filter tab counts (All = Excluded + Configured + Action Required)
+  // Build hierarchical display rows when in natural view (priority sort & all filter tab)
+  let displayRows = []
+  if (sortColumn === 'priority' && filter === 'all') {
+    const topOrder = { 'beds': 1, 'divan beds': 2, 'headboards': 3, 'mattresses': 4, 'bed frames': 5 }
+    const topCats = filteredPages.filter(p => isTopCategory(p))
+    topCats.sort((a, b) => (topOrder[a.title?.toLowerCase()] || 99) - (topOrder[b.title?.toLowerCase()] || 99))
+
+    const processedIds = new Set()
+    const categoryRows = []
+
+    topCats.forEach(topCat => {
+      const topId = String(topCat.id || '').replace('cat-', '')
+      processedIds.add(topCat.id)
+
+      categoryRows.push({
+        type: 'PAGE_ROW',
+        isTopLevel: true,
+        page: topCat,
+        indent: 0
+      })
+
+      // Find Shop By visual separators under this top category
+      const seps = shopBySeparators.filter(s => String(s.parentId || '') === topId)
+      seps.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+
+      seps.forEach(sep => {
+        const sepId = String(sep.id || '').replace('cat-', '')
+        categoryRows.push({
+          type: 'SEPARATOR_ROW',
+          id: sep.id,
+          title: sep.title || sep.name,
+          indent: 1
+        })
+
+        // Child leaf pages under this separator
+        const sepChildren = filteredPages.filter(p => String(p.parentId || '') === sepId)
+        sepChildren.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+        sepChildren.forEach(child => {
+          processedIds.add(child.id)
+          categoryRows.push({
+            type: 'PAGE_ROW',
+            isTopLevel: false,
+            page: child,
+            indent: 2
+          })
+        })
+      })
+
+      // Direct children under this top category (not under a Shop By separator)
+      const directChildren = filteredPages.filter(p => String(p.parentId || '') === topId && p.id !== topCat.id && !processedIds.has(p.id))
+      directChildren.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+      directChildren.forEach(child => {
+        processedIds.add(child.id)
+        categoryRows.push({
+          type: 'PAGE_ROW',
+          isTopLevel: false,
+          page: child,
+          indent: 1
+        })
+      })
+    })
+
+    // Remaining category pages (if any)
+    const otherCats = filteredPages.filter(p => p.post_type === 'category' && !processedIds.has(p.id))
+    otherCats.forEach(c => {
+      processedIds.add(c.id)
+      categoryRows.push({
+        type: 'PAGE_ROW',
+        isTopLevel: false,
+        page: c,
+        indent: 1
+      })
+    })
+
+    // CMS & Informational Pages
+    const cmsPages = filteredPages.filter(p => p.post_type !== 'category')
+    const cmsRows = []
+    if (cmsPages.length > 0) {
+      cmsRows.push({
+        type: 'SECTION_HEADER',
+        id: 'section-cms-header',
+        title: 'CMS & Informational Pages'
+      })
+      cmsPages.forEach(p => {
+        cmsRows.push({
+          type: 'PAGE_ROW',
+          isTopLevel: false,
+          page: p,
+          indent: 0
+        })
+      })
+    }
+
+    displayRows = [...categoryRows, ...cmsRows]
+  } else {
+    // When actively filtered or sorted by column, display flat rows
+    displayRows = sortedPages.map(page => ({
+      type: 'PAGE_ROW',
+      isTopLevel: isTopCategory(page),
+      page,
+      indent: 0
+    }))
+  }
+
+  // Calculate filter tab counts strictly for SEO-managed pages
   const allCount = pagesList.length
   const starredCount = pagesList.filter(p => p.isStarred === true && !p.isExcluded && p.type !== 'Excluded').length
   const configuredCount = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
@@ -766,169 +885,220 @@ export default function PageManagementPage({
             </tr>
           </thead>
           <tbody>
-            {sortedPages.length > 0 ? (
-              sortedPages.map((page, idx) => (
-                <tr key={page.id || page.url || idx}>
-                  <td className="col-page">
-                    <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
-                    <div className="w3-page-slug">{page.url || ''}</div>
-                  </td>
-                  <td className="col-type">
-                    <div className="type-select-wrapper">
-                      <select
-                        className={`type-select type-${(page.type || 'unclassified').toLowerCase()}`}
-                        value={page.type || 'Unclassified'}
-                        onChange={(e) => handleInlineTypeChange(page, e.target.value)}
-                      >
-                        <option value="Hub">Hub</option>
-                        <option value="Landing">Landing</option>
-                        <option value="Topical">Topical</option>
-                        <option value="Article">Article</option>
-                        <option value="Excluded">Excluded</option>
-                      </select>
-                      {page.isManualOverride && (
-                        <span className="manual-override-indicator" title="Manual Override Active (Preserved across resyncs)">
-                          🔧
-                        </span>
+            {displayRows.length > 0 ? (
+              displayRows.map((row, idx) => {
+                if (row.type === 'SEPARATOR_ROW') {
+                  return (
+                    <tr key={row.id || `sep-${idx}`} className="w3-row-visual-separator">
+                      <td colSpan="7">
+                        <div className="w3-visual-separator-content" style={{ paddingLeft: `${(row.indent || 1) * 20 + 8}px` }}>
+                          <span className="w3-separator-icon">📁</span>
+                          <span className="w3-separator-label"><em>{row.title}</em></span>
+                          <span className="w3-separator-badge">Navigation Category</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }
+
+                if (row.type === 'SECTION_HEADER') {
+                  return (
+                    <tr key={row.id || `sec-${idx}`} className="w3-row-section-header">
+                      <td colSpan="7">
+                        <div className="w3-section-header-content">
+                          <span className="w3-section-icon">📄</span>
+                          <span className="w3-section-title">{row.title}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                }
+
+                const page = row.page
+                return (
+                  <tr
+                    key={page.id || page.url || idx}
+                    className={row.isTopLevel ? 'w3-row-top-category' : ''}
+                  >
+                    <td className="col-page">
+                      {row.isTopLevel ? (
+                        <div className="w3-page-title-row">
+                          <span className="w3-top-cat-pill">TOP CATEGORY</span>
+                          <span className="w3-page-title w3-top-cat-title">{page.title || 'Untitled Page'}</span>
+                          <div className="w3-page-slug" style={{ width: '100%', marginTop: '2px' }}>{page.url || ''}</div>
+                        </div>
+                      ) : row.indent > 0 ? (
+                        <div className="w3-indented-cell" style={{ paddingLeft: `${row.indent * 18}px` }}>
+                          <span className="w3-tree-branch">↳</span>
+                          <div className="w3-page-title-content">
+                            <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
+                            <div className="w3-page-slug">{page.url || ''}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
+                          <div className="w3-page-slug">{page.url || ''}</div>
+                        </>
                       )}
-                    </div>
-                  </td>
-                  <td className="col-priority">
-                    <div className="w3-priority-cell">
-                      <span className="w3-priority-number">{page.priority !== undefined ? page.priority : 0}</span>
-                      <button
-                        type="button"
-                        className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
-                        onClick={() => handleToggleStar(page)}
-                        title={page.isStarred ? 'Remove work-priority star' : 'Set as work-priority star'}
-                      >
-                        {page.isStarred ? '⭐' : '☆'}
-                      </button>
-                    </div>
-                  </td>
-                  <td className="col-target">
-                    {(page.target || page.targetPhrase || '').trim() ? (
-                      page.target || page.targetPhrase
-                    ) : (
-                      <span className="target-not-set">Not Set</span>
-                    )}
-                  </td>
-                  <td className="col-last-audit">
-                    {page.isAudited ? (
-                      page.isStale ? (
+                    </td>
+                    <td className="col-type">
+                      <div className="type-select-wrapper">
+                        <select
+                          className={`type-select type-${(page.type || 'unclassified').toLowerCase()}`}
+                          value={page.type || 'Unclassified'}
+                          onChange={(e) => handleInlineTypeChange(page, e.target.value)}
+                        >
+                          <option value="Hub">Hub</option>
+                          <option value="Landing">Landing</option>
+                          <option value="Topical">Topical</option>
+                          <option value="Article">Article</option>
+                          <option value="Excluded">Excluded</option>
+                        </select>
+                        {page.isManualOverride && (
+                          <span className="manual-override-indicator" title="Manual Override Active (Preserved across resyncs)">
+                            🔧
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="col-priority">
+                      <div className="w3-priority-cell">
+                        <span className="w3-priority-number">{page.priority !== undefined ? page.priority : 0}</span>
                         <button
                           type="button"
-                          className="btn-audit-stale-badge"
-                          onClick={() => onViewAudit && onViewAudit(page)}
-                          id={`btn-last-audit-${page.id || idx}`}
-                          title={page.staleReason || 'WordPress data changed after last audit'}
+                          className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
+                          onClick={() => handleToggleStar(page)}
+                          title={page.isStarred ? 'Remove work-priority star' : 'Set as work-priority star'}
                         >
-                          🟡 Audit Stale ({String(page.lastAuditDate || 'Stale')})
+                          {page.isStarred ? '⭐' : '☆'}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="col-target">
+                      {(page.target || page.targetPhrase || '').trim() ? (
+                        page.target || page.targetPhrase
+                      ) : (
+                        <span className="target-not-set">Not Set</span>
+                      )}
+                    </td>
+                    <td className="col-last-audit">
+                      {page.isAudited ? (
+                        page.isStale ? (
+                          <button
+                            type="button"
+                            className="btn-audit-stale-badge"
+                            onClick={() => onViewAudit && onViewAudit(page)}
+                            id={`btn-last-audit-${page.id || idx}`}
+                            title={page.staleReason || 'WordPress data changed after last audit'}
+                          >
+                            🟡 Audit Stale ({String(page.lastAuditDate || 'Stale')})
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-audit-completed-badge"
+                            onClick={() => onViewAudit && onViewAudit(page)}
+                            id={`btn-last-audit-${page.id || idx}`}
+                            title="View completed audit results"
+                          >
+                            🟢 {String(page.lastAuditDate || 'Audited ✓')}
+                          </button>
+                        )
+                      ) : (
+                        <span className="w3-text-plain">Never</span>
+                      )}
+                    </td>
+                    <td className="col-audit-page">
+                      {currentlyAuditingKey && (currentlyAuditingKey === (page.id || page.url) || currentlyAuditingKey === page.url || currentlyAuditingKey === page.id) ? (
+                        <button
+                          type="button"
+                          className="btn-table-audit-action btn-audit-in-progress"
+                          disabled
+                          id={`btn-audit-page-${page.id || idx}`}
+                        >
+                          ⏳ Auditing...
+                        </button>
+                      ) : page.isAudited ? (
+                        page.isStale ? (
+                          <button
+                            type="button"
+                            className="btn-audit-stale-action"
+                            onClick={() => onViewAudit && onViewAudit(page)}
+                            id={`btn-audit-page-${page.id || idx}`}
+                            title={`WordPress content modified after audit - Re-audit recommended (${page.auditScore !== null ? `${page.auditScore} / 100` : 'Stale'})`}
+                          >
+                            {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audit Required ?'}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`btn-table-audit-action ${
+                              page.auditScore !== null
+                                ? (page.auditScore >= 70 ? 'btn-audit-score-green' : page.auditScore >= 50 ? 'btn-audit-score-amber' : 'btn-audit-score-red')
+                                : 'btn-audit-score-green'
+                            }`}
+                            onClick={() => onViewAudit && onViewAudit(page)}
+                            id={`btn-audit-page-${page.id || idx}`}
+                            title="View completed audit results"
+                          >
+                            {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audited ✓'}
+                          </button>
+                        )
+                      ) : page.isConfigured ? (
+                        <button
+                          type="button"
+                          className="btn-table-audit-action btn-audit-active"
+                          onClick={() => onViewAudit && onViewAudit(page)}
+                          id={`btn-audit-page-${page.id || idx}`}
+                        >
+                          Audit Page ▷
                         </button>
                       ) : (
                         <button
                           type="button"
-                          className="btn-audit-completed-badge"
-                          onClick={() => onViewAudit && onViewAudit(page)}
-                          id={`btn-last-audit-${page.id || idx}`}
-                          title="View completed audit results"
-                        >
-                          🟢 {String(page.lastAuditDate || 'Audited ✓')}
-                        </button>
-                      )
-                    ) : (
-                      <span className="w3-text-plain">Never</span>
-                    )}
-                  </td>
-                  <td className="col-audit-page">
-                    {currentlyAuditingKey && (currentlyAuditingKey === (page.id || page.url) || currentlyAuditingKey === page.url || currentlyAuditingKey === page.id) ? (
-                      <button
-                        type="button"
-                        className="btn-table-audit-action btn-audit-in-progress"
-                        disabled
-                        id={`btn-audit-page-${page.id || idx}`}
-                      >
-                        ⏳ Auditing...
-                      </button>
-                    ) : page.isAudited ? (
-                      page.isStale ? (
-                        <button
-                          type="button"
-                          className="btn-audit-stale-action"
+                          className="btn-table-audit-action btn-audit-faded"
                           onClick={() => onViewAudit && onViewAudit(page)}
                           id={`btn-audit-page-${page.id || idx}`}
-                          title={`WordPress content modified after audit - Re-audit recommended (${page.auditScore !== null ? `${page.auditScore} / 100` : 'Stale'})`}
                         >
-                          {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audit Required ?'}
+                          Audit Page ▷
+                        </button>
+                      )}
+                    </td>
+                    <td className="col-actions">
+                      <button
+                        type="button"
+                        className={`btn-configure-page ${page.isConfigured ? 'btn-configured-state' : ''}`}
+                        onClick={() => setEditingPage(page)}
+                        id={`btn-configure-page-${page.id || idx}`}
+                      >
+                        {page.isConfigured ? 'Configured' : 'Configure'}
+                      </button>
+                      {page.isExcluded || page.type === 'Excluded' ? (
+                        <button
+                          type="button"
+                          className="btn-row-include"
+                          onClick={() => handleIncludePage(page)}
+                          title="Include page back in active list"
+                          id={`btn-include-page-${page.id || idx}`}
+                        >
+                          Include
                         </button>
                       ) : (
                         <button
                           type="button"
-                          className={`btn-table-audit-action ${
-                            page.auditScore !== null
-                              ? (page.auditScore >= 70 ? 'btn-audit-score-green' : page.auditScore >= 50 ? 'btn-audit-score-amber' : 'btn-audit-score-red')
-                              : 'btn-audit-score-green'
-                          }`}
-                          onClick={() => onViewAudit && onViewAudit(page)}
-                          id={`btn-audit-page-${page.id || idx}`}
-                          title="View completed audit results"
+                          className="btn-row-exclude"
+                          onClick={() => handleExcludePage(page)}
+                          title="Exclude page with 1-click"
+                          id={`btn-exclude-page-${page.id || idx}`}
                         >
-                          {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audited ✓'}
+                          Exclude
                         </button>
-                      )
-                    ) : page.isConfigured ? (
-                      <button
-                        type="button"
-                        className="btn-table-audit-action btn-audit-active"
-                        onClick={() => onViewAudit && onViewAudit(page)}
-                        id={`btn-audit-page-${page.id || idx}`}
-                      >
-                        Audit Page ▷
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-table-audit-action btn-audit-faded"
-                        onClick={() => onViewAudit && onViewAudit(page)}
-                        id={`btn-audit-page-${page.id || idx}`}
-                      >
-                        Audit Page ▷
-                      </button>
-                    )}
-                  </td>
-                  <td className="col-actions">
-                    <button
-                      type="button"
-                      className={`btn-configure-page ${page.isConfigured ? 'btn-configured-state' : ''}`}
-                      onClick={() => setEditingPage(page)}
-                      id={`btn-configure-page-${page.id || idx}`}
-                    >
-                      {page.isConfigured ? 'Configured' : 'Configure'}
-                    </button>
-                    {page.isExcluded || page.type === 'Excluded' ? (
-                      <button
-                        type="button"
-                        className="btn-row-include"
-                        onClick={() => handleIncludePage(page)}
-                        title="Include page back in active list"
-                        id={`btn-include-page-${page.id || idx}`}
-                      >
-                        Include
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-row-exclude"
-                        onClick={() => handleExcludePage(page)}
-                        title="Exclude page with 1-click"
-                        id={`btn-exclude-page-${page.id || idx}`}
-                      >
-                        Exclude
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
+                      )}
+                    </td>
+                  </tr>
+                )
+              })
             ) : (
               <tr>
                 <td colSpan="7" className="w3-empty-row">

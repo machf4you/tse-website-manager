@@ -194,7 +194,11 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
 
   // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
-  const rawExportedPages = extractPagesFromPackage(pkg)
+  const isShopBySeparator = (p) => {
+    const title = (p.title || p.name || '').trim().toLowerCase()
+    return p.post_type === 'category' && (title.startsWith('shop by') || title.startsWith('shop-by'))
+  }
+  const rawExportedPages = extractPagesFromPackage(pkg).filter(p => !isShopBySeparator(p))
   const _exportedPosts = extractPostsFromPackage(pkg)
 
   // Merge localStorage page configurations so targetPhrase, priority, and type are preserved globally

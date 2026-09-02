@@ -811,3 +811,120 @@
   color: rgb(148, 163, 184);
   font-size: 0.9rem;
 }
+
+/* ── Visual Hierarchy Styles ── */
+.w3-row-top-category {
+  background-color: rgba(30, 41, 59, 0.75) !important;
+  border-top: 2px solid rgba(59, 130, 246, 0.4) !important;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2) !important;
+}
+
+.w3-row-top-category:hover {
+  background-color: rgba(30, 41, 59, 0.9) !important;
+}
+
+.w3-page-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.w3-top-cat-pill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  background-color: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.w3-top-cat-title {
+  font-weight: 800 !important;
+  font-size: 0.95rem !important;
+  letter-spacing: 0.02em;
+  color: #ffffff !important;
+}
+
+.w3-row-visual-separator {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  border-top: 1px dashed rgba(100, 116, 139, 0.3) !important;
+  border-bottom: 1px dashed rgba(100, 116, 139, 0.3) !important;
+  user-select: none;
+}
+
+.w3-visual-separator-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  font-size: 0.82rem;
+  color: rgb(148, 163, 184);
+}
+
+.w3-separator-icon {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.w3-separator-label {
+  font-style: italic;
+  font-weight: 600;
+  color: rgb(203, 213, 225);
+}
+
+.w3-separator-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  background-color: rgba(100, 116, 139, 0.2);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  color: rgb(148, 163, 184);
+  border-radius: 3px;
+  margin-left: 6px;
+}
+
+.w3-row-section-header {
+  background-color: rgba(15, 23, 42, 0.95) !important;
+  border-top: 2px solid rgba(100, 116, 139, 0.4) !important;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.2) !important;
+}
+
+.w3-section-header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(148, 163, 184);
+}
+
+.w3-indented-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.w3-tree-branch {
+  color: rgb(100, 116, 139);
+  font-weight: 700;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.w3-page-title-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
