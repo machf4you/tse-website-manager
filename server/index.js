@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.92',
-  buildHash: 'w3prioritysafe92',
-  buildTimestamp: 1788260000000,
+  version: '1.93',
+  buildHash: 'mgcanonicalurl93',
+  buildTimestamp: 1788270000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -790,7 +790,63 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
     const pages = []
 
     if (rawCats.length > 0) {
-      // Process detailed categories list with genuine Magento URL paths and attributes
+      // Build lookup map of category ID to category entity
+      const catMap = {}
+      rawCats.forEach(cat => {
+        if (cat && cat.id) catMap[String(cat.id)] = cat
+      })
+
+      // Canonical Category URL Resolver: constructs clean canonical URLs (Level 2 top slug + leaf slug)
+      function resolveCanonicalCategoryUrl(cat) {
+        if (!cat || !cat.name) return cleanSiteUrl
+
+        const attrs = {}
+        if (Array.isArray(cat.custom_attributes)) {
+          cat.custom_attributes.forEach(a => {
+            if (a && a.attribute_code) attrs[a.attribute_code] = a.value
+          })
+        }
+
+        const catPath = attrs.path || (cat.path ? String(cat.path) : '')
+        const parts = catPath.split('/').filter(Boolean)
+        const level = cat.level !== undefined ? Number(cat.level) : (parts.length - 1)
+
+        const urlKey = attrs.url_key || cat.url_key || ''
+        const cleanNameSlug = cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        const leafSlug = urlKey || cleanNameSlug
+
+        // Root container (Level 1, e.g. ID: 2 Hf4you)
+        if (level <= 1 || parts.length <= 2) {
+          return cleanSiteUrl
+        }
+
+        // Level 2 (Top-level product category: Beds, Bed Frames, Divan Beds, Headboards, Mattresses)
+        if (level === 2 || parts.length === 3) {
+          return `${cleanSiteUrl}/${leafSlug}`
+        }
+
+        // Level 3 or 4 descendant: Resolve the Level 2 top parent
+        // parts format: ['1', '2', '<top_level_id>', ..., '<leaf_id>']
+        const topLevelId = parts[2]
+        const topCat = topLevelId ? catMap[String(topLevelId)] : null
+        let topSlug = ''
+        if (topCat) {
+          const topAttrs = {}
+          if (Array.isArray(topCat.custom_attributes)) {
+            topCat.custom_attributes.forEach(a => {
+              if (a && a.attribute_code) topAttrs[a.attribute_code] = a.value
+            })
+          }
+          topSlug = topAttrs.url_key || topCat.url_key || topCat.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+        }
+
+        if (topSlug) {
+          return `${cleanSiteUrl}/${topSlug}/${leafSlug}`
+        }
+        return `${cleanSiteUrl}/${leafSlug}`
+      }
+
+      // Process detailed categories list with Canonical Category URL Resolver
       rawCats.forEach(cat => {
         if (!cat.id || !cat.name) return
         const attrs = {}
@@ -807,10 +863,7 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
           return // Skip foreign store category
         }
 
-        const urlPath = attrs.url_path || attrs.url_key || ''
-        const cleanPath = urlPath.trim().replace(/^\/+/, '').replace(/\/+$/, '')
-        const slug = cat.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-        const fullCatUrl = cleanPath ? `${cleanSiteUrl}/${cleanPath}` : `${cleanSiteUrl}/${slug}`
+        const fullCatUrl = resolveCanonicalCategoryUrl(cat)
 
         const isContainerOrInactive = (cat.level !== undefined && cat.level <= 1) || Boolean(cat.is_active) === false
         const catType = isContainerOrInactive ? 'Excluded' : 'Landing'
@@ -843,14 +896,18 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
         hf4youTreeNode = catTreeData.children_data.find(ch => String(ch.id) === '2' || ch.name?.toLowerCase() === 'hf4you') || catTreeData
       }
 
-      function processCategoryNode(node, parentName = '') {
+      function processCategoryNode(node, topLevelSlug = '') {
         if (!node) return
         if (node.name && node.id) {
           if (node.path && !String(node.path).startsWith('1/2/') && String(node.path) !== '1/2') {
             return
           }
-          const catSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-          const fullCatUrl = `${cleanSiteUrl}/${catSlug}`
+          const catSlug = (node.url_key || node.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+          const currentTopSlug = node.level === 2 ? catSlug : topLevelSlug
+          const fullCatUrl = node.level <= 1
+            ? cleanSiteUrl
+            : (node.level === 2 ? `${cleanSiteUrl}/${catSlug}` : (currentTopSlug ? `${cleanSiteUrl}/${currentTopSlug}/${catSlug}` : `${cleanSiteUrl}/${catSlug}`))
+
           const isContainerOrInactive = (node.level !== undefined && node.level <= 1) || Boolean(node.is_active) === false
           const catType = isContainerOrInactive ? 'Excluded' : 'Landing'
           const catPriority = isContainerOrInactive ? 0 : 2
@@ -868,12 +925,13 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
             level: node.level,
             magentoCategoryId: node.id,
             parentId: node.parent_id,
-            parentName: parentName || null,
+            parentName: node.level > 2 ? currentTopSlug : null,
             position: node.position
           })
-        }
-        if (Array.isArray(node.children_data)) {
-          node.children_data.forEach(child => processCategoryNode(child, node.name))
+
+          if (Array.isArray(node.children_data)) {
+            node.children_data.forEach(child => processCategoryNode(child, currentTopSlug))
+          }
         }
       }
       processCategoryNode(hf4youTreeNode)
