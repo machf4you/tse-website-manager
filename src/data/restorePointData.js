@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.92-stable-magento-sync-and-priority',
+    version: 'v1.92-stable',
+    gitTag: 'v1.92-stable',
+    commit: '576b3e3',
+    date: '02-09-2026 16:20',
+    title: 'Stable Magento Admin Bearer Token Auth, Store-Tree Hierarchy Scoping & W3 Priority Resolution (V1.92)',
+    description: 'Complete stable build featuring automatic Magento 2 Admin Bearer Token authentication via POST /integration/admin/token, store-tree hierarchy path scoping (enforcing path 1/2/ prefix to isolate HF4You from multi-store bleed), canonical priority derivation from autoType when no manual type override exists, and verified Landing Priority 2 resolution on active Divan Beds category.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.92-stable-magento-sync-and-priority.md'
+  },
+  {
     id: 'v1.89-stable-w3-w4-navigation',
     version: 'v1.89-stable',
     gitTag: 'v1.89-stable',
-    commit: '[AUTO]',
+    commit: 'e60f744',
     date: '01-09-2026 09:10',
     title: 'Stable W3 & W4 Navigation, Work-Priority, Alt Text Pipeline & Error Resilience (V1.89)',
     description: 'Complete verified stable build of Website Manager (V1.89). Includes W3 Page Management, manual ⭐ work-priority toggling, W4 Alt Text push pipeline with exact Media ID resolution, green push checkmark persistence, Action Checklist deduplication, readable date/time formatting, W4 to W3 seamless back navigation, browser refresh persistence, type-safe localStorage state parsing, and global React ErrorBoundary.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.89-stable-w3-w4-navigation.md'
   },
   {
