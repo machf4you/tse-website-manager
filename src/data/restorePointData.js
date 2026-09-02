@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.93-stable-prior-to-displaying-category-structure',
+    version: 'v1.93-stable',
+    gitTag: 'v1.93-stable',
+    commit: '2f94985',
+    date: '02-09-2026 16:50',
+    title: 'Stable Canonical Category URL Resolver & Clean Live URL Resolution (V1.93)',
+    description: 'Complete verified stable build featuring the dynamic Canonical Category URL Resolver. Automatically constructs clean 2-level canonical category URLs ({top-level-url_key}/{leaf-url_key}) for all active Magento categories, eliminating legacy intermediate filter folders (such as /type/, /bed-sizes/, /shop-by-divan-type/) while leaving Magento navigation and 301 redirects untouched. All 47 active categories verified returning live HTTP 200 OK.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.93-stable-prior-to-displaying-category-structure.md'
+  },
+  {
     id: 'v1.92-stable-magento-sync-and-priority',
     version: 'v1.92-stable',
     gitTag: 'v1.92-stable',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '02-09-2026 16:20',
     title: 'Stable Magento Admin Bearer Token Auth, Store-Tree Hierarchy Scoping & W3 Priority Resolution (V1.92)',
     description: 'Complete stable build featuring automatic Magento 2 Admin Bearer Token authentication via POST /integration/admin/token, store-tree hierarchy path scoping (enforcing path 1/2/ prefix to isolate HF4You from multi-store bleed), canonical priority derivation from autoType when no manual type override exists, and verified Landing Priority 2 resolution on active Divan Beds category.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.92-stable-magento-sync-and-priority.md'
   },
   {
