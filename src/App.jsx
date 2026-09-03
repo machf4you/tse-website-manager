@@ -65,76 +65,76 @@ const SlidersIcon = () => (
   </svg>
 )
 
+import AppsDashboard from './pages/AppsDashboard'
 import GlobalDeploymentIndicator from './components/GlobalDeploymentIndicator'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
-  const [activeNavTab, setActiveNavTab] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tse_top_nav_tab_v1')
-      if (saved && (saved === 'websites' || saved === 'global-settings')) {
-        return saved
-      }
-    } catch (e) {
-      // ignore
-    }
-    return 'websites'
-  })
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('tse_top_nav_tab_v1', activeNavTab)
-    } catch (e) {
-      // ignore
-    }
-  }, [activeNavTab])
+  const [currentView, setCurrentView] = useState('apps-dashboard') // 'apps-dashboard' | 'website-manager'
+  const [activeNavTab, setActiveNavTab] = useState('websites') // 'websites' | 'global-settings'
 
   return (
     <div className="app">
       <header className="app-header" role="banner">
 
-        {/* Left: Back to Apps + Title */}
+        {/* Left: Back to Apps (when in Website Manager) + Title */}
         <div className="header-left">
-          <button
-            type="button"
-            className="back-to-apps"
-            aria-label="Back to Apps"
-          >
-            <ArrowLeftIcon />
-            <span className="back-label">Back to Apps</span>
-          </button>
+          {currentView === 'website-manager' ? (
+            <>
+              <button
+                type="button"
+                className="back-to-apps"
+                aria-label="Back to Apps"
+                onClick={() => setCurrentView('apps-dashboard')}
+                id="btn-back-to-apps"
+              >
+                <ArrowLeftIcon />
+                <span className="back-label">Back to Apps</span>
+              </button>
 
-          <div className="header-divider" aria-hidden="true" />
+              <div className="header-divider" aria-hidden="true" />
 
-          <div className="app-identity">
-            <span className="app-name">
-              <span className="app-name-accent">TSE</span> Website Management
-            </span>
-          </div>
+              <div className="app-identity">
+                <span className="app-name">
+                  <span className="app-name-accent">TSE</span> Website Management
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="app-identity">
+              <span className="app-name">
+                <span className="app-name-accent">TSE</span> Apps Platform
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Centre: Navigation tabs */}
+        {/* Centre: Navigation tabs (when in Website Manager) */}
         <nav className="header-nav" aria-label="Primary navigation">
-          <button
-            type="button"
-            className={`nav-tab ${activeNavTab === 'websites' ? 'active' : ''}`}
-            aria-current={activeNavTab === 'websites' ? 'page' : undefined}
-            id="nav-tab-websites"
-            onClick={() => setActiveNavTab('websites')}
-          >
-            <GlobeIcon />
-            Websites
-          </button>
-          <button
-            type="button"
-            className={`nav-tab ${activeNavTab === 'global-settings' ? 'active' : ''}`}
-            aria-current={activeNavTab === 'global-settings' ? 'page' : undefined}
-            id="nav-tab-global-settings"
-            onClick={() => setActiveNavTab('global-settings')}
-          >
-            <SlidersIcon />
-            Global Settings
-          </button>
+          {currentView === 'website-manager' && (
+            <>
+              <button
+                type="button"
+                className={`nav-tab ${activeNavTab === 'websites' ? 'active' : ''}`}
+                aria-current={activeNavTab === 'websites' ? 'page' : undefined}
+                id="nav-tab-websites"
+                onClick={() => setActiveNavTab('websites')}
+              >
+                <GlobeIcon />
+                Websites
+              </button>
+              <button
+                type="button"
+                className={`nav-tab ${activeNavTab === 'global-settings' ? 'active' : ''}`}
+                aria-current={activeNavTab === 'global-settings' ? 'page' : undefined}
+                id="nav-tab-global-settings"
+                onClick={() => setActiveNavTab('global-settings')}
+              >
+                <SlidersIcon />
+                Global Settings
+              </button>
+            </>
+          )}
         </nav>
 
         {/* Right: Global Deployment / Version Indicator */}
@@ -151,8 +151,18 @@ function App() {
         aria-label="Main content"
       >
         <ErrorBoundary>
-          {activeNavTab === 'websites' && <WebsitesDashboard />}
-          {activeNavTab === 'global-settings' && <GlobalSettings />}
+          {currentView === 'apps-dashboard' && (
+            <AppsDashboard onOpenWebsiteManager={() => {
+              setCurrentView('website-manager')
+              setActiveNavTab('websites')
+            }} />
+          )}
+          {currentView === 'website-manager' && activeNavTab === 'websites' && (
+            <WebsitesDashboard />
+          )}
+          {currentView === 'website-manager' && activeNavTab === 'global-settings' && (
+            <GlobalSettings />
+          )}
         </ErrorBoundary>
       </main>
     </div>
