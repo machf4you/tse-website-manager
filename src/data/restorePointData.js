@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.11-stable-apps-dashboard-hierarchy-confirmed',
+    version: 'v2.11-stable',
+    gitTag: 'v2.11-stable-apps-dashboard-hierarchy-confirmed',
+    commit: '72cfa4c',
+    date: '03-09-2026 18:18',
+    title: 'Confirmed Apps Dashboard Hierarchy & Sectioning (V2.11)',
+    description: 'Confirmed stable restore point capturing live-approved Apps Dashboard structure: Website Management Suite with visual tree hierarchy (Page Auditor & Site Auditor subordinate) and distinct independent sections for Lead Generator, Chatza, Social Automation, and WP Exporter.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.11-stable-apps-dashboard-hierarchy-confirmed.md'
+  },
+  {
     id: 'v2.09-before-app-relationship-hierarchy',
     version: 'v2.09',
     gitTag: 'v2.09-before-app-relationship-hierarchy',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 18:06',
     title: 'State Prior to Application Relationship Hierarchy (V2.09)',
     description: 'Pre-change checkpoint capturing confirmed V2.09 production state before restructuring Apps Dashboard into a hierarchical Website Management Suite and distinct independent app sections.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.09-before-app-relationship-hierarchy.md'
   },
   {
