@@ -491,96 +491,209 @@ export default function PageManagementPage({
   // Build hierarchical display rows when in natural view (priority sort & all filter tab)
   let displayRows = []
   if (sortColumn === 'priority' && filter === 'all') {
-    const topCats = filteredPages.filter(p => isTopCategory(p))
-    topCats.sort((a, b) => getTopOrder(a.title || a.name) - getTopOrder(b.title || b.name))
+    const isAscentBuilders = Boolean(site && (
+      (site.name && safeLower(site.name).includes('ascent')) ||
+      (site.url && safeLower(site.url).includes('ascentbuilders'))
+    ))
 
-    const processedIds = new Set()
-    const categoryRows = []
+    if (isAscentBuilders) {
+      // ── WordPress Visual Hierarchy Prototype for Ascent Builders ──
+      const getCleanPath = (url) => {
+        if (!url) return ''
+        try {
+          const u = url.startsWith('http') ? new URL(url) : new URL(url, 'https://example.com')
+          return u.pathname.replace(/^\/+|\/+$/g, '').toLowerCase()
+        } catch {
+          return String(url).replace(/^\/+|\/+$/g, '').toLowerCase()
+        }
+      }
 
-    topCats.forEach(topCat => {
-      const topId = getRawId(topCat.id)
-      processedIds.add(topCat.id)
+      // 1. Build parent-child relationships based on canonical URL structure
+      const potentialParents = filteredPages.filter(p => getCleanPath(p.url))
+      const parentOfChild = new Map() // childId -> parentId
+      const childrenByParent = new Map() // parentId -> [children]
 
-      categoryRows.push({
-        type: 'PAGE_ROW',
-        isTopLevel: true,
-        page: topCat,
-        indent: 0
+      filteredPages.forEach(c => {
+        const cPath = getCleanPath(c.url)
+        if (!cPath) return // home page has empty path
+        const cParts = cPath.split('/')
+        const cSlug = c.slug || cParts[cParts.length - 1]
+        const cDir = cParts.slice(0, -1).join('/')
+
+        for (const p of potentialParents) {
+          if (p.id === c.id) continue
+          const pPath = getCleanPath(p.url)
+          if (!pPath) continue
+          const pParts = pPath.split('/')
+          const pSlug = p.slug || pParts[pParts.length - 1]
+          const pDir = pParts.slice(0, -1).join('/')
+
+          // Rule A: Direct subpath nesting (/services/loft-conversions under /services)
+          if (cPath.startsWith(pPath + '/')) {
+            parentOfChild.set(c.id, p.id)
+            if (!childrenByParent.has(p.id)) childrenByParent.set(p.id, [])
+            childrenByParent.get(p.id).push(c)
+            break
+          }
+
+          // Rule B: Slug prefix nesting at same directory depth (/loft-conversions-banstead under /loft-conversions)
+          if (cDir === pDir && pSlug.length >= 4 && cSlug.startsWith(pSlug + '-')) {
+            parentOfChild.set(c.id, p.id)
+            if (!childrenByParent.has(p.id)) childrenByParent.set(p.id, [])
+            childrenByParent.get(p.id).push(c)
+            break
+          }
+        }
       })
 
-      // Find Shop By visual separators under this top category
-      const seps = shopBySeparators.filter(s => getRawId(s.parentId) === topId)
-      seps.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
+      // 2. Identify top-level pages
+      const topLevelPages = filteredPages.filter(p => !parentOfChild.has(p.id))
 
-      seps.forEach(sep => {
-        const sepId = getRawId(sep.id)
-        categoryRows.push({
-          type: 'SEPARATOR_ROW',
-          id: sep.id,
-          title: extractSafeString(sep.title || sep.name),
-          indent: 1
+      // Sort top-level pages by standard priority / title sort
+      topLevelPages.sort((a, b) => {
+        const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
+        const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
+        if (pA !== pB) return pA - pB
+        const starA = a.isStarred ? 1 : 0
+        const starB = b.isStarred ? 1 : 0
+        if (starA !== starB) return starB - starA
+        return safeLower(a.title).localeCompare(safeLower(b.title))
+      })
+
+      // 3. Assemble visual display rows with indentation
+      const wpRows = []
+      const processedIds = new Set()
+
+      topLevelPages.forEach(topPage => {
+        processedIds.add(topPage.id)
+        wpRows.push({
+          type: 'PAGE_ROW',
+          isTopLevel: true,
+          page: topPage,
+          indent: 0
         })
 
-        // Child leaf pages under this separator
-        const sepChildren = filteredPages.filter(p => getRawId(p.parentId) === sepId)
-        sepChildren.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
-        sepChildren.forEach(child => {
+        const children = childrenByParent.get(topPage.id) || []
+        children.sort((a, b) => safeLower(a.title).localeCompare(safeLower(b.title)))
+        children.forEach(child => {
+          processedIds.add(child.id)
+          wpRows.push({
+            type: 'PAGE_ROW',
+            isTopLevel: false,
+            page: child,
+            indent: 1
+          })
+        })
+      })
+
+      // Safety fallback: ensure any unprocessed page is rendered
+      filteredPages.forEach(p => {
+        if (!processedIds.has(p.id)) {
+          wpRows.push({
+            type: 'PAGE_ROW',
+            isTopLevel: false,
+            page: p,
+            indent: 0
+          })
+        }
+      })
+
+      displayRows = wpRows
+    } else {
+      // ── Magento & Standard WordPress Rendering ──
+      const topCats = filteredPages.filter(p => isTopCategory(p))
+      topCats.sort((a, b) => getTopOrder(a.title || a.name) - getTopOrder(b.title || b.name))
+
+      const processedIds = new Set()
+      const categoryRows = []
+
+      topCats.forEach(topCat => {
+        const topId = getRawId(topCat.id)
+        processedIds.add(topCat.id)
+
+        categoryRows.push({
+          type: 'PAGE_ROW',
+          isTopLevel: true,
+          page: topCat,
+          indent: 0
+        })
+
+        // Find Shop By visual separators under this top category
+        const seps = shopBySeparators.filter(s => getRawId(s.parentId) === topId)
+        seps.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
+
+        seps.forEach(sep => {
+          const sepId = getRawId(sep.id)
+          categoryRows.push({
+            type: 'SEPARATOR_ROW',
+            id: sep.id,
+            title: extractSafeString(sep.title || sep.name),
+            indent: 1
+          })
+
+          // Child leaf pages under this separator
+          const sepChildren = filteredPages.filter(p => getRawId(p.parentId) === sepId)
+          sepChildren.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
+          sepChildren.forEach(child => {
+            processedIds.add(child.id)
+            categoryRows.push({
+              type: 'PAGE_ROW',
+              isTopLevel: false,
+              page: child,
+              indent: 2
+            })
+          })
+        })
+
+        // Direct children under this top category (not under a Shop By separator)
+        const directChildren = filteredPages.filter(p => getRawId(p.parentId) === topId && p.id !== topCat.id && !processedIds.has(p.id))
+        directChildren.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
+        directChildren.forEach(child => {
           processedIds.add(child.id)
           categoryRows.push({
             type: 'PAGE_ROW',
             isTopLevel: false,
             page: child,
-            indent: 2
+            indent: 1
           })
         })
       })
 
-      // Direct children under this top category (not under a Shop By separator)
-      const directChildren = filteredPages.filter(p => getRawId(p.parentId) === topId && p.id !== topCat.id && !processedIds.has(p.id))
-      directChildren.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
-      directChildren.forEach(child => {
-        processedIds.add(child.id)
+      // Remaining category pages (if any)
+      const otherCats = filteredPages.filter(p => p.post_type === 'category' && !processedIds.has(p.id) && getRawId(p.id) !== '2')
+      otherCats.forEach(c => {
+        processedIds.add(c.id)
         categoryRows.push({
           type: 'PAGE_ROW',
           isTopLevel: false,
-          page: child,
+          page: c,
           indent: 1
         })
       })
-    })
 
-    // Remaining category pages (if any)
-    const otherCats = filteredPages.filter(p => p.post_type === 'category' && !processedIds.has(p.id) && getRawId(p.id) !== '2')
-    otherCats.forEach(c => {
-      processedIds.add(c.id)
-      categoryRows.push({
-        type: 'PAGE_ROW',
-        isTopLevel: false,
-        page: c,
-        indent: 1
-      })
-    })
-
-    // CMS & Informational Pages
-    const cmsPages = filteredPages.filter(p => p.post_type !== 'category')
-    const cmsRows = []
-    if (cmsPages.length > 0) {
-      cmsRows.push({
-        type: 'SECTION_HEADER',
-        id: 'section-cms-header',
-        title: 'CMS & Informational Pages'
-      })
-      cmsPages.forEach(p => {
-        cmsRows.push({
-          type: 'PAGE_ROW',
-          isTopLevel: false,
-          page: p,
-          indent: 0
+      // CMS & Informational Pages
+      const cmsPages = filteredPages.filter(p => p.post_type !== 'category' && !processedIds.has(p.id))
+      const cmsRows = []
+      if (cmsPages.length > 0) {
+        if (site?.platform === 'magento' || topCats.length > 0) {
+          cmsRows.push({
+            type: 'SECTION_HEADER',
+            id: 'section-cms-header',
+            title: 'CMS & Informational Pages'
+          })
+        }
+        cmsPages.forEach(p => {
+          cmsRows.push({
+            type: 'PAGE_ROW',
+            isTopLevel: false,
+            page: p,
+            indent: 0
+          })
         })
-      })
-    }
+      }
 
-    displayRows = [...categoryRows, ...cmsRows]
+      displayRows = [...categoryRows, ...cmsRows]
+    }
   } else {
     // When actively filtered or sorted by column, display flat rows
     displayRows = sortedPages.map(page => ({
