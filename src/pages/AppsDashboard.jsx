@@ -205,15 +205,16 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       id: 'SOCIAL_AUTOMATION',
       name: 'Social Automation',
       description: 'Automated social media posting, scheduling, and analytics agent.',
-      status: 'Development',
-      version: 'v0.1.0-dev',
+      status: 'Live',
+      version: 'v1.0.0',
       accentColor: '#ec4899',
       IconComponent: MegaphoneIcon,
-      isActionable: false,
-      buttonText: 'Coming Soon',
-      liveUrl: null,
-      displayUrl: 'Not deployed',
-      isDeployed: false
+      launchUrl: 'https://automation.thesearchequation.co.uk/',
+      isActionable: true,
+      buttonText: 'Launch',
+      liveUrl: 'https://automation.thesearchequation.co.uk/',
+      displayUrl: 'automation.thesearchequation.co.uk',
+      isDeployed: true
     }
   ]
 
@@ -256,7 +257,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
           </div>
           <div className="stat-info">
             <span className="stat-label">Live Apps</span>
-            <span className="stat-number">3</span>
+            <span className="stat-number">4</span>
             <span className="stat-tag text-blue">Ready to use</span>
           </div>
         </div>
@@ -267,7 +268,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
           </div>
           <div className="stat-info">
             <span className="stat-label">In Development</span>
-            <span className="stat-number">4</span>
+            <span className="stat-number">3</span>
             <span className="stat-tag text-amber">Building</span>
           </div>
         </div>
