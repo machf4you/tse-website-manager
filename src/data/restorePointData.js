@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.09-before-app-relationship-hierarchy',
+    version: 'v2.09',
+    gitTag: 'v2.09-before-app-relationship-hierarchy',
+    commit: '2c2be6a',
+    date: '03-09-2026 18:06',
+    title: 'State Prior to Application Relationship Hierarchy (V2.09)',
+    description: 'Pre-change checkpoint capturing confirmed V2.09 production state before restructuring Apps Dashboard into a hierarchical Website Management Suite and distinct independent app sections.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.09-before-app-relationship-hierarchy.md'
+  },
+  {
     id: 'v2.02-stable-before-apps-dashboard-restore',
     version: 'v2.02-stable',
     gitTag: 'v2.02-stable-before-apps-dashboard-restore',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 16:26',
     title: 'State Prior to Apps Dashboard Restoration (V2.02)',
     description: 'Restore point capturing confirmed V2.02 production state before restoring the top-level TSE Apps Dashboard launcher and wiring the Back to Apps navigation.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.02-stable-before-apps-dashboard-restore.md'
   },
   {
