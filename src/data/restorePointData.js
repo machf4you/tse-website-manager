@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.00-stable-before-wp-w3-hierarchy-prototype',
+    version: 'v2.00-stable',
+    gitTag: 'v2.00-stable-before-wp-w3-hierarchy-prototype',
+    commit: '6c58b45',
+    date: '03-09-2026 11:27',
+    title: 'State Prior to WordPress W3 Hierarchy Prototype (Ascent Builders)',
+    description: 'Restore point capturing confirmed V2.00 production state before implementing the visual URL-derived parent-child hierarchy prototype on Ascent Builders.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.00-stable-before-wp-w3-hierarchy-prototype.md'
+  },
+  {
     id: 'v2.00-stable-global-phrase-matching-confirmed',
     version: 'v2.00-stable',
     gitTag: 'v2.00-stable-global-phrase-matching-confirmed',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 11:15',
     title: 'Confirmed Stable Global Phrase-Matching Engine & Safe String Navigation (V2.00)',
     description: 'Confirmed-good production release V2.00 personally verified by Mac on live production. Features deterministic minimum-token-window sliding algorithm for target-phrase intent matching (Meta Title PASS, Meta Description PASS, H1 PASS on HF4You 4ft 6 Double Beds), safe string extraction across WordPress/Magento pages, seamless W2/W3/W4 navigation, and preserved category hierarchies.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.00-stable-global-phrase-matching-confirmed.md'
   },
   {
