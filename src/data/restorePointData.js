@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.00-stable-global-phrase-matching-confirmed',
+    version: 'v2.00-stable',
+    gitTag: 'v2.00-stable-global-phrase-matching-confirmed',
+    commit: '9d79c34',
+    date: '03-09-2026 11:15',
+    title: 'Confirmed Stable Global Phrase-Matching Engine & Safe String Navigation (V2.00)',
+    description: 'Confirmed-good production release V2.00 personally verified by Mac on live production. Features deterministic minimum-token-window sliding algorithm for target-phrase intent matching (Meta Title PASS, Meta Description PASS, H1 PASS on HF4You 4ft 6 Double Beds), safe string extraction across WordPress/Magento pages, seamless W2/W3/W4 navigation, and preserved category hierarchies.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.00-stable-global-phrase-matching-confirmed.md'
+  },
+  {
     id: 'v1.96-stable-before-global-phrase-matching',
     version: 'v1.96-stable',
     gitTag: 'v1.96-stable-before-global-phrase-matching',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 09:52',
     title: 'Pre-Global Target Phrase Matching Engine Update (V1.96)',
     description: 'Restore point protecting confirmed V1.96 production state before deploying the shared deterministic PASS / IMPROVE / FAIL target-phrase matching algorithm across Page Auditor and Website Manager.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.96-stable-before-global-phrase-matching.md'
   },
   {
