@@ -4,8 +4,10 @@
  * based on target phrase, page topic, site name, and target length requirements.
  */
 
+import { matchTargetPhraseIntent, extractSafeString } from './phraseMatcher'
+
 function cleanTopicText(str = '', siteName = '') {
-  let s = (str || '').trim()
+  let s = extractSafeString(str).trim()
   if (!s) return ''
 
   // Remove common brand suffixes (e.g. "- Ascent Builders", "| Ascent Builders", "- HF4You")
@@ -35,8 +37,6 @@ function extractTopicFromUrl(url = '') {
     return ''
   }
 }
-
-import { matchTargetPhraseIntent } from './phraseMatcher'
 
 function containsPhrase(text = '', phrase = '') {
   if (!text || !phrase) return false

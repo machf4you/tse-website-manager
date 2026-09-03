@@ -1,7 +1,7 @@
-export const CURRENT_BUILD_VERSION = '1.97'
-export const CURRENT_BUILD_LABEL = 'V1.97 | READY'
-export const CURRENT_BUILD_HASH = 'globalphrasematchingv197'
-export const CURRENT_BUILD_TIMESTAMP = 1788310000000
+export const CURRENT_BUILD_VERSION = '1.98'
+export const CURRENT_BUILD_LABEL = 'V1.98 | READY'
+export const CURRENT_BUILD_HASH = 'w3resilienttitles198'
+export const CURRENT_BUILD_TIMESTAMP = 1788320000000
 
 
 

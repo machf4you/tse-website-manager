@@ -14,8 +14,19 @@ const STOPS = new Set([
   'the', 'a', 'an', 'of', 'in', 'on', 'for', 'to', 'and', 'or', 'with', 'across', 'at', 'by', 'from', 'our', 'your'
 ])
 
+export function extractSafeString(val) {
+  if (!val) return ''
+  if (typeof val === 'string') return val
+  if (typeof val === 'object') {
+    if (typeof val.rendered === 'string') return val.rendered
+    if (typeof val.raw === 'string') return val.raw
+    return ''
+  }
+  return String(val)
+}
+
 export function stemWord(w = '') {
-  const word = w.toLowerCase().trim()
+  const word = extractSafeString(w).toLowerCase().trim()
   if (word.endsWith('ies') && word.length > 4) return word.slice(0, -3) + 'y'
   if (word.endsWith('es') && word.length > 4) return word.slice(0, -2)
   if (word.endsWith('s') && !word.endsWith('ss') && word.length > 3) return word.slice(0, -1)
@@ -24,8 +35,9 @@ export function stemWord(w = '') {
 }
 
 export function normalizePhraseText(s = '') {
-  if (!s || typeof s !== 'string') return ''
-  let text = s.toLowerCase()
+  const safeStr = extractSafeString(s)
+  if (!safeStr) return ''
+  let text = safeStr.toLowerCase()
   text = text.replace(/&/g, ' and ')
   for (const { pat, repl } of DIM_PATTERNS) {
     text = text.replace(pat, repl)

@@ -196,9 +196,15 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   const pkg = storedPackageData || site?.storedPackageData
   const isShopBySeparator = (p) => {
     if (!p) return false
-    const rawTitle = (p.originalTitle || p.name || p.title || '').trim().toLowerCase()
-    const rawUrl = (p.url || p.link || '').toLowerCase()
-    const rawSlug = (p.slug || '').toLowerCase()
+    const extractStr = (val) => {
+      if (!val) return ''
+      if (typeof val === 'string') return val
+      if (typeof val === 'object') return val.rendered || val.raw || ''
+      return String(val)
+    }
+    const rawTitle = extractStr(p.originalTitle || p.name || p.title).trim().toLowerCase()
+    const rawUrl = extractStr(p.url || p.link).toLowerCase()
+    const rawSlug = extractStr(p.slug).toLowerCase()
     const catId = String(p.id || '').replace(/^cat-|^cms-/, '')
     return (
       (p.post_type === 'category' || p.magentoCategoryId !== undefined) &&

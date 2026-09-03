@@ -344,8 +344,10 @@ export function normalizeImportedPage(p, siteUrl = '') {
   return {
     ...cleanPage,
     id: p.id || p.ID || url,
-    title,
-    originalTitle: p.originalTitle || p.title || p.name || title,
+    originalTitle: (typeof p.originalTitle === 'string' ? p.originalTitle : '') ||
+                   (typeof p.name === 'string' ? p.name : '') ||
+                   (typeof p.title === 'string' ? p.title : '') ||
+                   title,
     url,
     link: url,
     metaTitle,

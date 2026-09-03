@@ -242,9 +242,15 @@ export default function PageManagementPage({
 
   const isShopBySeparator = (p) => {
     if (!p) return false
-    const rawTitle = (p.originalTitle || p.name || p.title || '').trim().toLowerCase()
-    const rawUrl = (p.url || p.link || '').toLowerCase()
-    const rawSlug = (p.slug || '').toLowerCase()
+    const extractStr = (val) => {
+      if (!val) return ''
+      if (typeof val === 'string') return val
+      if (typeof val === 'object') return val.rendered || val.raw || ''
+      return String(val)
+    }
+    const rawTitle = extractStr(p.originalTitle || p.name || p.title).trim().toLowerCase()
+    const rawUrl = extractStr(p.url || p.link).toLowerCase()
+    const rawSlug = extractStr(p.slug).toLowerCase()
     const catId = String(p.id || '').replace(/^cat-|^cms-/, '')
     return (
       (p.post_type === 'category' || p.magentoCategoryId !== undefined) &&
@@ -464,7 +470,13 @@ export default function PageManagementPage({
 
   // Keyword-based ordering for top-level product sections
   const getTopOrder = (title) => {
-    const t = (title || '').toLowerCase()
+    const extractStr = (val) => {
+      if (!val) return ''
+      if (typeof val === 'string') return val
+      if (typeof val === 'object') return val.rendered || val.raw || ''
+      return String(val)
+    }
+    const t = extractStr(title).toLowerCase()
     if (t.includes('bed frame')) return 5
     if (t.includes('divan')) return 2
     if (t.includes('headboard')) return 3
