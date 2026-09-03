@@ -118,12 +118,15 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       name: 'Website Management',
       description: 'Manage connected websites, crawl pages, run phrase fits, and track SEO audits.',
       status: 'Live',
-      version: 'v2.02',
+      version: 'v2.05',
       accentColor: '#10b981',
       IconComponent: GlobeIcon,
       onClick: onOpenWebsiteManager,
       isActionable: true,
-      buttonText: 'Open App'
+      buttonText: 'Open App',
+      liveUrl: 'https://tse-website-manager.thesearchequation.co.uk/',
+      displayUrl: 'tse-website-manager.thesearchequation.co.uk',
+      isDeployed: true
     },
     {
       id: 'LEAD_GENERATOR',
@@ -135,7 +138,10 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       IconComponent: DatabaseIcon,
       launchUrl: 'https://lead-finder.thesearchequation.co.uk',
       isActionable: true,
-      buttonText: 'Launch'
+      buttonText: 'Launch',
+      liveUrl: 'https://lead-finder.thesearchequation.co.uk/',
+      displayUrl: 'lead-finder.thesearchequation.co.uk',
+      isDeployed: true
     },
     {
       id: 'CHATZA',
@@ -146,7 +152,10 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       accentColor: '#3b82f6',
       IconComponent: MessageSquareIcon,
       isActionable: false,
-      buttonText: 'Coming Soon'
+      buttonText: 'Coming Soon',
+      liveUrl: null,
+      displayUrl: 'Not deployed',
+      isDeployed: false
     },
     {
       id: 'WP_EXPORTER',
@@ -157,19 +166,25 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       accentColor: '#8b5cf6',
       IconComponent: DownloadIcon,
       isActionable: false,
-      buttonText: 'Coming Soon'
+      buttonText: 'Coming Soon',
+      liveUrl: null,
+      displayUrl: 'Not deployed',
+      isDeployed: false
     },
     {
       id: 'PAGE_AUDITOR',
       name: 'Page Auditor',
       description: 'Intelligent page-level SEO auditing and fitment engine (Integrated directly into Website Manager W4).',
       status: 'Live (W4)',
-      version: 'v2.02',
+      version: 'v2.05',
       accentColor: '#f59e0b',
       IconComponent: SearchIcon,
       onClick: onOpenWebsiteManager,
       isActionable: true,
-      buttonText: 'Open in W4'
+      buttonText: 'Open in W4',
+      liveUrl: null,
+      displayUrl: 'Not deployed',
+      isDeployed: false
     },
     {
       id: 'SITE_AUDITOR',
@@ -180,7 +195,10 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       accentColor: '#06b6d4',
       IconComponent: NetworkIcon,
       isActionable: false,
-      buttonText: 'Coming Soon'
+      buttonText: 'Coming Soon',
+      liveUrl: null,
+      displayUrl: 'Not deployed',
+      isDeployed: false
     },
     {
       id: 'SOCIAL_AUTOMATION',
@@ -191,7 +209,10 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       accentColor: '#ec4899',
       IconComponent: MegaphoneIcon,
       isActionable: false,
-      buttonText: 'Coming Soon'
+      buttonText: 'Coming Soon',
+      liveUrl: null,
+      displayUrl: 'Not deployed',
+      isDeployed: false
     }
   ]
 
@@ -332,6 +353,25 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
                 <p className="app-description">
                   {app.description}
                 </p>
+
+                {/* URL row */}
+                <div className="app-url-row">
+                  <span className="app-url-label">URL</span>
+                  {app.isDeployed && app.liveUrl ? (
+                    <a
+                      href={app.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="app-url-link"
+                      onClick={(e) => e.stopPropagation()}
+                      title={`Open ${app.liveUrl}`}
+                    >
+                      {app.displayUrl}
+                    </a>
+                  ) : (
+                    <span className="app-url-muted">{app.displayUrl}</span>
+                  )}
+                </div>
               </div>
 
               <div className="app-card-footer">
