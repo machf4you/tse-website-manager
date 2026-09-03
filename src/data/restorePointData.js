@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.94-stable-prior-to-hf-magento-structure-resync',
+    version: 'v1.94-stable',
+    gitTag: 'v1.94-stable-prior-to-hf-magento-structure-resync',
+    commit: '224afca',
+    date: '03-09-2026 08:00',
+    title: 'Stable W3 Visual Category Hierarchy Presentation & Non-Clickable Separators (V1.94)',
+    description: 'Complete verified stable build featuring hierarchical W3 category presentation with prominent top category rows (Beds, Divan Beds, Headboards, Mattresses, Bed Frames), non-clickable visual Shop By separators with zero SEO footprint, sub-branch tree indentation, and multi-store tree isolation. Preserves canonical URLs and 100% of user configurations.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.94-stable-prior-to-hf-magento-structure-resync.md'
+  },
+  {
     id: 'v1.93-stable-prior-to-displaying-category-structure',
     version: 'v1.93-stable',
     gitTag: 'v1.93-stable',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '02-09-2026 16:50',
     title: 'Stable Canonical Category URL Resolver & Clean Live URL Resolution (V1.93)',
     description: 'Complete verified stable build featuring the dynamic Canonical Category URL Resolver. Automatically constructs clean 2-level canonical category URLs ({top-level-url_key}/{leaf-url_key}) for all active Magento categories, eliminating legacy intermediate filter folders (such as /type/, /bed-sizes/, /shop-by-divan-type/) while leaving Magento navigation and 301 redirects untouched. All 47 active categories verified returning live HTTP 200 OK.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.93-stable-prior-to-displaying-category-structure.md'
   },
   {
