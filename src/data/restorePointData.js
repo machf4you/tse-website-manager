@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.96-stable-before-global-phrase-matching',
+    version: 'v1.96-stable',
+    gitTag: 'v1.96-stable-before-global-phrase-matching',
+    commit: 'a34ca1b',
+    date: '03-09-2026 09:52',
+    title: 'Pre-Global Target Phrase Matching Engine Update (V1.96)',
+    description: 'Restore point protecting confirmed V1.96 production state before deploying the shared deterministic PASS / IMPROVE / FAIL target-phrase matching algorithm across Page Auditor and Website Manager.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.96-stable-before-global-phrase-matching.md'
+  },
+  {
     id: 'v1.96-stable-hf-category-hierarchy-confirmed',
     version: 'v1.96-stable',
     gitTag: 'v1.96-stable-hf-category-hierarchy-confirmed',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 09:00',
     title: 'Confirmed Stable HF4You Category Hierarchy & Visual Separators (V1.96)',
     description: 'Confirmed-good production state verifying Beds hierarchy (Shop By Bed Size with all 7 size pages and Shop By Bed Type), Bed Frames hierarchy, Divan Beds hierarchy, visual-only separator isolation, 122 SEO pages, and 100% user configurations preserved.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.96-stable-hf-category-hierarchy-confirmed.md'
   },
   {
