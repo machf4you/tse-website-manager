@@ -38,6 +38,47 @@ export function normalizePhraseText(s = '') {
   return text.replace(/\s+/g, ' ').trim()
 }
 
+export function findMinTokenWindow(hayTokens = [], targetTokens = []) {
+  const targetSet = new Set(targetTokens)
+  const distinctNeeded = targetSet.size
+  if (distinctNeeded === 0) return 0
+
+  const countMap = new Map()
+  let distinctPresent = 0
+  let minWindow = Infinity
+  let left = 0
+
+  for (let right = 0; right < hayTokens.length; right++) {
+    const tok = hayTokens[right]
+    if (targetSet.has(tok)) {
+      const currentCount = countMap.get(tok) || 0
+      countMap.set(tok, currentCount + 1)
+      if (currentCount === 0) {
+        distinctPresent++
+      }
+    }
+
+    while (distinctPresent === distinctNeeded) {
+      const curWindow = right - left + 1
+      if (curWindow < minWindow) {
+        minWindow = curWindow
+      }
+
+      const leftTok = hayTokens[left]
+      if (targetSet.has(leftTok)) {
+        const c = countMap.get(leftTok) - 1
+        countMap.set(leftTok, c)
+        if (c === 0) {
+          distinctPresent--
+        }
+      }
+      left++
+    }
+  }
+
+  return minWindow === Infinity ? null : minWindow
+}
+
 export function matchTargetPhraseIntent(haystack = '', targetPhrase = '') {
   if (!haystack || !targetPhrase) {
     return {
@@ -86,39 +127,25 @@ export function matchTargetPhraseIntent(haystack = '', targetPhrase = '') {
   const coverage = matchedTokens.length / targetTokens.length
 
   if (coverage === 1.0) {
-    const positions = []
-    hayTokensStemmed.forEach((t, i) => {
-      if (targetTokens.includes(t)) positions.push(i)
-    })
+    const minWin = findMinTokenWindow(hayTokensStemmed, targetTokens)
+    const maxAllowedWindow = Math.max(targetTokens.length + 6, targetTokens.length * 2 + 2)
 
-    if (positions.length > 0) {
-      const windowSize = Math.max(...positions) - Math.min(...positions) + 1
-      const maxAllowedWindow = Math.max(targetTokens.length + 6, targetTokens.length * 2 + 2)
-      if (windowSize <= maxAllowedWindow) {
-        return {
-          status: 'PASS',
-          score: 90,
-          matchType: 'CLOSE_VARIANT',
-          coverage: 1.0,
-          detail: 'Target intent fully matched as a natural close variant.'
-        }
-      } else {
-        return {
-          status: 'IMPROVE',
-          score: 70,
-          matchType: 'DISTANT_TOKENS',
-          coverage: 1.0,
-          detail: 'All target words present, but separated across too wide a span.'
-        }
+    if (minWin !== null && minWin <= maxAllowedWindow) {
+      return {
+        status: 'PASS',
+        score: 90,
+        matchType: 'CLOSE_VARIANT',
+        coverage: 1.0,
+        detail: 'Target intent fully matched as a natural close variant.'
       }
-    }
-
-    return {
-      status: 'PASS',
-      score: 85,
-      matchType: 'CLOSE_VARIANT',
-      coverage: 1.0,
-      detail: 'Target intent fully matched.'
+    } else {
+      return {
+        status: 'IMPROVE',
+        score: 70,
+        matchType: 'DISTANT_TOKENS',
+        coverage: 1.0,
+        detail: 'All target words present, but separated across too wide a span.'
+      }
     }
   }
 
