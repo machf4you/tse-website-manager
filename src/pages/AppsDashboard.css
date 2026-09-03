@@ -1,7 +1,8 @@
 /* ── TSE Apps Dashboard Styles ── */
 .apps-dashboard-container {
-  padding: 3rem 2.5rem;
-  max-width: 1280px;
+  padding: 2.5rem 3.5rem;
+  max-width: 1680px;
+  width: 100%;
   margin: 0 auto;
   text-align: left;
   box-sizing: border-box;
@@ -56,9 +57,9 @@
   background-color: #0c101b;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
-  padding: 1.25rem 2rem;
+  padding: 1.5rem 2.5rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 24px;
   margin-bottom: 2.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -77,8 +78,8 @@
 }
 
 .stat-icon-wrapper {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -164,10 +165,10 @@
   margin: 4px 0 0 0;
 }
 
-/* ── Applications Grid ── */
+/* ── Applications Grid (3 Columns on Desktop) ── */
 .apps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   padding-bottom: 3rem;
 }
@@ -208,8 +209,8 @@
 }
 
 .app-icon-box {
-  width: 46px;
-  height: 46px;
+  width: 48px;
+  height: 48px;
   border-radius: 12px;
   border: 1px solid transparent;
   display: flex;
@@ -230,28 +231,29 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
 }
 
 .app-name {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: var(--text-primary, #f8fafc);
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .app-status-badge {
   font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .app-description {
@@ -315,6 +317,22 @@
   color: rgba(255, 255, 255, 0.45);
 }
 
+/* ── Responsive Queries ── */
+@media (max-width: 1280px) {
+  .apps-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .dashboard-stats-panel {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  .stat-border-left:nth-child(3) {
+    border-left: none;
+    padding-left: 0;
+  }
+}
+
 @media (max-width: 768px) {
   .apps-dashboard-container {
     padding: 1.5rem 1rem;
@@ -332,5 +350,6 @@
   }
   .apps-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 }
