@@ -123,7 +123,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
     IconComponent: GlobeIcon,
     onClick: onOpenWebsiteManager,
     isActionable: true,
-    buttonText: 'Open App',
+    buttonText: 'Launch',
     liveUrl: 'https://tse-website-manager.thesearchequation.co.uk/',
     displayUrl: 'tse-website-manager.thesearchequation.co.uk',
     isDeployed: true

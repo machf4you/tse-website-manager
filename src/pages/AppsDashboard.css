@@ -321,7 +321,7 @@
 /* ══════════════════════════════════════════════════════════════ */
 .app-card {
   background-color: #0c101b;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 12px;
   padding: 1.5rem 1.5rem 1.25rem 1.5rem;
   display: flex;
@@ -338,31 +338,31 @@
 
 .app-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.32);
   box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.35), 0 0 20px -5px var(--app-accent);
 }
 
 /* Hero Parent Card */
 .app-card-hero {
   background-color: #0e1424;
-  border: 1.5px solid rgba(16, 185, 129, 0.35);
+  border: 1.5px solid rgba(16, 185, 129, 0.45);
   box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.3), 0 0 20px -5px rgba(16, 185, 129, 0.18);
 }
 
 .app-card-hero:hover {
-  border-color: rgba(16, 185, 129, 0.6);
+  border-color: rgba(16, 185, 129, 0.75);
   box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.4), 0 0 28px -4px rgba(16, 185, 129, 0.3);
 }
 
 /* Subordinate Card */
 .app-card-subordinate {
   background-color: #090c16;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .app-card-subordinate:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .app-card-top {
