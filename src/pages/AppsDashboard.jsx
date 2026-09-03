@@ -147,15 +147,16 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       id: 'CHATZA',
       name: 'Chatza',
       description: 'Real-time communication and video collaboration client.',
-      status: 'Coming Soon',
+      status: 'Live',
       version: 'v1.0.0',
       accentColor: '#3b82f6',
       IconComponent: MessageSquareIcon,
-      isActionable: false,
-      buttonText: 'Coming Soon',
-      liveUrl: null,
-      displayUrl: 'Not deployed',
-      isDeployed: false
+      launchUrl: 'https://meet.chatza.app/',
+      isActionable: true,
+      buttonText: 'Launch',
+      liveUrl: 'https://meet.chatza.app/',
+      displayUrl: 'meet.chatza.app',
+      isDeployed: true
     },
     {
       id: 'WP_EXPORTER',
