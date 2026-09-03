@@ -195,8 +195,28 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   // Extract exported pages and posts using resilient package extractor
   const pkg = storedPackageData || site?.storedPackageData
   const isShopBySeparator = (p) => {
-    const title = (p.title || p.name || '').trim().toLowerCase()
-    return p.post_type === 'category' && (title.startsWith('shop by') || title.startsWith('shop-by'))
+    if (!p) return false
+    const rawTitle = (p.originalTitle || p.name || p.title || '').trim().toLowerCase()
+    const rawUrl = (p.url || p.link || '').toLowerCase()
+    const rawSlug = (p.slug || '').toLowerCase()
+    const catId = String(p.id || '').replace(/^cat-|^cms-/, '')
+    return (
+      (p.post_type === 'category' || p.magentoCategoryId !== undefined) &&
+      (
+        rawTitle.startsWith('shop by') ||
+        rawTitle.startsWith('shop-by') ||
+        rawUrl.includes('/shop-by') ||
+        rawUrl.includes('/shop_by') ||
+        rawUrl.endsWith('/bed-sizes') ||
+        rawSlug.startsWith('shop-by') ||
+        catId === '810' ||
+        catId === '1245' ||
+        catId === '1247' ||
+        catId === '1248' ||
+        catId === '1251' ||
+        catId === '1260'
+      )
+    )
   }
   const rawExportedPages = extractPagesFromPackage(pkg).filter(p => !isShopBySeparator(p))
   const _exportedPosts = extractPostsFromPackage(pkg)

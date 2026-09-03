@@ -345,6 +345,7 @@ export function normalizeImportedPage(p, siteUrl = '') {
     ...cleanPage,
     id: p.id || p.ID || url,
     title,
+    originalTitle: p.originalTitle || p.title || p.name || title,
     url,
     link: url,
     metaTitle,
