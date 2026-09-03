@@ -87,12 +87,11 @@ const CodeIcon = ({ size = 20 }) => (
   </svg>
 )
 
-const CalendarIcon = ({ size = 20 }) => (
+const LayersIcon = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-    <line x1="16" y1="2" x2="16" y2="6" />
-    <line x1="8" y1="2" x2="8" y2="6" />
-    <line x1="3" y1="10" x2="21" y2="10" />
+    <polygon points="12 2 2 7 12 12 22 7 12 2" />
+    <polyline points="2 17 12 22 22 17" />
+    <polyline points="2 12 12 17 22 12" />
   </svg>
 )
 
@@ -109,114 +108,246 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
 
   const showNotification = (msg) => {
     setNotification(msg)
-    setTimeout(() => setNotification(null), 3000)
+    setTimeout(() => setNotification(null), 3500)
   }
 
-  const applications = [
-    {
-      id: 'WEBSITE_MANAGEMENT',
-      name: 'Website Management',
-      description: 'Manage connected websites, crawl pages, run phrase fits, and track SEO audits.',
-      status: 'Live',
-      version: 'v2.05',
-      accentColor: '#10b981',
-      IconComponent: GlobeIcon,
-      onClick: onOpenWebsiteManager,
-      isActionable: true,
-      buttonText: 'Open App',
-      liveUrl: 'https://tse-website-manager.thesearchequation.co.uk/',
-      displayUrl: 'tse-website-manager.thesearchequation.co.uk',
-      isDeployed: true
-    },
-    {
-      id: 'LEAD_GENERATOR',
-      name: 'Lead Generator',
-      description: 'Find local businesses, extract contact details and prepare websites for the Audit Engine.',
-      status: 'Live',
-      version: 'v1.0.0',
-      accentColor: '#6366f1',
-      IconComponent: DatabaseIcon,
-      launchUrl: 'https://lead-gen.thesearchequation.co.uk/',
-      isActionable: true,
-      buttonText: 'Launch',
-      liveUrl: 'https://lead-gen.thesearchequation.co.uk/',
-      displayUrl: 'lead-gen.thesearchequation.co.uk',
-      isDeployed: true
-    },
-    {
-      id: 'CHATZA',
-      name: 'Chatza',
-      description: 'Real-time communication and video collaboration client.',
-      status: 'Live',
-      version: 'v1.0.0',
-      accentColor: '#3b82f6',
-      IconComponent: MessageSquareIcon,
-      launchUrl: 'https://meet.chatza.app/',
-      isActionable: true,
-      buttonText: 'Launch',
-      liveUrl: 'https://meet.chatza.app/',
-      displayUrl: 'meet.chatza.app',
-      isDeployed: true
-    },
-    {
-      id: 'WP_EXPORTER',
-      name: 'WP Exporter',
-      description: 'WordPress site exporter plugin data manager and sync agent.',
-      status: 'Coming Soon',
-      version: 'v1.0.0',
-      accentColor: '#8b5cf6',
-      IconComponent: DownloadIcon,
-      isActionable: false,
-      buttonText: 'Coming Soon',
-      liveUrl: null,
-      displayUrl: 'Not deployed',
-      isDeployed: false
-    },
+  // 1. Primary Website Management Card
+  const websiteManagerApp = {
+    id: 'WEBSITE_MANAGEMENT',
+    name: 'Website Management',
+    roleTag: 'Primary Suite Application',
+    description: 'Central hub for managing connected WordPress & Magento websites, keyword target phrase fits, priority rankings, and SEO audit workflows.',
+    status: 'Live',
+    version: 'v2.10',
+    accentColor: '#10b981',
+    IconComponent: GlobeIcon,
+    onClick: onOpenWebsiteManager,
+    isActionable: true,
+    buttonText: 'Open App',
+    liveUrl: 'https://tse-website-manager.thesearchequation.co.uk/',
+    displayUrl: 'tse-website-manager.thesearchequation.co.uk',
+    isDeployed: true
+  }
+
+  // 2. Subordinate Suite Tools (Page Auditor & Site Auditor)
+  const subordinateSuiteApps = [
     {
       id: 'PAGE_AUDITOR',
       name: 'Page Auditor',
-      description: 'Intelligent page-level SEO auditing and fitment engine (Integrated directly into Website Manager W4).',
-      status: 'Live (W4)',
-      version: 'v2.05',
+      roleTag: 'Subordinate Engine',
+      description: 'Intelligent page-level SEO auditing and fitment engine. Integrated directly into Website Manager for deep single-page audit analysis.',
+      status: 'Integrated',
+      version: 'v2.10',
       accentColor: '#f59e0b',
       IconComponent: SearchIcon,
-      onClick: onOpenWebsiteManager,
+      onClick: () => showNotification('Page Auditor is integrated into Website Manager (W4) and executes per-page audits automatically.'),
       isActionable: true,
-      buttonText: 'Open in W4',
+      buttonText: 'Used in Website Manager',
       liveUrl: null,
-      displayUrl: 'Not deployed',
+      displayUrl: 'Not deployed (Integrated in W4)',
       isDeployed: false
     },
     {
       id: 'SITE_AUDITOR',
       name: 'Site Auditor',
-      description: 'Comprehensive site-wide link, layout, and structure auditor.',
+      roleTag: 'Subordinate Engine',
+      description: 'Comprehensive site-wide link, layout, and internal structure auditor designed as a supporting component for Website Manager.',
       status: 'Development',
       version: 'v0.5.0-dev',
       accentColor: '#06b6d4',
       IconComponent: NetworkIcon,
       isActionable: false,
-      buttonText: 'Coming Soon',
+      buttonText: 'In Development',
       liveUrl: null,
       displayUrl: 'Not deployed',
       isDeployed: false
-    },
-    {
-      id: 'SOCIAL_AUTOMATION',
-      name: 'Social Automation',
-      description: 'Automated social media posting, scheduling, and analytics agent.',
-      status: 'Live',
-      version: 'v1.0.0',
-      accentColor: '#ec4899',
-      IconComponent: MegaphoneIcon,
-      launchUrl: 'https://automation.thesearchequation.co.uk/',
-      isActionable: true,
-      buttonText: 'Launch',
-      liveUrl: 'https://automation.thesearchequation.co.uk/',
-      displayUrl: 'automation.thesearchequation.co.uk',
-      isDeployed: true
     }
   ]
+
+  // 3. Standalone Independent Applications
+  const independentSections = [
+    {
+      sectionTitle: 'Lead Generation',
+      sectionSubtitle: 'Prospect discovery and data extraction',
+      app: {
+        id: 'LEAD_GENERATOR',
+        name: 'Lead Generator',
+        roleTag: 'Standalone Application',
+        description: 'Find local businesses, extract contact details, crawl websites, and prepare candidate sites for outreach and SEO auditing.',
+        status: 'Live',
+        version: 'v1.0.0',
+        accentColor: '#6366f1',
+        IconComponent: DatabaseIcon,
+        launchUrl: 'https://lead-gen.thesearchequation.co.uk/',
+        isActionable: true,
+        buttonText: 'Launch',
+        liveUrl: 'https://lead-gen.thesearchequation.co.uk/',
+        displayUrl: 'lead-gen.thesearchequation.co.uk',
+        isDeployed: true
+      }
+    },
+    {
+      sectionTitle: 'Real-Time Communication',
+      sectionSubtitle: 'Video meeting and live communication client',
+      app: {
+        id: 'CHATZA',
+        name: 'Chatza',
+        roleTag: 'Standalone Application',
+        description: 'Real-time communication, messaging, and high-performance browser-based video collaboration client.',
+        status: 'Live',
+        version: 'v1.0.0',
+        accentColor: '#3b82f6',
+        IconComponent: MessageSquareIcon,
+        launchUrl: 'https://meet.chatza.app/',
+        isActionable: true,
+        buttonText: 'Launch',
+        liveUrl: 'https://meet.chatza.app/',
+        displayUrl: 'meet.chatza.app',
+        isDeployed: true
+      }
+    },
+    {
+      sectionTitle: 'Social Media Automation',
+      sectionSubtitle: 'Autonomous marketing and scheduled social publishing',
+      app: {
+        id: 'SOCIAL_AUTOMATION',
+        name: 'Social Automation',
+        roleTag: 'Standalone Application',
+        description: 'Automated social media posting, multi-channel scheduling, campaign management, and engagement analytics agent.',
+        status: 'Live',
+        version: 'v1.0.0',
+        accentColor: '#ec4899',
+        IconComponent: MegaphoneIcon,
+        launchUrl: 'https://automation.thesearchequation.co.uk/',
+        isActionable: true,
+        buttonText: 'Launch',
+        liveUrl: 'https://automation.thesearchequation.co.uk/',
+        displayUrl: 'automation.thesearchequation.co.uk',
+        isDeployed: true
+      }
+    },
+    {
+      sectionTitle: 'WordPress Utilities',
+      sectionSubtitle: 'WordPress exporter plugin data manager and sync agent',
+      app: {
+        id: 'WP_EXPORTER',
+        name: 'WP Exporter',
+        roleTag: 'Standalone Utility',
+        description: 'WordPress site exporter plugin data manager and sync agent for extracting structured page packages.',
+        status: 'Coming Soon',
+        version: 'v1.0.0',
+        accentColor: '#8b5cf6',
+        IconComponent: DownloadIcon,
+        isActionable: false,
+        buttonText: 'Coming Soon',
+        liveUrl: null,
+        displayUrl: 'Not deployed',
+        isDeployed: false
+      }
+    }
+  ]
+
+  const renderCard = (app, isSubordinate = false, isHero = false) => {
+    const isLive = app.status === 'Live' || app.status === 'Integrated'
+    const badgeBg = isLive ? `${app.accentColor}14` : 'rgba(245, 158, 11, 0.08)'
+    const badgeBorder = isLive ? `1px solid ${app.accentColor}35` : '1px solid rgba(245, 158, 11, 0.2)'
+    const badgeColor = isLive ? app.accentColor : '#fbbf24'
+
+    const handleCardClick = () => {
+      if (app.launchUrl) {
+        window.open(app.launchUrl, '_blank', 'noopener,noreferrer')
+      } else if (app.onClick) {
+        app.onClick()
+      } else {
+        showNotification(`${app.name} is currently in development.`)
+      }
+    }
+
+    return (
+      <div
+        key={app.id}
+        className={`app-card ${isHero ? 'app-card-hero' : ''} ${isSubordinate ? 'app-card-subordinate' : ''}`}
+        onClick={handleCardClick}
+        style={{ '--app-accent': app.accentColor }}
+      >
+        <div className="app-card-top">
+          <div className="app-card-header">
+            <div
+              className="app-icon-box"
+              style={{
+                backgroundColor: `${app.accentColor}14`,
+                borderColor: `${app.accentColor}35`,
+                color: app.accentColor
+              }}
+            >
+              <app.IconComponent size={isSubordinate ? 20 : 22} />
+            </div>
+
+            <div className="app-title-group">
+              <div className="app-title-row">
+                <h3 className="app-name">{app.name}</h3>
+                <span
+                  className="app-status-badge"
+                  style={{
+                    backgroundColor: badgeBg,
+                    borderColor: badgeBorder,
+                    color: badgeColor
+                  }}
+                >
+                  {app.status}
+                </span>
+              </div>
+              {app.roleTag && (
+                <span className="app-role-tag">{app.roleTag}</span>
+              )}
+            </div>
+          </div>
+
+          <p className="app-description">
+            {app.description}
+          </p>
+
+          {/* URL row */}
+          <div className="app-url-row">
+            <span className="app-url-label">URL</span>
+            {app.isDeployed && app.liveUrl ? (
+              <a
+                href={app.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="app-url-link"
+                onClick={(e) => e.stopPropagation()}
+                title={`Open ${app.liveUrl}`}
+              >
+                {app.displayUrl}
+              </a>
+            ) : (
+              <span className="app-url-muted">{app.displayUrl}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="app-card-footer">
+          <span className="app-version-text">
+            {app.version}
+          </span>
+
+          <button
+            type="button"
+            className={`app-action-btn ${isLive ? 'btn-live' : 'btn-disabled'}`}
+            style={isLive ? { backgroundColor: app.accentColor, color: '#ffffff' } : {}}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleCardClick()
+            }}
+          >
+            {app.buttonText}
+            {app.launchUrl ? <ExternalLinkIcon size={13} /> : <ChevronRightIcon size={14} />}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="apps-dashboard-container">
@@ -264,139 +395,94 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
 
         <div className="stat-card stat-border-left">
           <div className="stat-icon-wrapper stat-amber">
-            <CodeIcon size={20} />
+            <LayersIcon size={20} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">In Development</span>
-            <span className="stat-number">3</span>
-            <span className="stat-tag text-amber">Building</span>
+            <span className="stat-label">Suite Structure</span>
+            <span className="stat-number">1 Suite + 4 Apps</span>
+            <span className="stat-tag text-amber">Hierarchical</span>
           </div>
         </div>
 
         <div className="stat-card stat-border-left">
           <div className="stat-icon-wrapper stat-purple">
-            <CalendarIcon size={20} />
+            <CodeIcon size={20} />
           </div>
           <div className="stat-info">
             <span className="stat-label">Platform Version</span>
-            <span className="stat-number">V2.02</span>
+            <span className="stat-number">V2.10</span>
             <span className="stat-tag text-purple">Active</span>
           </div>
         </div>
       </div>
 
-      {/* Your Applications Header */}
-      <div className="apps-section-header">
-        <div>
-          <h2 className="apps-section-title">
-            Your Applications
-          </h2>
-          <p className="apps-section-subtitle">
-            Access all your TSE applications from one place.
-          </p>
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* SECTION 1: WEBSITE MANAGEMENT SUITE (PARENT & SUBORDINATES)    */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="dashboard-suite-section">
+        <div className="suite-section-header">
+          <div>
+            <div className="suite-badge-label">
+              <span className="suite-badge-dot"></span>
+              CORE PLATFORM SUITE
+            </div>
+            <h2 className="suite-section-title">
+              Website Management Suite
+            </h2>
+            <p className="suite-section-subtitle">
+              Central SEO management platform with integrated page fitment and site audit engines.
+            </p>
+          </div>
+        </div>
+
+        {/* Tree Container */}
+        <div className="suite-tree-container">
+          {/* Primary Parent Card */}
+          <div className="suite-parent-wrapper">
+            {renderCard(websiteManagerApp, false, true)}
+          </div>
+
+          {/* Visual Connector Lines */}
+          <div className="suite-connector-branch" aria-hidden="true">
+            <div className="connector-vertical-stem"></div>
+            <div className="connector-horizontal-bar"></div>
+            <div className="connector-child-stems">
+              <div className="connector-stem-left"></div>
+              <div className="connector-stem-right"></div>
+            </div>
+          </div>
+
+          {/* Subordinate Children Grid */}
+          <div className="suite-children-grid">
+            {subordinateSuiteApps.map((app) => renderCard(app, true, false))}
+          </div>
         </div>
       </div>
 
-      {/* Applications Grid */}
-      <div className="apps-grid">
-        {applications.map((app) => {
-          const isLive = app.status === 'Live' || app.status === 'Live (W4)'
-          const badgeBg = isLive ? `${app.accentColor}12` : 'rgba(245, 158, 11, 0.08)'
-          const badgeBorder = isLive ? `1px solid ${app.accentColor}30` : '1px solid rgba(245, 158, 11, 0.2)'
-          const badgeColor = isLive ? app.accentColor : '#fbbf24'
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* SECTION 2: STANDALONE INDEPENDENT APPLICATIONS (SEPARATE ROWS) */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="dashboard-independent-sections">
+        <div className="independent-master-header">
+          <h2 className="independent-master-title">
+            Independent Applications
+          </h2>
+          <p className="independent-master-subtitle">
+            Standalone marketing, prospect extraction, communication, and automation clients.
+          </p>
+        </div>
 
-          const handleCardClick = () => {
-            if (app.launchUrl) {
-              window.open(app.launchUrl, '_blank', 'noopener,noreferrer')
-            } else if (app.onClick) {
-              app.onClick()
-            } else {
-              showNotification(`${app.name} is currently in development.`)
-            }
-          }
-
-          return (
-            <div
-              key={app.id}
-              className="app-card"
-              onClick={handleCardClick}
-              style={{ '--app-accent': app.accentColor }}
-            >
-              <div className="app-card-top">
-                <div className="app-card-header">
-                  <div
-                    className="app-icon-box"
-                    style={{
-                      backgroundColor: `${app.accentColor}12`,
-                      borderColor: `${app.accentColor}30`,
-                      color: app.accentColor
-                    }}
-                  >
-                    <app.IconComponent size={22} />
-                  </div>
-
-                  <div className="app-title-group">
-                    <div className="app-title-row">
-                      <h3 className="app-name">{app.name}</h3>
-                      <span
-                        className="app-status-badge"
-                        style={{
-                          backgroundColor: badgeBg,
-                          borderColor: badgeBorder,
-                          color: badgeColor
-                        }}
-                      >
-                        {app.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="app-description">
-                  {app.description}
-                </p>
-
-                {/* URL row */}
-                <div className="app-url-row">
-                  <span className="app-url-label">URL</span>
-                  {app.isDeployed && app.liveUrl ? (
-                    <a
-                      href={app.liveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="app-url-link"
-                      onClick={(e) => e.stopPropagation()}
-                      title={`Open ${app.liveUrl}`}
-                    >
-                      {app.displayUrl}
-                    </a>
-                  ) : (
-                    <span className="app-url-muted">{app.displayUrl}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="app-card-footer">
-                <span className="app-version-text">
-                  {app.version}
-                </span>
-
-                <button
-                  type="button"
-                  className={`app-action-btn ${isLive ? 'btn-live' : 'btn-disabled'}`}
-                  style={isLive ? { backgroundColor: app.accentColor, color: '#ffffff' } : {}}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleCardClick()
-                  }}
-                >
-                  {app.buttonText}
-                  {app.launchUrl ? <ExternalLinkIcon size={13} /> : <ChevronRightIcon size={14} />}
-                </button>
-              </div>
+        {independentSections.map((sec, idx) => (
+          <div key={sec.app.id} className="independent-row-section">
+            <div className="independent-row-header">
+              <h3 className="independent-row-title">{sec.sectionTitle}</h3>
+              <span className="independent-row-subtitle">{sec.sectionSubtitle}</span>
             </div>
-          )
-        })}
+            <div className="independent-card-wrapper">
+              {renderCard(sec.app, false, false)}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
