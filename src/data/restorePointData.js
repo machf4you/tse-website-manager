@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.02-stable-before-apps-dashboard-restore',
+    version: 'v2.02-stable',
+    gitTag: 'v2.02-stable-before-apps-dashboard-restore',
+    commit: '1e1f6d2',
+    date: '03-09-2026 16:26',
+    title: 'State Prior to Apps Dashboard Restoration (V2.02)',
+    description: 'Restore point capturing confirmed V2.02 production state before restoring the top-level TSE Apps Dashboard launcher and wiring the Back to Apps navigation.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.02-stable-before-apps-dashboard-restore.md'
+  },
+  {
     id: 'v2.00-stable-before-wp-w3-hierarchy-prototype',
     version: 'v2.00-stable',
     gitTag: 'v2.00-stable-before-wp-w3-hierarchy-prototype',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 11:27',
     title: 'State Prior to WordPress W3 Hierarchy Prototype (Ascent Builders)',
     description: 'Restore point capturing confirmed V2.00 production state before implementing the visual URL-derived parent-child hierarchy prototype on Ascent Builders.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.00-stable-before-wp-w3-hierarchy-prototype.md'
   },
   {
