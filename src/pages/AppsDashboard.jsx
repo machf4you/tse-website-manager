@@ -136,11 +136,11 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       version: 'v1.0.0',
       accentColor: '#6366f1',
       IconComponent: DatabaseIcon,
-      launchUrl: 'https://lead-finder.thesearchequation.co.uk',
+      launchUrl: 'https://lead-gen.thesearchequation.co.uk/',
       isActionable: true,
       buttonText: 'Launch',
-      liveUrl: 'https://lead-finder.thesearchequation.co.uk/',
-      displayUrl: 'lead-finder.thesearchequation.co.uk',
+      liveUrl: 'https://lead-gen.thesearchequation.co.uk/',
+      displayUrl: 'lead-gen.thesearchequation.co.uk',
       isDeployed: true
     },
     {
