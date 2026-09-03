@@ -14,6 +14,7 @@ import {
 import { getSiteConfigsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { formatReadableDateTime } from '../utils/dateFormatter'
+import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -259,14 +260,13 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
                      (urlPath ? savedConfigs[urlPath] : null) ||
                      (page.id ? savedConfigs[String(page.id)] : null)
 
-    const targetPhraseStr = (
+    const targetPhraseStr = extractSafeString(
       override?.targetPhrase ||
       override?.target ||
       override?.target_phrase ||
       page.targetPhrase ||
       page.target ||
-      page.target_phrase ||
-      ''
+      page.target_phrase
     ).trim()
 
     const isConfigured = Boolean(targetPhraseStr.length > 0)
@@ -290,11 +290,15 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
       ? (override?.isExcluded !== undefined ? Boolean(override.isExcluded) : pageType === 'Excluded')
       : (pageType === 'Excluded' || Boolean(page.isExcluded))
 
+    const rawPageTitle = extractSafeString(page.originalTitle || page.title || page.name) || 'Untitled Page'
+    const finalProposedTitle = extractSafeString(override?.proposedTitle || page.proposedTitle || rawPageTitle) || rawPageTitle
+
     if (override) {
       return {
         ...page,
-        title: override.proposedTitle || page.title,
-        proposedTitle: override.proposedTitle || page.title,
+        originalTitle: rawPageTitle,
+        title: finalProposedTitle,
+        proposedTitle: finalProposedTitle,
         target: targetPhraseStr,
         targetPhrase: targetPhraseStr,
         type: pageType,
@@ -307,12 +311,16 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     }
     return {
       ...page,
+      originalTitle: rawPageTitle,
+      title: rawPageTitle,
+      proposedTitle: rawPageTitle,
       target: targetPhraseStr,
       targetPhrase: targetPhraseStr,
       type: pageType,
       seoPageType: pageType,
       priority: pagePriority,
-      isConfigured
+      isConfigured,
+      isExcluded
     }
   })
 

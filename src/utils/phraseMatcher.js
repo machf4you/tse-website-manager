@@ -14,16 +14,8 @@ const STOPS = new Set([
   'the', 'a', 'an', 'of', 'in', 'on', 'for', 'to', 'and', 'or', 'with', 'across', 'at', 'by', 'from', 'our', 'your'
 ])
 
-export function extractSafeString(val) {
-  if (!val) return ''
-  if (typeof val === 'string') return val
-  if (typeof val === 'object') {
-    if (typeof val.rendered === 'string') return val.rendered
-    if (typeof val.raw === 'string') return val.raw
-    return ''
-  }
-  return String(val)
-}
+import { extractSafeString } from './safeString'
+export { extractSafeString }
 
 export function stemWord(w = '') {
   const word = extractSafeString(w).toLowerCase().trim()

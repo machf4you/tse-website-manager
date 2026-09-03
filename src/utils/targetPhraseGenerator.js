@@ -38,14 +38,18 @@ const UTILITY_TITLES = [
   /404/i,
 ]
 
+import { extractSafeString } from './safeString'
+
 export function isUtilityPage(url = '', title = '') {
-  if (UTILITY_PATTERNS.some(pat => pat.test(url))) return true
-  if (UTILITY_TITLES.some(pat => pat.test(title))) return true
+  const safeUrl = extractSafeString(url)
+  const safeTitle = extractSafeString(title)
+  if (UTILITY_PATTERNS.some(pat => pat.test(safeUrl))) return true
+  if (UTILITY_TITLES.some(pat => pat.test(safeTitle))) return true
   return false
 }
 
 function cleanText(str = '', siteName = '') {
-  let s = (str || '').trim()
+  let s = extractSafeString(str).trim()
   if (!s) return ''
 
   // Remove site / brand name suffixes e.g. " - Ascent Builders", " | Ascent Builders"

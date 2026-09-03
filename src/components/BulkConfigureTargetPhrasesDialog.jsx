@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { generateProposedTargetPhrase, isUtilityPage } from '../utils/targetPhraseGenerator'
+import { extractSafeString } from '../utils/safeString'
 import './BulkConfigureTargetPhrasesDialog.css'
 
 export default function BulkConfigureTargetPhrasesDialog({
@@ -19,9 +20,10 @@ export default function BulkConfigureTargetPhrasesDialog({
     
     // Filter to active, non-excluded pages that currently have no target phrase
     const unconfigured = pages.filter(p => {
-      const tp = (p.targetPhrase || p.target || '').trim()
+      const tp = extractSafeString(p.targetPhrase || p.target).trim()
       const isEx = p.type === 'Excluded' || p.seoPageType === 'Excluded' || p.isExcluded
-      return !tp && !isEx && !isUtilityPage(p.url, p.title)
+      const pageTitle = extractSafeString(p.title || p.originalTitle)
+      return !tp && !isEx && !isUtilityPage(p.url, pageTitle)
     })
 
     const initialRows = unconfigured.map(p => {
@@ -40,8 +42,8 @@ export default function BulkConfigureTargetPhrasesDialog({
         pageId: pageKey,
         url: p.url,
         cleanPath,
-        title: p.title || p.originalTitle || 'Untitled Page',
-        h1: p.h1 || p.actualH1 || '',
+        title: extractSafeString(p.title || p.originalTitle) || 'Untitled Page',
+        h1: extractSafeString(p.h1 || p.actualH1),
         type: p.type || p.seoPageType || 'Topical',
         proposedPhrase: generated,
         isApproved: Boolean(generated && generated.trim().length > 0),

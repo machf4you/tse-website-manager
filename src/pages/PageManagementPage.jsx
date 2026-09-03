@@ -6,6 +6,7 @@ import { getPageConfigsApi, savePageConfigsApi, getPageAuditsApi, savePageAuditA
 import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
 import { formatReadableDateTime } from '../utils/dateFormatter'
+import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
 import './PageManagementPage.css'
 
 export default function PageManagementPage({
@@ -336,17 +337,20 @@ export default function PageManagementPage({
       ? (override?.isExcluded !== undefined ? Boolean(override.isExcluded) : effectiveType === 'Excluded')
       : (effectiveType === 'Excluded' || Boolean(page.isExcluded))
 
-    const targetPhraseStr = (override?.targetPhrase || override?.target || page.targetPhrase || page.target || '').trim()
+    const targetPhraseStr = extractSafeString(override?.targetPhrase || override?.target || page.targetPhrase || page.target).trim()
     const isConfigured = Boolean(targetPhraseStr.length > 0)
     const isStarred = Boolean(override?.isStarred)
+
+    const rawPageTitle = extractSafeString(page.originalTitle || page.title || page.name) || 'Untitled Page'
+    const finalProposedTitle = extractSafeString(override?.proposedTitle || page.proposedTitle || rawPageTitle) || rawPageTitle
 
     if (override) {
       return {
         ...page,
         autoType,
-        originalTitle: page.title,
-        title: override.proposedTitle || page.title,
-        proposedTitle: override.proposedTitle || page.title,
+        originalTitle: rawPageTitle,
+        title: finalProposedTitle,
+        proposedTitle: finalProposedTitle,
         target: targetPhraseStr,
         targetPhrase: targetPhraseStr,
         type: effectiveType,
@@ -367,8 +371,9 @@ export default function PageManagementPage({
     return {
       ...page,
       autoType,
-      originalTitle: page.title,
-      proposedTitle: page.title,
+      originalTitle: rawPageTitle,
+      title: rawPageTitle,
+      proposedTitle: rawPageTitle,
       target: targetPhraseStr,
       targetPhrase: targetPhraseStr,
       isManualOverride: false,
@@ -380,6 +385,10 @@ export default function PageManagementPage({
       lastAuditDate,
       auditScore,
       auditResult: auditRecord?.auditResult || null,
+      isExcluded: effectiveIsExcluded,
+      type: effectiveType,
+      seoPageType: effectiveType,
+      priority: effectivePriority
     }
   })
 
@@ -407,31 +416,31 @@ export default function PageManagementPage({
   // Sort filtered pages
   const sortedPages = [...filteredPages].sort((a, b) => {
     if (sortColumn === 'type') {
-      const valA = (a.type || a.seoPageType || '').toLowerCase()
-      const valB = (b.type || b.seoPageType || '').toLowerCase()
+      const valA = safeLower(a.type || a.seoPageType)
+      const valB = safeLower(b.type || b.seoPageType)
       if (valA !== valB) {
         return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
       }
-      const titleA = (a.title || '').toLowerCase()
-      const titleB = (b.title || '').toLowerCase()
+      const titleA = safeLower(a.title)
+      const titleB = safeLower(b.title)
       return titleA.localeCompare(titleB)
     }
 
     if (sortColumn === 'page') {
-      const valA = (a.title || '').toLowerCase()
-      const valB = (b.title || '').toLowerCase()
+      const valA = safeLower(a.title)
+      const valB = safeLower(b.title)
       return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
     }
 
     if (sortColumn === 'target') {
-      const valA = (a.target || a.targetPhrase || '').toLowerCase()
-      const valB = (b.target || b.targetPhrase || '').toLowerCase()
+      const valA = safeLower(a.target || a.targetPhrase)
+      const valB = safeLower(b.target || b.targetPhrase)
       return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
     }
 
     if (sortColumn === 'lastAudit') {
-      const valA = String(a.lastAuditDate || 'Never').toLowerCase()
-      const valB = String(b.lastAuditDate || 'Never').toLowerCase()
+      const valA = safeLower(a.lastAuditDate || 'Never')
+      const valB = safeLower(b.lastAuditDate || 'Never')
       return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
     }
 
@@ -441,14 +450,14 @@ export default function PageManagementPage({
       if (scoreA !== scoreB) {
         return sortDirection === 'asc' ? scoreA - scoreB : scoreB - scoreA
       }
-      const valA = (a.title || '').toLowerCase()
-      const valB = (b.title || '').toLowerCase()
+      const valA = safeLower(a.title)
+      const valB = safeLower(b.title)
       return valA.localeCompare(valB)
     }
 
     if (sortColumn === 'actions') {
-      const valA = String(a.id || '').toLowerCase()
-      const valB = String(b.id || '').toLowerCase()
+      const valA = safeLower(a.id)
+      const valB = safeLower(b.id)
       return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
     }
 
@@ -463,20 +472,14 @@ export default function PageManagementPage({
     if (starA !== starB) {
       return sortDirection === 'asc' ? starB - starA : starA - starB
     }
-    const tA = (a.title || '').toLowerCase()
-    const tB = (b.title || '').toLowerCase()
+    const tA = safeLower(a.title)
+    const tB = safeLower(b.title)
     return tA.localeCompare(tB)
   })
 
   // Keyword-based ordering for top-level product sections
   const getTopOrder = (title) => {
-    const extractStr = (val) => {
-      if (!val) return ''
-      if (typeof val === 'string') return val
-      if (typeof val === 'object') return val.rendered || val.raw || ''
-      return String(val)
-    }
-    const t = extractStr(title).toLowerCase()
+    const t = safeLower(title)
     if (t.includes('bed frame')) return 5
     if (t.includes('divan')) return 2
     if (t.includes('headboard')) return 3
@@ -507,20 +510,20 @@ export default function PageManagementPage({
 
       // Find Shop By visual separators under this top category
       const seps = shopBySeparators.filter(s => getRawId(s.parentId) === topId)
-      seps.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''))
+      seps.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
 
       seps.forEach(sep => {
         const sepId = getRawId(sep.id)
         categoryRows.push({
           type: 'SEPARATOR_ROW',
           id: sep.id,
-          title: sep.title || sep.name,
+          title: extractSafeString(sep.title || sep.name),
           indent: 1
         })
 
         // Child leaf pages under this separator
         const sepChildren = filteredPages.filter(p => getRawId(p.parentId) === sepId)
-        sepChildren.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''))
+        sepChildren.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
         sepChildren.forEach(child => {
           processedIds.add(child.id)
           categoryRows.push({
@@ -534,7 +537,7 @@ export default function PageManagementPage({
 
       // Direct children under this top category (not under a Shop By separator)
       const directChildren = filteredPages.filter(p => getRawId(p.parentId) === topId && p.id !== topCat.id && !processedIds.has(p.id))
-      directChildren.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''))
+      directChildren.sort((a, b) => extractSafeString(a.title || a.name).localeCompare(extractSafeString(b.title || b.name)))
       directChildren.forEach(child => {
         processedIds.add(child.id)
         categoryRows.push({
@@ -625,8 +628,8 @@ export default function PageManagementPage({
           return prioA - prioB
         }
 
-        const titleA = (a.title || '').toLowerCase()
-        const titleB = (b.title || '').toLowerCase()
+        const titleA = safeLower(a.title)
+        const titleB = safeLower(b.title)
         return titleA.localeCompare(titleB)
       })
 

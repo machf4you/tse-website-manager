@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
+import { extractSafeString } from '../utils/safeString'
 import './ConfigurePageDialog.css'
 
 export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSave }) {
-  const [proposedTitle, setProposedTitle] = useState(() => page ? (page.proposedTitle || page.title || '') : '')
-  const [targetPhrase, setTargetPhrase] = useState(() => page ? (page.targetPhrase || page.target || '') : '')
+  const [proposedTitle, setProposedTitle] = useState(() => page ? extractSafeString(page.proposedTitle || page.title) : '')
+  const [targetPhrase, setTargetPhrase] = useState(() => page ? extractSafeString(page.targetPhrase || page.target) : '')
   const [pageType, setPageType] = useState(() => page ? (page.type || page.seoPageType || 'Landing') : 'Landing')
 
   const getPriorityFromType = (typeVal) => {
@@ -22,8 +23,8 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
 
   useEffect(() => {
     if (page) {
-      setProposedTitle(page.proposedTitle || page.title || '')
-      setTargetPhrase(page.targetPhrase || page.target || '')
+      setProposedTitle(extractSafeString(page.proposedTitle || page.title))
+      setTargetPhrase(extractSafeString(page.targetPhrase || page.target))
       setPageType(page.type || page.seoPageType || 'Landing')
     }
   }, [page])
@@ -46,7 +47,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
   }
   if (!pageUrlPath.startsWith('/')) pageUrlPath = '/' + pageUrlPath
 
-  const originalTitle = page.originalTitle || page.title || 'Untitled Page'
+  const originalTitle = extractSafeString(page.originalTitle || page.title) || 'Untitled Page'
 
   const handleSubmit = (e) => {
     e.preventDefault()

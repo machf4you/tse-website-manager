@@ -7,6 +7,8 @@ import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/site
 import { normalizeUrlForMatching } from '../utils/urlUtils'
 import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
 import { formatReadableDateTime } from '../utils/dateFormatter'
+import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
+import { matchTargetPhraseIntent } from '../utils/phraseMatcher'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import OptimizeAltTextDialog from '../components/OptimizeAltTextDialog'
 import './PageAuditResultsPage.css'
@@ -165,20 +167,18 @@ export default function PageAuditResultsPage({
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
 
   // Strict per-field Actual Live/Synced values (prioritizes pushed/synced values over stale pre-push snapshot)
-  // Strict per-field Actual Live/Synced values (prioritizes pushed/synced package data as authoritative live source of truth)
-  const actualMetaTitle = (overrideObj.pushedActualMetaTitle || overrideObj.actualMetaTitle || rawCurrentPage.metaTitle || rawCurrentPage.title || snap.title || '').trim()
-  const actualMetaDescription = (overrideObj.pushedActualMetaDescription || overrideObj.actualMetaDescription || rawCurrentPage.metaDescription || snap.meta_description || '').trim()
-  const actualH1 = (overrideObj.pushedActualH1 || overrideObj.actualH1 || rawCurrentPage.h1 || rawCurrentPage.title || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || '').trim()
+  const actualMetaTitle = extractSafeString(overrideObj.pushedActualMetaTitle || overrideObj.actualMetaTitle || rawCurrentPage.metaTitle || rawCurrentPage.title || snap.title).trim()
+  const actualMetaDescription = extractSafeString(overrideObj.pushedActualMetaDescription || overrideObj.actualMetaDescription || rawCurrentPage.metaDescription || snap.meta_description).trim()
+  const actualH1 = extractSafeString(overrideObj.pushedActualH1 || overrideObj.actualH1 || rawCurrentPage.h1 || rawCurrentPage.title || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1)).trim()
 
   // Target Phrase MUST come from Website Manager configuration data
-  const recTargetPhrase = (
+  const recTargetPhrase = extractSafeString(
     overrideObj.targetPhrase ||
     overrideObj.target ||
     overrideObj.target_phrase ||
     rawCurrentPage.targetPhrase ||
     rawCurrentPage.target ||
-    rawCurrentPage.target_phrase ||
-    ''
+    rawCurrentPage.target_phrase
   ).trim()
 
   const recommendations = generateSeoRecommendations({
@@ -186,8 +186,8 @@ export default function PageAuditResultsPage({
     actualMetaTitle,
     actualMetaDescription,
     actualH1,
-    pageUrl: rawCurrentPage.url || '',
-    pageTitle: rawCurrentPage.title || '',
+    pageUrl: extractSafeString(rawCurrentPage.url),
+    pageTitle: extractSafeString(rawCurrentPage.title),
     siteName: site?.name || '',
   })
 
@@ -448,9 +448,9 @@ export default function PageAuditResultsPage({
     }))
   }
 
-  const targetPhrase = currentPage.target || currentPage.targetPhrase || ''
+  const targetPhrase = extractSafeString(currentPage.target || currentPage.targetPhrase)
   const pageType = currentPage.type || currentPage.seoPageType || 'Landing Page'
-  const displayTitle = currentPage.proposedTitle || currentPage.title || 'Untitled'
+  const displayTitle = extractSafeString(currentPage.proposedTitle || currentPage.title) || 'Untitled'
   const fullUrl = currentPage.url || site?.url || '/'
 
   // Clean path display
@@ -888,15 +888,16 @@ export default function PageAuditResultsPage({
       wordCountRec = `Fail — ${wordCount} words. ${cleanType} pages require a minimum of ${minWords} words.`
     }
 
-    const titleLen = (snap.title || displayTitle || '').length
+    const snapTitle = extractSafeString(snap.title || displayTitle)
+    const titleLen = snapTitle.length
     const hasTitleTarget = breakdown.title === 'Yes' || (
-      snap.title && targetPhrase && snap.title.toLowerCase().includes(targetPhrase.toLowerCase())
+      snapTitle && targetPhrase && matchTargetPhraseIntent(snapTitle, targetPhrase).status === 'PASS'
     )
     const titleStatus = (hasTitleTarget && titleCheck?.status !== 'fail') ? 'Pass' : 'Fail'
     let titleRec = '—'
     if (titleStatus === 'Pass') {
       titleRec = `Pass — Contains target phrase (${titleLen} chars).`
-    } else if (!snap.title && !displayTitle) {
+    } else if (!snapTitle && !displayTitle) {
       titleRec = `Fail — Missing Meta Title. Add a title between 30–65 characters containing "${targetPhrase}".`
     } else if (!hasTitleTarget) {
       titleRec = `Fail — Target phrase "${targetPhrase}" not found in Meta Title.`
@@ -904,16 +905,17 @@ export default function PageAuditResultsPage({
       titleRec = titleCheck?.detail || `Fail — Meta Title length (${titleLen} chars) outside optimal 30–65 range.`
     }
 
-    const descLen = (snap.meta_description || '').length
+    const snapDesc = extractSafeString(snap.meta_description)
+    const descLen = snapDesc.length
     const descLenOk = descLen >= 120 && descLen <= 160
     const hasDescTarget = breakdown.description === 'Yes' || (
-      snap.meta_description && targetPhrase && snap.meta_description.toLowerCase().includes(targetPhrase.toLowerCase())
+      snapDesc && targetPhrase && matchTargetPhraseIntent(snapDesc, targetPhrase).status === 'PASS'
     )
     const descStatus = (hasDescTarget && descLenOk && descCheck?.status !== 'fail') ? 'Pass' : 'Fail'
     let descRec = '—'
     if (descStatus === 'Pass') {
       descRec = `Pass — Contains target phrase and length is optimal (${descLen} chars).`
-    } else if (!snap.meta_description) {
+    } else if (!snapDesc) {
       descRec = `Fail — Missing Meta Description. Add a description (120–160 chars) containing "${targetPhrase}".`
     } else if (!hasDescTarget) {
       descRec = `Fail — Target phrase "${targetPhrase}" not found in Meta Description.`
@@ -925,10 +927,11 @@ export default function PageAuditResultsPage({
       descRec = descCheck?.detail || `Fail — Meta Description requires optimization.`
     }
 
-    const h1Value = (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1) || ''
+    const rawH1 = Array.isArray(snap.h1) ? snap.h1[0] : snap.h1
+    const h1Value = extractSafeString(rawH1)
     const h1Count = Array.isArray(snap.h1) ? snap.h1.length : (snap.h1 ? 1 : 0)
     const hasH1Target = breakdown.h1 === 'Yes' || (
-      h1Value && targetPhrase && h1Value.toLowerCase().includes(targetPhrase.toLowerCase())
+      h1Value && targetPhrase && matchTargetPhraseIntent(h1Value, targetPhrase).status === 'PASS'
     )
     const h1Status = (h1Count === 1 && hasH1Target && h1Check?.status !== 'fail') ? 'Pass' : 'Fail'
     let h1Rec = '—'
