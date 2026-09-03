@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.96-stable-hf-category-hierarchy-confirmed',
+    version: 'v1.96-stable',
+    gitTag: 'v1.96-stable-hf-category-hierarchy-confirmed',
+    commit: '7fdbfa7',
+    date: '03-09-2026 09:00',
+    title: 'Confirmed Stable HF4You Category Hierarchy & Visual Separators (V1.96)',
+    description: 'Confirmed-good production state verifying Beds hierarchy (Shop By Bed Size with all 7 size pages and Shop By Bed Type), Bed Frames hierarchy, Divan Beds hierarchy, visual-only separator isolation, 122 SEO pages, and 100% user configurations preserved.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.96-stable-hf-category-hierarchy-confirmed.md'
+  },
+  {
     id: 'v1.94-post-sync-prior-to-beds-size-hierarchy-fix',
     version: 'v1.94',
     gitTag: 'v1.94-post-sync-prior-to-beds-size-hierarchy-fix',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 08:30',
     title: 'State Prior to Beds Size Category Hierarchy Fix (V1.94)',
     description: 'Restore point capturing the state following the Magento resync, before applying the definitive fix for Beds size category hierarchy grouping in W3 Manage Pages.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.94-post-sync-prior-to-beds-size-hierarchy-fix.md'
   },
   {
