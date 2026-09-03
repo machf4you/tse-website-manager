@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.94-post-sync-prior-to-beds-size-hierarchy-fix',
+    version: 'v1.94',
+    gitTag: 'v1.94-post-sync-prior-to-beds-size-hierarchy-fix',
+    commit: '21029fd',
+    date: '03-09-2026 08:30',
+    title: 'State Prior to Beds Size Category Hierarchy Fix (V1.94)',
+    description: 'Restore point capturing the state following the Magento resync, before applying the definitive fix for Beds size category hierarchy grouping in W3 Manage Pages.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.94-post-sync-prior-to-beds-size-hierarchy-fix.md'
+  },
+  {
     id: 'v1.94-stable-prior-to-hf-magento-structure-resync',
     version: 'v1.94-stable',
     gitTag: 'v1.94-stable-prior-to-hf-magento-structure-resync',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 08:00',
     title: 'Stable W3 Visual Category Hierarchy Presentation & Non-Clickable Separators (V1.94)',
     description: 'Complete verified stable build featuring hierarchical W3 category presentation with prominent top category rows (Beds, Divan Beds, Headboards, Mattresses, Bed Frames), non-clickable visual Shop By separators with zero SEO footprint, sub-branch tree indentation, and multi-store tree isolation. Preserves canonical URLs and 100% of user configurations.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v1.94-stable-prior-to-hf-magento-structure-resync.md'
   },
   {
