@@ -497,7 +497,7 @@ export default function PageManagementPage({
     ))
 
     if (isAscentBuilders) {
-      // ── WordPress Visual Hierarchy Prototype for Ascent Builders ──
+      // ── WordPress Visual Hierarchy for Ascent Builders ──
       const getCleanPath = (url) => {
         if (!url) return ''
         try {
@@ -508,45 +508,48 @@ export default function PageManagementPage({
         }
       }
 
-      // 1. Build parent-child relationships based on canonical URL structure
-      const potentialParents = filteredPages.filter(p => getCleanPath(p.url))
+      // Find the Areas We Cover parent page
+      const areasWeCoverPage = filteredPages.find(p => {
+        const path = getCleanPath(p.url)
+        const slug = p.slug || path.split('/').pop()
+        return slug === 'areas-we-cover' || path === 'areas-we-cover'
+      })
+
       const parentOfChild = new Map() // childId -> parentId
       const childrenByParent = new Map() // parentId -> [children]
 
+      // Canonical location landing pages for Ascent Builders
+      const isAscentLocationPage = (p) => {
+        const path = getCleanPath(p.url)
+        const slug = p.slug || path.split('/').pop()
+        return !path.includes('projects/') && slug.startsWith('loft-conversions-')
+      }
+
       filteredPages.forEach(c => {
+        // Place location landing pages beneath Areas We Cover
+        if (areasWeCoverPage && isAscentLocationPage(c) && c.id !== areasWeCoverPage.id) {
+          parentOfChild.set(c.id, areasWeCoverPage.id)
+          if (!childrenByParent.has(areasWeCoverPage.id)) childrenByParent.set(areasWeCoverPage.id, [])
+          childrenByParent.get(areasWeCoverPage.id).push(c)
+          return
+        }
+
+        // Genuine subpath nesting (e.g. /a/b under /a where /a is an actual page)
         const cPath = getCleanPath(c.url)
-        if (!cPath) return // home page has empty path
+        if (!cPath) return
         const cParts = cPath.split('/')
-        const cSlug = c.slug || cParts[cParts.length - 1]
-        const cDir = cParts.slice(0, -1).join('/')
-
-        for (const p of potentialParents) {
-          if (p.id === c.id) continue
-          const pPath = getCleanPath(p.url)
-          if (!pPath) continue
-          const pParts = pPath.split('/')
-          const pSlug = p.slug || pParts[pParts.length - 1]
-          const pDir = pParts.slice(0, -1).join('/')
-
-          // Rule A: Direct subpath nesting (/services/loft-conversions under /services)
-          if (cPath.startsWith(pPath + '/')) {
-            parentOfChild.set(c.id, p.id)
-            if (!childrenByParent.has(p.id)) childrenByParent.set(p.id, [])
-            childrenByParent.get(p.id).push(c)
-            break
-          }
-
-          // Rule B: Slug prefix nesting at same directory depth (/loft-conversions-banstead under /loft-conversions)
-          if (cDir === pDir && pSlug.length >= 4 && cSlug.startsWith(pSlug + '-')) {
-            parentOfChild.set(c.id, p.id)
-            if (!childrenByParent.has(p.id)) childrenByParent.set(p.id, [])
-            childrenByParent.get(p.id).push(c)
-            break
+        if (cParts.length > 1) {
+          const parentCandidatePath = cParts.slice(0, -1).join('/')
+          const parentCandidate = filteredPages.find(p => getCleanPath(p.url) === parentCandidatePath)
+          if (parentCandidate && parentCandidate.id !== c.id) {
+            parentOfChild.set(c.id, parentCandidate.id)
+            if (!childrenByParent.has(parentCandidate.id)) childrenByParent.set(parentCandidate.id, [])
+            childrenByParent.get(parentCandidate.id).push(c)
           }
         }
       })
 
-      // 2. Identify top-level pages
+      // Identify top-level pages
       const topLevelPages = filteredPages.filter(p => !parentOfChild.has(p.id))
 
       // Sort top-level pages by standard priority / title sort
@@ -560,7 +563,7 @@ export default function PageManagementPage({
         return safeLower(a.title).localeCompare(safeLower(b.title))
       })
 
-      // 3. Assemble visual display rows with indentation
+      // Assemble visual display rows with indentation
       const wpRows = []
       const processedIds = new Set()
 
