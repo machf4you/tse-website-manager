@@ -36,9 +36,12 @@ function extractTopicFromUrl(url = '') {
   }
 }
 
+import { matchTargetPhraseIntent } from './phraseMatcher'
+
 function containsPhrase(text = '', phrase = '') {
   if (!text || !phrase) return false
-  return text.toLowerCase().includes(phrase.toLowerCase())
+  const res = matchTargetPhraseIntent(text, phrase)
+  return res.status === 'PASS'
 }
 
 /**

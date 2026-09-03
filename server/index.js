@@ -10,9 +10,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '1.96',
-  buildHash: 'w3bedssizecat810fix96',
-  buildTimestamp: 1788300000000,
+  version: '1.97',
+  buildHash: 'globalphrasematchingv197',
+  buildTimestamp: 1788310000000,
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
