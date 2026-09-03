@@ -367,11 +367,15 @@ export default function PageManagementPage({
     return !p.isExcluded && p.type !== 'Excluded'
   })
 
-  // Helper to identify top-level product category
+  // Helper to extract raw ID (stripping cat- or cms- prefixes)
+  const getRawId = (id) => String(id || '').replace(/^cat-|^cms-/, '')
+
+  // Helper to identify top-level product category (Level 2 categories, excluding store root container)
   const isTopCategory = (p) => {
     if (p.post_type !== 'category') return false
-    const pid = String(p.parentId || '')
-    return (p.level === 2 || pid === '1' || pid === '2' || !p.parentId) && !isShopBySeparator(p)
+    const rawPid = getRawId(p.parentId)
+    const rawId = getRawId(p.id)
+    return (Number(p.level) === 2 || rawPid === '2' || rawPid === '1') && !isShopBySeparator(p) && rawId !== '2'
   }
 
   // Sort filtered pages
@@ -438,18 +442,28 @@ export default function PageManagementPage({
     return tA.localeCompare(tB)
   })
 
+  // Keyword-based ordering for top-level product sections
+  const getTopOrder = (title) => {
+    const t = (title || '').toLowerCase()
+    if (t.includes('bed frame')) return 5
+    if (t.includes('divan')) return 2
+    if (t.includes('headboard')) return 3
+    if (t.includes('mattress')) return 4
+    if (t.includes('bed')) return 1
+    return 99
+  }
+
   // Build hierarchical display rows when in natural view (priority sort & all filter tab)
   let displayRows = []
   if (sortColumn === 'priority' && filter === 'all') {
-    const topOrder = { 'beds': 1, 'divan beds': 2, 'headboards': 3, 'mattresses': 4, 'bed frames': 5 }
     const topCats = filteredPages.filter(p => isTopCategory(p))
-    topCats.sort((a, b) => (topOrder[a.title?.toLowerCase()] || 99) - (topOrder[b.title?.toLowerCase()] || 99))
+    topCats.sort((a, b) => getTopOrder(a.title || a.name) - getTopOrder(b.title || b.name))
 
     const processedIds = new Set()
     const categoryRows = []
 
     topCats.forEach(topCat => {
-      const topId = String(topCat.id || '').replace('cat-', '')
+      const topId = getRawId(topCat.id)
       processedIds.add(topCat.id)
 
       categoryRows.push({
@@ -460,11 +474,11 @@ export default function PageManagementPage({
       })
 
       // Find Shop By visual separators under this top category
-      const seps = shopBySeparators.filter(s => String(s.parentId || '') === topId)
-      seps.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+      const seps = shopBySeparators.filter(s => getRawId(s.parentId) === topId)
+      seps.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''))
 
       seps.forEach(sep => {
-        const sepId = String(sep.id || '').replace('cat-', '')
+        const sepId = getRawId(sep.id)
         categoryRows.push({
           type: 'SEPARATOR_ROW',
           id: sep.id,
@@ -473,8 +487,8 @@ export default function PageManagementPage({
         })
 
         // Child leaf pages under this separator
-        const sepChildren = filteredPages.filter(p => String(p.parentId || '') === sepId)
-        sepChildren.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+        const sepChildren = filteredPages.filter(p => getRawId(p.parentId) === sepId)
+        sepChildren.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''))
         sepChildren.forEach(child => {
           processedIds.add(child.id)
           categoryRows.push({
@@ -487,8 +501,8 @@ export default function PageManagementPage({
       })
 
       // Direct children under this top category (not under a Shop By separator)
-      const directChildren = filteredPages.filter(p => String(p.parentId || '') === topId && p.id !== topCat.id && !processedIds.has(p.id))
-      directChildren.sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+      const directChildren = filteredPages.filter(p => getRawId(p.parentId) === topId && p.id !== topCat.id && !processedIds.has(p.id))
+      directChildren.sort((a, b) => (a.title || a.name || '').localeCompare(b.title || b.name || ''))
       directChildren.forEach(child => {
         processedIds.add(child.id)
         categoryRows.push({
@@ -501,7 +515,7 @@ export default function PageManagementPage({
     })
 
     // Remaining category pages (if any)
-    const otherCats = filteredPages.filter(p => p.post_type === 'category' && !processedIds.has(p.id))
+    const otherCats = filteredPages.filter(p => p.post_type === 'category' && !processedIds.has(p.id) && getRawId(p.id) !== '2')
     otherCats.forEach(c => {
       processedIds.add(c.id)
       categoryRows.push({
