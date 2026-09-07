@@ -56,6 +56,15 @@ const MegaphoneIcon = ({ size = 22 }) => (
   </svg>
 )
 
+const ServerIcon = ({ size = 22 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+    <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+    <line x1="6" y1="6" x2="6.01" y2="6" />
+    <line x1="6" y1="18" x2="6.01" y2="18" />
+  </svg>
+)
+
 const ChevronRightIcon = ({ size = 14 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="9 18 15 12 9 6" />
@@ -166,6 +175,26 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
 
   // 3. Standalone Independent Applications
   const independentSections = [
+    {
+      sectionTitle: 'Master Site Registry',
+      sectionSubtitle: 'Connected domains and infrastructure management',
+      app: {
+        id: 'SITE_REGISTRY',
+        name: 'Site Registry',
+        roleTag: 'Standalone Application',
+        description: 'Master registry for managed domains, hosting providers, server configurations, and platform credentials.',
+        status: 'Live',
+        version: 'v1.0.0',
+        accentColor: '#0ea5e9',
+        IconComponent: ServerIcon,
+        launchUrl: 'https://site-registry.thesearchequation.co.uk/',
+        isActionable: true,
+        buttonText: 'Launch',
+        liveUrl: 'https://site-registry.thesearchequation.co.uk/',
+        displayUrl: 'site-registry.thesearchequation.co.uk',
+        isDeployed: true
+      }
+    },
     {
       sectionTitle: 'Lead Generation',
       sectionSubtitle: 'Prospect discovery and data extraction',
@@ -377,7 +406,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
           </div>
           <div className="stat-info">
             <span className="stat-label">Total Apps</span>
-            <span className="stat-number">7</span>
+            <span className="stat-number">8</span>
             <span className="stat-tag text-emerald">All systems</span>
           </div>
         </div>
@@ -388,7 +417,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
           </div>
           <div className="stat-info">
             <span className="stat-label">Live Apps</span>
-            <span className="stat-number">4</span>
+            <span className="stat-number">5</span>
             <span className="stat-tag text-blue">Ready to use</span>
           </div>
         </div>
@@ -399,7 +428,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
           </div>
           <div className="stat-info">
             <span className="stat-label">Suite Structure</span>
-            <span className="stat-number">1 Suite + 4 Apps</span>
+            <span className="stat-number">1 Suite + 5 Apps</span>
             <span className="stat-tag text-amber">Hierarchical</span>
           </div>
         </div>
