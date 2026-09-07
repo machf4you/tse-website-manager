@@ -48,6 +48,107 @@ app.post('/api/deployment/status', (req, res) => {
   }
 })
 
+// ── App Progress API Endpoints ──
+app.get('/api/app-progress', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM app_progress ORDER BY name ASC').all()
+    res.json({ status: 'ok', apps: rows })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.get('/api/app-progress/:appId', (req, res) => {
+  try {
+    const row = db.prepare('SELECT * FROM app_progress WHERE app_id = ?').get(req.params.appId)
+    if (!row) {
+      return res.status(404).json({ error: 'App progress record not found' })
+    }
+    res.json({ status: 'ok', app: row })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.post('/api/app-progress/:appId', (req, res) => {
+  try {
+    const appId = req.params.appId
+    const existing = db.prepare('SELECT * FROM app_progress WHERE app_id = ?').get(appId)
+    if (!existing) {
+      return res.status(404).json({ error: 'App progress record not found' })
+    }
+
+    const {
+      status,
+      version,
+      completed_summary,
+      current_work,
+      next_action,
+      blocked_by,
+      deployment_status,
+      notes
+    } = req.body || {}
+
+    const updatedRecord = {
+      app_id: appId,
+      name: existing.name,
+      live_url: req.body.live_url !== undefined ? req.body.live_url : existing.live_url,
+      repo_ref: req.body.repo_ref !== undefined ? req.body.repo_ref : existing.repo_ref,
+      status: status || existing.status,
+      version: version !== undefined ? version : existing.version,
+      completed_summary: completed_summary !== undefined ? completed_summary : existing.completed_summary,
+      current_work: current_work !== undefined ? current_work : existing.current_work,
+      next_action: next_action !== undefined ? next_action : existing.next_action,
+      blocked_by: blocked_by !== undefined ? blocked_by : existing.blocked_by,
+      deployment_status: deployment_status !== undefined ? deployment_status : existing.deployment_status,
+      notes: notes !== undefined ? notes : existing.notes
+    }
+
+    db.transaction(() => {
+      db.prepare(`
+        UPDATE app_progress
+        SET status = @status,
+            version = @version,
+            completed_summary = @completed_summary,
+            current_work = @current_work,
+            next_action = @next_action,
+            blocked_by = @blocked_by,
+            deployment_status = @deployment_status,
+            notes = @notes,
+            live_url = @live_url,
+            repo_ref = @repo_ref,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE app_id = @app_id
+      `).run(updatedRecord)
+
+      // Append snapshot to history
+      db.prepare(`
+        INSERT INTO app_progress_history (app_id, status, version, snapshot_json, created_at)
+        VALUES (@app_id, @status, @version, @snapshot_json, CURRENT_TIMESTAMP)
+      `).run({
+        app_id: appId,
+        status: updatedRecord.status,
+        version: updatedRecord.version,
+        snapshot_json: JSON.stringify(updatedRecord)
+      })
+    })()
+
+    const freshRecord = db.prepare('SELECT * FROM app_progress WHERE app_id = ?').get(appId)
+    res.json({ status: 'ok', app: freshRecord })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+app.get('/api/app-progress/:appId/history', (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM app_progress_history WHERE app_id = ? ORDER BY id DESC').all(req.params.appId)
+    res.json({ status: 'ok', history: rows })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // Extract genuine content images server-side (excludes logos, badges, background sliders, and third-party placeholders)
 app.get('/api/images/extract', async (req, res) => {
   try {
