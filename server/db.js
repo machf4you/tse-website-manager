@@ -19,6 +19,7 @@ db.pragma('journal_mode = WAL')
 db.exec(`
   CREATE TABLE IF NOT EXISTS websites (
     id TEXT PRIMARY KEY,
+    domain_id TEXT DEFAULT NULL,
     name TEXT NOT NULL,
     url TEXT NOT NULL,
     platform TEXT,
@@ -87,8 +88,25 @@ db.exec(`
   );
 `)
 
+// Safe idempotent migration: ensure domain_id column and index exist on websites table
+try {
+  const colCheck = db.pragma('table_info(websites)')
+  const hasDomainId = colCheck.some(col => col.name === 'domain_id')
+  if (!hasDomainId) {
+    db.exec(`
+      ALTER TABLE websites ADD COLUMN domain_id TEXT DEFAULT NULL;
+    `)
+  }
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_websites_domain_id ON websites(domain_id);
+  `)
+} catch (e) {
+  console.error('Error ensuring domain_id column exists on websites table:', e)
+}
+
 export const getAllWebsitesStmt = db.prepare('SELECT * FROM websites')
 export const getWebsiteByIdStmt = db.prepare('SELECT * FROM websites WHERE id = ?')
+export const getWebsiteByDomainIdStmt = db.prepare('SELECT * FROM websites WHERE domain_id = ?')
 
 export function getAllWebsitesFromDb() {
   return getAllWebsitesStmt.all()
@@ -96,6 +114,10 @@ export function getAllWebsitesFromDb() {
 
 export function getWebsiteByIdFromDb(id) {
   return getWebsiteByIdStmt.get(String(id))
+}
+
+export function getWebsiteByDomainIdFromDb(domainId) {
+  return getWebsiteByDomainIdStmt.get(String(domainId))
 }
 
 export default db

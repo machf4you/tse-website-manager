@@ -422,6 +422,7 @@ app.get('/api/websites', (req, res) => {
     const rows = db.prepare(`SELECT * FROM websites ORDER BY created_at DESC`).all()
     const websites = rows.map(r => ({
       ...r,
+      domainId: r.domain_id || null,
       syncStatus: r.sync_status || r.syncStatus || 'Synced',
       lastSyncTimestamp: r.last_sync_timestamp || r.lastSyncTimestamp || null,
       isAudited: Boolean(r.is_audited),
@@ -445,11 +446,12 @@ app.post('/api/websites', (req, res) => {
     const now = new Date().toISOString()
     const stmt = db.prepare(`
       INSERT INTO websites (
-        id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
+        id, domain_id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
       ) VALUES (
-        @id, @name, @url, @platform, @portfolio, @status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @config_data, @created_at, @updated_at
+        @id, @domain_id, @name, @url, @platform, @portfolio, @status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @config_data, @created_at, @updated_at
       )
       ON CONFLICT(id) DO UPDATE SET
+        domain_id = COALESCE(excluded.domain_id, websites.domain_id),
         name = excluded.name,
         url = excluded.url,
         platform = excluded.platform,
@@ -470,6 +472,7 @@ app.post('/api/websites', (req, res) => {
 
     stmt.run({
       id: String(site.id),
+      domain_id: site.domain_id || site.domainId || null,
       name: site.name || 'Untitled Website',
       url: site.url || '',
       platform: site.platform || 'WordPress',
@@ -501,11 +504,12 @@ app.post('/api/websites/batch', (req, res) => {
     const now = new Date().toISOString()
     const stmt = db.prepare(`
       INSERT INTO websites (
-        id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
+        id, domain_id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
       ) VALUES (
-        @id, @name, @url, @platform, @portfolio, @status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @config_data, @created_at, @updated_at
+        @id, @domain_id, @name, @url, @platform, @portfolio, @status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @config_data, @created_at, @updated_at
       )
       ON CONFLICT(id) DO UPDATE SET
+        domain_id = COALESCE(excluded.domain_id, websites.domain_id),
         name = excluded.name,
         url = excluded.url,
         platform = excluded.platform,
@@ -527,6 +531,7 @@ app.post('/api/websites/batch', (req, res) => {
         const statusVal = typeof site.status === 'object' ? JSON.stringify(site.status) : (site.status || 'Active')
         stmt.run({
           id: String(site.id),
+          domain_id: site.domain_id || site.domainId || null,
           name: site.name || 'Untitled Website',
           url: site.url || '',
           platform: site.platform || 'WordPress',
@@ -547,6 +552,133 @@ app.post('/api/websites/batch', (req, res) => {
     res.json({ success: true, count: sites.length })
   } catch (e) {
     res.status(500).json({ error: e.message })
+  }
+})
+
+// Phase 2A Bridge: Link a website record to Master Domain UUID
+app.post('/api/bridge/domains/link', (req, res) => {
+  try {
+    const { siteId, domainId } = req.body || {}
+    if (!siteId || !domainId) {
+      return res.status(400).json({ success: false, error: 'siteId and domainId are required' })
+    }
+
+    const info = db.prepare(`UPDATE websites SET domain_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(String(domainId), String(siteId))
+    if (info.changes === 0) {
+      return res.status(404).json({ success: false, error: `Website with id ${siteId} not found` })
+    }
+
+    res.json({ success: true, siteId, domainId, changes: info.changes })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+// Phase 2A Bridge: Read-only SEO Context (Landing Pages & Target Phrases) by Master Domain UUID or domain string
+app.get('/api/bridge/domains/:domain_or_id/seo-context', (req, res) => {
+  try {
+    const { domain_or_id } = req.params
+    if (!domain_or_id) {
+      return res.status(400).json({ success: false, error: 'Domain or Domain UUID parameter is required' })
+    }
+
+    // Clean search string
+    let clean = domain_or_id.trim().toLowerCase()
+    clean = clean.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '')
+
+    // Find website row by domain_id, id, or domain in url
+    let site = db.prepare(`SELECT * FROM websites WHERE domain_id = ? OR id = ? OR LOWER(url) LIKE ?`).get(
+      domain_or_id,
+      domain_or_id,
+      `%${clean}%`
+    )
+
+    if (!site) {
+      return res.status(404).json({
+        success: false,
+        error: `No website record found in Website Manager matching domain or UUID "${domain_or_id}"`,
+        domain_or_id
+      })
+    }
+
+    // Retrieve configured landing pages from page_configurations
+    const configRows = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ? ORDER BY priority DESC, page_key ASC`).all(site.id)
+
+    // Retrieve package data if available
+    let packagePages = []
+    try {
+      const pkgRow = db.prepare(`SELECT package_data FROM wp_packages WHERE site_id = ?`).get(site.id)
+      if (pkgRow && pkgRow.package_data) {
+        const parsed = JSON.parse(pkgRow.package_data)
+        packagePages = parsed.pages || parsed.items || []
+      }
+    } catch (e) {}
+
+    // Retrieve latest page audit scores
+    const auditRows = db.prepare(`SELECT page_key, audit_result_json, last_audit_timestamp FROM page_audits WHERE site_id = ?`).all(site.id)
+    const auditMap = {}
+    auditRows.forEach(a => {
+      try {
+        auditMap[a.page_key] = {
+          lastAuditTimestamp: a.last_audit_timestamp,
+          result: a.audit_result_json ? JSON.parse(a.audit_result_json) : null
+        }
+      } catch (e) {}
+    })
+
+    // Construct unified list of landing pages
+    let landingPages = []
+
+    if (configRows && configRows.length > 0) {
+      landingPages = configRows.map(r => {
+        const audit = auditMap[r.page_key] || {}
+        let parsedConfig = {}
+        try { if (r.config_json) parsedConfig = JSON.parse(r.config_json) } catch (e) {}
+
+        return {
+          page_key: r.page_key,
+          url: r.url || parsedConfig.url || r.page_key,
+          title: r.title || parsedConfig.title || parsedConfig.proposedTitle || '',
+          target_phrase: r.target_phrase || parsedConfig.target || parsedConfig.targetPhrase || '',
+          page_type: r.seo_page_type || parsedConfig.type || parsedConfig.seoPageType || 'Landing',
+          priority: r.priority || 0,
+          is_excluded: Boolean(r.is_excluded),
+          last_audit_timestamp: audit.lastAuditTimestamp || null,
+          audit_score: audit.result ? audit.result.score : null
+        }
+      })
+    } else if (packagePages && packagePages.length > 0) {
+      landingPages = packagePages.map(p => {
+        const pageKey = p.url || p.link || p.slug || String(p.id)
+        const audit = auditMap[pageKey] || {}
+        return {
+          page_key: pageKey,
+          url: p.url || p.link || pageKey,
+          title: p.title || p.name || '',
+          target_phrase: p.targetPhrase || p.target || '',
+          page_type: p.type || p.pageType || 'Landing',
+          priority: p.priority || 0,
+          is_excluded: Boolean(p.isExcluded),
+          last_audit_timestamp: audit.lastAuditTimestamp || null,
+          audit_score: audit.result ? audit.result.score : null
+        }
+      })
+    }
+
+    res.json({
+      success: true,
+      domain_id: site.domain_id || null,
+      site_id: site.id,
+      name: site.name,
+      url: site.url,
+      platform: site.platform,
+      portfolio: site.portfolio,
+      status: site.status,
+      pages_count: landingPages.length,
+      landing_pages: landingPages
+    })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
   }
 })
 
