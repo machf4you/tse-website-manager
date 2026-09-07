@@ -7,7 +7,9 @@ Every future restore point must update this file.
 
 | Version | Git Tag | Commit | Date | Summary | Status |
 |---|---|---|---|---|---|
-| v1.60-w4-sync-audit-push-workflow | `v1.60-w4-full-sync-audit-push-workflow-complete` | `ae49a2d` | 29-08-2026 10:55 | W4 Complete Sync Page, Re-run Audit, Timestamps, Stale Alerts & Live Push Workflow. | **Current** |
+| v2.12-stable | `v2.12-stable-site-registry-before-backlinks-phase-2a` | `3c31682` | 07-09-2026 17:31 | Confirmed Stable Site Registry: 126 Master Domain records in public.domains, redesigned Domains table with standard TSE UI font (+1px), duplicate URLs removed, widened table layout, Domain Control Page (/domains/:id), Backlinks Phase 1 & 2 audit completed. | **Current** |
+| v2.11-stable | `v2.11-stable-apps-dashboard-hierarchy-confirmed` | `72cfa4c` | 03-09-2026 18:18 | Confirmed Apps Dashboard Hierarchy & Sectioning (V2.11). | Superseded |
+| v1.60-w4-sync-audit-push-workflow | `v1.60-w4-full-sync-audit-push-workflow-complete` | `ae49a2d` | 29-08-2026 10:55 | W4 Complete Sync Page, Re-run Audit, Timestamps, Stale Alerts & Live Push Workflow. | Superseded |
 | v1.53-w4-last-audit-timestamp-fix | `v1.53-w4-last-audit-timestamp-api-outer-record-fix` | `[AUTO]` | 28-08-2026 14:35 | W4 LAST AUDIT Timestamp API Outer-Record Resolution Fix. | Superseded |
 | v1.52-w4-elementor-h1-safety-fix | `v1.52-w4-elementor-h1-safety-tree-update-fix` | `b4a1290` | 28-08-2026 10:30 | W4 Elementor H1 Scope Safety & Single-Widget Update Fix. | Superseded |
 | v1.51-w4-freshness-indicators-fix | `v1.51-w4-audit-freshness-and-timestamps-indicators-fix` | `a518fa2` | 28-08-2026 09:28 | W4 audit freshness & timestamps indicators (LAST AUDIT vs LAST SYNC & stale warning banner). | Superseded |

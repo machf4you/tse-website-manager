@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.12-stable-site-registry-before-backlinks-phase-2a',
+    version: 'v2.12-stable',
+    gitTag: 'v2.12-stable-site-registry-before-backlinks-phase-2a',
+    commit: '3c31682',
+    date: '07-09-2026 17:31',
+    title: 'Confirmed Stable Site Registry Before Backlinks Phase 2A (V2.12)',
+    description: 'Confirmed stable restore point capturing live-approved Site Registry: 126 Master Domain records in public.domains, redesigned Domains table with standard TSE UI font (monospace removed, +1px size), duplicate URLs removed, widened table layout, Domain Control Page (/domains/:id), and completed Backlinks Phase 1 & 2 pre-check audit.',
+    status: 'Current',
+    docFile: 'V2.12-STABLE-SITE-REGISTRY-BEFORE-BACKLINKS-PHASE-2A.md'
+  },
+  {
     id: 'v2.11-stable-apps-dashboard-hierarchy-confirmed',
     version: 'v2.11-stable',
     gitTag: 'v2.11-stable-apps-dashboard-hierarchy-confirmed',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '03-09-2026 18:18',
     title: 'Confirmed Apps Dashboard Hierarchy & Sectioning (V2.11)',
     description: 'Confirmed stable restore point capturing live-approved Apps Dashboard structure: Website Management Suite with visual tree hierarchy (Page Auditor & Site Auditor subordinate) and distinct independent sections for Lead Generator, Chatza, Social Automation, and WP Exporter.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.11-stable-apps-dashboard-hierarchy-confirmed.md'
   },
   {
