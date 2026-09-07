@@ -410,7 +410,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
           </div>
           <div className="stat-info">
             <span className="stat-label">Platform Version</span>
-            <span className="stat-number">V2.10</span>
+            <span className="stat-number">V2.12</span>
             <span className="stat-tag text-purple">Active</span>
           </div>
         </div>
@@ -420,21 +420,6 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       {/* SECTION 1: WEBSITE MANAGEMENT SUITE (PARENT & SUBORDINATES)    */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="dashboard-suite-section">
-        <div className="suite-section-header">
-          <div>
-            <div className="suite-badge-label">
-              <span className="suite-badge-dot"></span>
-              CORE PLATFORM SUITE
-            </div>
-            <h2 className="suite-section-title">
-              Website Management Suite
-            </h2>
-            <p className="suite-section-subtitle">
-              Central SEO management platform with integrated page fitment and site audit engines.
-            </p>
-          </div>
-        </div>
-
         {/* Tree Container */}
         <div className="suite-tree-container">
           {/* Primary Parent Card */}
@@ -463,21 +448,8 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       {/* SECTION 2: STANDALONE INDEPENDENT APPLICATIONS (SEPARATE ROWS) */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="dashboard-independent-sections">
-        <div className="independent-master-header">
-          <h2 className="independent-master-title">
-            Independent Applications
-          </h2>
-          <p className="independent-master-subtitle">
-            Standalone marketing, prospect extraction, communication, and automation clients.
-          </p>
-        </div>
-
-        {independentSections.map((sec, idx) => (
+        {independentSections.map((sec) => (
           <div key={sec.app.id} className="independent-row-section">
-            <div className="independent-row-header">
-              <h3 className="independent-row-title">{sec.sectionTitle}</h3>
-              <span className="independent-row-subtitle">{sec.sectionSubtitle}</span>
-            </div>
             <div className="independent-card-wrapper">
               {renderCard(sec.app, false, false)}
             </div>
