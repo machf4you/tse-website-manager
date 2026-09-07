@@ -97,7 +97,19 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
     site.topIndicator === 'connected' ||
     hasValidPackage
   )
-  const ind = isConnected ? INDICATOR.connected : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
+
+  const isRegistryShell = Boolean(
+    site.domain_id &&
+    (!site.configData || Object.keys(site.configData).length === 0) &&
+    (!hasValidPackage) &&
+    (site.syncStatus === 'Unsynced' || site.sync_status === 'Unsynced' || (typeof site.status === 'object' ? site.status?.registryOrigin : site.status?.includes('registryOrigin')))
+  )
+
+  const ind = isRegistryShell
+    ? { label: 'SETUP REQUIRED', cls: 'status-partial' }
+    : isConnected
+    ? INDICATOR.connected
+    : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
 
   const siteIdKey = getSiteConfigsStorageKey(site)
   const savedConfigs = (() => {
@@ -140,8 +152,11 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   else if (serverTypeValue === 'Nginx') serverTypeVariant = 'purple'
   else if (serverTypeValue === 'Apache') serverTypeVariant = 'amber'
 
+  const connectionValue = isRegistryShell ? 'Setup Required' : isConnected ? 'Connected' : 'Disconnected'
+  const connectionVariant = isRegistryShell ? 'amber' : isConnected ? 'green' : 'red'
+
   const liveStatusRows = [
-    { label: 'Connection',       value: isConnected ? 'Connected' : 'Disconnected', variant: isConnected ? 'green' : 'red' },
+    { label: 'Connection',       value: connectionValue, variant: connectionVariant },
     { label: 'WordPress API',    value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
     { label: 'Server Type',      value: serverTypeValue, variant: serverTypeVariant },
     { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
@@ -157,6 +172,19 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
           <span className="connection-dot" aria-hidden="true" />
           {ind.label}
         </span>
+        {isRegistryShell && (
+          <span
+            className="task-count-badge"
+            style={{
+              borderColor: 'rgba(56, 189, 248, 0.3)',
+              color: 'rgb(56, 189, 248)',
+              backgroundColor: 'rgba(56, 189, 248, 0.08)',
+              fontSize: '0.65rem'
+            }}
+          >
+            NEW FROM SITE REGISTRY
+          </span>
+        )}
       </div>
 
       {/* ── Site name ── */}

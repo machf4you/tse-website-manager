@@ -574,6 +574,137 @@ app.post('/api/bridge/domains/link', (req, res) => {
   }
 })
 
+// Phase 2A Bridge: Idempotent Sync / Shell Creation from Master Domains
+app.post('/api/bridge/sync-master-domains', (req, res) => {
+  try {
+    let domains = req.body?.domains || req.body
+    if (!Array.isArray(domains) && typeof domains === 'object' && domains !== null && domains.id) {
+      domains = [domains]
+    }
+    if (!Array.isArray(domains)) {
+      return res.status(400).json({ success: false, error: 'Array of domains is required' })
+    }
+
+    const now = new Date().toISOString()
+    const results = {
+      processed: 0,
+      created: 0,
+      updated: 0,
+      skippedIneligible: 0,
+      conflicts: []
+    }
+
+    const normalizeDomain = (str) => {
+      if (!str || typeof str !== 'string') return ''
+      return str.trim().toLowerCase()
+        .replace(/^https?:\/\//i, '')
+        .replace(/\/.*$/, '')
+        .replace(/^www\./i, '')
+        .split(':')[0]
+    }
+
+    for (const d of domains) {
+      if (!d || !d.id) continue
+      results.processed++
+
+      const masterId = String(d.id)
+      const canonical = normalizeDomain(d.canonical_domain || d.domain_name || d.name || d.url)
+      const status = (d.status || 'active').toLowerCase()
+      const portfolio = d.portfolio || 'tse'
+      const platform = d.platform || 'WordPress'
+      const primaryUrl = d.primary_url || (canonical ? `https://${canonical}` : '')
+
+      // Eligibility Rule: Automatically create Website Manager shells ONLY for active and development
+      const isEligible = status === 'active' || status === 'development'
+
+      // Tier A: Match by domain_id
+      const existingByDomainId = db.prepare(`SELECT * FROM websites WHERE domain_id = ?`).get(masterId)
+
+      if (existingByDomainId) {
+        // Safe metadata update: do NOT delete history or touch credentials
+        db.prepare(`
+          UPDATE websites SET
+            portfolio = COALESCE(@portfolio, portfolio),
+            platform = COALESCE(@platform, platform),
+            updated_at = @now
+          WHERE id = @siteId
+        `).run({
+          portfolio,
+          platform,
+          now,
+          siteId: existingByDomainId.id
+        })
+        results.updated++
+        continue
+      }
+
+      // If domain is not eligible and no existing record is mapped, do not create shell
+      if (!isEligible) {
+        results.skippedIneligible++
+        continue
+      }
+
+      // Tier B: Legacy fallback match (where domain_id is NULL)
+      if (canonical) {
+        const legacyMatches = db.prepare(`
+          SELECT * FROM websites 
+          WHERE domain_id IS NULL AND (LOWER(url) LIKE ? OR LOWER(name) LIKE ?)
+        `).all(`%${canonical}%`, `%${canonical}%`)
+
+        if (legacyMatches.length === 1) {
+          db.prepare(`UPDATE websites SET domain_id = ?, updated_at = ? WHERE id = ?`).run(
+            masterId,
+            now,
+            legacyMatches[0].id
+          )
+          results.updated++
+          continue
+        } else if (legacyMatches.length > 1) {
+          results.conflicts.push({
+            domain_id: masterId,
+            canonical_domain: canonical,
+            reason: 'Multiple ambiguous unlinked legacy rows found'
+          })
+          continue
+        }
+      }
+
+      // Tier C: Create new lightweight Website Manager shell
+      const newInternalId = `wm-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+      const shellStatusJson = JSON.stringify({
+        connection: { label: 'Setup Required', value: 'Setup Required' },
+        registryOrigin: true,
+        registryStatus: status
+      })
+
+      db.prepare(`
+        INSERT INTO websites (
+          id, domain_id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
+        ) VALUES (
+          @id, @domain_id, @name, @url, @platform, @portfolio, @status, 0, NULL, 'Unsynced', NULL, NULL, @created_at, @updated_at
+        )
+      `).run({
+        id: newInternalId,
+        domain_id: masterId,
+        name: d.canonical_domain || d.domain_name || canonical,
+        url: primaryUrl,
+        platform,
+        portfolio,
+        status: shellStatusJson,
+        created_at: now,
+        updated_at: now
+      })
+
+      results.created++
+    }
+
+    res.json({ success: true, ...results })
+  } catch (e) {
+    console.error('Error syncing master domains:', e)
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
 // Phase 2A Bridge: Read-only SEO Context (Landing Pages & Target Phrases) by Master Domain UUID or domain string
 app.get('/api/bridge/domains/:domain_or_id/seo-context', (req, res) => {
   try {

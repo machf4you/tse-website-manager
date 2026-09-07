@@ -99,6 +99,7 @@ try {
   }
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_websites_domain_id ON websites(domain_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_websites_unique_domain_id ON websites(domain_id) WHERE domain_id IS NOT NULL;
   `)
 } catch (e) {
   console.error('Error ensuring domain_id column exists on websites table:', e)
