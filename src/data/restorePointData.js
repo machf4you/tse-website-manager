@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.14-stable-backlinks-phase-2a-foundations',
+    version: 'v2.14-stable',
+    gitTag: 'v2.14-stable-backlinks-phase-2a-foundations',
+    commit: '[AUTO]',
+    date: '07-09-2026 18:18',
+    title: 'Backlinks Phase 2A Foundations Completed (V2.14)',
+    description: 'Confirmed stable restore point capturing completed Backlinks Phase 2A Foundations: 530 backlink targets linked to Master Domain UUIDs (0 unmatched / 0 ambiguous), 1,204 backlink items linked to Master Domain UUIDs, Master Source Database (1,372 sources) preserved with operational usage and 2-client deduplication checks, Target-Page Anchor Pool schema/foundation implemented (1,637 anchors: 1,126 historical used anchors preserved + 511 available target phrases), Website Manager SEO Context bridge active, 126 Master Domains and 14 WM sites unchanged.',
+    status: 'Current',
+    docFile: 'V2.14-STABLE-BACKLINKS-PHASE-2A-FOUNDATIONS.md'
+  },
+  {
     id: 'v2.13-stable-shared-domain-foundation',
     version: 'v2.13-stable',
     gitTag: 'v2.13-stable-shared-domain-foundation',
-    commit: '[AUTO]',
+    commit: '701baf4',
     date: '07-09-2026 18:05',
     title: 'Site Registry → Website Manager Shared-Domain Foundation (V2.13)',
     description: 'Confirmed stable restore point capturing completed Site Registry → Website Manager shared-domain foundation: public.domains as sole Master Domain UUID authority, secure Express backend domain write path, anon Supabase access restricted to SELECT-only, Website Manager websites.domain_id Master UUID link (14/14 sites mapped, 180 page configs preserved), SEO Context bridge operational, automatic Active/Development domain → Website Manager shell creation with NEW FROM SITE REGISTRY badge and SETUP REQUIRED status, duplicate prevention via unique domain_id index, and idempotent reconciliation.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'V2.13-STABLE-SHARED-DOMAIN-FOUNDATION.md'
   },
   {
