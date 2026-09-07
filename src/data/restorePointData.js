@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.13-stable-shared-domain-foundation',
+    version: 'v2.13-stable',
+    gitTag: 'v2.13-stable-shared-domain-foundation',
+    commit: '[AUTO]',
+    date: '07-09-2026 18:05',
+    title: 'Site Registry → Website Manager Shared-Domain Foundation (V2.13)',
+    description: 'Confirmed stable restore point capturing completed Site Registry → Website Manager shared-domain foundation: public.domains as sole Master Domain UUID authority, secure Express backend domain write path, anon Supabase access restricted to SELECT-only, Website Manager websites.domain_id Master UUID link (14/14 sites mapped, 180 page configs preserved), SEO Context bridge operational, automatic Active/Development domain → Website Manager shell creation with NEW FROM SITE REGISTRY badge and SETUP REQUIRED status, duplicate prevention via unique domain_id index, and idempotent reconciliation.',
+    status: 'Current',
+    docFile: 'V2.13-STABLE-SHARED-DOMAIN-FOUNDATION.md'
+  },
+  {
     id: 'v2.12-stable-site-registry-before-backlinks-phase-2a',
     version: 'v2.12-stable',
     gitTag: 'v2.12-stable-site-registry-before-backlinks-phase-2a',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-09-2026 17:31',
     title: 'Confirmed Stable Site Registry Before Backlinks Phase 2A (V2.12)',
     description: 'Confirmed stable restore point capturing live-approved Site Registry: 126 Master Domain records in public.domains, redesigned Domains table with standard TSE UI font (monospace removed, +1px size), duplicate URLs removed, widened table layout, Domain Control Page (/domains/:id), and completed Backlinks Phase 1 & 2 pre-check audit.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'V2.12-STABLE-SITE-REGISTRY-BEFORE-BACKLINKS-PHASE-2A.md'
   },
   {
