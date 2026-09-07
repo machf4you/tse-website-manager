@@ -474,14 +474,12 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* SECTION 2: STANDALONE INDEPENDENT APPLICATIONS (SEPARATE ROWS) */}
+      {/* SECTION 2: STANDALONE INDEPENDENT APPLICATIONS (2-COLUMN GRID) */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="dashboard-independent-sections">
+      <div className="dashboard-independent-grid">
         {independentSections.map((sec) => (
-          <div key={sec.app.id} className="independent-row-section">
-            <div className="independent-card-wrapper">
-              {renderCard(sec.app, false, false)}
-            </div>
+          <div key={sec.app.id} className="independent-card-wrapper">
+            {renderCard(sec.app, false, false)}
           </div>
         ))}
       </div>
