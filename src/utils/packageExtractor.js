@@ -3,11 +3,11 @@
  * Normalizes title, url, SEO Page Type classification, and applies automatic exclusion rules upon import.
  */
 
-export function classifyPageType(p, title, url, isExcluded, isHomePage) {
-  // 1. Excluded pages -> Excluded
+export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext = null) {
+  // 1. Excluded pages -> Excluded (Priority 0)
   if (isExcluded) return 'Excluded'
 
-  // 2. Homepage -> Hub
+  // 2. Homepage -> Hub (Priority 1)
   if (isHomePage) return 'Hub'
 
   // 3. Magento Category Rules (Authoritative Hierarchy Node)
@@ -27,14 +27,49 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage) {
     return 'Topical'
   }
 
-  // 5. WordPress Post -> Article
+  // 5. WordPress Posts -> Article (Priority 4)
   if (p && (p.post_type === 'post' || p.type === 'post')) return 'Article'
 
-  const lowerTitle = title.toLowerCase()
-  const lowerUrl = url.toLowerCase()
-  const cleanSlug = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '').replace(/^\/+/, '').toLowerCase()
+  const lowerTitle = (title || '').toLowerCase()
+  const lowerUrl = (url || '').toLowerCase()
+  const cleanSlug = (url || '').replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '').replace(/^\/+/, '').toLowerCase()
 
-  // 3. Informational Intent Triggers (Topical Pages)
+  // 6. Section Hubs (Hierarchy & Structure Detection)
+  // A. Check WordPress parent-child relationship: If other pages sit beneath this page
+  const pageId = p ? (p.id || p.ID) : null
+  const hasChildPages = Boolean(
+    hierarchyContext?.parentIdsWithChildren &&
+    pageId &&
+    (hierarchyContext.parentIdsWithChildren.has(String(pageId)) || hierarchyContext.parentIdsWithChildren.has(Number(pageId)))
+  )
+  if (hasChildPages) {
+    return 'Hub'
+  }
+
+  // B. Generic Collection / Section Hub Slugs
+  const genericHubSlugs = [
+    'services', 'our-services', 'all-services', 'service-areas',
+    'locations', 'areas', 'areas-covered', 'our-locations',
+    'treatments', 'our-treatments', 'all-treatments',
+    'products', 'our-products', 'categories',
+    'sectors', 'industries', 'practice-areas'
+  ]
+  if (genericHubSlugs.includes(cleanSlug)) {
+    return 'Hub'
+  }
+
+  // 7. Informational / Topical Indexes & Content
+  const genericTopicalSlugs = [
+    'blog', 'news', 'insights', 'articles', 'resources', 'knowledge-base',
+    'guides', 'case-studies', 'faqs', 'faq'
+  ]
+  if (genericTopicalSlugs.includes(cleanSlug)) {
+    return 'Topical'
+  }
+
+  const isBlogPostUrl = lowerUrl.includes('/blog/') || lowerUrl.includes('/news/') || lowerUrl.includes('/insights/') || lowerUrl.includes('/articles/')
+  const isArticleAuthority = p?.authority?.strategic_type === 'article' || p?.classification?.strategic_type === 'article' || p?.intent === 'informational'
+
   const informationalStarters = [
     'how much', 'how to', 'do i need', 'what is', 'what are', 'can builders', 'can i', 'why ',
     'should i', 'when to', 'where to', 'is it worth', 'which one', 'best types', 'types of',
@@ -42,58 +77,25 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage) {
     'everything you need to know', 'pros and cons', 'cost vs value', 'without planning permission',
     'reasons to', 'ways to', 'things to', 'what adds more value', 'ideas for'
   ]
-
   const isQuestionOrGuideTitle = informationalStarters.some(starter => lowerTitle.includes(starter) || lowerUrl.includes(starter))
-  const isBlogPostType = p.post_type === 'post' || p.type === 'post' || lowerUrl.includes('/blog/') || lowerUrl.includes('/news/') || lowerUrl.includes('/insights/') || lowerUrl.includes('/articles/')
-  const isArticleAuthority = p.authority?.strategic_type === 'article' || p.classification?.strategic_type === 'article' || p.intent === 'informational'
 
-  let informationalScore = 0
-  if (isQuestionOrGuideTitle) informationalScore += 4
-  if (isBlogPostType) informationalScore += 3
-  if (isArticleAuthority) informationalScore += 2
-
-  // 4. Commercial Intent Triggers (Landing Pages)
-  const commercialKeywords = [
-    'loft conversion', 'loft conversions',
-    'house extension', 'house extensions', 'home extension', 'home extensions',
-    'garage conversion', 'garage conversions',
-    'renovation', 'renovations', 'refurbishment', 'refurbishments',
-    'kitchen fitting', 'kitchen fitters', 'kitchen installation',
-    'bathroom installation', 'bathroom fitters', 'bathroom renovation',
-    'builders', 'building services', 'architectural', 'planning support',
-    'services', 'our services', 'service area', 'contractor', 'contractors',
-    'carpentry', 'joinery', 'plastering', 'decorating', 'roofing', 'landscaping'
-  ]
-
-  const isServiceLandingSlug = [
-    'loft-conversions', 'house-extensions', 'garage-conversions',
-    'renovations-and-refurbishments', 'building-services', 'services',
-    'our-services', 'architectural-planning-support', 'plastering-decorating',
-    'kitchen-fitting', 'bathroom-installations', 'projects'
-  ].some(slug => cleanSlug === slug || cleanSlug.endsWith('/' + slug))
-
-  const isCommercialTitle = commercialKeywords.some(kw => lowerTitle.includes(kw) || lowerUrl.includes(kw))
-  const isServiceAuthority = p.authority?.strategic_type === 'service' || p.authority?.strategic_type === 'landing' || p.post_type === 'service' || p.intent === 'commercial'
-
-  let commercialScore = 0
-  if (isServiceLandingSlug) commercialScore += 4
-  if (isCommercialTitle && !isQuestionOrGuideTitle) commercialScore += 3
-  if (isServiceAuthority) commercialScore += 2
-  if (p.post_type === 'page' && !isQuestionOrGuideTitle && !isBlogPostType) commercialScore += 1
-
-  // 5. Classification Decision Matrix (Strict Confidence Thresholds)
-  if (informationalScore >= 3 && informationalScore > commercialScore) {
+  if (isQuestionOrGuideTitle || (isBlogPostUrl && p?.post_type !== 'page') || isArticleAuthority) {
     return 'Topical'
   }
-  if (commercialScore >= 2 && commercialScore > informationalScore) {
+
+  // 8. Standard Commercial WordPress Page (Generic Landing Fallback - Priority 2)
+  // Any normal published WordPress page (that is not home, not excluded, not hub, not topical)
+  // classifies as a commercial Landing page without requiring niche-specific keyword lists.
+  const isWpPage = !p || p.post_type === 'page' || p.type === 'page' || !p.post_type || p.post_type === 'services' || p.post_type === 'service' || p.post_type === 'projects' || p.post_type === 'project'
+  if (isWpPage) {
     return 'Landing'
   }
 
-  // 6. Anything uncertain remains Unclassified
+  // 9. Anything uncertain remains Unclassified
   return 'Unclassified'
 }
 
-export function normalizeImportedPage(p, siteUrl = '') {
+export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) {
   if (!p || typeof p !== 'object') return p
 
   // 1. Meta Title / Page Title resolution
@@ -240,7 +242,7 @@ export function normalizeImportedPage(p, siteUrl = '') {
     lowerTitle === 'home' ||
     lowerTitle === 'homepage'
 
-  const seoPageType = classifyPageType(p, title, url, isExcluded, isHomePage)
+  const seoPageType = classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext)
   const type = seoPageType
 
   // 5. Priority Level Rule:
@@ -445,7 +447,17 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
     uniqueItems.push(item)
   }
 
-  return uniqueItems.map(page => normalizeImportedPage(page, siteUrl))
+  const parentIdsWithChildren = new Set()
+  for (const item of uniqueItems) {
+    const parentId = item.parent || item.post_parent || item.parentId
+    if (parentId && parentId !== 0 && parentId !== '0') {
+      parentIdsWithChildren.add(String(parentId))
+      parentIdsWithChildren.add(Number(parentId))
+    }
+  }
+  const hierarchyContext = { parentIdsWithChildren, allItems: uniqueItems }
+
+  return uniqueItems.map(page => normalizeImportedPage(page, siteUrl, hierarchyContext))
 }
 
 export function extractPostsFromPackage(rawPkg) {

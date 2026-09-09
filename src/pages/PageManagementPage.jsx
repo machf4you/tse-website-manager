@@ -1119,6 +1119,7 @@ export default function PageManagementPage({
                           <option value="Topical">Topical</option>
                           <option value="Article">Article</option>
                           <option value="Excluded">Excluded</option>
+                          <option value="Unclassified">Unclassified</option>
                         </select>
                         {page.isManualOverride && (
                           <span className="manual-override-indicator" title="Manual Override Active (Preserved across resyncs)">
