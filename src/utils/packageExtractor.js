@@ -4,11 +4,11 @@
  */
 
 export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext = null) {
-  // 1. Excluded pages -> Excluded (Priority 0)
-  if (isExcluded) return 'Excluded'
-
-  // 2. Homepage -> Hub (Priority 1)
+  // 1. Homepage -> Hub (Priority 1) - Absolute rule taking precedence sitewide over all heuristics
   if (isHomePage) return 'Hub'
+
+  // 2. Excluded pages -> Excluded (Priority 0)
+  if (isExcluded) return 'Excluded'
 
   // 3. Magento Category Rules (Authoritative Hierarchy Node)
   if (p && (p.post_type === 'category' || p.magentoCategoryId !== undefined)) {
@@ -34,31 +34,20 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
   const lowerUrl = (url || '').toLowerCase()
   const cleanSlug = (url || '').replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '').replace(/^\/+/, '').toLowerCase()
 
-  // 6. Section Hubs (Hierarchy & Structure Detection)
-  // A. Check WordPress parent-child relationship: If other pages sit beneath this page
-  const pageId = p ? (p.id || p.ID) : null
-  const hasChildPages = Boolean(
-    hierarchyContext?.parentIdsWithChildren &&
-    pageId &&
-    (hierarchyContext.parentIdsWithChildren.has(String(pageId)) || hierarchyContext.parentIdsWithChildren.has(Number(pageId)))
-  )
-  if (hasChildPages) {
-    return 'Hub'
-  }
-
-  // B. Generic Collection / Section Hub Slugs
-  const genericHubSlugs = [
-    'services', 'our-services', 'all-services', 'service-areas',
-    'locations', 'areas', 'areas-covered', 'our-locations',
+  // 6. Explicit Structural Landing Page Slugs (Priority 2)
+  // /services/, /locations/, /areas/, /areas-we-cover/ explicitly classify as Landing
+  const structuralLandingSlugs = [
+    'services', 'locations', 'areas', 'areas-we-cover',
+    'our-services', 'all-services', 'service-areas', 'our-locations',
     'treatments', 'our-treatments', 'all-treatments',
     'products', 'our-products', 'categories',
     'sectors', 'industries', 'practice-areas'
   ]
-  if (genericHubSlugs.includes(cleanSlug)) {
-    return 'Hub'
+  if (structuralLandingSlugs.includes(cleanSlug)) {
+    return 'Landing'
   }
 
-  // 7. Informational / Topical Indexes & Content
+  // 7. Informational / Topical Indexes & Content (Priority 3)
   const genericTopicalSlugs = [
     'blog', 'news', 'insights', 'articles', 'resources', 'knowledge-base',
     'guides', 'case-studies', 'faqs', 'faq'
@@ -83,15 +72,14 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
     return 'Topical'
   }
 
-  // 8. Standard Commercial WordPress Page (Generic Landing Fallback - Priority 2)
-  // Any normal published WordPress page (that is not home, not excluded, not hub, not topical)
-  // classifies as a commercial Landing page without requiring niche-specific keyword lists.
+  // 7. Standard Commercial WordPress Pages & Section Landing Pages (Priority 2)
+  // Handles /services/, /locations/, /areas/, /areas-we-cover/ and all child service/location pages
   const isWpPage = !p || p.post_type === 'page' || p.type === 'page' || !p.post_type || p.post_type === 'services' || p.post_type === 'service' || p.post_type === 'projects' || p.post_type === 'project'
   if (isWpPage) {
     return 'Landing'
   }
 
-  // 9. Anything uncertain remains Unclassified
+  // 8. Anything uncertain remains Unclassified
   return 'Unclassified'
 }
 
@@ -227,8 +215,6 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
   const isMagentoCategory = p.post_type === 'category' || p.magentoCategoryId !== undefined
   const isMagentoContainerOrInactive = isMagentoCategory && ((p.level !== undefined && p.level <= 1) || p.is_active === false)
 
-  const isExcluded = p.isExcluded !== undefined ? Boolean(p.isExcluded) : (matchesExclusion || isMagentoContainerOrInactive)
-
   // 4. SEO Page Classification Rules
   const cleanUrlPath = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '')
   const cleanSiteUrl = siteUrl ? siteUrl.trim().replace(/\/+$/, '') : ''
@@ -241,6 +227,8 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
     (cleanSiteUrl && url.replace(/\/+$/, '') === cleanSiteUrl) ||
     lowerTitle === 'home' ||
     lowerTitle === 'homepage'
+
+  const isExcluded = isHomePage ? false : (p.isExcluded !== undefined ? Boolean(p.isExcluded) : (matchesExclusion || isMagentoContainerOrInactive))
 
   const seoPageType = classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext)
   const type = seoPageType
