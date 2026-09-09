@@ -4,10 +4,12 @@ import WordPressImportRulesPage from './WordPressImportRulesPage'
 import PageTypeClassificationsPage from './PageTypeClassificationsPage'
 import PageAuditorRulesPage from './PageAuditorRulesPage'
 import InternalLinkingRulesPage from './InternalLinkingRulesPage'
+import DeploymentRecoveryPage from './DeploymentRecoveryPage'
 import './GlobalSettings.css'
 
 const SETTINGS_MENU = [
   { id: 'restore-points',            label: 'Restore Points',            icon: 'history' },
+  { id: 'deployment-recovery',       label: 'Deployment & Recovery',     icon: 'shield' },
   { id: 'import-rules',              label: 'WordPress Import Rules',    icon: 'download' },
   { id: 'page-type-classifications', label: 'Page Type Classifications', icon: 'tag' },
   { id: 'internal-linking-rules',    label: 'Internal Linking Rules',    icon: 'link' },
@@ -66,6 +68,7 @@ export default function GlobalSettings() {
       {/* Main Settings Content */}
       <main className="gs-content">
         {activeTab === 'restore-points'            && <RestorePointsPage />}
+        {activeTab === 'deployment-recovery'       && <DeploymentRecoveryPage />}
         {activeTab === 'import-rules'              && <WordPressImportRulesPage />}
         {activeTab === 'page-type-classifications' && <PageTypeClassificationsPage />}
         {activeTab === 'internal-linking-rules'    && <InternalLinkingRulesPage />}
