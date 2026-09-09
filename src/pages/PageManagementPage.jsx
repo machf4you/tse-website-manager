@@ -413,68 +413,112 @@ export default function PageManagementPage({
     return (Number(p.level) === 2 || rawPid === '2' || rawPid === '1') && !isShopBySeparator(p) && rawId !== '2'
   }
 
+  const getPageTitle = (p) => {
+    const t = extractSafeString(p?.title || p?.originalTitle || p?.name).trim()
+    if (t && t.toLowerCase() !== 'untitled page') return t
+    return extractSafeString(p?.url || p?.link || '').trim()
+  }
+
+  const getAuditTimestamp = (p) => {
+    if (!p) return 0
+    if (typeof p.lastAuditTimestamp === 'number' && !isNaN(p.lastAuditTimestamp) && p.lastAuditTimestamp > 0) {
+      return p.lastAuditTimestamp
+    }
+    if (typeof p.auditRecord?.lastAuditTimestamp === 'number' && !isNaN(p.auditRecord.lastAuditTimestamp) && p.auditRecord.lastAuditTimestamp > 0) {
+      return p.auditRecord.lastAuditTimestamp
+    }
+    const dateCandidates = [
+      p.lastAuditTimestamp,
+      p.auditRecord?.lastAuditTimestamp,
+      p.lastAuditDate,
+      p.override?.lastAuditDate
+    ]
+    for (const cand of dateCandidates) {
+      if (!cand || cand === 'Never') continue
+      if (typeof cand === 'number' && !isNaN(cand) && cand > 0) return cand
+      if (typeof cand === 'string' && cand !== 'Audited ✓' && cand !== 'Never') {
+        const parsed = Date.parse(cand)
+        if (!isNaN(parsed) && parsed > 0) return parsed
+        const ukMatch = cand.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
+        if (ukMatch) {
+          const d = new Date(Number(ukMatch[3]), Number(ukMatch[2]) - 1, Number(ukMatch[1]))
+          if (!isNaN(d.getTime())) return d.getTime()
+        }
+      }
+      if (cand === 'Audited ✓' || p.isAudited) {
+        return 1
+      }
+    }
+    return 0
+  }
+
   // Sort filtered pages
   const sortedPages = [...filteredPages].sort((a, b) => {
+    // 1. PAGE COLUMN (Alphabetical by title, fallback to URL)
+    if (sortColumn === 'page') {
+      const valA = safeLower(getPageTitle(a))
+      const valB = safeLower(getPageTitle(b))
+      const cmp = valA.localeCompare(valB)
+      return sortDirection === 'asc' ? cmp : -cmp
+    }
+
+    // 2. TYPE COLUMN (Alphabetical by visible SEO page type string)
     if (sortColumn === 'type') {
-      const valA = safeLower(a.type || a.seoPageType)
-      const valB = safeLower(b.type || b.seoPageType)
-      if (valA !== valB) {
-        return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+      const typeA = safeLower(a.type || a.seoPageType || 'Unclassified')
+      const typeB = safeLower(b.type || b.seoPageType || 'Unclassified')
+      if (typeA !== typeB) {
+        return sortDirection === 'asc' ? typeA.localeCompare(typeB) : typeB.localeCompare(typeA)
       }
-      const titleA = safeLower(a.title)
-      const titleB = safeLower(b.title)
+      const titleA = safeLower(getPageTitle(a))
+      const titleB = safeLower(getPageTitle(b))
       return titleA.localeCompare(titleB)
     }
 
-    if (sortColumn === 'page') {
-      const valA = safeLower(a.title)
-      const valB = safeLower(b.title)
-      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
-    }
-
+    // 3. TARGET COLUMN (Alphabetical by target phrase, empty at end)
     if (sortColumn === 'target') {
-      const valA = safeLower(a.target || a.targetPhrase)
-      const valB = safeLower(b.target || b.targetPhrase)
-      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
-    }
-
-    if (sortColumn === 'lastAudit') {
-      const valA = safeLower(a.lastAuditDate || 'Never')
-      const valB = safeLower(b.lastAuditDate || 'Never')
-      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
-    }
-
-    if (sortColumn === 'auditPage') {
-      const scoreA = a.auditScore !== null ? a.auditScore : (a.isAudited ? 0 : -1)
-      const scoreB = b.auditScore !== null ? b.auditScore : (b.isAudited ? 0 : -1)
-      if (scoreA !== scoreB) {
-        return sortDirection === 'asc' ? scoreA - scoreB : scoreB - scoreA
+      const targetA = safeTrim(a.target || a.targetPhrase || '')
+      const targetB = safeTrim(b.target || b.targetPhrase || '')
+      if (!targetA && !targetB) {
+        return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
       }
-      const valA = safeLower(a.title)
-      const valB = safeLower(b.title)
-      return valA.localeCompare(valB)
+      if (!targetA) return 1
+      if (!targetB) return -1
+      const cmp = safeLower(targetA).localeCompare(safeLower(targetB))
+      if (cmp !== 0) {
+        return sortDirection === 'asc' ? cmp : -cmp
+      }
+      return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
     }
 
-    if (sortColumn === 'actions') {
-      const valA = safeLower(a.id)
-      const valB = safeLower(b.id)
-      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    // 4. LAST AUDIT COLUMN (Chronological, Never/missing at end)
+    if (sortColumn === 'lastAudit') {
+      const timeA = getAuditTimestamp(a)
+      const timeB = getAuditTimestamp(b)
+      if (!timeA && !timeB) {
+        return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
+      }
+      if (!timeA) return 1
+      if (!timeB) return -1
+      if (timeA !== timeB) {
+        return sortDirection === 'asc' ? timeA - timeB : timeB - timeA
+      }
+      return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
     }
 
-    // Default sorting (sortColumn === 'priority')
-    const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
-    const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
+    // 5. PRIORITY COLUMN (Default: Numerical 0, 1, 2, 3, 4 etc.)
+    const pA = a.priority !== undefined && !isNaN(Number(a.priority)) ? Number(a.priority) : 0
+    const pB = b.priority !== undefined && !isNaN(Number(b.priority)) ? Number(b.priority) : 0
     if (pA !== pB) {
       return sortDirection === 'asc' ? pA - pB : pB - pA
     }
     const starA = a.isStarred ? 1 : 0
     const starB = b.isStarred ? 1 : 0
     if (starA !== starB) {
-      return sortDirection === 'asc' ? starB - starA : starA - starB
+      return starB - starA
     }
-    const tA = safeLower(a.title)
-    const tB = safeLower(b.title)
-    return tA.localeCompare(tB)
+    const titleA = safeLower(getPageTitle(a))
+    const titleB = safeLower(getPageTitle(b))
+    return titleA.localeCompare(titleB)
   })
 
   // Keyword-based ordering for top-level product sections
@@ -488,14 +532,15 @@ export default function PageManagementPage({
     return 99
   }
 
-  // Build hierarchical display rows when in natural view (priority sort & all filter tab)
+  // Build hierarchical display rows only when in natural default view (priority sort asc & all filter tab & structured tree exists)
   let displayRows = []
-  if (sortColumn === 'priority' && filter === 'all') {
-    const isAscentBuilders = Boolean(site && (
-      (site.name && safeLower(site.name).includes('ascent')) ||
-      (site.url && safeLower(site.url).includes('ascentbuilders'))
-    ))
+  const isAscentBuilders = Boolean(site && (
+    (site.name && safeLower(site.name).includes('ascent')) ||
+    (site.url && safeLower(site.url).includes('ascentbuilders'))
+  ))
+  const isMagentoSite = Boolean(site?.platform === 'magento' || filteredPages.some(p => isTopCategory(p)))
 
+  if (sortColumn === 'priority' && sortDirection === 'asc' && filter === 'all' && (isAscentBuilders || isMagentoSite)) {
     if (isAscentBuilders) {
       // ── WordPress Visual Hierarchy for Ascent Builders ──
       const getCleanPath = (url) => {
@@ -554,13 +599,13 @@ export default function PageManagementPage({
 
       // Sort top-level pages by standard priority / title sort
       topLevelPages.sort((a, b) => {
-        const pA = (a.priority !== undefined && Number(a.priority) > 0) ? Number(a.priority) : 999
-        const pB = (b.priority !== undefined && Number(b.priority) > 0) ? Number(b.priority) : 999
+        const pA = (a.priority !== undefined && !isNaN(Number(a.priority))) ? Number(a.priority) : 0
+        const pB = (b.priority !== undefined && !isNaN(Number(b.priority))) ? Number(b.priority) : 0
         if (pA !== pB) return pA - pB
         const starA = a.isStarred ? 1 : 0
         const starB = b.isStarred ? 1 : 0
         if (starA !== starB) return starB - starA
-        return safeLower(a.title).localeCompare(safeLower(b.title))
+        return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
       })
 
       // Assemble visual display rows with indentation
@@ -577,7 +622,7 @@ export default function PageManagementPage({
         })
 
         const children = childrenByParent.get(topPage.id) || []
-        children.sort((a, b) => safeLower(a.title).localeCompare(safeLower(b.title)))
+        children.sort((a, b) => safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b))))
         children.forEach(child => {
           processedIds.add(child.id)
           wpRows.push({
@@ -603,7 +648,7 @@ export default function PageManagementPage({
 
       displayRows = wpRows
     } else {
-      // ── Magento & Standard WordPress Rendering ──
+      // ── Magento Rendering ──
       const topCats = filteredPages.filter(p => isTopCategory(p))
       topCats.sort((a, b) => getTopOrder(a.title || a.name) - getTopOrder(b.title || b.name))
 
@@ -676,6 +721,13 @@ export default function PageManagementPage({
 
       // CMS & Informational Pages
       const cmsPages = filteredPages.filter(p => p.post_type !== 'category' && !processedIds.has(p.id))
+      cmsPages.sort((a, b) => {
+        const pA = a.priority !== undefined && !isNaN(Number(a.priority)) ? Number(a.priority) : 0
+        const pB = b.priority !== undefined && !isNaN(Number(b.priority)) ? Number(b.priority) : 0
+        if (pA !== pB) return pA - pB
+        return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
+      })
+
       const cmsRows = []
       if (cmsPages.length > 0) {
         if (site?.platform === 'magento' || topCats.length > 0) {
@@ -698,7 +750,7 @@ export default function PageManagementPage({
       displayRows = [...categoryRows, ...cmsRows]
     }
   } else {
-    // When actively filtered or sorted by column, display flat rows
+    // When actively filtered, sorted by column, or standard WordPress site, display flat sorted rows
     displayRows = sortedPages.map(page => ({
       type: 'PAGE_ROW',
       isTopLevel: isTopCategory(page),
@@ -1041,11 +1093,11 @@ export default function PageManagementPage({
               <th className="sortable-th" onClick={() => handleSort('lastAudit')}>
                 Last Audit {renderSortIndicator('lastAudit')}
               </th>
-              <th className="sortable-th" onClick={() => handleSort('auditPage')}>
-                Audit Page {renderSortIndicator('auditPage')}
+              <th className="col-audit-page">
+                Audit Page
               </th>
-              <th className="sortable-th" onClick={() => handleSort('actions')}>
-                Actions {renderSortIndicator('actions')}
+              <th className="col-actions">
+                Actions
               </th>
             </tr>
           </thead>
