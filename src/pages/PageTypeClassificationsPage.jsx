@@ -132,6 +132,8 @@ Definition:
 A Landing page is a page designed to rank for a commercial search term and generate enquiries, leads, sales or conversions.
 
 Examples:
+- Structural section hub pages (/services/, /locations/, /areas/, /areas-we-cover/) -> Landing / Priority 2
+- Child service and location pages (/services/*, /locations/*, /areas/*, /areas-we-cover/*) -> Landing / Priority 2
 - Main service pages (/loft-conversions/, /house-extensions/)
 - Service variation pages (/bathroom-installations/)
 - Location pages (/builders-surrey/, /kitchen-fitters-london/)
@@ -178,20 +180,21 @@ Use Article where the source data clearly identifies the content as an article/b
 Definition:
 A Hub is a high-level page that acts as the main authority/entry point for a website or major subject structure.
 
-Automatic Rule:
-- Homepage -> Hub
-The homepage should normally remain Hub unless there is a specific manual override.
+Absolute Sitewide Rule:
+- Homepage / Root URL -> Hub / Priority 1
+  The homepage is the primary HUB of every website. This is an absolute classification rule that takes precedence over all other page-type heuristics. The homepage must NEVER be classified as Landing, Topical, Article, or Unclassified.
 
 --------------------------------------------------
 8. AUTOMATIC CLASSIFICATION LOGIC
 --------------------------------------------------
 Classification priority order:
-1. Excluded rules
-2. Homepage / Hub rule
-3. Explicit Article identification where supported by source data
-4. Genuine commercial intent -> Landing
-5. Genuine informational/supporting intent -> Topical
-6. Anything uncertain -> Unclassified
+1. Absolute Homepage / Hub rule (Root URL -> Hub / Priority 1)
+2. Excluded rules
+3. Structural Section Hubs & Child Landing pages (/services/, /locations/, etc. -> Landing / Priority 2)
+4. Explicit Article identification where supported by source data
+5. Genuine commercial intent -> Landing
+6. Genuine informational/supporting intent -> Topical
+7. Anything uncertain -> Unclassified
 
 IMPORTANT:
 Do NOT force a classification when confidence is low.
@@ -218,6 +221,12 @@ Magento pages use the same common Website Manager SEO classification framework:
 Do NOT create a separate Magento classification system. Magento pages use the exact same common Website Manager SEO classification framework.`
 
 const DEFAULT_COMMENTS = [
+  {
+    id: 'c5',
+    author: 'System Admin',
+    timestamp: '09-09-2026 17:35',
+    text: 'Updated classification documentation (v2.17): Enforced Absolute Homepage rule (Homepage / root URL -> Hub / Priority 1 sitewide) and Structural Landing page rules (/services/, /locations/, /areas/, /areas-we-cover/ and child pages -> Landing / Priority 2).'
+  },
   {
     id: 'c4',
     author: 'System Admin',

@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.17-stable-wordpress-structural-rules-and-classification',
+    version: 'v2.17-stable',
+    gitTag: 'v2.17-stable-wordpress-structural-rules-and-classification',
+    commit: 'd454c14',
+    date: '09-09-2026 17:35',
+    title: 'Sitewide WordPress Structural Classification Rules & W3 Navigation Stability (V2.17)',
+    description: 'Confirmed stable restore point capturing sitewide generic WordPress classification rules: Absolute Homepage rule (Homepage / root URL -> Hub / Priority 1 sitewide), Structural Landing rules (/services/, /locations/, /areas/, /areas-we-cover/ and child pages -> Landing / Priority 2), sitewide natural alphanumeric column sorting across W3 Manage Pages, route state persistence on refresh, and WordPress REST API live Push 401 resolution.',
+    status: 'Current',
+    docFile: 'V2.17-STABLE-WORDPRESS-STRUCTURAL-RULES-AND-CLASSIFICATION.md'
+  },
+  {
     id: 'v2.14-stable-backlinks-phase-2a-foundations',
     version: 'v2.14-stable',
     gitTag: 'v2.14-stable-backlinks-phase-2a-foundations',
@@ -11,7 +22,7 @@ export const restorePointIndexData = [
     date: '07-09-2026 18:18',
     title: 'Backlinks Phase 2A Foundations Completed (V2.14)',
     description: 'Confirmed stable restore point capturing completed Backlinks Phase 2A Foundations: 530 backlink targets linked to Master Domain UUIDs (0 unmatched / 0 ambiguous), 1,204 backlink items linked to Master Domain UUIDs, Master Source Database (1,372 sources) preserved with operational usage and 2-client deduplication checks, Target-Page Anchor Pool schema/foundation implemented (1,637 anchors: 1,126 historical used anchors preserved + 511 available target phrases), Website Manager SEO Context bridge active, 126 Master Domains and 14 WM sites unchanged.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'V2.14-STABLE-BACKLINKS-PHASE-2A-FOUNDATIONS.md'
   },
   {
