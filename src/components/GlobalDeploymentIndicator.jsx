@@ -88,27 +88,61 @@ export default function GlobalDeploymentIndicator() {
 
   if (deployState === 'updating') {
     return (
-      <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite" title="Build/Deployment in progress - Do NOT refresh yet">
-        <span className="deploy-spin-icon" aria-hidden="true">⏳</span>
-        <span className="deploy-text-updating">V{serverVersion || CURRENT_BUILD_VERSION} | UPDATING — DO NOT PRESS CTRL+F5</span>
-      </div>
+      <>
+        <div className="global-updating-banner" role="status" aria-live="polite">
+          <div className="global-update-banner-content">
+            <span className="banner-message">
+              <span className="deploy-spin-icon" aria-hidden="true">⏳</span>
+              <strong>DEPLOYMENT IN PROGRESS:</strong> A new build is currently being deployed to Website Manager. Please wait and <em>DO NOT press Ctrl + F5 yet</em>.
+            </span>
+          </div>
+        </div>
+        <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite" title="Build/Deployment in progress - Do NOT refresh yet">
+          <span className="deploy-spin-icon" aria-hidden="true">⏳</span>
+          <span className="deploy-text-updating">V{serverVersion || CURRENT_BUILD_VERSION} | UPDATING — DO NOT PRESS CTRL+F5</span>
+        </div>
+      </>
     )
   }
 
   if (deployState === 'update_ready') {
     return (
-      <div 
-        className="global-deploy-indicator global-deploy-ready" 
-        role="button" 
-        tabIndex={0}
-        onClick={handleManualRefresh}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleManualRefresh()}
-        title="New deployment is live! Click or press Ctrl+F5 to reload"
-      >
-        <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
-        <span className="deploy-text-ready">V{serverVersion || CURRENT_BUILD_VERSION} | PRESS CTRL+F5 — UPDATE READY</span>
-        <span className="deploy-action-badge">Refresh Now</span>
-      </div>
+      <>
+        <div 
+          className="global-update-banner" 
+          role="alert"
+          onClick={handleManualRefresh}
+        >
+          <div className="global-update-banner-content">
+            <span className="banner-message">
+              <span className="deploy-ready-pulse-dot" aria-hidden="true">⚠️</span>
+              <strong>NEW UPDATE AVAILABLE:</strong> Please press <kbd>Ctrl</kbd> + <kbd>F5</kbd> (or click here) to refresh and load the latest updates!
+            </span>
+            <button 
+              type="button" 
+              className="banner-action-button"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleManualRefresh()
+              }}
+            >
+              ↻ Refresh Now (Ctrl + F5)
+            </button>
+          </div>
+        </div>
+        <div 
+          className="global-deploy-indicator global-deploy-ready" 
+          role="button" 
+          tabIndex={0}
+          onClick={handleManualRefresh}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleManualRefresh()}
+          title="New deployment is live! Click or press Ctrl+F5 to reload"
+        >
+          <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
+          <span className="deploy-text-ready">V{serverVersion || CURRENT_BUILD_VERSION} | PRESS CTRL+F5 — UPDATE READY</span>
+          <span className="deploy-action-badge">Refresh Now</span>
+        </div>
+      </>
     )
   }
 
