@@ -113,6 +113,10 @@ function App() {
       if (saved && (saved === 'apps-dashboard' || saved === 'website-manager')) {
         return saved
       }
+      const hasManagedSite = localStorage.getItem('tse_managed_site_object_v1') || localStorage.getItem('tse_managed_site_id_v1')
+      if (hasManagedSite) {
+        return 'website-manager'
+      }
     } catch (e) {}
     return 'apps-dashboard'
   })

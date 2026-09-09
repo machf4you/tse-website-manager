@@ -115,19 +115,28 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   const [apiConfigs, setApiConfigs] = useState({})
   const activeTabStorageKey = site?.id ? `tse_active_tab_${site.id}` : 'tse_active_tab_default'
 
-  const [activeTab, setActiveTab] = useState(() => {
+  const [activeTab, setActiveTabState] = useState(() => {
     try {
-      const saved = localStorage.getItem(activeTabStorageKey)
+      const saved = localStorage.getItem(activeTabStorageKey) || localStorage.getItem('tse_active_tab_v1')
       if (saved) return saved
     } catch (e) {
       console.error('Failed to load active tab from localStorage:', e)
     }
-    return 'w2'
+    return 'w3'
   })
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab)
+    try {
+      localStorage.setItem(activeTabStorageKey, tab)
+      localStorage.setItem('tse_active_tab_v1', tab)
+    } catch (e) {}
+  }
 
   useEffect(() => {
     try {
       localStorage.setItem(activeTabStorageKey, activeTab)
+      localStorage.setItem('tse_active_tab_v1', activeTab)
     } catch (e) {
       console.error('Failed to save active tab to localStorage:', e)
     }
