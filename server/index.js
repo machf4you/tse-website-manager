@@ -773,6 +773,7 @@ app.get('/api/bridge/domains/:domain_or_id/seo-context', (req, res) => {
           target_phrase: r.target_phrase || parsedConfig.target || parsedConfig.targetPhrase || '',
           page_type: r.seo_page_type || parsedConfig.type || parsedConfig.seoPageType || 'Landing',
           priority: r.priority || 0,
+          is_starred: Boolean(parsedConfig.isStarred || parsedConfig.starred),
           is_excluded: Boolean(r.is_excluded),
           last_audit_timestamp: audit.lastAuditTimestamp || null,
           audit_score: audit.result ? audit.result.score : null
@@ -789,6 +790,7 @@ app.get('/api/bridge/domains/:domain_or_id/seo-context', (req, res) => {
           target_phrase: p.targetPhrase || p.target || '',
           page_type: p.type || p.pageType || 'Landing',
           priority: p.priority || 0,
+          is_starred: Boolean(p.isStarred || p.starred),
           is_excluded: Boolean(p.isExcluded),
           last_audit_timestamp: audit.lastAuditTimestamp || null,
           audit_score: audit.result ? audit.result.score : null
