@@ -107,8 +107,40 @@ const ChevronDownIcon = () => (
 )
 
 function App() {
-  const [currentView, setCurrentView] = useState('apps-dashboard') // 'apps-dashboard' | 'website-manager'
-  const [activeNavTab, setActiveNavTab] = useState('websites') // 'websites' | 'global-settings'
+  const [currentView, setCurrentViewState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tse_current_view_v1')
+      if (saved && (saved === 'apps-dashboard' || saved === 'website-manager')) {
+        return saved
+      }
+    } catch (e) {}
+    return 'apps-dashboard'
+  })
+
+  const [activeNavTab, setActiveNavTabState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tse_active_nav_tab_v1')
+      if (saved && (saved === 'websites' || saved === 'global-settings')) {
+        return saved
+      }
+    } catch (e) {}
+    return 'websites'
+  })
+
+  const setCurrentView = (view) => {
+    setCurrentViewState(view)
+    try {
+      localStorage.setItem('tse_current_view_v1', view)
+    } catch (e) {}
+  }
+
+  const setActiveNavTab = (tab) => {
+    setActiveNavTabState(tab)
+    try {
+      localStorage.setItem('tse_active_nav_tab_v1', tab)
+    } catch (e) {}
+  }
+
   const [currentUser, setCurrentUser] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
