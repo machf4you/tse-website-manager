@@ -112,7 +112,7 @@ const ExternalLinkIcon = ({ size = 12 }) => (
   </svg>
 )
 
-export default function AppsDashboard({ onOpenWebsiteManager }) {
+export default function AppsDashboard({ onOpenWebsiteManager, currentUser }) {
   const [notification, setNotification] = useState(null)
 
   const showNotification = (msg) => {
@@ -120,9 +120,18 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
     setTimeout(() => setNotification(null), 3500)
   }
 
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.allowed_apps?.includes('*')
+  const allowedApps = currentUser?.allowed_apps || []
+
+  const isPermitted = (permKey) => {
+    if (isAdmin) return true
+    return allowedApps.includes(permKey)
+  }
+
   // 1. Primary Website Management Card
   const websiteManagerApp = {
     id: 'WEBSITE_MANAGEMENT',
+    permKey: 'website_manager',
     name: 'Website Management',
     roleTag: 'Primary Suite Application',
     description: 'Central hub for managing connected WordPress & Magento websites, keyword target phrase fits, priority rankings, and SEO audit workflows.',
@@ -142,6 +151,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
   const subordinateSuiteApps = [
     {
       id: 'PAGE_AUDITOR',
+      permKey: 'website_manager',
       name: 'Page Auditor',
       roleTag: 'Subordinate Engine',
       description: 'Intelligent page-level SEO auditing and fitment engine. Integrated directly into Website Manager for deep single-page audit analysis.',
@@ -158,6 +168,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
     },
     {
       id: 'SITE_AUDITOR',
+      permKey: 'website_manager',
       name: 'Site Auditor',
       roleTag: 'Subordinate Engine',
       description: 'Comprehensive site-wide link, layout, and internal structure auditor designed as a supporting component for Website Manager.',
@@ -180,6 +191,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       sectionSubtitle: 'Connected domains and infrastructure management',
       app: {
         id: 'SITE_REGISTRY',
+        permKey: 'site_registry',
         name: 'Site Registry',
         roleTag: 'Standalone Application',
         description: 'Master registry for managed domains, hosting providers, server configurations, and platform credentials.',
@@ -200,6 +212,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       sectionSubtitle: 'Prospect discovery and data extraction',
       app: {
         id: 'LEAD_GENERATOR',
+        permKey: 'lead_generator',
         name: 'Lead Generator',
         roleTag: 'Standalone Application',
         description: 'Find local businesses, extract contact details, crawl websites, and prepare candidate sites for outreach and SEO auditing.',
@@ -220,6 +233,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       sectionSubtitle: 'Video meeting and live communication client',
       app: {
         id: 'CHATZA',
+        permKey: 'chatza',
         name: 'Chatza',
         roleTag: 'Standalone Application',
         description: 'Real-time communication, messaging, and high-performance browser-based video collaboration client.',
@@ -240,6 +254,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       sectionSubtitle: 'Autonomous marketing and scheduled social publishing',
       app: {
         id: 'SOCIAL_AUTOMATION',
+        permKey: 'social_automation',
         name: 'Social Automation',
         roleTag: 'Standalone Application',
         description: 'Automated social media posting, multi-channel scheduling, campaign management, and engagement analytics agent.',
@@ -260,6 +275,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       sectionSubtitle: 'WordPress exporter plugin data manager and sync agent',
       app: {
         id: 'WP_EXPORTER',
+        permKey: 'wp_exporter',
         name: 'WP Exporter',
         roleTag: 'Standalone Utility',
         description: 'WordPress site exporter plugin data manager and sync agent for extracting structured page packages.',
@@ -275,6 +291,26 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       }
     }
   ]
+
+  // Filter sections by permissions
+  const isSuiteVisible = isPermitted('website_manager')
+  const visibleIndependentSections = independentSections.filter(sec => isPermitted(sec.app.permKey))
+
+  // Calculate dynamic stats
+  let totalAppsCount = 0
+  let liveAppsCount = 0
+  if (isSuiteVisible) {
+    totalAppsCount += 3 // WM + Page Auditor + Site Auditor
+    liveAppsCount += 2  // WM (Live) + Page Auditor (Integrated)
+  }
+  visibleIndependentSections.forEach(sec => {
+    totalAppsCount += 1
+    if (sec.app.status === 'Live' || sec.app.status === 'Integrated') {
+      liveAppsCount += 1
+    }
+  })
+
+  const hasAnyVisibleApps = isSuiteVisible || visibleIndependentSections.length > 0
 
   const renderCard = (app, isSubordinate = false, isHero = false) => {
     const isLive = app.status === 'Live' || app.status === 'Integrated'
@@ -378,6 +414,9 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
     )
   }
 
+  const rawUsername = currentUser?.username || 'Mac'
+  const displayGreetingName = rawUsername.charAt(0).toUpperCase() + rawUsername.slice(1)
+
   return (
     <div className="apps-dashboard-container">
       {notification && (
@@ -390,7 +429,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
       <div className="dashboard-welcome-header">
         <div>
           <h1 className="dashboard-title">
-            Welcome back, Mac 👋
+            Welcome back, {displayGreetingName} 👋
           </h1>
           <p className="dashboard-subtitle">
             Launch and manage your marketing and auditing applications.
@@ -405,9 +444,9 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
             <LayoutGridIcon size={20} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">Total Apps</span>
-            <span className="stat-number">8</span>
-            <span className="stat-tag text-emerald">All systems</span>
+            <span className="stat-label">Accessible Apps</span>
+            <span className="stat-number">{totalAppsCount}</span>
+            <span className="stat-tag text-emerald">{isAdmin ? 'All systems' : 'Authorised'}</span>
           </div>
         </div>
 
@@ -417,7 +456,7 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
           </div>
           <div className="stat-info">
             <span className="stat-label">Live Apps</span>
-            <span className="stat-number">5</span>
+            <span className="stat-number">{liveAppsCount}</span>
             <span className="stat-tag text-blue">Ready to use</span>
           </div>
         </div>
@@ -427,9 +466,11 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
             <LayersIcon size={20} />
           </div>
           <div className="stat-info">
-            <span className="stat-label">Suite Structure</span>
-            <span className="stat-number">1 Suite + 5 Apps</span>
-            <span className="stat-tag text-amber">Hierarchical</span>
+            <span className="stat-label">User Role</span>
+            <span className="stat-number" style={{ textTransform: 'capitalize' }}>
+              {currentUser?.role || (isAdmin ? 'Admin' : 'Staff')}
+            </span>
+            <span className="stat-tag text-amber">{isAdmin ? 'Full Suite Authority' : 'Assigned Role'}</span>
           </div>
         </div>
 
@@ -445,44 +486,64 @@ export default function AppsDashboard({ onOpenWebsiteManager }) {
         </div>
       </div>
 
+      {!hasAnyVisibleApps && (
+        <div style={{
+          padding: '3rem 2rem',
+          textAlign: 'center',
+          background: 'rgba(15, 23, 42, 0.6)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '12px',
+          margin: '2rem 0'
+        }}>
+          <h3 style={{ color: '#f8fafc', marginBottom: '0.5rem', fontSize: '1.25rem' }}>No Applications Assigned</h3>
+          <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+            Your account does not currently have permissions for any applications. Please contact an administrator to request access.
+          </p>
+        </div>
+      )}
+
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* SECTION 1: WEBSITE MANAGEMENT SUITE (PARENT & SUBORDINATES)    */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="dashboard-suite-section">
-        {/* Tree Container */}
-        <div className="suite-tree-container">
-          {/* Primary Parent Card */}
-          <div className="suite-parent-wrapper">
-            {renderCard(websiteManagerApp, false, true)}
-          </div>
+      {isSuiteVisible && (
+        <div className="dashboard-suite-section">
+          {/* Tree Container */}
+          <div className="suite-tree-container">
+            {/* Primary Parent Card */}
+            <div className="suite-parent-wrapper">
+              {renderCard(websiteManagerApp, false, true)}
+            </div>
 
-          {/* Visual Connector Lines */}
-          <div className="suite-connector-branch" aria-hidden="true">
-            <div className="connector-vertical-stem"></div>
-            <div className="connector-horizontal-bar"></div>
-            <div className="connector-child-stems">
-              <div className="connector-stem-left"></div>
-              <div className="connector-stem-right"></div>
+            {/* Visual Connector Lines */}
+            <div className="suite-connector-branch" aria-hidden="true">
+              <div className="connector-vertical-stem"></div>
+              <div className="connector-horizontal-bar"></div>
+              <div className="connector-child-stems">
+                <div className="connector-stem-left"></div>
+                <div className="connector-stem-right"></div>
+              </div>
+            </div>
+
+            {/* Subordinate Children Grid */}
+            <div className="suite-children-grid">
+              {subordinateSuiteApps.map((app) => renderCard(app, true, false))}
             </div>
           </div>
-
-          {/* Subordinate Children Grid */}
-          <div className="suite-children-grid">
-            {subordinateSuiteApps.map((app) => renderCard(app, true, false))}
-          </div>
         </div>
-      </div>
+      )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
       {/* SECTION 2: STANDALONE INDEPENDENT APPLICATIONS (2-COLUMN GRID) */}
       {/* ══════════════════════════════════════════════════════════════ */}
-      <div className="dashboard-independent-grid">
-        {independentSections.map((sec) => (
-          <div key={sec.app.id} className="independent-card-wrapper">
-            {renderCard(sec.app, false, false)}
-          </div>
-        ))}
-      </div>
+      {visibleIndependentSections.length > 0 && (
+        <div className="dashboard-independent-grid">
+          {visibleIndependentSections.map((sec) => (
+            <div key={sec.app.id} className="independent-card-wrapper">
+              {renderCard(sec.app, false, false)}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

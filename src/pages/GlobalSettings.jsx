@@ -5,11 +5,13 @@ import PageTypeClassificationsPage from './PageTypeClassificationsPage'
 import PageAuditorRulesPage from './PageAuditorRulesPage'
 import InternalLinkingRulesPage from './InternalLinkingRulesPage'
 import DeploymentRecoveryPage from './DeploymentRecoveryPage'
+import UsersAccessPage from './UsersAccessPage'
 import './GlobalSettings.css'
 
 const SETTINGS_MENU = [
   { id: 'restore-points',            label: 'Restore Points',            icon: 'history' },
   { id: 'deployment-recovery',       label: 'Deployment & Recovery',     icon: 'shield' },
+  { id: 'users-access',              label: 'Users & Access',            icon: 'users',    adminOnly: true },
   { id: 'import-rules',              label: 'WordPress Import Rules',    icon: 'download' },
   { id: 'page-type-classifications', label: 'Page Type Classifications', icon: 'tag' },
   { id: 'internal-linking-rules',    label: 'Internal Linking Rules',    icon: 'link' },
@@ -19,11 +21,14 @@ const SETTINGS_MENU = [
   { id: 'defaults',                  label: 'Defaults',                  icon: 'sliders',  disabled: true },
 ]
 
-export default function GlobalSettings() {
+export default function GlobalSettings({ currentUser }) {
+  const isAdmin = currentUser?.role === 'admin'
+  const visibleMenu = SETTINGS_MENU.filter(item => !item.adminOnly || isAdmin)
+
   const [activeTab, setActiveTab] = useState(() => {
     try {
       const saved = localStorage.getItem('tse_global_settings_tab_v1')
-      if (saved && SETTINGS_MENU.some(m => m.id === saved && !m.disabled)) {
+      if (saved && visibleMenu.some(m => m.id === saved && !m.disabled)) {
         return saved
       }
     } catch (e) {
@@ -31,6 +36,13 @@ export default function GlobalSettings() {
     }
     return 'restore-points'
   })
+
+  // Fallback to restore-points if non-admin somehow has users-access active
+  useEffect(() => {
+    if (activeTab === 'users-access' && !isAdmin) {
+      setActiveTab('restore-points')
+    }
+  }, [isAdmin, activeTab])
 
   useEffect(() => {
     try {
@@ -47,7 +59,7 @@ export default function GlobalSettings() {
       <aside className="gs-sidebar" aria-label="Global Settings navigation">
         <div className="gs-sidebar-title">Global Settings</div>
         <nav className="gs-menu">
-          {SETTINGS_MENU.map((item) => (
+          {visibleMenu.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -69,6 +81,7 @@ export default function GlobalSettings() {
       <main className="gs-content">
         {activeTab === 'restore-points'            && <RestorePointsPage />}
         {activeTab === 'deployment-recovery'       && <DeploymentRecoveryPage />}
+        {activeTab === 'users-access'              && isAdmin && <UsersAccessPage currentUser={currentUser} />}
         {activeTab === 'import-rules'              && <WordPressImportRulesPage />}
         {activeTab === 'page-type-classifications' && <PageTypeClassificationsPage />}
         {activeTab === 'internal-linking-rules'    && <InternalLinkingRulesPage />}

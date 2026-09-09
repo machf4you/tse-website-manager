@@ -1,0 +1,564 @@
+/* ── Users & Access Page Styling ── */
+
+.users-access-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.uap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.uap-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 0.25rem 0;
+}
+
+.uap-subtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.uap-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.uap-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.uap-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.uap-btn-primary {
+  background: #4f46e5;
+  color: #ffffff;
+  border-color: #6366f1;
+}
+.uap-btn-primary:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.uap-btn-secondary {
+  background: rgba(30, 41, 59, 0.8);
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.uap-btn-secondary:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.9);
+  color: #ffffff;
+}
+
+.uap-btn-danger {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+.uap-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+/* Alerts */
+.uap-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+.uap-alert-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+.uap-alert-success {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+/* Stats Cards */
+.uap-stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.uap-stat-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1.125rem 1.25rem;
+}
+
+.uap-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  margin-bottom: 0.25rem;
+}
+
+.uap-stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.2;
+}
+
+.uap-text-indigo { color: #818cf8; }
+.uap-text-emerald { color: #34d399; }
+
+.uap-stat-desc {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+/* Users Table */
+.uap-table-container {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.uap-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.uap-table th {
+  background: rgba(30, 41, 59, 0.5);
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.uap-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  vertical-align: middle;
+}
+
+.uap-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.uap-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.uap-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #334155;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.uap-username {
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.uap-userid {
+  font-size: 0.6875rem;
+  color: #64748b;
+}
+
+.uap-email {
+  color: #94a3b8;
+  font-family: monospace;
+  font-size: 0.8125rem;
+}
+
+.uap-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+}
+
+.uap-badge-admin {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.uap-badge-staff {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.uap-apps-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.uap-app-tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  background: rgba(51, 65, 85, 0.6);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.uap-app-all {
+  background: rgba(99, 102, 241, 0.12);
+  color: #c7d2fe;
+  border-color: rgba(99, 102, 241, 0.25);
+  font-weight: 600;
+}
+
+.uap-app-none {
+  background: rgba(239, 68, 68, 0.08);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.uap-date {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.uap-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.uap-action-btn {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 5px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.uap-action-edit {
+  background: rgba(51, 65, 85, 0.7);
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.uap-action-edit:hover {
+  background: rgba(71, 85, 105, 0.9);
+  color: #ffffff;
+}
+
+.uap-action-delete {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.uap-action-delete:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  color: #ffffff;
+}
+.uap-action-delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.uap-loading-state, .uap-empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.uap-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: uap-spin 0.8s linear infinite;
+  margin: 0 auto 0.75rem auto;
+}
+
+@keyframes uap-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modals */
+.uap-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.uap-modal {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+.uap-modal-sm {
+  max-width: 420px;
+}
+
+.uap-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.uap-modal-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.uap-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.uap-modal-close:hover { color: #f8fafc; }
+
+.uap-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.uap-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.uap-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.uap-form-group label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.uap-required {
+  color: #ef4444;
+}
+
+.uap-form-group input[type="text"],
+.uap-form-group input[type="email"],
+.uap-form-group input[type="password"] {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 0.625rem 0.875rem;
+  color: #f8fafc;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.uap-form-group input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.uap-password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.uap-password-input-wrapper input {
+  width: 100%;
+  padding-right: 4.5rem;
+}
+
+.uap-password-toggle {
+  position: absolute;
+  right: 0.5rem;
+  background: rgba(51, 65, 85, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.uap-input-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.uap-role-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.uap-role-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.4);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.uap-role-card.active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.uap-role-card input[type="radio"] {
+  margin-top: 0.2rem;
+  accent-color: #6366f1;
+}
+
+.uap-role-card strong {
+  display: block;
+  font-size: 0.8125rem;
+  color: #f8fafc;
+}
+
+.uap-role-card span {
+  display: block;
+  font-size: 0.6875rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+}
+
+.uap-apps-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(30, 41, 59, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.uap-app-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.35rem 0.25rem;
+}
+
+.uap-app-checkbox-row input[type="checkbox"] {
+  margin-top: 0.2rem;
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+}
+
+.uap-app-picker-info strong {
+  display: block;
+  font-size: 0.8125rem;
+  color: #f8fafc;
+}
+
+.uap-app-picker-info span {
+  display: block;
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.uap-admin-note {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  color: #c7d2fe;
+  font-size: 0.75rem;
+}

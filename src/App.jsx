@@ -68,10 +68,63 @@ const SlidersIcon = () => (
 import AppsDashboard from './pages/AppsDashboard'
 import GlobalDeploymentIndicator from './components/GlobalDeploymentIndicator'
 import ErrorBoundary from './components/ErrorBoundary'
+import { getAuthMe, logoutUser } from './services/authApi'
+
+const LogOutIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
+  </svg>
+)
+
+const ChevronDownIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="6 9 12 15 18 9" />
+  </svg>
+)
 
 function App() {
   const [currentView, setCurrentView] = useState('apps-dashboard') // 'apps-dashboard' | 'website-manager'
   const [activeNavTab, setActiveNavTab] = useState('websites') // 'websites' | 'global-settings'
+  const [currentUser, setCurrentUser] = useState(null)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+    getAuthMe().then(res => {
+      if (isMounted && res.authenticated && res.user) {
+        setCurrentUser(res.user)
+      }
+    })
+    return () => { isMounted = false }
+  }, [])
+
+  const rawUsername = currentUser?.username || 'Mac'
+  const displayUsername = rawUsername.charAt(0).toUpperCase() + rawUsername.slice(1)
+  const isAdmin = currentUser?.role === 'admin'
 
   return (
     <div className="app">
@@ -137,9 +190,57 @@ function App() {
           )}
         </nav>
 
-        {/* Right: Global Deployment / Version Indicator */}
-        <div className="header-right" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        {/* Right: Global Deployment + Account / Logout Menu */}
+        <div className="header-right" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.875rem' }}>
           <GlobalDeploymentIndicator />
+
+          {/* Account Dropdown */}
+          <div className="account-dropdown-wrapper">
+            <button
+              type="button"
+              className="account-btn"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              id="btn-account-menu"
+              aria-label="User Account Menu"
+              aria-expanded={showUserMenu}
+            >
+              <div className="account-avatar">
+                {rawUsername.charAt(0).toUpperCase()}
+              </div>
+              <span className="account-name">
+                {displayUsername}
+              </span>
+              <ChevronDownIcon />
+            </button>
+
+            {showUserMenu && (
+              <>
+                <div className="account-backdrop" onClick={() => setShowUserMenu(false)} />
+                <div className="account-menu-dropdown">
+                  <div className="account-menu-header">
+                    <div className="account-menu-username">{displayUsername}</div>
+                    <div className="account-menu-email">{currentUser?.email || 'Authenticated User'}</div>
+                    <span className={`account-role-pill ${isAdmin ? 'pill-admin' : 'pill-staff'}`}>
+                      {isAdmin ? 'Admin' : 'Staff'}
+                    </span>
+                  </div>
+                  <div className="account-menu-divider" />
+                  <button
+                    type="button"
+                    className="account-menu-item item-logout"
+                    onClick={() => {
+                      setShowUserMenu(false)
+                      logoutUser()
+                    }}
+                    id="btn-logout"
+                  >
+                    <LogOutIcon />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
       </header>
@@ -152,16 +253,19 @@ function App() {
       >
         <ErrorBoundary>
           {currentView === 'apps-dashboard' && (
-            <AppsDashboard onOpenWebsiteManager={() => {
-              setCurrentView('website-manager')
-              setActiveNavTab('websites')
-            }} />
+            <AppsDashboard
+              currentUser={currentUser}
+              onOpenWebsiteManager={() => {
+                setCurrentView('website-manager')
+                setActiveNavTab('websites')
+              }}
+            />
           )}
           {currentView === 'website-manager' && activeNavTab === 'websites' && (
             <WebsitesDashboard />
           )}
           {currentView === 'website-manager' && activeNavTab === 'global-settings' && (
-            <GlobalSettings />
+            <GlobalSettings currentUser={currentUser} />
           )}
         </ErrorBoundary>
       </main>

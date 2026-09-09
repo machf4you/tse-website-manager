@@ -139,6 +139,155 @@
   height: 100%;
 }
 
+/* ── Account Dropdown ── */
+.account-dropdown-wrapper {
+  position: relative;
+}
+
+.account-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+  color: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.account-btn:hover {
+  background: rgba(51, 65, 85, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.account-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.account-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.account-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+}
+
+.account-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  overflow: hidden;
+  animation: accountFadeIn 0.15s ease-out;
+}
+
+@keyframes accountFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.account-menu-header {
+  padding: 0.875rem 1rem;
+  background: rgba(30, 41, 59, 0.4);
+}
+
+.account-menu-username {
+  font-weight: 700;
+  color: #f8fafc;
+  font-size: 0.875rem;
+  text-transform: capitalize;
+}
+
+.account-menu-email {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-role-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  margin-top: 0.4rem;
+}
+
+.pill-admin {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.pill-staff {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.account-menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.account-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.account-menu-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.item-logout {
+  color: #f87171;
+}
+
+.item-logout:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
 /* ── Content Area ── */
 .app-content {
   flex: 1;
