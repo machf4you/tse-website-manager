@@ -4,14 +4,25 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.21-stable-classification-engine-hostname-isolation-fix',
+    version: 'v2.21-stable',
+    gitTag: 'v2.21-stable-classification-engine-hostname-isolation-fix',
+    commit: '[AUTO]',
+    date: '10-09-2026 10:20',
+    title: 'Classification Engine Hostname Isolation & Search Query Detection (V2.21)',
+    description: 'Confirmed stable release V2.21 isolating URL pathname/slug from domain hostname in packageExtractor.js automatic exclusion rules. Prevents domain names containing keywords like search (e.g. thesearchequation.com), tag, date, feed, or cart from erroneously triggering exclusions. Resolves 112/113 false exclusions on The Search Equation, restoring 1 Hub, 29 Landing, 4 Topical, 74 Article, and 5 legitimate Excluded pages with zero regression across all sites.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.21-stable-classification-engine-hostname-isolation-fix.md'
+  },
+  {
     id: 'v2.20-stable-website-manager-realtime',
     version: 'v2.20-stable',
     gitTag: 'v2.20-stable-website-manager-realtime',
-    commit: '[AUTO]',
+    commit: 'e809ddd',
     date: '10-09-2026 10:00',
     title: 'Real-Time Multi-User Synchronization with Supabase Realtime Broadcast (V2.20)',
     description: 'Confirmed stable release V2.20 implementing real-time multi-user synchronization across TSE Website Manager using Supabase Realtime Broadcast. Supports concurrent administrative sessions (Mac & Deb) with instant updates across connected website tiles, page configurations, target phrases, package syncs, and page audits. Preserves SQLite/Express backend as authoritative single source of truth with zero data loss, loop prevention, and self-echo immunity.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'RESTORE-POINT-v2.20-realtime-multi-user-website-manager.md'
   },
   {
