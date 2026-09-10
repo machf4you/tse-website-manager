@@ -1,8 +1,9 @@
-﻿# Restore Point: RESTORE-POINT-v2.20-realtime-multi-user-website-manager
+# Restore Point: RESTORE-POINT-v2.20-realtime-multi-user-website-manager
 
 **Timestamp**: 2026-09-10 10:00 UTC  
 **Git Tag**: `v2.20-stable-website-manager-realtime`  
-**Base Commit**: `beb7dae`  
+**Base Commit**: `e809ddd`  
+**Live Bundle**: `dist/assets/index-Bgwakbuf.js`  
 **Deployment Target**: Dedicated Applications VPS (`77.245.157.66`)  
 **Service Status**: All services online (`website-manager-api` port 3005, `page-auditor-api` port 8005, `site-registry-api` port 3006, `tse-auth-service` port 3001)
 
