@@ -4,6 +4,28 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v2.20-stable-website-manager-realtime',
+    version: 'v2.20-stable',
+    gitTag: 'v2.20-stable-website-manager-realtime',
+    commit: '[AUTO]',
+    date: '10-09-2026 10:00',
+    title: 'Real-Time Multi-User Synchronization with Supabase Realtime Broadcast (V2.20)',
+    description: 'Confirmed stable release V2.20 implementing real-time multi-user synchronization across TSE Website Manager using Supabase Realtime Broadcast. Supports concurrent administrative sessions (Mac & Deb) with instant updates across connected website tiles, page configurations, target phrases, package syncs, and page audits. Preserves SQLite/Express backend as authoritative single source of truth with zero data loss, loop prevention, and self-echo immunity.',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v2.20-realtime-multi-user-website-manager.md'
+  },
+  {
+    id: 'v2.12-stable-before-website-manager-realtime',
+    version: 'v2.12-stable',
+    gitTag: 'v2.12-stable-before-website-manager-realtime',
+    commit: '2396766',
+    date: '10-09-2026 09:50',
+    title: 'Baseline State Prior to Supabase Realtime Multi-User Sync (V2.12)',
+    description: 'Baseline restore point prior to introducing Supabase Realtime multi-user synchronization. Authoritative SQLite/Express backend, WordPress Exporter & REST API sync/push, Magento 2 sync/auth, and W3/W4 page auditor workflows confirmed operational.',
+    status: 'Superseded',
+    docFile: 'V2.12-STABLE-BEFORE-WEBSITE-MANAGER-REALTIME.md'
+  },
+  {
     id: 'v2.17-stable-wordpress-structural-rules-and-classification',
     version: 'v2.17-stable',
     gitTag: 'v2.17-stable-wordpress-structural-rules-and-classification',
@@ -11,7 +33,7 @@ export const restorePointIndexData = [
     date: '09-09-2026 17:35',
     title: 'Sitewide WordPress Structural Classification Rules & W3 Navigation Stability (V2.17)',
     description: 'Confirmed stable restore point capturing sitewide generic WordPress classification rules: Absolute Homepage rule (Homepage / root URL -> Hub / Priority 1 sitewide), Structural Landing rules (/services/, /locations/, /areas/, /areas-we-cover/ and child pages -> Landing / Priority 2), sitewide natural alphanumeric column sorting across W3 Manage Pages, route state persistence on refresh, and WordPress REST API live Push 401 resolution.',
-    status: 'Current',
+    status: 'Superseded',
     docFile: 'V2.17-STABLE-WORDPRESS-STRUCTURAL-RULES-AND-CLASSIFICATION.md'
   },
   {
