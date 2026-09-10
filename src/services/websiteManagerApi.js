@@ -4,6 +4,7 @@
  */
 
 import { normalizeSiteId } from '../utils/siteKeyHelper.js'
+import { broadcastWebsiteManagerEvent, REALTIME_EVENTS } from './supabaseRealtime.js'
 
 export const API_BASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_WEBSITE_MANAGER_API_URL)
   ? process.env.VITE_WEBSITE_MANAGER_API_URL
@@ -96,6 +97,13 @@ export async function saveWebsiteApi(siteRecord) {
     console.warn('Backend API save failed:', e)
   }
 
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.WEBSITE_CHANGED, {
+    action: 'update',
+    siteId: String(siteRecord.id),
+    site: payload
+  })
+
   try {
     if (typeof localStorage !== 'undefined') {
       const raw = localStorage.getItem('tse_website_dashboard_sites')
@@ -134,6 +142,13 @@ export async function saveWebsitesBatchApi(sitesList) {
       body: JSON.stringify(sanitizedList)
     })
   } catch (e) {}
+
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.WEBSITE_CHANGED, {
+    action: 'batch',
+    sites: sanitizedList
+  })
+
   try {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(sanitizedList))
@@ -147,6 +162,13 @@ export async function deleteWebsiteApi(siteId) {
       method: 'DELETE'
     })
   } catch (e) {}
+
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.WEBSITE_CHANGED, {
+    action: 'delete',
+    siteId: String(siteId)
+  })
+
   try {
     const raw = localStorage.getItem('tse_website_dashboard_sites')
     if (raw) {
@@ -155,6 +177,7 @@ export async function deleteWebsiteApi(siteId) {
     }
   } catch (err) {}
 }
+
 
 // 2. WORDPRESS SYNC PACKAGES
 export async function getWpPackageApi(siteId) {
@@ -193,6 +216,13 @@ export async function saveWpPackageApi(siteId, packageData) {
       body: JSON.stringify(cleanPackageData)
     })
   } catch (e) {}
+
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.PACKAGE_SYNCED, {
+    siteId: String(siteId),
+    timestamp: Date.now()
+  })
+
   try {
     localStorage.setItem(`tse_wp_package_${siteId}`, JSON.stringify(cleanPackageData))
   } catch (err) {}
@@ -217,6 +247,13 @@ export async function savePageConfigsApi(rawSiteId, configsMap) {
       body: JSON.stringify(configsMap)
     })
   } catch (e) {}
+
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.PAGE_CONFIG_CHANGED, {
+    siteId: String(siteId),
+    configsMap
+  })
+
   try {
     localStorage.setItem(`tse_page_configs_${siteId}`, JSON.stringify(configsMap))
   } catch (err) {}
@@ -241,6 +278,14 @@ export async function savePageAuditApi(rawSiteId, pageKey, auditRecord) {
       body: JSON.stringify({ pageKey, auditRecord })
     })
   } catch (e) {}
+
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.PAGE_AUDIT_CHANGED, {
+    siteId: String(siteId),
+    pageKey,
+    auditRecord
+  })
+
   try {
     const raw = localStorage.getItem(`tse_page_audits_${siteId}`)
     const audits = raw ? JSON.parse(raw) : {}
@@ -257,6 +302,13 @@ export async function savePageAuditsBatchApi(rawSiteId, auditsMap) {
       body: JSON.stringify(auditsMap)
     })
   } catch (e) {}
+
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.PAGE_AUDIT_CHANGED, {
+    siteId: String(siteId),
+    auditsMap
+  })
+
   try {
     localStorage.setItem(`tse_page_audits_${siteId}`, JSON.stringify(auditsMap))
   } catch (err) {}
@@ -278,10 +330,18 @@ export async function saveInternalLinkRecommendationsApi(siteId, recsMap) {
       body: JSON.stringify(recsMap)
     })
   } catch (e) {}
+
+  // Realtime multi-user synchronization broadcast
+  broadcastWebsiteManagerEvent(REALTIME_EVENTS.LINK_REC_CHANGED, {
+    siteId: String(siteId),
+    recommendationsMap: recsMap
+  })
+
   try {
     localStorage.setItem(`tse_w5_recommendations_${siteId}`, JSON.stringify(recsMap))
   } catch (err) {}
 }
+
 
 // 5. ONE-TIME MIGRATION UTILITY FROM LOCALSTORAGE
 export async function migrateLocalStorageApi() {

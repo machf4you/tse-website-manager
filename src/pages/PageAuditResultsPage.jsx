@@ -9,9 +9,11 @@ import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRe
 import { formatReadableDateTime } from '../utils/dateFormatter'
 import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
 import { matchTargetPhraseIntent } from '../utils/phraseMatcher'
+import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import W4FixIssueDialog from '../components/W4FixIssueDialog'
 import OptimizeAltTextDialog from '../components/OptimizeAltTextDialog'
 import './PageAuditResultsPage.css'
+
 
 function getCleanPathname(fullUrl, siteBaseUrl) {
   if (!fullUrl || typeof fullUrl !== 'string') return '/'
@@ -90,6 +92,47 @@ export default function PageAuditResultsPage({
   const [isSyncingPage, setIsSyncingPage] = useState(false)
   const [_pageSyncError, setPageSyncError] = useState(null)
 
+  // Real-time multi-user synchronization hook
+  useWebsiteManagerRealtime({
+    onPageAuditChanged: ({ siteId, pageKey: changedKey, auditRecord, auditsMap }) => {
+      if (site?.id && String(site.id) === String(siteId)) {
+        const currentUrlKey = selectedUrl || page?.url || page?.id
+        if (changedKey && auditRecord) {
+          if (changedKey === currentUrlKey || changedKey === page?.url || changedKey === String(page?.id)) {
+            setApiAuditRecord(auditRecord)
+          }
+        } else if (auditsMap && currentUrlKey) {
+          const matched = auditsMap[currentUrlKey] || (page?.url ? auditsMap[page.url] : null) || (page?.id ? auditsMap[String(page.id)] : null)
+          if (matched) setApiAuditRecord(matched)
+        }
+      }
+    },
+    onPageConfigChanged: ({ siteId, configsMap }) => {
+      if (site?.id && String(site.id) === String(siteId) && configsMap) {
+        setLocalOverrides(prev => ({
+          ...(prev || {}),
+          ...configsMap
+        }))
+      }
+    },
+    onReconnect: () => {
+      if (site?.id && (page?.url || page?.id)) {
+        const pKey = page.url || page.id
+        getPageAuditsApi(site.id).then(apiAudits => {
+          if (apiAudits && typeof apiAudits === 'object') {
+            const rec = apiAudits[pKey] || (page.url ? apiAudits[page.url] : null) || (page.id ? apiAudits[page.id] : null)
+            if (rec) setApiAuditRecord(rec)
+          }
+        }).catch(() => {})
+        getPageConfigsApi(site.id).then(dbConfigs => {
+          if (dbConfigs && typeof dbConfigs === 'object') {
+            setLocalOverrides(prev => ({ ...dbConfigs, ...prev }))
+          }
+        }).catch(() => {})
+      }
+    }
+  })
+
   // Load page audit record from SQLite API for authoritative timestamps
   useEffect(() => {
     let isMounted = true
@@ -108,6 +151,7 @@ export default function PageAuditResultsPage({
     }
     return () => { isMounted = false }
   }, [site?.id, page?.url, page?.id])
+
 
   // Load stored page configurations from SQLite backend DB on mount
   useEffect(() => {

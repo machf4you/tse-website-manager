@@ -10,6 +10,7 @@ import {
   deleteWebsiteApi,
   triggerLocalStorageMigrationApi
 } from '../services/websiteManagerApi'
+import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './WebsitesDashboard.css'
 
 export default function WebsitesDashboard() {
@@ -26,6 +27,42 @@ export default function WebsitesDashboard() {
       }
     } catch (e) {}
     return [mockSiteTile]
+  })
+
+  // Real-time multi-user synchronization hook
+  useWebsiteManagerRealtime({
+    onWebsiteChanged: ({ action, siteId, site: updatedSite, sites: batchSites }) => {
+      if (action === 'delete') {
+        setSites(prev => prev.filter(s => String(s.id) !== String(siteId)))
+        setManagedSiteState(prev => (prev && String(prev.id) === String(siteId) ? null : prev))
+      } else if (action === 'batch' && Array.isArray(batchSites)) {
+        setSites(batchSites)
+      } else if (updatedSite && updatedSite.id !== undefined) {
+        setSites(prev => {
+          const exists = prev.some(s => String(s.id) === String(updatedSite.id))
+          if (exists) {
+            return prev.map(s => String(s.id) === String(updatedSite.id) ? { ...s, ...updatedSite } : s)
+          }
+          return [updatedSite, ...prev]
+        })
+        setManagedSiteState(prev => {
+          if (prev && String(prev.id) === String(updatedSite.id)) {
+            return { ...prev, ...updatedSite }
+          }
+          return prev
+        })
+      } else {
+        // Fallback: refresh from authoritative SQLite API
+        getWebsitesApi().then(fresh => {
+          if (Array.isArray(fresh) && fresh.length > 0) setSites(fresh)
+        }).catch(() => {})
+      }
+    },
+    onReconnect: () => {
+      getWebsitesApi().then(fresh => {
+        if (Array.isArray(fresh) && fresh.length > 0) setSites(fresh)
+      }).catch(() => {})
+    }
   })
 
   // One-time localStorage migration & SQLite initial load on mount
@@ -61,6 +98,7 @@ export default function WebsitesDashboard() {
     initData()
     return () => { isMounted = false }
   }, [])
+
 
   const [managedSite, setManagedSiteState] = useState(() => {
     try {

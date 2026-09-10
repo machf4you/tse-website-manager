@@ -11,9 +11,11 @@ import {
   getInternalLinkRecommendationsApi,
   saveInternalLinkRecommendationsApi
 } from '../services/websiteManagerApi'
+import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import { updateWordPressPageContent } from '../services/wordpressApi'
 import W5LinkImplementationModal from '../components/W5LinkImplementationModal'
 import './InternalLinkingPage.css'
+
 
 export function renderHighlightedText(text, anchorText) {
   if (!text) return ''
@@ -163,6 +165,24 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
     }
   }
 
+  // Real-time multi-user synchronization hook
+  useWebsiteManagerRealtime({
+    onLinkRecChanged: ({ siteId, recommendationsMap }) => {
+      if (site?.id && String(site.id) === String(siteId) && recommendationsMap) {
+        setSavedRecs(prev => ({ ...prev, ...recommendationsMap }))
+      }
+    },
+    onReconnect: () => {
+      if (site?.id) {
+        getInternalLinkRecommendationsApi(site.id).then(res => {
+          if (res && typeof res === 'object') {
+            setSavedRecs(prev => ({ ...prev, ...res }))
+          }
+        }).catch(() => {})
+      }
+    }
+  })
+
   // Hydrate saved recommendations from backend API if available
   useEffect(() => {
     if (!site?.id) return
@@ -174,6 +194,7 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
     }).catch(() => {})
     return () => { isMounted = false }
   }, [site?.id])
+
 
   const [aiSentences, setAiSentences] = useState({})
   const [generatingIds, setGeneratingIds] = useState({})

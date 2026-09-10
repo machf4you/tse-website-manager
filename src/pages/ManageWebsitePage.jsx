@@ -15,6 +15,7 @@ import { getSiteConfigsStorageKey, getSitePackageStorageKey } from '../utils/sit
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { formatReadableDateTime } from '../utils/dateFormatter'
 import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
+import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './ManageWebsitePage.css'
 
 /* ── Icons ─────────────────────────────────────────────────────────────────── */
@@ -344,6 +345,47 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
 
   const timerRef = useRef(null)
 
+  // Real-time multi-user synchronization hook
+  useWebsiteManagerRealtime({
+    onWebsiteChanged: ({ siteId, site: updatedSite }) => {
+      if (site?.id && String(site.id) === String(siteId) && updatedSite) {
+        if (typeof onUpdateSite === 'function') {
+          onUpdateSite(updatedSite)
+        }
+      }
+    },
+    onPageConfigChanged: ({ siteId, configsMap }) => {
+      if (site?.id && String(site.id) === String(siteId) && configsMap) {
+        setApiConfigs(prev => ({ ...(prev || {}), ...configsMap }))
+      }
+    },
+    onPackageSynced: ({ siteId }) => {
+      if (site?.id && String(site.id) === String(siteId)) {
+        getWpPackageApi(site.id).then(pkgRes => {
+          if (pkgRes && (pkgRes.packageData || pkgRes.pages)) {
+            setHasSyncHeader(true)
+            if (pkgRes.lastSyncTimestamp) setLastSyncDate(pkgRes.lastSyncTimestamp)
+            const cleanPkg = pkgRes.packageData || pkgRes
+            setStoredPackageData(cleanPkg)
+          }
+        }).catch(() => {})
+      }
+    },
+    onReconnect: () => {
+      if (site?.id) {
+        getPageConfigsApi(site.id).then(configs => {
+          if (configs) setApiConfigs(configs)
+        }).catch(() => {})
+        getWpPackageApi(site.id).then(pkgRes => {
+          if (pkgRes && (pkgRes.packageData || pkgRes.pages)) {
+            const cleanPkg = pkgRes.packageData || pkgRes
+            setStoredPackageData(cleanPkg)
+          }
+        }).catch(() => {})
+      }
+    }
+  })
+
   useEffect(() => {
     let isMounted = true
     if (site?.id) {
@@ -372,6 +414,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     }
     return () => { isMounted = false }
   }, [site?.id])
+
 
   useEffect(() => {
     if (!isPackageHydrated) return

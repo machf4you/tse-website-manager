@@ -1,11 +1,31 @@
 import { useState, useEffect } from 'react'
 import { CURRENT_BUILD_VERSION, CURRENT_BUILD_LABEL, CURRENT_BUILD_HASH, CURRENT_BUILD_TIMESTAMP } from '../config/version'
 import { API_BASE_URL } from '../services/websiteManagerApi'
+import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './GlobalDeploymentIndicator.css'
 
 export default function GlobalDeploymentIndicator() {
   const [deployState, setDeployState] = useState('normal') // 'normal' | 'updating' | 'update_ready'
   const [serverVersion, setServerVersion] = useState(CURRENT_BUILD_VERSION)
+
+  useWebsiteManagerRealtime({
+    onDeploymentStatusChanged: ({ deploymentStatus }) => {
+      if (deploymentStatus) {
+        if (deploymentStatus.isDeploymentInProgress) {
+          setDeployState('updating')
+        } else if (
+          (deploymentStatus.buildHash && deploymentStatus.buildHash !== CURRENT_BUILD_HASH) ||
+          (deploymentStatus.buildTimestamp && Number(deploymentStatus.buildTimestamp) > CURRENT_BUILD_TIMESTAMP) ||
+          (deploymentStatus.version && deploymentStatus.version !== CURRENT_BUILD_VERSION)
+        ) {
+          setDeployState('update_ready')
+        } else {
+          setDeployState('normal')
+        }
+      }
+    }
+  })
+
 
   useEffect(() => {
     let isMounted = true

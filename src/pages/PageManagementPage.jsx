@@ -7,7 +7,9 @@ import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
 import { formatReadableDateTime } from '../utils/dateFormatter'
 import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
+import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './PageManagementPage.css'
+
 
 export default function PageManagementPage({
   site,
@@ -56,6 +58,44 @@ export default function PageManagementPage({
     return {}
   })
 
+  // Real-time multi-user synchronization hook
+  useWebsiteManagerRealtime({
+    onPageConfigChanged: ({ siteId, configsMap }) => {
+      if (site?.id && String(site.id) === String(siteId) && configsMap) {
+        setConfigurations(prev => ({ ...prev, ...configsMap }))
+      }
+    },
+    onPageAuditChanged: ({ siteId, pageKey, auditRecord, auditsMap }) => {
+      if (site?.id && String(site.id) === String(siteId)) {
+        if (pageKey && auditRecord) {
+          setPageAudits(prev => ({ ...prev, [pageKey]: auditRecord }))
+        } else if (auditsMap) {
+          setPageAudits(prev => ({ ...prev, ...auditsMap }))
+        }
+      }
+    },
+    onPackageSynced: ({ siteId }) => {
+      if (site?.id && String(site.id) === String(siteId)) {
+        getPageConfigsApi(site.id).then(apiConfigs => {
+          if (apiConfigs) setConfigurations(prev => ({ ...prev, ...apiConfigs }))
+        }).catch(() => {})
+        getPageAuditsApi(site.id).then(apiAudits => {
+          if (apiAudits) setPageAudits(prev => ({ ...prev, ...apiAudits }))
+        }).catch(() => {})
+      }
+    },
+    onReconnect: () => {
+      if (site?.id) {
+        getPageConfigsApi(site.id).then(apiConfigs => {
+          if (apiConfigs) setConfigurations(prev => ({ ...prev, ...apiConfigs }))
+        }).catch(() => {})
+        getPageAuditsApi(site.id).then(apiAudits => {
+          if (apiAudits) setPageAudits(prev => ({ ...prev, ...apiAudits }))
+        }).catch(() => {})
+      }
+    }
+  })
+
   useEffect(() => {
     let isMounted = true
     if (site?.id) {
@@ -81,6 +121,7 @@ export default function PageManagementPage({
     }
     return () => { isMounted = false }
   }, [site?.id])
+
 
   const handleSort = (col) => {
     if (sortColumn === col) {
