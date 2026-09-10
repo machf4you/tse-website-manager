@@ -255,7 +255,7 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
     lowerTitle === 'home' ||
     lowerTitle === 'homepage'
 
-  const isExcluded = isHomePage ? false : (p.isExcluded !== undefined ? Boolean(p.isExcluded) : (matchesExclusion || isMagentoContainerOrInactive))
+  const isExcluded = isHomePage ? false : (matchesExclusion || isMagentoContainerOrInactive)
 
   const seoPageType = classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext)
   const type = seoPageType
