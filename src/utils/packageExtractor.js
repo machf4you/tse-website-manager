@@ -31,8 +31,11 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
   if (p && (p.post_type === 'post' || p.type === 'post')) return 'Article'
 
   const lowerTitle = (title || '').toLowerCase()
-  const lowerUrl = (url || '').toLowerCase()
-  const cleanSlug = (url || '').replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '').replace(/^\/+/, '').toLowerCase()
+  let cleanUrlPath = (url || '').replace(/^https?:\/\/[^/]+/i, '')
+  if (!cleanUrlPath.startsWith('/')) cleanUrlPath = '/' + cleanUrlPath
+  const [pathnameRaw] = cleanUrlPath.split('?')
+  const pathname = (pathnameRaw || '/').toLowerCase()
+  const cleanSlug = pathname.replace(/\/+$/, '').replace(/^\/+/, '')
 
   // 6. Explicit Structural Landing Page Slugs (Priority 2)
   // /services/, /locations/, /areas/, /areas-we-cover/ explicitly classify as Landing
@@ -56,7 +59,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
     return 'Topical'
   }
 
-  const isBlogPostUrl = lowerUrl.includes('/blog/') || lowerUrl.includes('/news/') || lowerUrl.includes('/insights/') || lowerUrl.includes('/articles/')
+  const isBlogPostUrl = pathname.includes('/blog/') || pathname.includes('/news/') || pathname.includes('/insights/') || pathname.includes('/articles/')
   const isArticleAuthority = p?.authority?.strategic_type === 'article' || p?.classification?.strategic_type === 'article' || p?.intent === 'informational'
 
   const informationalStarters = [
@@ -66,7 +69,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
     'everything you need to know', 'pros and cons', 'cost vs value', 'without planning permission',
     'reasons to', 'ways to', 'things to', 'what adds more value', 'ideas for'
   ]
-  const isQuestionOrGuideTitle = informationalStarters.some(starter => lowerTitle.includes(starter) || lowerUrl.includes(starter))
+  const isQuestionOrGuideTitle = informationalStarters.some(starter => lowerTitle.includes(starter) || pathname.includes(starter))
 
   if (isQuestionOrGuideTitle || (isBlogPostUrl && p?.post_type !== 'page') || isArticleAuthority) {
     return 'Topical'
@@ -149,81 +152,105 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
   }
   const url = rawUrl
 
-  // 3. Automatic Exclusion Rules
-  const lowerTitle = title.toLowerCase()
-  const lowerUrl = url.toLowerCase()
+  // 3. Automatic Exclusion Rules (Evaluated against URL Path/Slug & Specific Title Phrases — Domain Hostname is excluded)
+  let cleanUrlPath = (url || '').replace(/^https?:\/\/[^/]+/i, '')
+  if (!cleanUrlPath.startsWith('/')) cleanUrlPath = '/' + cleanUrlPath
+  const cleanSiteUrl = siteUrl ? siteUrl.trim().replace(/\/+$/, '') : ''
 
-  const exclusionPatterns = [
-    // Legal / Policy Pages
-    'privacy policy', 'privacy-policy',
-    'cookie policy', 'cookie-policy',
-    'terms & conditions', 'terms-and-conditions', 'terms of service', 'terms-of-service', 'terms-conditions',
-    'disclaimer',
-    'accessibility statement', 'accessibility',
+  const [pathnameRaw, searchRaw] = cleanUrlPath.split('?')
+  const pathname = (pathnameRaw || '/').toLowerCase()
+  const searchParams = (searchRaw ? '?' + searchRaw : '').toLowerCase()
+  const cleanSlug = pathname.replace(/\/+$/, '').replace(/^\/+/, '')
+  const slugSegments = cleanSlug.split('/').filter(Boolean)
+  const lowerTitle = (title || '').toLowerCase().trim()
 
-    // Website Utility Pages
-    'about us', 'about-us', 'about',
-    'contact us', 'contact-us', 'contact',
-    'thank you', 'thank-you', 'thankyou',
-    'confirmation',
-    'search results', 'search',
-    '404', '404 page', 'not found',
-    'login', 'wp-login',
-    'register', 'signup', 'sign-up',
-    'lost password', 'lost-password', 'reset-password',
-    'my account', 'my-account',
+  // A. Search Results (Explicit /search/ path, ?s= search parameter, or explicit search results title)
+  const isSearchResultPage =
+    pathname === '/search' ||
+    pathname.startsWith('/search/') ||
+    cleanSlug === 'search' ||
+    searchParams.includes('?s=') ||
+    searchParams.includes('&s=') ||
+    lowerTitle === 'search results' ||
+    lowerTitle === 'search' ||
+    lowerTitle.startsWith('search results') ||
+    lowerTitle.startsWith('search for')
 
-    // WordPress / System Pages
-    'author archive', 'author',
-    'date archive', 'date',
-    'tag archive', 'tag',
-    'attachment', 'media attachment',
-    'feed', 'rss', 'xml sitemap', 'sitemap',
-
-    // Ecommerce / Transaction Pages
-    'cart',
-    'checkout',
-    'basket',
-    'wishlist',
-    'compare',
-
-    // Other Non-SEO Pages
-    'internal search',
-    'test page', 'test-page',
-    'draft', 'staging', 'sample page',
-
-    // Extended Utility / Policy & Store Information Pages
-    'returns policy', 'returns-policy', 'orders & returns', 'orders-and-returns', 'orders-returns',
-    'delivery information', 'delivery-information', 'delivery details', 'delivery-details',
-    'payment information', 'payment-information', 'payment-options',
-    'faq', 'faqs', 'f-a-q', "f.a.q's",
-    'finance',
-    'showroom', 'showrooms', 'store-finder', 'store-info', 'our-stores', 'store-locator',
-    'price match', 'price-match',
-    'pay later with klarna', 'klarna', 'pay-later',
-    'partners',
-    'testimonials',
-    'customer service', 'customer-service',
-    'enable cookies', 'enable-cookies', 'cookie-restriction-mode', 'cookie restriction',
-    'further resources', 'further-resources'
+  // B. Legal & Policy Pages
+  const legalSlugs = [
+    'privacy-policy', 'privacy', 'cookie-policy', 'cookies',
+    'terms-and-conditions', 'terms-conditions', 'terms-of-service', 'terms', 'terms-of-use',
+    'disclaimer', 'accessibility-statement', 'accessibility'
   ]
+  const isLegalPage =
+    legalSlugs.some(s => cleanSlug === s || slugSegments.includes(s)) ||
+    lowerTitle.includes('privacy policy') || lowerTitle.includes('cookie policy') ||
+    lowerTitle.includes('terms & conditions') || lowerTitle.includes('terms and conditions') ||
+    lowerTitle.includes('terms of service') || lowerTitle.includes('terms of use') ||
+    lowerTitle.includes('accessibility statement') || lowerTitle === 'disclaimer'
 
-  const matchesExclusion = exclusionPatterns.some(pattern => {
-    return lowerTitle.includes(pattern) || lowerUrl.includes(pattern)
-  })
+  // C. Website Utility Pages (About, Contact, Thank You, Sitemap, 404)
+  const utilitySlugs = [
+    'about-us', 'about', 'contact-us', 'contact',
+    'thank-you', 'thankyou', 'confirmation',
+    '404', '404-page', 'not-found',
+    'sitemap', 'xml-sitemap'
+  ]
+  const isUtilityPage =
+    utilitySlugs.some(s => cleanSlug === s || slugSegments.includes(s)) ||
+    lowerTitle === 'about us' || lowerTitle === 'about' || lowerTitle.startsWith('about us') ||
+    lowerTitle === 'contact us' || lowerTitle === 'contact' || lowerTitle.startsWith('contact us') ||
+    lowerTitle === 'thank you' || lowerTitle === 'confirmation' ||
+    lowerTitle === 'sitemap' || lowerTitle === 'xml sitemap' ||
+    lowerTitle === '404' || lowerTitle === 'page not found' || lowerTitle === 'not found'
+
+  // D. WordPress / System Pages (Author, Date, Tag, Attachment, Feed)
+  const isSystemArchivePage =
+    pathname.startsWith('/tag/') || cleanSlug === 'tag' ||
+    pathname.startsWith('/author/') || cleanSlug === 'author' ||
+    pathname.startsWith('/date/') || /^\/\d{4}\/\d{2}(\/\d{2})?(\/|$)/.test(pathname) ||
+    pathname.startsWith('/attachment/') || cleanSlug === 'attachment' ||
+    pathname === '/feed' || pathname.endsWith('/feed') || pathname.endsWith('/feed/') || pathname.endsWith('.xml') || pathname.endsWith('.rss') || cleanSlug === 'feed' || cleanSlug === 'rss' ||
+    lowerTitle.startsWith('author archive') || lowerTitle.startsWith('date archive') || lowerTitle.startsWith('tag archive') ||
+    lowerTitle === 'author' || lowerTitle === 'tag' || lowerTitle === 'date' || lowerTitle === 'attachment' || lowerTitle.includes('media attachment')
+
+  // E. Ecommerce / Transactional / Store Information Pages
+  const ecomSlugs = [
+    'cart', 'checkout', 'basket', 'wishlist', 'compare',
+    'login', 'wp-login', 'register', 'signup', 'sign-up',
+    'lost-password', 'reset-password', 'my-account', 'account',
+    'returns-policy', 'orders-and-returns', 'orders-returns',
+    'delivery-information', 'delivery-details', 'payment-information', 'payment-options',
+    'store-finder', 'store-locator', 'our-stores', 'price-match',
+    'pay-later', 'klarna', 'customer-service', 'enable-cookies', 'cookie-restriction-mode'
+  ]
+  const isEcomPage =
+    ecomSlugs.some(s => cleanSlug === s || slugSegments.includes(s)) ||
+    lowerTitle === 'cart' || lowerTitle === 'checkout' || lowerTitle === 'basket' || lowerTitle === 'wishlist' ||
+    lowerTitle === 'my account' || lowerTitle === 'login' || lowerTitle === 'register' || lowerTitle === 'sign up' ||
+    lowerTitle === 'lost password' || lowerTitle === 'reset password' ||
+    lowerTitle.includes('returns policy') || lowerTitle.includes('orders & returns') ||
+    lowerTitle.includes('delivery information') || lowerTitle.includes('payment information') ||
+    lowerTitle === 'store finder' || lowerTitle === 'store locator' || lowerTitle === 'price match' ||
+    lowerTitle.includes('enable cookies') || lowerTitle.includes('cookie restriction')
+
+  const matchesExclusion =
+    isSearchResultPage ||
+    isLegalPage ||
+    isUtilityPage ||
+    isSystemArchivePage ||
+    isEcomPage
 
   const isMagentoCategory = p.post_type === 'category' || p.magentoCategoryId !== undefined
   const isMagentoContainerOrInactive = isMagentoCategory && ((p.level !== undefined && p.level <= 1) || p.is_active === false)
 
   // 4. SEO Page Classification Rules
-  const cleanUrlPath = url.replace(/^https?:\/\/[^/]+/, '').replace(/\/+$/, '')
-  const cleanSiteUrl = siteUrl ? siteUrl.trim().replace(/\/+$/, '') : ''
   const isHomePage =
     p.isHome === true ||
     p.is_front_page === true ||
     p.id === 'cms-home' ||
-    cleanUrlPath === '' ||
-    cleanUrlPath === '/' ||
+    cleanSlug === '' ||
+    pathname === '/' ||
     (cleanSiteUrl && url.replace(/\/+$/, '') === cleanSiteUrl) ||
     lowerTitle === 'home' ||
     lowerTitle === 'homepage'
