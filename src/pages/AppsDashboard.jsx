@@ -39,6 +39,14 @@ const SearchIcon = ({ size = 22 }) => (
   </svg>
 )
 
+const SparklesSearchIcon = ({ size = 22 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    <path d="m11 7 0.8 1.6 1.7 0.4-1.3 1.2 0.4 1.8-1.6-0.9-1.6 0.9 0.4-1.8-1.3-1.2 1.7-0.4z" fill="currentColor" fillOpacity="0.2" />
+  </svg>
+)
+
 const NetworkIcon = ({ size = 22 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="16" y="16" width="6" height="6" rx="1" />
@@ -288,6 +296,27 @@ export default function AppsDashboard({ onOpenWebsiteManager, currentUser }) {
         liveUrl: null,
         displayUrl: 'Not deployed',
         isDeployed: false
+      }
+    },
+    {
+      sectionTitle: 'Keyword Research',
+      sectionSubtitle: 'DataForSEO target phrase discovery and blueprint planning',
+      app: {
+        id: 'KEYWORD_RESEARCH',
+        permKey: 'keyword_research',
+        name: 'Keyword Research',
+        roleTag: 'Standalone Application',
+        description: 'Keyword discovery, research and website blueprint planning.',
+        status: 'Live',
+        version: 'v1.0.0',
+        accentColor: '#38bdf8',
+        IconComponent: SparklesSearchIcon,
+        launchUrl: 'https://keyword-research.thesearchequation.co.uk/',
+        isActionable: true,
+        buttonText: 'Launch',
+        liveUrl: 'https://keyword-research.thesearchequation.co.uk/',
+        displayUrl: 'keyword-research.thesearchequation.co.uk',
+        isDeployed: true
       }
     }
   ]
