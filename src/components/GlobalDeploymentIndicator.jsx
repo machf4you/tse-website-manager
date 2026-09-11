@@ -26,7 +26,6 @@ export default function GlobalDeploymentIndicator() {
     }
   })
 
-
   useEffect(() => {
     let isMounted = true
 
@@ -75,17 +74,14 @@ export default function GlobalDeploymentIndicator() {
         setServerVersion(serverVer || CURRENT_BUILD_VERSION)
 
         if (isUpdating) {
-          // STATE 2: UPDATING -> Explicit DO NOT PRESS CTRL+F5
           setDeployState('updating')
         } else if (
           (serverHash && serverHash !== CURRENT_BUILD_HASH) ||
           (serverTimestamp && serverTimestamp > CURRENT_BUILD_TIMESTAMP) ||
           (serverVer && serverVer !== CURRENT_BUILD_VERSION)
         ) {
-          // STATE 3: UPDATE READY -> Explicit PRESS CTRL+F5 - UPDATE READY
           setDeployState('update_ready')
         } else {
-          // STATE 1: NORMAL -> Current loaded frontend matches live server
           setDeployState('normal')
         }
       } catch (_err) {
@@ -103,7 +99,8 @@ export default function GlobalDeploymentIndicator() {
   }, [])
 
   const handleManualRefresh = () => {
-    window.location.reload(true)
+    // Cache bust reload
+    window.location.href = window.location.pathname + '?_v=' + Date.now()
   }
 
   if (deployState === 'updating') {
@@ -136,7 +133,7 @@ export default function GlobalDeploymentIndicator() {
           <div className="global-update-banner-content">
             <span className="banner-message">
               <span className="deploy-ready-pulse-dot" aria-hidden="true">⚠️</span>
-              <strong>NEW UPDATE AVAILABLE:</strong> Please press <kbd>Ctrl</kbd> + <kbd>F5</kbd> (or click here) to refresh and load the latest updates!
+              <strong>NEW UPDATE AVAILABLE:</strong> Please press <kbd>Ctrl</kbd> + <kbd>F5</kbd> (or click Refresh) to load the latest changes!
             </span>
             <button 
               type="button" 
@@ -159,19 +156,29 @@ export default function GlobalDeploymentIndicator() {
           title="New deployment is live! Click or press Ctrl+F5 to reload"
         >
           <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
-          <span className="deploy-text-ready">V{serverVersion || CURRENT_BUILD_VERSION} | PRESS CTRL+F5 — UPDATE READY</span>
-          <span className="deploy-action-badge">Refresh Now</span>
+          <span className="deploy-text-ready">V{serverVersion || CURRENT_BUILD_VERSION} | UPDATE READY</span>
+          <span className="deploy-action-badge">↻ Refresh</span>
         </div>
       </>
     )
   }
 
-  // STATE 1: NORMAL (Idle / Up-to-Date Live Badge)
+  // STATE 1: NORMAL (Idle / Up-to-Date Live Badge + Quick Refresh Button)
   return (
     <div className="global-deploy-indicator global-deploy-normal">
       <span className="global-deploy-live-badge">
         <span className="deploy-live-dot">●</span> {CURRENT_BUILD_LABEL}
       </span>
+      <button
+        type="button"
+        className="global-deploy-refresh-btn"
+        onClick={handleManualRefresh}
+        title="Refresh application (reload latest updates)"
+        id="btn-global-header-refresh"
+      >
+        <span className="refresh-icon" aria-hidden="true">↻</span> Refresh
+      </button>
     </div>
   )
 }
+

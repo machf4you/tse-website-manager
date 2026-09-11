@@ -1,7 +1,7 @@
-export const CURRENT_BUILD_VERSION = '2.21'
-export const CURRENT_BUILD_LABEL = 'V2.21 | READY'
-export const CURRENT_BUILD_HASH = 'classifix221'
-export const CURRENT_BUILD_TIMESTAMP = 1788840000000
+export const CURRENT_BUILD_VERSION = '2.22'
+export const CURRENT_BUILD_LABEL = 'V2.22 | READY'
+export const CURRENT_BUILD_HASH = 'keywordtile222'
+export const CURRENT_BUILD_TIMESTAMP = 1789126000000
 
 
 
