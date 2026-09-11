@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import { extractSafeString } from '../utils/safeString'
 import { getPathSlugForMatching, normalizeUrlForMatching } from '../utils/urlUtils'
 import {
   getExistingInternalLinks,
@@ -615,8 +616,8 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
               <div className="il-pages-list">
                 {sec.pages.map(page => {
                   const isExpanded = expandedUrl === page.url
-                  const targetPhrase = page.targetPhrase || page.target || 'Not set'
-                  const pageTitle = page.title || page.proposedTitle || 'Untitled Page'
+                  const targetPhrase = extractSafeString(page.targetPhrase || page.target || 'Not set')
+                  const pageTitle = extractSafeString(page.title || page.proposedTitle || 'Untitled Page')
 
           return (
             <div key={page.url} className={`il-page-card ${isExpanded ? 'il-page-card-expanded' : ''}`}>

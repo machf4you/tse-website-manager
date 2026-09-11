@@ -3,6 +3,8 @@
  * Normalizes title, url, SEO Page Type classification, and applies automatic exclusion rules upon import.
  */
 
+import { decodeHtmlEntities } from './safeString'
+
 export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext = null) {
   // 1. Homepage -> Hub (Priority 1) - Absolute rule taking precedence sitewide over all heuristics
   if (isHomePage) return 'Hub'
@@ -358,19 +360,22 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
   delete cleanPage.meta
   delete cleanPage.class_list
 
+  const decodedTitle = decodeHtmlEntities(title)
+  const rawOrigTitle = (typeof p.originalTitle === 'string' ? p.originalTitle : '') ||
+                       (typeof p.name === 'string' ? p.name : '') ||
+                       (typeof p.title === 'string' ? p.title : '') ||
+                       title
+
   return {
     ...cleanPage,
     id: p.id || p.ID || url,
-    title,
-    originalTitle: (typeof p.originalTitle === 'string' ? p.originalTitle : '') ||
-                   (typeof p.name === 'string' ? p.name : '') ||
-                   (typeof p.title === 'string' ? p.title : '') ||
-                   title,
+    title: decodedTitle,
+    originalTitle: decodeHtmlEntities(rawOrigTitle),
     url,
     link: url,
-    metaTitle,
-    metaDescription,
-    h1,
+    metaTitle: decodeHtmlEntities(metaTitle),
+    metaDescription: decodeHtmlEntities(metaDescription),
+    h1: decodeHtmlEntities(h1),
     content: contentText,
     body_text: contentText,
     type,

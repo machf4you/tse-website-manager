@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { extractSafeString } from '../utils/safeString'
 import { extractPagesFromPackage } from '../utils/packageExtractor'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
 import { getPageConfigsApi, getWpPackageApi } from '../services/websiteManagerApi'
@@ -188,7 +189,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
       </div>
 
       {/* ── Site name ── */}
-      <h3 className="tile-site-name">{site.name}</h3>
+      <h3 className="tile-site-name">{extractSafeString(site.name)}</h3>
 
       {/* ── Site URL ── */}
       <a

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { extractSafeString } from '../utils/safeString'
 import { updateWordPressSEOFields } from '../services/wordpressApi'
 import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
 import './W4FixIssueDialog.css'
@@ -48,9 +49,9 @@ export default function W4FixIssueDialog({
   const [pushedActuals, setPushedActuals] = useState(null)
 
   // Dynamic Actual live values computed directly from page prop or optimistic post-push state
-  const actualMetaTitle = pushedActuals?.metaTitle || page?.actualMetaTitle || page?.metaTitle || ''
-  const actualMetaDescription = pushedActuals?.metaDescription || page?.actualMetaDescription || page?.metaDescription || ''
-  const actualH1 = pushedActuals?.h1 || page?.actualH1 || page?.h1 || ''
+  const actualMetaTitle = extractSafeString(pushedActuals?.metaTitle || page?.actualMetaTitle || page?.metaTitle || '')
+  const actualMetaDescription = extractSafeString(pushedActuals?.metaDescription || page?.actualMetaDescription || page?.metaDescription || '')
+  const actualH1 = extractSafeString(pushedActuals?.h1 || page?.actualH1 || page?.h1 || '')
 
   // Pre-fill initial text from page object & reset workflow on open
   useEffect(() => {
@@ -65,24 +66,24 @@ export default function W4FixIssueDialog({
     setPushError(null)
     setPushedActuals(null)
 
-    const actT = page.actualMetaTitle || ''
-    const actD = page.actualMetaDescription || ''
-    const actH = page.actualH1 || ''
+    const actT = extractSafeString(page.actualMetaTitle || '')
+    const actD = extractSafeString(page.actualMetaDescription || '')
+    const actH = extractSafeString(page.actualH1 || '')
 
     const recs = generateSeoRecommendations({
-      targetPhrase: page.targetPhrase || page.target || '',
+      targetPhrase: extractSafeString(page.targetPhrase || page.target || ''),
       actualMetaTitle: actT,
       actualMetaDescription: actD,
       actualH1: actH,
       pageUrl: page.url || '',
-      pageTitle: page.title || '',
+      pageTitle: extractSafeString(page.title || ''),
       siteName: site?.name || '',
     })
 
     // Proposed values initially populated with genuine saved overrides or generated recommendations
-    const initT = resolveProposedField(page.proposedTitle, actT, recs.proposedTitle, site?.name)
-    const initD = resolveProposedField(page.proposedMetaDescription, actD, recs.proposedMetaDescription, site?.name)
-    const initH = resolveProposedField(page.proposedH1, actH, recs.proposedH1, site?.name)
+    const initT = resolveProposedField(extractSafeString(page.proposedTitle), actT, recs.proposedTitle, site?.name)
+    const initD = resolveProposedField(extractSafeString(page.proposedMetaDescription), actD, recs.proposedMetaDescription, site?.name)
+    const initH = resolveProposedField(extractSafeString(page.proposedH1), actH, recs.proposedH1, site?.name)
 
     setMetaTitleVal(initT)
     setMetaDescVal(initD)

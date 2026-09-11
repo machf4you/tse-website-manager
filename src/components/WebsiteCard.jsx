@@ -1,3 +1,4 @@
+import { extractSafeString } from '../utils/safeString'
 import './WebsiteCard.css'
 
 const ExternalLinkIcon = () => (
@@ -79,7 +80,7 @@ export default function WebsiteCard({ website }) {
             {getDomainInitials(website.name)}
           </div>
           <div className="wc-info">
-            <h3 className="wc-name">{website.name}</h3>
+            <h3 className="wc-name">{extractSafeString(website.name)}</h3>
             <a
               href={`https://${website.domain}`}
               target="_blank"
