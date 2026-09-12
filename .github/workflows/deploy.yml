@@ -8,7 +8,7 @@ on:
 jobs:
   deploy:
     name: Deploy Website Manager API
-    runs-on: [self-hosted, tse-vps, production, website-manager]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout Code

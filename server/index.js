@@ -19,6 +19,10 @@ let inMemoryDeploymentStatus = {
   lastDeployedAt: new Date().toISOString()
 }
 
+// Health check endpoints
+app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'website-manager-api' }))
+app.get('/api/page-auditor-health', (req, res) => res.json({ status: 'ok', service: 'page-auditor-proxy' }))
+
 app.get('/api/deployment/status', (req, res) => {
   try {
     const row = db.prepare(`SELECT value_json FROM global_settings WHERE key = 'deployment_status'`).get()
