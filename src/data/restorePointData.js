@@ -4,6 +4,17 @@
  */
 export const restorePointIndexData = [
   {
+    id: 'v1.4.3-stable-end-to-end-static-website-build-confirmed',
+    version: 'v1.4.3-kr-stable',
+    gitTag: 'v1.4.3-stable-end-to-end-static-website-build-confirmed',
+    commit: 'c8c4b86',
+    date: '12-09-2026 11:00',
+    title: 'TSE Keyword Research & Static Website Generator Engine (V1.4.3)',
+    description: 'Confirmed stable end-to-end Keyword Research to Static Website Generator build: approved 4-page hierarchy, approved content copy, Premium + Warm Contemporary design, royalty-free stock photography, 7-file static package (HTML/CSS/sitemap/robots), server persistence in Supabase, and full-width preview layout. (Hard refresh routing parked).',
+    status: 'Current',
+    docFile: 'RESTORE-POINT-v1.4.3-stable-end-to-end-static-website-build-confirmed.md'
+  },
+  {
     id: 'v2.21-stable-classification-engine-hostname-isolation-fix',
     version: 'v2.21-stable',
     gitTag: 'v2.21-stable-classification-engine-hostname-isolation-fix',
