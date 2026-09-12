@@ -1771,6 +1771,8 @@ function getDataForSeoCredentials() {
   const envPaths = [
     path.join(process.cwd(), '.env'),
     path.join(process.cwd(), 'server', '.env'),
+    path.join('c:', 'Antigravity', 'tse-keyword-research', 'server', '.env'),
+    path.join('c:', 'Antigravity', 'tse-lead-finder', 'server', '.env'),
     '/var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current/.env',
     '/var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/.env',
     '/var/www/www-root/data/www/api-page-auditor.thesearchequation.co.uk/.env',
