@@ -1,5 +1,7 @@
 import express from 'express'
 import cors from 'cors'
+import fs from 'fs'
+import path from 'path'
 import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
 
 const app = express()
@@ -1747,6 +1749,295 @@ app.post('/api/migrate-localstorage', (req, res) => {
     res.status(500).json({ error: e.message })
   }
 })
+
+// ==========================================
+// 6. GOOGLE RANKINGS (DATAFORSEO LIVE SERP)
+// ==========================================
+
+function getDataForSeoCredentials() {
+  // 1. Check direct process environment variables
+  let login = process.env.DATAFORSEO_LOGIN || process.env.DATAFORSEO_API_LOGIN || ''
+  let password = process.env.DATAFORSEO_PASSWORD || process.env.DATAFORSEO_API_PASSWORD || ''
+
+  if (login && password) {
+    return { login: login.trim(), password: password.trim() }
+  }
+
+  // 2. Scan standard environment files on VPS & local project
+  const envPaths = [
+    path.join(process.cwd(), '.env'),
+    path.join(process.cwd(), 'server', '.env'),
+    '/var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current/.env',
+    '/var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/.env',
+    '/var/www/www-root/data/www/api-page-auditor.thesearchequation.co.uk/.env',
+    '/var/www/www-root/data/www/api-keyword-research.thesearchequation.co.uk/.env',
+    '/var/www/www-root/data/www/api-backlinks.thesearchequation.co.uk/.env',
+    '/var/www/www-root/data/www/shared/.env',
+    '/root/.env'
+  ]
+
+  for (const envPath of envPaths) {
+    try {
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf8')
+        const lines = content.split('\n')
+        let fLogin = ''
+        let fPass = ''
+        for (const line of lines) {
+          const clean = line.trim()
+          if (!clean || clean.startsWith('#')) continue
+          const eqIdx = clean.indexOf('=')
+          if (eqIdx > 0) {
+            const k = clean.slice(0, eqIdx).trim()
+            const v = clean.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '')
+            if (k === 'DATAFORSEO_LOGIN' || k === 'DATAFORSEO_API_LOGIN') fLogin = v
+            if (k === 'DATAFORSEO_PASSWORD' || k === 'DATAFORSEO_API_PASSWORD') fPass = v
+          }
+        }
+        if (fLogin && fPass) {
+          return { login: fLogin, password: fPass }
+        }
+      }
+    } catch (_e) {}
+  }
+
+  // 3. Check SQLite global_settings
+  try {
+    const row = db.prepare(`SELECT value_json FROM global_settings WHERE key = 'dataforseo_credentials'`).get()
+    if (row && row.value_json) {
+      const parsed = JSON.parse(row.value_json)
+      if (parsed.login && parsed.password) {
+        return { login: parsed.login, password: parsed.password }
+      }
+    }
+  } catch (_e) {}
+
+  return null
+}
+
+function extractHostnameFromUrl(urlOrDomain) {
+  if (!urlOrDomain) return ''
+  let clean = String(urlOrDomain).trim().toLowerCase()
+  clean = clean.replace(/^https?:\/\//i, '').replace(/\/.*$/, '').replace(/^www\./i, '').split(':')[0]
+  return clean
+}
+
+function normalizeUrlForMatching(url, baseSiteUrl) {
+  if (!url) return ''
+  let u = String(url).trim().toLowerCase()
+  if (!u.startsWith('http://') && !u.startsWith('https://')) {
+    const base = (baseSiteUrl || '').replace(/\/+$/, '')
+    const rel = u.startsWith('/') ? u : `/${u}`
+    u = `${base}${rel}`
+  }
+  u = u.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/#.*$/, '').replace(/\?.*$/, '').replace(/\/+$/, '')
+  return u
+}
+
+// GET all stored rankings for a website
+app.get('/api/websites/:id/rankings', (req, res) => {
+  try {
+    const { id } = req.params
+    const rows = db.prepare(`SELECT * FROM page_rankings WHERE site_id = ?`).all(id)
+    const result = {}
+    rows.forEach(r => {
+      result[r.page_key] = {
+        siteId: r.site_id,
+        pageKey: r.page_key,
+        targetPhrase: r.target_phrase,
+        googleRank: r.google_rank,
+        isTop100: Boolean(r.is_top_100),
+        rankingUrl: r.ranking_url,
+        isUrlMatch: Boolean(r.is_url_match),
+        searchEngine: r.search_engine || 'google.co.uk',
+        locationCode: r.location_code || 2826,
+        device: r.device || 'desktop',
+        lastCheckedAt: r.last_checked_at,
+        updatedAt: r.updated_at
+      }
+    })
+    res.json(result)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// Check rank for a single page Target Phrase via DataForSEO Live Advanced SERP API
+async function handleSinglePhraseRankCheck(req, res) {
+  try {
+    const { id, pageKey: paramPageKey } = req.params
+    const pageKey = paramPageKey ? decodeURIComponent(paramPageKey) : (req.body?.pageKey || req.query?.pageKey)
+
+    if (!id || !pageKey) {
+      return res.status(400).json({ success: false, error: 'siteId and pageKey are required' })
+    }
+
+    // 1. Fetch website record to determine domain
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) {
+      return res.status(404).json({ success: false, error: `Website with ID '${id}' not found` })
+    }
+
+    const siteDomain = extractHostnameFromUrl(site.url || site.name)
+    if (!siteDomain) {
+      return res.status(400).json({ success: false, error: 'Could not resolve domain from website record' })
+    }
+
+    // 2. Fetch page configuration to determine target phrase & URL
+    let targetPhrase = (req.body?.targetPhrase || req.body?.target || '').trim()
+    let configuredUrl = (req.body?.url || req.body?.configuredUrl || '').trim()
+
+    if (!targetPhrase || !configuredUrl) {
+      const configRow = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ? AND page_key = ?`).get(id, pageKey)
+      if (configRow) {
+        if (!targetPhrase) targetPhrase = (configRow.target_phrase || '').trim()
+        if (!configuredUrl) configuredUrl = (configRow.url || '').trim()
+      }
+    }
+
+    if (!configuredUrl) {
+      configuredUrl = pageKey.startsWith('http://') || pageKey.startsWith('https://') || pageKey.startsWith('/') ? pageKey : (site.url || '')
+    }
+
+    if (!targetPhrase) {
+      return res.status(400).json({ success: false, error: 'Target phrase is not configured for this page' })
+    }
+
+    // 3. Resolve DataForSEO Credentials
+    const creds = getDataForSeoCredentials()
+    if (!creds || !creds.login || !creds.password) {
+      return res.status(500).json({
+        success: false,
+        error: 'DataForSEO credentials not configured on server. Please ensure DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are set.'
+      })
+    }
+
+    // 4. Query DataForSEO Google Organic SERP Live Advanced API
+    const authHeader = 'Basic ' + Buffer.from(`${creds.login}:${creds.password}`).toString('base64')
+    const serpPayload = [
+      {
+        keyword: targetPhrase,
+        location_code: 2826,
+        language_code: 'en',
+        se_domain: 'google.co.uk',
+        device: 'desktop',
+        depth: 100
+      }
+    ]
+
+    const serpRes = await fetch('https://api.dataforseo.com/v3/serp/google/organic/live/advanced', {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(serpPayload),
+      signal: AbortSignal.timeout(45000)
+    })
+
+    if (!serpRes.ok) {
+      const errText = await serpRes.text()
+      return res.status(serpRes.status).json({
+        success: false,
+        error: `DataForSEO API error (${serpRes.status}): ${errText.slice(0, 200)}`
+      })
+    }
+
+    const serpData = await serpRes.json()
+    const task = serpData?.tasks?.[0]
+
+    if (!task || task.status_code !== 20000) {
+      return res.status(502).json({
+        success: false,
+        error: `DataForSEO task failed: ${task?.status_message || 'Unknown error'}`
+      })
+    }
+
+    const taskCost = task.cost !== undefined ? task.cost : null
+    const resultItems = task?.result?.[0]?.items || []
+
+    // 5. Search organic results for target website domain
+    let matchedItem = null
+    for (const item of resultItems) {
+      if (item.type !== 'organic') continue
+      const itemDomain = extractHostnameFromUrl(item.domain || item.url || '')
+      if (itemDomain && (itemDomain === siteDomain || itemDomain.endsWith('.' + siteDomain) || siteDomain.endsWith('.' + itemDomain))) {
+        matchedItem = item
+        break
+      }
+    }
+
+    const now = new Date().toISOString()
+    let googleRank = null
+    let isTop100 = 0
+    let rankingUrl = null
+    let isUrlMatch = 0
+
+    if (matchedItem) {
+      googleRank = matchedItem.rank_absolute || matchedItem.rank_group || null
+      rankingUrl = matchedItem.url || null
+      isTop100 = 1
+
+      const normRanking = normalizeUrlForMatching(rankingUrl, site.url)
+      const normConfigured = normalizeUrlForMatching(configuredUrl, site.url)
+      isUrlMatch = (normRanking && normConfigured && normRanking === normConfigured) ? 1 : 0
+    }
+
+    // 6. Save result to page_rankings table
+    const stmt = db.prepare(`
+      INSERT INTO page_rankings (
+        site_id, page_key, target_phrase, google_rank, is_top_100, ranking_url, is_url_match, search_engine, location_code, device, last_checked_at, updated_at
+      ) VALUES (
+        @site_id, @page_key, @target_phrase, @google_rank, @is_top_100, @ranking_url, @is_url_match, 'google.co.uk', 2826, 'desktop', @last_checked_at, @updated_at
+      )
+      ON CONFLICT(site_id, page_key) DO UPDATE SET
+        target_phrase = excluded.target_phrase,
+        google_rank = excluded.google_rank,
+        is_top_100 = excluded.is_top_100,
+        ranking_url = excluded.ranking_url,
+        is_url_match = excluded.is_url_match,
+        last_checked_at = excluded.last_checked_at,
+        updated_at = excluded.updated_at
+    `)
+
+    stmt.run({
+      site_id: id,
+      page_key: pageKey,
+      target_phrase: targetPhrase,
+      google_rank: googleRank,
+      is_top_100: isTop100,
+      ranking_url: rankingUrl,
+      is_url_match: isUrlMatch,
+      last_checked_at: now,
+      updated_at: now
+    })
+
+    // 7. Return clean JSON response
+    res.json({
+      success: true,
+      siteId: id,
+      pageKey,
+      targetPhrase,
+      googleRank,
+      isTop100: Boolean(isTop100),
+      rankingUrl,
+      configuredUrl,
+      isUrlMatch: Boolean(isUrlMatch),
+      searchEngine: 'google.co.uk',
+      locationCode: 2826,
+      device: 'desktop',
+      lastCheckedAt: now,
+      cost: taskCost
+    })
+  } catch (err) {
+    console.error('Error during DataForSEO rank check:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
+app.post('/api/websites/:id/check-rank', handleSinglePhraseRankCheck)
+app.post('/api/websites/:id/pages/:pageKey/check-rank', handleSinglePhraseRankCheck)
 
 app.listen(PORT, () => {
   console.log(`[Website Manager SQLite API] Running on http://localhost:${PORT}`)

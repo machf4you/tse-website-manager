@@ -86,6 +86,23 @@ db.exec(`
     updated_at TEXT,
     PRIMARY KEY(site_id, rec_key)
   );
+
+  CREATE TABLE IF NOT EXISTS page_rankings (
+    site_id TEXT NOT NULL,
+    page_key TEXT NOT NULL,
+    target_phrase TEXT NOT NULL,
+    google_rank INTEGER DEFAULT NULL,
+    is_top_100 INTEGER DEFAULT 0,
+    ranking_url TEXT DEFAULT NULL,
+    is_url_match INTEGER DEFAULT 0,
+    search_engine TEXT DEFAULT 'google.co.uk',
+    location_code INTEGER DEFAULT 2826,
+    device TEXT DEFAULT 'desktop',
+    last_checked_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY(site_id, page_key),
+    FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
+  );
 `)
 
 // Safe idempotent migration: ensure domain_id column and index exist on websites table

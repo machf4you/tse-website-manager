@@ -401,3 +401,32 @@ export async function extractPageImagesApi(targetUrl) {
     return []
   }
 }
+
+// 6. GOOGLE RANKINGS (DATAFORSEO LIVE SERP)
+export async function getPageRankingsApi(rawSiteId) {
+  const siteId = normalizeSiteId(rawSiteId)
+  try {
+    return await fetchJson(`${API_BASE_URL}/websites/${siteId}/rankings`)
+  } catch (e) {
+    console.warn('[WM_API] Failed to fetch page rankings:', e)
+    return {}
+  }
+}
+
+export async function checkPageRankApi({ siteId: rawSiteId, pageKey, targetPhrase, url, configuredUrl }) {
+  const siteId = normalizeSiteId(rawSiteId)
+  try {
+    return await fetchJson(`${API_BASE_URL}/websites/${siteId}/check-rank`, {
+      method: 'POST',
+      body: JSON.stringify({
+        pageKey,
+        targetPhrase,
+        url: url || configuredUrl,
+        configuredUrl: url || configuredUrl
+      })
+    }, 50000)
+  } catch (e) {
+    console.error('[WM_API] Failed to check page rank:', e)
+    throw e
+  }
+}

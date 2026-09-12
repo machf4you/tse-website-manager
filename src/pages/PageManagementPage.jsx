@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import ConfigurePageDialog from '../components/ConfigurePageDialog'
 import BulkConfigureTargetPhrasesDialog from '../components/BulkConfigureTargetPhrasesDialog'
-import { getPageConfigsApi, savePageConfigsApi, getPageAuditsApi, savePageAuditApi } from '../services/websiteManagerApi'
+import {
+  getPageConfigsApi,
+  savePageConfigsApi,
+  getPageAuditsApi,
+  savePageAuditApi,
+  getPageRankingsApi,
+  checkPageRankApi
+} from '../services/websiteManagerApi'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
 import { formatReadableDateTime } from '../utils/dateFormatter'
@@ -29,6 +36,8 @@ export default function PageManagementPage({
   const [currentlyAuditingKey, setCurrentlyAuditingKey] = useState(null)
   const [bulkAuditProgress, setBulkAuditProgress] = useState({ current: 0, total: 0 })
   const [bulkAuditSummary, setBulkAuditSummary] = useState(null)
+  const [pageRankings, setPageRankings] = useState({})
+  const [checkingRankKey, setCheckingRankKey] = useState(null)
 
   const [configurations, setConfigurations] = useState(() => {
     try {
@@ -118,9 +127,55 @@ export default function PageManagementPage({
           setPageAudits(prev => ({ ...prev, ...apiAudits }))
         }
       }).catch(() => {})
+
+      getPageRankingsApi(site.id).then(apiRankings => {
+        if (isMounted && apiRankings && Object.keys(apiRankings).length > 0) {
+          setPageRankings(apiRankings)
+        }
+      }).catch(() => {})
     }
     return () => { isMounted = false }
   }, [site?.id])
+
+  const handleCheckRank = async (page) => {
+    const pageKey = page.id || page.url
+    const targetPhrase = (page.target || page.targetPhrase || '').trim()
+    if (!targetPhrase || !site?.id) return
+
+    setCheckingRankKey(pageKey)
+    try {
+      const res = await checkPageRankApi({
+        siteId: site.id,
+        pageKey,
+        targetPhrase,
+        url: page.url,
+        configuredUrl: page.url
+      })
+
+      if (res && res.success) {
+        setPageRankings(prev => ({
+          ...prev,
+          [pageKey]: {
+            siteId: site.id,
+            pageKey,
+            targetPhrase,
+            googleRank: res.googleRank,
+            isTop100: res.isTop100,
+            rankingUrl: res.rankingUrl,
+            isUrlMatch: res.isUrlMatch,
+            searchEngine: res.searchEngine,
+            locationCode: res.locationCode,
+            device: res.device,
+            lastCheckedAt: res.lastCheckedAt
+          }
+        }))
+      }
+    } catch (err) {
+      console.error('Failed to check rank:', err)
+    } finally {
+      setCheckingRankKey(null)
+    }
+  }
 
 
   const handleSort = (col) => {
@@ -1173,6 +1228,10 @@ export default function PageManagementPage({
                 }
 
                 const page = row.page
+                const pageKey = page.id || page.url
+                const rankInfo = pageRankings[pageKey] || (page.url ? pageRankings[page.url] : null) || (page.id ? pageRankings[String(page.id)] : null)
+                const isCheckingThisRank = checkingRankKey === pageKey || (page.url && checkingRankKey === page.url) || (page.id && checkingRankKey === page.id)
+
                 return (
                   <tr
                     key={page.id || page.url || idx}
@@ -1236,7 +1295,64 @@ export default function PageManagementPage({
                     </td>
                     <td className="col-target">
                       {(page.target || page.targetPhrase || '').trim() ? (
-                        page.target || page.targetPhrase
+                        <div className="w3-target-cell-content">
+                          <div className="w3-target-phrase-row">
+                            <span className="w3-target-phrase-text">{page.target || page.targetPhrase}</span>
+                            <div className="w3-rank-controls">
+                              {isCheckingThisRank ? (
+                                <span className="w3-rank-badge rank-checking" title="Checking Google UK...">
+                                  ⏳
+                                </span>
+                              ) : rankInfo?.isTop100 && rankInfo.googleRank ? (
+                                <span
+                                  className={`w3-rank-badge ${rankInfo.googleRank <= 10 ? 'rank-top-10' : 'rank-top-100'}`}
+                                  title={`Google UK Rank #${rankInfo.googleRank} (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
+                                >
+                                  #{rankInfo.googleRank}
+                                </span>
+                              ) : rankInfo?.lastCheckedAt && !rankInfo.isTop100 ? (
+                                <span
+                                  className="w3-rank-badge rank-not-top-100"
+                                  title={`Not Top 100 on Google UK (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
+                                >
+                                  &gt;100
+                                </span>
+                              ) : (
+                                <span className="w3-rank-badge rank-unchecked" title="Unchecked">
+                                  —
+                                </span>
+                              )}
+                              <button
+                                type="button"
+                                className={`btn-check-rank-row ${isCheckingThisRank ? 'is-checking' : ''}`}
+                                onClick={() => handleCheckRank(page)}
+                                disabled={isCheckingThisRank}
+                                title="Check Google UK rank via DataForSEO"
+                                id={`btn-check-rank-${page.id || idx}`}
+                              >
+                                🔄
+                              </button>
+                            </div>
+                          </div>
+                          {rankInfo?.rankingUrl && (
+                            <div className="w3-ranking-url-row">
+                              <a
+                                href={rankInfo.rankingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="w3-ranking-url-link"
+                                title={`Google Ranking URL: ${rankInfo.rankingUrl}`}
+                              >
+                                {rankInfo.rankingUrl.replace(/^https?:\/\/(www\.)?/, '')} ↗
+                              </a>
+                              {rankInfo.isTop100 && !rankInfo.isUrlMatch && (
+                                <span className="w3-rank-mismatch-pill" title={`Google ranked ${rankInfo.rankingUrl} instead of ${page.url}`}>
+                                  ⚠️ Different Ranking URL
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <span className="target-not-set">Not Set</span>
                       )}
