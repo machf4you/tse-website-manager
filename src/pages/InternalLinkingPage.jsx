@@ -185,6 +185,7 @@ export default function InternalLinkingPage({
       const existing = getExistingInternalLinks(page.url, activePages)
       const outgoing = getOutgoingInternalLinks(page, activePages)
       const recommended = getRecommendedInternalLinks(page.url, targetPhrase, activePages, existing)
+      const totalEligibleCandidates = recommended.totalEligibleCount !== undefined ? recommended.totalEligibleCount : recommended.length
 
       // Group Incoming by unique source page (LINKS IN)
       const incomingMap = new Map()
@@ -243,6 +244,7 @@ export default function InternalLinkingPage({
         groupedIncoming,
         groupedOutgoing,
         recommended,
+        totalEligibleCandidates,
         incomingCount,
         outgoingCount,
         needsLinks
@@ -952,9 +954,25 @@ export default function InternalLinkingPage({
               </div>
             )}
 
-            <div className="il-warning-banner">
-              ⚠️ Only {page.recommended.length} unique source pages are currently available. Add more content or configure additional pages to increase internal linking opportunities.
-            </div>
+            {page.recommended.length > 0 && (
+              <div className="il-rec-footer-info">
+                {page.totalEligibleCandidates > page.recommended.length ? (
+                  <span className="il-rec-count-text">
+                    Showing the top {page.recommended.length} of {page.totalEligibleCandidates} available linking opportunities.
+                  </span>
+                ) : (
+                  <span className="il-rec-count-text">
+                    Showing all {page.recommended.length} available linking {page.recommended.length === 1 ? 'opportunity' : 'opportunities'}.
+                  </span>
+                )}
+              </div>
+            )}
+
+            {page.totalEligibleCandidates > 0 && page.totalEligibleCandidates < 5 && (
+              <div className="il-warning-banner">
+                ⚠️ Only {page.totalEligibleCandidates} unique source {page.totalEligibleCandidates === 1 ? 'page is' : 'pages are'} currently available. Add more content or configure additional pages to increase internal linking opportunities.
+              </div>
+            )}
           </div>
         )}
       </div>

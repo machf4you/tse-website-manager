@@ -345,7 +345,7 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
     return (a.title || '').localeCompare(b.title || '')
   })
 
-  return sortedCandidates.slice(0, 5).map((page, idx) => {
+  const recs = sortedCandidates.slice(0, 5).map((page, idx) => {
     const chosenAnchor = generateNaturalAnchors(targetPage, page, idx)
 
     return {
@@ -361,6 +361,9 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
       reason: 'Opportunity: Contextual relevance between pages'
     }
   })
+
+  recs.totalEligibleCount = sortedCandidates.length
+  return recs
 }
 
 /**
