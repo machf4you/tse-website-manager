@@ -410,7 +410,8 @@
 .il-table-wrapper {
   overflow-x: auto;
   border: 1px solid #1e293b;
-  border-radius: 6px;
+  border-radius: 8px;
+  background: #0f172a;
 }
 
 .il-table {
@@ -421,19 +422,25 @@
 }
 
 .il-table th {
-  background: #0f172a;
+  background: #090d16;
   color: #64748b;
   font-size: 0.72rem;
   font-weight: 700;
-  padding: 10px 14px;
+  padding: 12px 18px;
   border-bottom: 1px solid #1e293b;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .il-table td {
-  padding: 12px 14px;
+  padding: 20px 18px;
   border-bottom: 1px solid #1e293b;
   color: #cbd5e1;
-  vertical-align: middle;
+  vertical-align: top;
+}
+
+.il-table tr:hover td {
+  background: rgba(255, 255, 255, 0.015);
 }
 
 .il-table tr:last-child td {
@@ -459,16 +466,16 @@
   color: #cbd5e1;
   font-size: 0.82rem;
   font-style: normal;
-  max-width: 440px;
-  line-height: 1.5;
+  max-width: 520px;
+  line-height: 1.55;
 }
 
 .il-gen-block {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background: rgba(15, 23, 42, 0.7);
-  padding: 10px 12px;
+  gap: 12px;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 14px 16px;
   border-radius: 6px;
   border: 1px solid #1e293b;
 }
@@ -1094,7 +1101,7 @@
 .il-review-expansion-row td {
   padding: 0 !important;
   background: #0f172a;
-  border-bottom: 2px solid #3b82f6 !important;
+  border-bottom: 1px solid #334155 !important;
 }
 
 .il-review-expansion-row .il-card-details {

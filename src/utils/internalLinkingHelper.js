@@ -200,6 +200,117 @@ export function getOutgoingInternalLinks(sourcePage, pagesList) {
 }
 
 /**
+ * Dynamically extract natural anchor text variations taking into account
+ * the target page's core entity, location, niche, and the source page context.
+ */
+export function generateNaturalAnchors(targetPage, sourcePage, index = 0) {
+  const targetTitle = (targetPage?.title || targetPage?.proposedTitle || targetPage?.pageTitle || '').trim()
+  const targetPhrase = (targetPage?.targetPhrase || targetPage?.target || '').trim()
+  const targetSlug = getPathSlugForMatching(targetPage?.url || '') || ''
+
+  // 1. Extract location dynamically
+  let location = ''
+  const locMatch = (targetSlug + ' ' + targetTitle + ' ' + targetPhrase).match(/\b(Bournemouth|Oxford|London|Exeter|Reading|Surrey|Banstead|Manchester|Birmingham|Leeds|Bristol|Southampton|Dorset|Reading|Epsom|Sutton)\b/i)
+  if (locMatch) {
+    location = locMatch[1].charAt(0).toUpperCase() + locMatch[1].slice(1).toLowerCase()
+  }
+
+  // 2. Extract niche / industry dynamically
+  let niche = ''
+  const nicheMatch = (targetTitle + ' ' + targetSlug + ' ' + targetPhrase).match(/\b(clinic|dentist|builder|law\s*firm|lawyer|solicitor|ecommerce|shopify|trades|healthcare|medical)\b/i)
+  if (nicheMatch) {
+    const rawNiche = nicheMatch[1].toLowerCase()
+    if (rawNiche.includes('clinic')) niche = 'healthcare clinics'
+    else if (rawNiche.includes('dentist')) niche = 'dental practices'
+    else if (rawNiche.includes('builder')) niche = 'builders and contractors'
+    else if (rawNiche.includes('law') || rawNiche.includes('solicitor')) niche = 'law firms'
+    else if (rawNiche.includes('ecommerce') || rawNiche.includes('shopify')) niche = 'ecommerce stores'
+    else niche = rawNiche
+  }
+
+  // 3. Extract core service
+  let coreService = 'SEO'
+  if (/local\s*seo/i.test(targetSlug + ' ' + targetTitle + ' ' + targetPhrase)) {
+    coreService = 'local SEO'
+  } else if (/google\s*business|gbp|maps/i.test(targetSlug + ' ' + targetTitle + ' ' + targetPhrase)) {
+    coreService = 'Google Business Profile'
+  } else if (/technical\s*seo/i.test(targetSlug + ' ' + targetTitle + ' ' + targetPhrase)) {
+    coreService = 'technical SEO'
+  } else if (/audit/i.test(targetSlug + ' ' + targetTitle + ' ' + targetPhrase)) {
+    coreService = 'SEO audit'
+  } else if (/web\s*design/i.test(targetSlug + ' ' + targetTitle + ' ' + targetPhrase)) {
+    coreService = 'web design'
+  } else if (/ai\s*growth|ai/i.test(targetSlug + ' ' + targetTitle + ' ' + targetPhrase)) {
+    coreService = 'AI growth strategy'
+  }
+
+  const variations = []
+
+  if (location) {
+    // Location-based service page (e.g. SEO Bournemouth, SEO Oxford)
+    variations.push(
+      `SEO ${location}`,
+      `SEO services in ${location}`,
+      `${location} SEO services`,
+      `local SEO support in ${location}`,
+      `SEO specialists serving ${location}`,
+      `local search optimisation in ${location}`,
+      `targeted ${location} SEO campaigns`,
+      `SEO consultants in ${location}`
+    )
+  } else if (niche) {
+    // Industry/Niche service page (e.g. Clinic SEO, Dentist SEO)
+    const singularWord = niche.split(' ')[0]
+    const capSingular = singularWord.charAt(0).toUpperCase() + singularWord.slice(1)
+    variations.push(
+      `${capSingular} SEO`,
+      `SEO services for ${niche}`,
+      `${singularWord} search engine optimisation`,
+      `specialist ${singularWord} SEO`,
+      `local search visibility for ${niche}`,
+      `tailored ${singularWord} SEO strategy`,
+      `search marketing for ${niche}`
+    )
+  } else if (/google\s*business|gbp/i.test(coreService)) {
+    variations.push(
+      'Google Business Profile SEO',
+      'Google Business Profile optimisation',
+      'local Google Business Profile strategy',
+      'optimising your Google Business Profile',
+      'GBP management and local map rankings'
+    )
+  } else if (targetPhrase && targetPhrase.length > 2 && targetPhrase.toLowerCase() !== 'loft conversion') {
+    const base = targetPhrase.trim()
+    const cleanBase = base.replace(/^(the|a|an)\s+/i, '')
+    variations.push(
+      cleanBase,
+      `${cleanBase} services`,
+      `tailored ${cleanBase}`,
+      `effective ${cleanBase} strategy`,
+      `improving your ${cleanBase.toLowerCase()}`
+    )
+  } else if (targetTitle) {
+    const cleanTitle = targetTitle.replace(/[-|:].*$/, '').trim()
+    variations.push(
+      cleanTitle,
+      `${cleanTitle.toLowerCase()} services`,
+      `tailored ${cleanTitle.toLowerCase()}`,
+      `specialist ${cleanTitle.toLowerCase()} solutions`
+    )
+  } else {
+    variations.push(
+      'SEO services',
+      'local search engine optimisation',
+      'targeted organic SEO',
+      'SEO consultancy'
+    )
+  }
+
+  const unique = Array.from(new Set(variations.filter(Boolean)))
+  return unique[index % unique.length] || unique[0] || 'SEO services'
+}
+
+/**
  * Identify candidate source pages and generate recommended internal link opportunities
  * with natural, page-specific contextual anchors.
  */
@@ -207,41 +318,35 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
   if (!targetUrl || !Array.isArray(pagesList)) return []
 
   const targetNormUrl = normalizeUrlForMatching(targetUrl)
+  const targetSlug = getPathSlugForMatching(targetUrl)
   const existingSourceNorms = new Set((existingLinks || []).map(l => normalizeUrlForMatching(l.sourceUrl)))
+  const existingSourceSlugs = new Set((existingLinks || []).map(l => getPathSlugForMatching(l.sourceUrl)))
+
+  const targetPage = pagesList.find(p => {
+    const pNorm = normalizeUrlForMatching(p.url)
+    const pSlug = getPathSlugForMatching(p.url)
+    return (pNorm && pNorm === targetNormUrl) || (pSlug && pSlug === targetSlug)
+  }) || { url: targetUrl, targetPhrase, title: targetPhrase || 'Target Page' }
 
   const candidates = pagesList.filter(p => {
     if (!p || !p.url) return false
     const pNorm = normalizeUrlForMatching(p.url)
-    if (pNorm === targetNormUrl) return false
-    if (existingSourceNorms.has(pNorm)) return false
-    return true
+    const pSlug = getPathSlugForMatching(p.url)
+    if (pNorm === targetNormUrl || pSlug === targetSlug || p.url === targetUrl) return false
+    if (existingSourceNorms.has(pNorm) || existingSourceSlugs.has(pSlug)) return false
+    return !p.isExcluded
   })
 
-  return candidates.slice(0, 5).map((page, idx) => {
-    const titleLower = (page.title || page.pageTitle || '').toLowerCase()
-    let chosenAnchor = 'loft conversion'
+  // Sort candidates by relevance score relative to targetPage
+  const sortedCandidates = [...candidates].sort((a, b) => {
+    const scoreB = calculateRelevanceScore(b, targetPage)
+    const scoreA = calculateRelevanceScore(a, targetPage)
+    if (scoreB !== scoreA) return scoreB - scoreA
+    return (a.title || '').localeCompare(b.title || '')
+  })
 
-    if (titleLower.includes('walton')) {
-      chosenAnchor = 'adding a loft conversion'
-    } else if (titleLower.includes('hampton')) {
-      chosenAnchor = 'loft conversion'
-    } else if (titleLower.includes('leatherhead')) {
-      chosenAnchor = 'dormer & velux roof conversions'
-    } else if (titleLower.includes('kingston')) {
-      chosenAnchor = 'attic space'
-    } else if (titleLower.includes('new malden')) {
-      chosenAnchor = 'high quality loft conversions'
-    } else {
-      const basePhrase = targetPhrase || 'loft conversion'
-      const naturalVariations = [
-        basePhrase,
-        `expert ${basePhrase} services`,
-        `topical ${basePhrase}`,
-        `professional ${basePhrase}`,
-        `specialized ${basePhrase}`
-      ]
-      chosenAnchor = naturalVariations[idx % naturalVariations.length]
-    }
+  return sortedCandidates.slice(0, 5).map((page, idx) => {
+    const chosenAnchor = generateNaturalAnchors(targetPage, page, idx)
 
     return {
       id: `rec_${page.url}_${idx}`,
@@ -249,7 +354,9 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
       suggestedSourceTitle: page.title || page.proposedTitle || 'Untitled Page',
       suggestedSourceUrl: getPathSlugForMatching(page.url) || page.url,
       sourcePageObj: page,
+      targetPageObj: targetPage,
       suggestedSentence: null,
+      targetTitle: targetPage.title || targetPage.proposedTitle || 'Target Page',
       targetUrl: getPathSlugForMatching(targetUrl) || targetUrl,
       reason: 'Opportunity: Contextual relevance between pages'
     }
@@ -257,9 +364,23 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
 }
 
 /**
- * Analyze a source page's actual body content and generate an independent contextual link replacement
+ * Analyze source page and target page context to generate an editorial, grammatically sound sentence
  */
-export function generateContextualReplacement(sourcePage, anchorText) {
+export function generateContextualReplacement(sourceInput, anchorTextInput, targetInput) {
+  let sourcePage = null
+  let targetPage = null
+  let anchorText = ''
+
+  if (sourceInput && typeof sourceInput === 'object' && !sourceInput.url && sourceInput.sourcePage) {
+    sourcePage = sourceInput.sourcePage
+    targetPage = sourceInput.targetPage
+    anchorText = sourceInput.anchorText || ''
+  } else {
+    sourcePage = sourceInput
+    anchorText = anchorTextInput || ''
+    targetPage = targetInput || null
+  }
+
   if (!sourcePage) {
     return { error: 'No suitable contextual placement found on this page' }
   }
@@ -274,23 +395,18 @@ export function generateContextualReplacement(sourcePage, anchorText) {
     typeof sourcePage.html === 'string' && sourcePage.html.trim() ? sourcePage.html.trim() : ''
   )
 
-  if (!rawContent) {
-    return { error: 'No suitable contextual placement found on this page' }
-  }
+  const cleanAnchor = (anchorText || '').trim()
 
-  // 1. Strip structural chrome, navigation, header, footer, CTA, phone, forms and template wrappers
+  // 1. Extract real body sentences from source page for candidate contextual placement
   const bodyCleaned = cleanEditorialHtml(rawContent)
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
 
-  // 2. Extract block elements & sentence strings
   const blocks = bodyCleaned
     .replace(/<(p|div|section|article|li|h[1-6])[^>]*>/gi, '\n')
     .replace(/<[^>]+>/g, ' ')
     .split(/[\r\n]+/)
-
-  const pageTitleClean = (sourcePage.pageTitle || sourcePage.title || '').replace(/[^a-zA-Z0-9\s]/g, '').trim().toLowerCase()
 
   const sentences = []
   blocks.forEach(block => {
@@ -299,85 +415,68 @@ export function generateContextualReplacement(sourcePage, anchorText) {
     const parts = cleanBlock.split(/(?<=[.!?])\s+/)
     parts.forEach(p => {
       const s = p.trim()
-      const sClean = s.replace(/[^a-zA-Z0-9\s]/g, '').trim().toLowerCase()
-      // Skip exact title matching and short headers
-      if (s.length >= 30 && s.length <= 320 && sClean !== pageTitleClean) {
+      if (s.length >= 35 && s.length <= 300 && !/all rights reserved|copyright|tel:|mailto:/i.test(s)) {
         sentences.push(s)
       }
     })
   })
 
-  // 3. Filter out actual phone numbers, repeated boilerplate CTA headers, copyright text
-  const phoneBoilerplateRegex = /(\d{4,5}\s*\d{5,6}|\b(07\d{3}|01\d{3}|all rights reserved|copyright|call us any time|construction work you can count on)\b)/i
+  // 2. Determine source page topic and audience
+  const sTitle = (sourcePage?.title || sourcePage?.proposedTitle || sourcePage?.pageTitle || '').replace(/[-|:].*$/, '').trim()
+  const sSlug = getPathSlugForMatching(sourcePage?.url || '') || ''
+  const tTitle = (targetPage?.title || targetPage?.proposedTitle || targetPage?.pageTitle || '').replace(/[-|:].*$/, '').trim()
+  const tSlug = getPathSlugForMatching(targetPage?.url || '') || ''
 
-  let editorialSentences = sentences.filter(s => !phoneBoilerplateRegex.test(s))
-  if (editorialSentences.length === 0) editorialSentences = sentences
-  if (editorialSentences.length === 0) {
-    return { error: 'No suitable contextual placement found on this page' }
-  }
+  let sAudience = 'businesses and organisations'
+  if (/clinic/i.test(sTitle + sSlug)) sAudience = 'healthcare clinics and medical practices'
+  else if (/dentist/i.test(sTitle + sSlug)) sAudience = 'dental practices and specialists'
+  else if (/builder/i.test(sTitle + sSlug)) sAudience = 'builders and construction contractors'
+  else if (/law\s*firm|lawyer|solicitor/i.test(sTitle + sSlug)) sAudience = 'law firms and legal practices'
+  else if (/shopify|ecommerce/i.test(sTitle + sSlug)) sAudience = 'ecommerce brands and online retailers'
+  else if (/audit/i.test(sTitle + sSlug)) sAudience = 'companies auditing their search performance'
+  else if (/pricing|cost/i.test(sTitle + sSlug)) sAudience = 'businesses evaluating their marketing budget'
+  else if (/local\s*seo/i.test(sTitle + sSlug)) sAudience = 'companies targeting local search visibility'
 
-  // 4. Rank sentences by semantic topical relevance
-  const cleanAnchor = (anchorText || '').trim()
-  const anchorWords = cleanAnchor.toLowerCase().split(/\s+/).filter(w => w.length > 2)
-  const topicKeywords = ['loft', 'conversion', 'conversions', 'extension', 'space', 'home', 'room', 'roof', 'renovation', 'building', 'builder', 'surrey', 'london', 'design', 'planning', 'bedroom', 'dormer', 'attic', ...anchorWords]
+  // 3. Extract target location / core focus
+  const locMatch = (tSlug + ' ' + tTitle + ' ' + cleanAnchor).match(/\b(Bournemouth|Oxford|London|Exeter|Reading|Surrey|Banstead|Manchester|Birmingham|Leeds|Bristol|Southampton|Dorset)\b/i)
+  const location = locMatch ? (locMatch[1].charAt(0).toUpperCase() + locMatch[1].slice(1).toLowerCase()) : ''
 
-  let bestSentence = editorialSentences[0]
-  let maxScore = -1
-
-  editorialSentences.forEach(s => {
-    const lower = s.toLowerCase()
-    let score = 0
-    topicKeywords.forEach(kw => {
-      if (lower.includes(kw)) score += kw.length
-    })
-    if (score > maxScore) {
-      maxScore = score
-      bestSentence = s
-    }
-  })
-
-  const chosenSentence = bestSentence || editorialSentences[0]
-
-  // 5. Create fluent, natural replacement sentence incorporating anchorText
-  const lowerSentence = chosenSentence.toLowerCase()
-  const lowerAnchor = cleanAnchor.toLowerCase()
+  // 4. Synthesize natural, fluent editorial sentence
   let replacement = ''
   let recommendationType = 'Add New Sentence'
 
-  if (lowerSentence.includes(lowerAnchor)) {
-    replacement = chosenSentence
+  // Check if any existing sentence in source page already contains the clean anchor
+  const matchingSentence = sentences.find(s => s.toLowerCase().includes(cleanAnchor.toLowerCase()))
+  if (matchingSentence) {
+    replacement = matchingSentence
     recommendationType = 'Modify Existing Text'
-  } else {
-    const baseText = chosenSentence.replace(/[.!?]+$/, '').trim()
-    const pageTitle = (sourcePage?.title || sourcePage?.proposedTitle || '').trim()
-    const locationMatch = (baseText + ' ' + pageTitle).match(/\b(Banstead|Surrey|London|Walton|Hampton|Leatherhead|Kingston|New Malden|Epsom|Sutton)\b/i)
-    const locationStr = locationMatch ? ` in ${locationMatch[1]}` : ''
-
-    const isGerund = /^(adding|building|creating|planning|designing|converting|expanding|choosing|transforming)\b/i.test(cleanAnchor)
-    const isPlural = /\b(conversions|extensions|services|solutions|rooms|spaces)\b/i.test(cleanAnchor)
-    const startsWithVowel = /^[aeiou]/i.test(cleanAnchor)
-
-    let articlePrefix = ''
-    if (!isGerund && !isPlural && !/\b(services|solutions|work)\b/i.test(cleanAnchor)) {
-      articlePrefix = startsWithVowel ? 'an ' : 'a '
-    }
-
-    if (/\b(loft conversions|loft conversion)\b/i.test(baseText) && !/\b(adding|building|creating|planning)\b/i.test(cleanAnchor)) {
-      replacement = baseText.replace(/\b(loft conversions|loft conversion)\b/i, cleanAnchor) + '.'
-      recommendationType = 'Modify Existing Text'
-    } else if (isGerund) {
-      replacement = `If you are considering ${cleanAnchor}${locationStr}, our experienced team can help create the perfect space for your home.`
-    } else if (cleanAnchor.toLowerCase().startsWith('expert') || cleanAnchor.toLowerCase().startsWith('professional') || cleanAnchor.toLowerCase().startsWith('specialized')) {
-      replacement = `For ${cleanAnchor}${locationStr}, our experienced team provides high-quality construction and design services.`
-    } else if (isPlural) {
-      replacement = `For homeowners seeking high-quality ${cleanAnchor}${locationStr}, our experienced team provides full design and build solutions.`
+  } else if (location) {
+    // Target is a location SEO page
+    if (/specialists|team|experts|consultant/i.test(cleanAnchor)) {
+      replacement = `For ${sAudience} seeking to expand their regional reach, partnering with ${cleanAnchor} ensures prominent placement across competitive local search queries.`
+    } else if (/^SEO\s+[A-Z]/i.test(cleanAnchor)) {
+      replacement = `For ${sAudience} expanding their customer or patient base in Dorset and the South Coast, investing in dedicated ${cleanAnchor} significantly enhances regional search visibility.`
+    } else if (/services|support|campaigns|strategy/i.test(cleanAnchor)) {
+      replacement = `For ${sAudience} looking to capture high-intent search traffic, tailored ${cleanAnchor} provides the authority and rankings needed to outpace local competitors.`
+    } else if (/optimisation|optimization/i.test(cleanAnchor)) {
+      replacement = `For ${sAudience} operating across the region, comprehensive ${cleanAnchor} drives consistent inbound inquiries from nearby searchers.`
     } else {
-      replacement = `If you are considering ${articlePrefix}${cleanAnchor}${locationStr}, our experienced team can help create the perfect space for your home.`
+      replacement = `For ${sAudience} aiming to strengthen their presence in the area, our ${cleanAnchor} provides the targeted visibility needed to attract qualified clients.`
     }
+  } else if (/google\s*business|gbp|maps/i.test(tSlug + tTitle + cleanAnchor)) {
+    replacement = `To complement overall organic growth, implementing a dedicated ${cleanAnchor} ensures maximum prominence in local map packs and high-converting search features.`
+  } else if (/technical/i.test(tSlug + tTitle + cleanAnchor)) {
+    replacement = `Alongside content and on-page improvements, maintaining robust ${cleanAnchor} ensures search engines can crawl, index, and rank key service pages without friction.`
+  } else if (/pricing|cost/i.test(tSlug + tTitle + cleanAnchor)) {
+    replacement = `Before launching a campaign, reviewing our ${cleanAnchor} helps clarify the expected investment and strategic deliverables needed for long-term organic ROI.`
+  } else if (/audit/i.test(tSlug + tTitle + cleanAnchor)) {
+    replacement = `To identify technical roadblocks and untapped ranking opportunities, conducting a thorough ${cleanAnchor} is the crucial first step in any organic strategy.`
+  } else {
+    replacement = `For ${sAudience} focused on scalable organic growth, integrating ${cleanAnchor} into your wider digital marketing strategy delivers sustainable search visibility.`
   }
 
   return {
-    currentSourceText: chosenSentence,
+    currentSourceText: sentences[0] || '',
     suggestedReplacement: replacement,
     recommendedAnchor: cleanAnchor,
     recommendationType

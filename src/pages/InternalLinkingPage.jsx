@@ -392,10 +392,11 @@ export default function InternalLinkingPage({
     }
   }
 
-  const handleGenerateSentence = (recId, anchorText, sourcePageInput) => {
+  const handleGenerateSentence = (recId, anchorText, sourcePageInput, targetPageInput) => {
     setGeneratingIds(prev => ({ ...prev, [recId]: true }))
     setTimeout(() => {
       let sourcePage = typeof sourcePageInput === 'object' && sourcePageInput !== null ? sourcePageInput : null
+      let targetPage = typeof targetPageInput === 'object' && targetPageInput !== null ? targetPageInput : null
 
       if (!sourcePage && typeof sourcePageInput === 'string') {
         const normInput = normalizeUrlForMatching(sourcePageInput)
@@ -408,7 +409,18 @@ export default function InternalLinkingPage({
         })
       }
 
-      const result = generateContextualReplacement(sourcePage, anchorText)
+      if (!targetPage && typeof targetPageInput === 'string') {
+        const normTarget = normalizeUrlForMatching(targetPageInput)
+        const slugTarget = getPathSlugForMatching(targetPageInput)
+        targetPage = activePages.find(p => {
+          if (!p) return false
+          const pNorm = normalizeUrlForMatching(p.url)
+          const pSlug = getPathSlugForMatching(p.url)
+          return (pNorm && pNorm === normTarget) || (pSlug && pSlug === slugTarget) || p.title === targetPageInput || p.url === targetPageInput
+        })
+      }
+
+      const result = generateContextualReplacement(sourcePage, anchorText, targetPage)
       setAiSentences(prev => ({
         ...prev,
         [recId]: result
@@ -572,7 +584,12 @@ export default function InternalLinkingPage({
       <button
         type="button"
         className="il-btn-generate"
-        onClick={() => handleGenerateSentence(recKey, rec.anchorText || rec.targetTitle, rec.sourcePageObj || rec.sourceUrl || rec.suggestedSourceUrl)}
+        onClick={() => handleGenerateSentence(
+          recKey,
+          rec.anchorText || rec.targetTitle,
+          rec.sourcePageObj || rec.sourceUrl || rec.suggestedSourceUrl,
+          rec.targetPageObj || rec.targetUrl
+        )}
         disabled={generatingIds[recKey]}
       >
         {generatingIds[recKey] ? 'Generating...' : '✨ Generate'}
@@ -924,7 +941,8 @@ export default function InternalLinkingPage({
                             ...rec,
                             sourceUrl: rec.suggestedSourceUrl,
                             targetUrl: page.url,
-                            sourcePageObj: rec.sourcePageObj
+                            sourcePageObj: rec.sourcePageObj,
+                            targetPageObj: rec.targetPageObj || page
                           })}
                         </td>
                       </tr>
