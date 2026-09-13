@@ -14,9 +14,7 @@ export default function GlobalDeploymentIndicator() {
         if (deploymentStatus.isDeploymentInProgress) {
           setDeployState('updating')
         } else if (
-          (deploymentStatus.buildHash && deploymentStatus.buildHash !== CURRENT_BUILD_HASH) ||
-          (deploymentStatus.buildTimestamp && Number(deploymentStatus.buildTimestamp) > CURRENT_BUILD_TIMESTAMP) ||
-          (deploymentStatus.version && deploymentStatus.version !== CURRENT_BUILD_VERSION)
+          (deploymentStatus.buildTimestamp && Number(deploymentStatus.buildTimestamp) > CURRENT_BUILD_TIMESTAMP)
         ) {
           setDeployState('update_ready')
         } else {
@@ -29,10 +27,24 @@ export default function GlobalDeploymentIndicator() {
   useEffect(() => {
     let isMounted = true
 
+    function isServerNewer(sVer, sTimestamp) {
+      if (sTimestamp && Number(sTimestamp) > CURRENT_BUILD_TIMESTAMP) return true
+      if (sVer && sVer !== CURRENT_BUILD_VERSION) {
+        const sParts = String(sVer).split('.').map(n => parseInt(n, 10) || 0)
+        const cParts = String(CURRENT_BUILD_VERSION).split('.').map(n => parseInt(n, 10) || 0)
+        for (let i = 0; i < Math.max(sParts.length, cParts.length); i++) {
+          const sNum = sParts[i] || 0
+          const cNum = cParts[i] || 0
+          if (sNum > cNum) return true
+          if (sNum < cNum) return false
+        }
+      }
+      return false
+    }
+
     async function checkDeploymentStatus() {
       try {
         let isUpdating = false
-        let serverHash = CURRENT_BUILD_HASH
         let serverVer = CURRENT_BUILD_VERSION
         let serverTimestamp = CURRENT_BUILD_TIMESTAMP
 
@@ -47,7 +59,6 @@ export default function GlobalDeploymentIndicator() {
               isUpdating = true
             }
             if (apiData.version) serverVer = apiData.version
-            if (apiData.buildHash) serverHash = apiData.buildHash
             if (apiData.buildTimestamp) serverTimestamp = Number(apiData.buildTimestamp)
           }
         } catch (_e) {}
@@ -64,7 +75,6 @@ export default function GlobalDeploymentIndicator() {
               isUpdating = true
             }
             if (staticData.version) serverVer = staticData.version
-            if (staticData.buildHash) serverHash = staticData.buildHash
             if (staticData.buildTimestamp) serverTimestamp = Number(staticData.buildTimestamp)
           }
         } catch (_e) {}
@@ -75,11 +85,7 @@ export default function GlobalDeploymentIndicator() {
 
         if (isUpdating) {
           setDeployState('updating')
-        } else if (
-          (serverHash && serverHash !== CURRENT_BUILD_HASH) ||
-          (serverTimestamp && serverTimestamp > CURRENT_BUILD_TIMESTAMP) ||
-          (serverVer && serverVer !== CURRENT_BUILD_VERSION)
-        ) {
+        } else if (isServerNewer(serverVer, serverTimestamp)) {
           setDeployState('update_ready')
         } else {
           setDeployState('normal')
