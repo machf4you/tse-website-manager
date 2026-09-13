@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import './AppsDashboard.css'
+import TseWorkflowsSection from '../components/TseWorkflowsSection'
 
 /* ── SVG Icons ── */
 const GlobeIcon = ({ size = 22 }) => (
@@ -573,6 +574,11 @@ export default function AppsDashboard({ onOpenWebsiteManager, currentUser }) {
           ))}
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* SECTION 3: TSE WORKFLOWS OPERATIONAL GUIDE                     */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <TseWorkflowsSection onOpenWebsiteManager={onOpenWebsiteManager} />
     </div>
   )
 }

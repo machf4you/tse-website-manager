@@ -1,0 +1,396 @@
+/* ── TSE Workflows Section Styling ── */
+
+.tse-workflows-container {
+  margin-top: 4rem;
+  padding-top: 3.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+/* Header & Intro */
+.tse-workflows-header {
+  margin-bottom: 2.5rem;
+}
+
+.tse-workflows-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.tse-workflows-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.tse-workflows-subheading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #38bdf8;
+  margin: 0 0 0.85rem 0;
+}
+
+.tse-workflows-intro {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #94a3b8;
+  max-width: 860px;
+  margin: 0;
+}
+
+/* Part 1: Quick Workflow Summary */
+.tse-workflows-part {
+  margin-bottom: 3.5rem;
+}
+
+.tse-part-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tse-part-tag {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tse-part-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.tse-quick-summary-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tse-quick-card {
+  background: #0c101b;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.tse-quick-card:hover {
+  border-color: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.tse-quick-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--wf-accent, #38bdf8);
+  opacity: 0.85;
+}
+
+.tse-quick-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 0.85rem;
+}
+
+.tse-quick-num-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tse-quick-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.tse-quick-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+/* Stage sequence flow */
+.tse-stage-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0.85rem;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.tse-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tse-stage-pill.is-link {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.25);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tse-stage-pill.is-link:hover {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.tse-stage-pill.is-active-app {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+  cursor: pointer;
+}
+
+.tse-stage-pill.is-active-app:hover {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.tse-stage-arrow {
+  color: #64748b;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  user-select: none;
+  padding: 0 1px;
+}
+
+.tse-quick-purpose {
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.tse-quick-purpose strong {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* Part 2: Full Workflow Explanation */
+.tse-full-explanations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.tse-full-wf-card {
+  background: #0c101b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.75rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.tse-full-wf-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  background: var(--wf-accent, #38bdf8);
+}
+
+.tse-full-wf-header {
+  margin-bottom: 1.25rem;
+}
+
+.tse-full-wf-num-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wf-accent, #38bdf8);
+  margin-bottom: 0.4rem;
+}
+
+.tse-full-wf-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 0.5rem 0;
+}
+
+.tse-full-wf-lead {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  margin: 0 0 1.25rem 0;
+}
+
+/* Steps Grid / Breakdown */
+.tse-steps-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin: 1.5rem 0;
+}
+
+.tse-step-item {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 0.9rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: background 0.15s ease;
+}
+
+.tse-step-item:hover {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.tse-step-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tse-step-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #f1f5f9;
+}
+
+.tse-step-link-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tse-step-link-badge:hover {
+  background: rgba(56, 189, 248, 0.3);
+  color: #ffffff;
+}
+
+.tse-step-desc {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Purpose Callout Box */
+.tse-wf-purpose-box {
+  margin-top: 1.25rem;
+  background: linear-gradient(180deg, rgba(16, 185, 129, 0.06) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tse-wf-purpose-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  color: #34d399;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tse-wf-purpose-content {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #e2e8f0;
+}
+
+.tse-wf-purpose-content strong {
+  color: #34d399;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.78rem;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .tse-workflows-title {
+    font-size: 1.75rem;
+  }
+  .tse-full-wf-card {
+    padding: 1.25rem 1.25rem;
+  }
+  .tse-stage-flow {
+    padding: 6px 8px;
+  }
+}
