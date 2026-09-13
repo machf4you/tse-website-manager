@@ -100,7 +100,12 @@ export default function GlobalDeploymentIndicator() {
 
   const handleManualRefresh = () => {
     // Cache bust reload
-    window.location.href = window.location.pathname + '?_v=' + Date.now()
+    const url = new URL(window.location.href)
+    url.searchParams.set('_v', Date.now().toString())
+    window.location.href = url.toString()
+    setTimeout(() => {
+      window.location.reload()
+    }, 100)
   }
 
   if (deployState === 'updating') {

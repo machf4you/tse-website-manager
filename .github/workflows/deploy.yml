@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Website Manager API
+    name: Deploy Website Manager API and Frontend
     runs-on: self-hosted
 
     steps:
@@ -27,10 +27,31 @@ jobs:
             --exclude='.env' \
             ./ /var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current/
 
-      - name: Install Dependencies
+      - name: Install Dependencies and Build Frontend
         run: |
           cd /var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current
           npm install
+          npm run build
+
+      - name: Deploy Frontend Dist to Web Roots
+        run: |
+          cd /var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current
+          for target_dir in \
+            /var/www/www-root/data/www/tse-website-manager.thesearchequation.co.uk \
+            /var/www/tse-website-manager.thesearchequation.co.uk \
+            /opt/tse-apps/website-manager/dist \
+            /opt/tse-apps/website-manager \
+            /var/www/html; do
+            if [ -d "$target_dir" ]; then
+              echo "Deploying dist to $target_dir..."
+              cp -r dist/* "$target_dir/" 2>/dev/null || true
+            fi
+          done
+          NGINX_ROOT=$(grep -rh "root " /etc/nginx/ 2>/dev/null | grep "tse-website-manager" | head -n 1 | awk '{print $2}' | tr -d ';')
+          if [ -n "$NGINX_ROOT" ] && [ -d "$NGINX_ROOT" ]; then
+            echo "Deploying dist to NGINX root: $NGINX_ROOT..."
+            cp -r dist/* "$NGINX_ROOT/" 2>/dev/null || true
+          fi
 
       - name: Restart PM2 Service
         run: |
