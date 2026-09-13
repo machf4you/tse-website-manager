@@ -485,7 +485,14 @@ export async function updateWordPressSEOFields({ site, page, metaTitle, metaDesc
 /**
  * Pushes modified HTML content to a source page in WordPress REST API.
  */
-export async function updateWordPressPageContent({ site, sourcePage, contentHtml }) {
+export async function updateWordPressPageContent({
+  site,
+  sourcePage,
+  contentHtml,
+  targetUrl,
+  anchorText,
+  savedSentence
+}) {
   if (!site || !sourcePage) return { success: false, message: 'Site or Source Page object missing' }
   let base = (site?.url || sourcePage?.url || '').trim().replace(/\/+$/, '')
   if (!/^https?:\/\//i.test(base)) {
@@ -493,19 +500,6 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
   }
 
   const { username, password } = await resolveSiteCredentials(site, sourcePage)
-
-  console.log('[WP_CONTENT_PUSH_DIAGNOSTIC]', {
-    hasSite: Boolean(site),
-    siteId: site?.id,
-    siteName: site?.name,
-    hasWpUser: Boolean(site?.wpUser),
-    hasWpPass: Boolean(site?.wpPass),
-    hasConfigData: Boolean(site?.configData),
-    hasConfigWpUser: Boolean(site?.configData?.wpUser),
-    hasConfigWpPass: Boolean(site?.configData?.wpPass),
-    usernamePresent: Boolean(username),
-    passwordPresent: Boolean(password)
-  })
 
   if (!username || !password) {
     return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
@@ -522,7 +516,7 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
       const pathParts = sourcePage.url.replace(/\/+$/, '').split('/')
       const slug = pathParts[pathParts.length - 1]
       if (slug) {
-        const lookupRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}?slug=${encodeURIComponent(slug)}`, {
+        const lookupRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}?slug=${encodeURIComponent(slug)}&context=edit`, {
           headers: { Authorization: authHeader, Accept: 'application/json' }
         })
         if (lookupRes.ok) {
@@ -539,15 +533,107 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
     return { success: false, message: `Could not resolve numeric WordPress page ID for source page '${sourcePage.url}'.` }
   }
 
-  const payload = {
-    content: contentHtml
+  // 1. Fetch live page data from WP REST API to inspect Elementor tree & content
+  let livePageData = null
+  try {
+    const pageRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}/${numericId}?context=edit`, {
+      headers: { Authorization: authHeader, Accept: 'application/json' }
+    })
+    if (pageRes.ok) {
+      livePageData = await pageRes.json()
+    }
+  } catch (_fetchErr) {}
+
+  const elemRaw = livePageData?.meta?._elementor_data || livePageData?._elementor_data || null
+  let updatedElementorJson = null
+
+  // 2. If Elementor page, locate and update the widget inside the Elementor JSON tree
+  if (elemRaw && (targetUrl || savedSentence)) {
+    try {
+      const tree = typeof elemRaw === 'string' ? JSON.parse(elemRaw) : elemRaw
+      if (Array.isArray(tree)) {
+        const cleanAnchor = (anchorText || '').trim()
+        const cleanTarget = (targetUrl || '').trim()
+        let hyperlinkedSentence = savedSentence || ''
+        
+        if (cleanTarget && cleanAnchor && savedSentence) {
+          if (!savedSentence.toLowerCase().includes(`<a href="${cleanTarget.toLowerCase()}"`)) {
+            const lowerSentence = savedSentence.toLowerCase()
+            const lowerAnchor = cleanAnchor.toLowerCase()
+            const anchorIdx = lowerSentence.indexOf(lowerAnchor)
+            if (anchorIdx !== -1) {
+              const beforeAnchor = savedSentence.slice(0, anchorIdx)
+              const matchedAnchor = savedSentence.slice(anchorIdx, anchorIdx + cleanAnchor.length)
+              const afterAnchor = savedSentence.slice(anchorIdx + cleanAnchor.length)
+              hyperlinkedSentence = `${beforeAnchor}<a href="${cleanTarget}">${matchedAnchor}</a>${afterAnchor}`
+            } else {
+              hyperlinkedSentence = `${savedSentence} <a href="${cleanTarget}">${cleanAnchor}</a>`
+            }
+          }
+        }
+
+        let targetWidgetNode = null
+        let fallbackTextWidget = null
+
+        function findWidgetNode(nodes) {
+          if (!Array.isArray(nodes) || targetWidgetNode) return
+          for (const node of nodes) {
+            if (node.widgetType === 'text-editor' && node.settings && typeof node.settings.editor === 'string') {
+              const editorHtml = node.settings.editor
+              // Check if exact sentence or clean text exists in this widget
+              if (savedSentence && editorHtml.includes(savedSentence)) {
+                targetWidgetNode = node
+                return
+              }
+              // Check if widget mentions target niche/topic
+              if (/local\s*seo|location|bournemouth/i.test(editorHtml)) {
+                if (!targetWidgetNode) targetWidgetNode = node
+              }
+              if (!fallbackTextWidget) fallbackTextWidget = node
+            }
+            if (Array.isArray(node.elements)) findWidgetNode(node.elements)
+          }
+        }
+
+        findWidgetNode(tree)
+        const chosenNode = targetWidgetNode || fallbackTextWidget
+
+        if (chosenNode && chosenNode.settings) {
+          const currentEditor = chosenNode.settings.editor || ''
+          if (savedSentence && currentEditor.includes(savedSentence)) {
+            chosenNode.settings.editor = currentEditor.replace(savedSentence, hyperlinkedSentence)
+          } else if (!currentEditor.includes(cleanTarget)) {
+            chosenNode.settings.editor = `${currentEditor.trim()}\n<p>${hyperlinkedSentence}</p>`
+          }
+          updatedElementorJson = JSON.stringify(tree)
+        }
+      }
+    } catch (eErr) {
+      console.error('[WORDPRESS_API] Error parsing/updating Elementor tree:', eErr)
+    }
   }
 
-  const targetUrl = `${base}/wp-json/wp/v2/${endpoint}/${numericId}`
-  console.log('[WP_CONTENT_PUSH_TRACE] Target Endpoint:', targetUrl)
+  const payload = {
+    content: contentHtml,
+    ...(updatedElementorJson ? {
+      _elementor_data: updatedElementorJson,
+      elementor_data: updatedElementorJson,
+      meta_input: {
+        _elementor_data: updatedElementorJson,
+        elementor_data: updatedElementorJson
+      },
+      meta: {
+        _elementor_data: updatedElementorJson,
+        elementor_data: updatedElementorJson
+      }
+    } : {})
+  }
+
+  const targetUrlEndpoint = `${base}/wp-json/wp/v2/${endpoint}/${numericId}`
+  console.log('[WP_CONTENT_PUSH_TRACE] Target Endpoint:', targetUrlEndpoint)
 
   try {
-    const res = await fetch(targetUrl, {
+    const res = await fetch(targetUrlEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -574,7 +660,47 @@ export async function updateWordPressPageContent({ site, sourcePage, contentHtml
     }
 
     const postData = await res.json()
-    return { success: true, data: postData }
+
+    // 3. Purge Elementor CSS/render cache
+    try {
+      await fetch(`${base}/wp-json/elementor/v1/cache`, {
+        method: 'DELETE',
+        headers: { Authorization: authHeader }
+      })
+    } catch (_e) {}
+
+    // 4. Post-Update Verification Check on returned data
+    let verified = false
+    const updatedContentRaw = postData.content?.raw || postData.content?.rendered || ''
+    const updatedElemRaw = postData.meta?._elementor_data || postData._elementor_data || ''
+
+    if (targetUrl) {
+      const cleanSlug = targetUrl.replace(/^https?:\/\/[^\/]+/, '').replace(/\/+$/, '')
+      if (
+        updatedContentRaw.includes(targetUrl) ||
+        (cleanSlug && updatedContentRaw.includes(cleanSlug)) ||
+        updatedElemRaw.includes(targetUrl) ||
+        (cleanSlug && updatedElemRaw.includes(cleanSlug))
+      ) {
+        verified = true
+      }
+    } else {
+      verified = true
+    }
+
+    if (!verified) {
+      return {
+        success: false,
+        verified: false,
+        message: 'WordPress REST API accepted the request, but post-update content verification failed: the target link was not found in stored page data.'
+      }
+    }
+
+    return {
+      success: true,
+      verified: true,
+      data: postData
+    }
   } catch (e) {
     return {
       success: false,

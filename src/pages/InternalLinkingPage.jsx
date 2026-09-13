@@ -320,19 +320,20 @@ export default function InternalLinkingPage({
     setModalError(null)
   }
 
-  const handleConfirmPushLink = async () => {
+  const handleConfirmPushLink = async (customSentence) => {
     if (!activeModalRec || isPushingLink) return
     setIsPushingLink(true)
     setModalError(null)
 
     const rec = activeModalRec
+    const sentenceToUse = (typeof customSentence === 'string' && customSentence.trim()) ? customSentence.trim() : (rec.savedSentence || '')
     const sourcePage = activeModalSourcePage || rec.sourcePageObj
 
     const buildRes = buildModifiedSourceContent(
       sourcePage,
       rec.targetUrl,
       rec.anchorText || rec.targetTitle,
-      rec.savedSentence
+      sentenceToUse
     )
 
     if (!buildRes.success) {
@@ -345,11 +346,14 @@ export default function InternalLinkingPage({
       const pushRes = await updateWordPressPageContent({
         site,
         sourcePage: sourcePage || { url: rec.sourceUrl || rec.suggestedSourceUrl },
-        contentHtml: buildRes.newContent
+        contentHtml: buildRes.newContent,
+        targetUrl: rec.targetUrl,
+        anchorText: rec.anchorText || rec.targetTitle,
+        savedSentence: sentenceToUse
       })
 
-      if (!pushRes || !pushRes.success) {
-        setModalError(pushRes?.message || 'WordPress content push failed.')
+      if (!pushRes || !pushRes.success || !pushRes.verified) {
+        setModalError(pushRes?.message || 'WordPress content push or verification failed.')
         setIsPushingLink(false)
         return
       }
@@ -363,7 +367,7 @@ export default function InternalLinkingPage({
         sourceUrl: rec.sourceUrl || rec.suggestedSourceUrl,
         targetUrl: rec.targetUrl,
         anchorText: rec.anchorText || rec.targetTitle,
-        savedSentence: rec.savedSentence,
+        savedSentence: sentenceToUse,
         isSaved: true,
         isImplemented: true,
         status: 'IMPLEMENTED',
