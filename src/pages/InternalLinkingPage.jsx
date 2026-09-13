@@ -3,20 +3,22 @@ import { extractSafeString } from '../utils/safeString'
 import { getPathSlugForMatching, normalizeUrlForMatching } from '../utils/urlUtils'
 import {
   getExistingInternalLinks,
+  getOutgoingInternalLinks,
   getRecommendedInternalLinks,
   generateContextualReplacement,
-  generateSimpleInternalLinkRecommendations,
   buildModifiedSourceContent
 } from '../utils/internalLinkingHelper'
 import {
   getInternalLinkRecommendationsApi,
-  saveInternalLinkRecommendationsApi
+  saveInternalLinkRecommendationsApi,
+  getPageRankingsApi,
+  getPageConfigsApi
 } from '../services/websiteManagerApi'
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import { updateWordPressPageContent } from '../services/wordpressApi'
+import { formatReadableDateTime } from '../utils/dateFormatter'
 import W5LinkImplementationModal from '../components/W5LinkImplementationModal'
 import './InternalLinkingPage.css'
-
 
 export function renderHighlightedText(text, anchorText) {
   if (!text) return ''
@@ -43,13 +45,30 @@ export function renderHighlightedText(text, anchorText) {
   )
 }
 
-export default function InternalLinkingPage({ site, pagesList, isLoadingPackage, initialSelectedUrl, onNavigateTab, onNavigateBack }) {
+function getDisplayPath(url) {
+  if (!url) return ''
+  try {
+    const parsed = new URL(url)
+    return parsed.pathname || '/'
+  } catch (_e) {
+    return url
+  }
+}
+
+export default function InternalLinkingPage({
+  site,
+  pagesList,
+  isLoadingPackage,
+  initialSelectedUrl,
+  onNavigateTab,
+  onNavigateBack
+}) {
   const [expandedUrl, setExpandedUrl] = useState(() => {
-    if (initialSelectedUrl) {
-      return initialSelectedUrl
-    }
-    return pagesList?.[0]?.url || ''
+    return initialSelectedUrl || null
   })
+  const [showAllPages, setShowAllPages] = useState(false)
+  const [pageRankings, setPageRankings] = useState({})
+  const [pageConfigs, setPageConfigs] = useState({})
 
   const storageKey = site?.id ? `tse_w5_recommendations_${site.id}` : 'tse_w5_recommendations_default'
 
@@ -70,6 +89,164 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
   const [activeModalSourcePage, setActiveModalSourcePage] = useState(null)
   const [isPushingLink, setIsPushingLink] = useState(false)
   const [modalError, setModalError] = useState(null)
+
+  const [aiSentences, setAiSentences] = useState({})
+  const [generatingIds, setGeneratingIds] = useState({})
+
+  // Hydrate rankings and configs from backend API
+  useEffect(() => {
+    if (!site?.id) return
+    let isMounted = true
+
+    getPageRankingsApi(site.id).then(rankings => {
+      if (isMounted && rankings && typeof rankings === 'object') {
+        setPageRankings(rankings)
+      }
+    }).catch(() => {})
+
+    getPageConfigsApi(site.id).then(configs => {
+      if (isMounted && configs && typeof configs === 'object') {
+        setPageConfigs(configs)
+      }
+    }).catch(() => {})
+
+    return () => { isMounted = false }
+  }, [site?.id])
+
+  // Hydrate saved recommendations from backend API if available
+  useEffect(() => {
+    if (!site?.id) return
+    let isMounted = true
+    getInternalLinkRecommendationsApi(site.id).then(res => {
+      if (isMounted && res && typeof res === 'object') {
+        setSavedRecs(prev => ({ ...prev, ...res }))
+      }
+    }).catch(() => {})
+    return () => { isMounted = false }
+  }, [site?.id])
+
+  // Real-time multi-user synchronization hook
+  useWebsiteManagerRealtime({
+    onLinkRecChanged: ({ siteId, recommendationsMap }) => {
+      if (site?.id && String(site.id) === String(siteId) && recommendationsMap) {
+        setSavedRecs(prev => ({ ...prev, ...recommendationsMap }))
+      }
+    },
+    onPageConfigChanged: ({ siteId, configsMap }) => {
+      if (site?.id && String(site.id) === String(siteId) && configsMap) {
+        setPageConfigs(prev => ({ ...prev, ...configsMap }))
+      }
+    },
+    onReconnect: () => {
+      if (site?.id) {
+        getInternalLinkRecommendationsApi(site.id).then(res => {
+          if (res && typeof res === 'object') {
+            setSavedRecs(prev => ({ ...prev, ...res }))
+          }
+        }).catch(() => {})
+        getPageConfigsApi(site.id).then(configs => {
+          if (configs && typeof configs === 'object') {
+            setPageConfigs(configs)
+          }
+        }).catch(() => {})
+        getPageRankingsApi(site.id).then(rankings => {
+          if (rankings && typeof rankings === 'object') {
+            setPageRankings(rankings)
+          }
+        }).catch(() => {})
+      }
+    }
+  })
+
+  const websiteTitle = site?.name || 'The Search Equation'
+  const websiteUrl = site?.url || 'https://www.thesearchequation.com'
+
+  // Filter active non-excluded pages strictly by W3 Type configuration
+  const activePages = useMemo(() => {
+    if (!Array.isArray(pagesList)) return []
+    return pagesList.filter(p => {
+      const pageKey = p.id || p.url
+      const config = pageConfigs[pageKey] || (p.url ? pageConfigs[p.url] : null) || (p.id ? pageConfigs[String(p.id)] : null)
+      const typeStr = (config?.type || p.type || p.seoPageType || '').trim().toLowerCase()
+      const isExcluded = config?.isExcluded !== undefined ? config.isExcluded : (p.isExcluded || typeStr === 'excluded' || typeStr === 'unclassified / excluded')
+      return !isExcluded
+    })
+  }, [pagesList, pageConfigs])
+
+  const pagesWithData = useMemo(() => {
+    if (!Array.isArray(activePages)) return []
+    return activePages.map(page => {
+      const pageKey = page.id || page.url
+      const config = pageConfigs[pageKey] || (page.url ? pageConfigs[page.url] : null) || (page.id ? pageConfigs[String(page.id)] : null)
+      const isStarred = Boolean(config?.isStarred !== undefined ? config.isStarred : page.isStarred)
+      const targetPhrase = config?.targetPhrase || config?.target || page.targetPhrase || page.target || ''
+
+      const existing = getExistingInternalLinks(page.url, activePages)
+      const outgoing = getOutgoingInternalLinks(page, activePages)
+      const recommended = getRecommendedInternalLinks(page.url, targetPhrase, activePages, existing)
+
+      // Calculate Unique Body-Content Source Pages (LINKS IN)
+      const uniqueSourceUrls = new Set(
+        existing
+          .map(link => normalizeUrlForMatching(link.sourceUrl) || getPathSlugForMatching(link.sourceUrl) || link.sourceUrl)
+          .filter(Boolean)
+      )
+      const incomingCount = uniqueSourceUrls.size
+
+      // Calculate Unique Body-Content Destination Pages (LINKS OUT) - excluding self-links
+      const pageNorm = normalizeUrlForMatching(page.url)
+      const pageSlug = getPathSlugForMatching(page.url)
+      const uniqueDestUrls = new Set(
+        outgoing
+          .map(link => normalizeUrlForMatching(link.destinationUrl) || getPathSlugForMatching(link.destinationUrl) || link.destinationUrl)
+          .filter(dest => Boolean(dest) && dest !== pageNorm && dest !== pageSlug && dest !== page.url)
+      )
+      const outgoingCount = uniqueDestUrls.size
+
+      const needsLinks = incomingCount < 3
+
+      return {
+        ...page,
+        isStarred,
+        targetPhrase,
+        target: targetPhrase,
+        slug: getPathSlugForMatching(page.url) || page.url || '/',
+        existing,
+        outgoing,
+        recommended,
+        incomingCount,
+        outgoingCount,
+        needsLinks
+      }
+    })
+  }, [activePages, pageConfigs])
+
+  const priorityPages = useMemo(() => {
+    return pagesWithData.filter(p => p.isStarred)
+  }, [pagesWithData])
+
+  const otherPages = useMemo(() => {
+    return pagesWithData.filter(p => !p.isStarred)
+  }, [pagesWithData])
+
+  const totalContextualLinks = useMemo(() => {
+    return priorityPages.reduce((acc, p) => acc + (p.incomingCount || 0), 0)
+  }, [priorityPages])
+
+  const getRankInfo = (page) => {
+    const pageKey = page.id || page.url
+    return (
+      pageRankings[pageKey] ||
+      (page.url ? pageRankings[page.url] : null) ||
+      (page.slug ? pageRankings[page.slug] : null) ||
+      (page.id ? pageRankings[String(page.id)] : null) ||
+      null
+    )
+  }
+
+  const toggleExpand = (url) => {
+    setExpandedUrl(prev => (prev === url ? null : url))
+  }
 
   const handleOpenImplementModal = (rec) => {
     const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
@@ -164,139 +341,6 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
       setModalError(err.message || 'Push to WordPress failed due to a network error.')
       setIsPushingLink(false)
     }
-  }
-
-  // Real-time multi-user synchronization hook
-  useWebsiteManagerRealtime({
-    onLinkRecChanged: ({ siteId, recommendationsMap }) => {
-      if (site?.id && String(site.id) === String(siteId) && recommendationsMap) {
-        setSavedRecs(prev => ({ ...prev, ...recommendationsMap }))
-      }
-    },
-    onReconnect: () => {
-      if (site?.id) {
-        getInternalLinkRecommendationsApi(site.id).then(res => {
-          if (res && typeof res === 'object') {
-            setSavedRecs(prev => ({ ...prev, ...res }))
-          }
-        }).catch(() => {})
-      }
-    }
-  })
-
-  // Hydrate saved recommendations from backend API if available
-  useEffect(() => {
-    if (!site?.id) return
-    let isMounted = true
-    getInternalLinkRecommendationsApi(site.id).then(res => {
-      if (isMounted && res && typeof res === 'object') {
-        setSavedRecs(prev => ({ ...prev, ...res }))
-      }
-    }).catch(() => {})
-    return () => { isMounted = false }
-  }, [site?.id])
-
-
-  const [aiSentences, setAiSentences] = useState({})
-  const [generatingIds, setGeneratingIds] = useState({})
-
-  const websiteTitle = site?.name || 'The Search Equation'
-  const websiteUrl = site?.url || 'https://www.thesearchequation.com'
-
-  // Filter active non-excluded pages strictly by W3 Type configuration
-  const activePages = useMemo(() => {
-    if (!Array.isArray(pagesList)) return []
-    return pagesList.filter(p => {
-      const typeStr = (p.type || p.seoPageType || '').trim().toLowerCase()
-      return !p.isExcluded && typeStr !== 'excluded' && typeStr !== 'unclassified / excluded'
-    })
-  }, [pagesList])
-
-  const pagesWithData = useMemo(() => {
-    if (!Array.isArray(activePages)) return []
-    return activePages.map(page => {
-      const existing = getExistingInternalLinks(page.url, activePages)
-      const targetPhrase = page.targetPhrase || page.target || ''
-      const recommended = getRecommendedInternalLinks(page.url, targetPhrase, activePages, existing)
-      const count = existing.length
-      const needsLinks = count < 3
-
-      return {
-        ...page,
-        slug: getPathSlugForMatching(page.url) || page.url || '/',
-        existing,
-        recommended,
-        incomingCount: count,
-        needsLinks
-      }
-    })
-  }, [activePages])
-
-  // Group active pages into Hub (green), Landing (blue), Topical (yellow), and Other (slate) sections
-  const sections = useMemo(() => {
-    const hubPages = pagesWithData.filter(p => {
-      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
-      return t === 'hub' || t === 'hub page' || t === 'home' || t === 'home page' || p.slug === '/'
-    })
-    const hubSet = new Set(hubPages.map(p => p.url))
-
-    const landingPages = pagesWithData.filter(p => {
-      if (hubSet.has(p.url)) return false
-      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
-      return t === 'landing page' || t === 'landing'
-    })
-    const landingSet = new Set(landingPages.map(p => p.url))
-
-    const topicalPages = pagesWithData.filter(p => {
-      if (hubSet.has(p.url) || landingSet.has(p.url)) return false
-      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
-      return t === 'topical' || t === 'topical page'
-    })
-    const topicalSet = new Set(topicalPages.map(p => p.url))
-
-    const articlePages = pagesWithData.filter(p => {
-      if (hubSet.has(p.url) || landingSet.has(p.url) || topicalSet.has(p.url)) return false
-      const t = (p.type || p.seoPageType || '').trim().toLowerCase()
-      return t === 'article' || t === 'article page'
-    })
-    const articleSet = new Set(articlePages.map(p => p.url))
-
-    const otherPages = pagesWithData.filter(p => {
-      return !hubSet.has(p.url) && !landingSet.has(p.url) && !topicalSet.has(p.url) && !articleSet.has(p.url)
-    })
-
-    return [
-      { key: 'hub', title: 'HUB PAGE', colorClass: 'sec-theme-green', color: '#10b981', pages: hubPages },
-      { key: 'landing', title: 'LANDING PAGES', colorClass: 'sec-theme-blue', color: '#60a5fa', pages: landingPages },
-      { key: 'topical', title: 'TOPICAL PAGES', colorClass: 'sec-theme-yellow', color: '#f59e0b', pages: topicalPages },
-      { key: 'article', title: 'ARTICLES', colorClass: 'sec-theme-purple', color: '#c084fc', pages: articlePages },
-      { key: 'other', title: 'OTHER ACTIVE PAGES', colorClass: 'sec-theme-slate', color: '#94a3b8', pages: otherPages },
-    ]
-  }, [pagesWithData])
-
-  const typeCounts = useMemo(() => {
-    const counts = { total: 0, hub: 0, landing: 0, topical: 0, article: 0, excluded: 0 }
-    sections.forEach(sec => {
-      if (sec.key === 'hub') counts.hub = sec.pages.length
-      if (sec.key === 'landing') counts.landing = sec.pages.length
-      if (sec.key === 'topical') counts.topical = sec.pages.length
-      if (sec.key === 'article') counts.article = sec.pages.length
-    })
-
-    if (Array.isArray(pagesList)) {
-      counts.excluded = pagesList.filter(p => {
-        const t = (p.type || p.seoPageType || '').trim().toLowerCase()
-        return p.isExcluded || t === 'excluded' || t === 'unclassified / excluded'
-      }).length
-      counts.total = pagesList.length
-    } else {
-      counts.total = counts.hub + counts.landing + counts.topical + counts.article
-    }
-    return counts
-  }, [sections, pagesList])
-
-  const toggleExpand = (url) => {
-    setExpandedUrl(prev => (prev === url ? null : url))
   }
 
   const handleGenerateSentence = (recId, anchorText, sourcePageInput) => {
@@ -487,6 +531,290 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
     )
   }
 
+  const renderRankCell = (page) => {
+    const rankInfo = getRankInfo(page)
+    if (rankInfo?.isTop100 && rankInfo.googleRank) {
+      return (
+        <div className="w3-rank-badge-wrapper">
+          <span
+            className={`w3-rank-badge ${rankInfo.googleRank <= 10 ? 'rank-top-10' : 'rank-top-100'}`}
+            title={`Google UK Rank #${rankInfo.googleRank}${rankInfo.lastCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})` : ''}`}
+          >
+            #{rankInfo.googleRank}
+          </span>
+          {!rankInfo.isUrlMatch && rankInfo.rankingUrl && (
+            <span
+              className="w3-rank-mismatch-mark"
+              title={`Different ranking URL\nGoogle ranking URL: ${getDisplayPath(rankInfo.rankingUrl)}\nConfigured page: ${getDisplayPath(page.url)}`}
+            >
+              ?
+            </span>
+          )}
+        </div>
+      )
+    }
+    if (rankInfo?.lastCheckedAt && !rankInfo.isTop100) {
+      return (
+        <span
+          className="w3-rank-badge rank-not-top-100"
+          title={`Not in Top 100 on Google UK${rankInfo.lastCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})` : ''}`}
+        >
+          &gt;100
+        </span>
+      )
+    }
+    return (
+      <span className="w3-rank-badge rank-unchecked" title="Not checked yet">
+        —
+      </span>
+    )
+  }
+
+  const renderVolumeCell = (page) => {
+    const rankInfo = getRankInfo(page)
+    if (rankInfo?.searchVolume !== null && rankInfo?.searchVolume !== undefined) {
+      return (
+        <span
+          className="w3-volume-badge volume-value"
+          title={`UK Monthly Search Volume: ${Number(rankInfo.searchVolume).toLocaleString()}${rankInfo.volumeCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.volumeCheckedAt) || rankInfo.volumeCheckedAt})` : ''}`}
+        >
+          {Number(rankInfo.searchVolume).toLocaleString()}
+        </span>
+      )
+    }
+    return (
+      <span className="w3-volume-badge volume-unchecked" title="Search volume not checked yet">
+        —
+      </span>
+    )
+  }
+
+  const renderPageReviewDetail = (page) => {
+    return (
+      <div className="il-card-details">
+        {/* Stat Cards Row */}
+        <div className="il-stats-grid">
+          <div className="il-stat-box">
+            <span className="il-stat-icon">🔗</span>
+            <div>
+              <span className="il-stat-label">CURRENT LINKS</span>
+              <div className="il-stat-val">
+                {page.incomingCount} unique sources ({page.existing.length} body {page.existing.length === 1 ? 'link' : 'links'})
+              </div>
+            </div>
+          </div>
+
+          <div className="il-stat-box">
+            <span className="il-stat-icon">🎯</span>
+            <div>
+              <span className="il-stat-label">RECOMMENDATIONS</span>
+              <div className="il-stat-val">{page.recommended.length} suggested</div>
+            </div>
+          </div>
+
+          <div className="il-stat-box il-stat-box-status">
+            <span className="il-stat-icon">📈</span>
+            <div>
+              <span className="il-stat-label">STATUS</span>
+              <div className="il-stat-val-status">
+                {page.needsLinks ? 'Needs Links' : 'Optimal Link Density'}
+              </div>
+              <div className="il-stat-subtext">
+                {page.needsLinks
+                  ? `Add ${Math.max(0, 3 - page.incomingCount)} unique source page ${3 - page.incomingCount === 1 ? 'link' : 'links'}`
+                  : 'Target threshold met (≥3 unique source pages)'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Existing Links Section */}
+        <div className="il-section-block">
+          <h3 className="il-section-title">Existing Incoming Links ({page.existing.length})</h3>
+          {page.existing.length === 0 ? (
+            <div className="il-empty-msg">No contextual incoming links found for this page yet.</div>
+          ) : (
+            <div className="il-table-wrapper">
+              <table className="il-table">
+                <thead>
+                  <tr>
+                    <th>Source Page Title</th>
+                    <th>Source Page URL</th>
+                    <th>Link Context</th>
+                    <th>Destination URL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {page.existing.map(link => (
+                    <tr key={link.id}>
+                      <td className="font-bold">{link.sourceTitle}</td>
+                      <td className="col-url">{link.sourceUrl}</td>
+                      <td className="col-context">{renderHighlightedText(link.linkContext, link.anchorText)}</td>
+                      <td className="col-url">{link.destinationUrl}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Recommended Links Section */}
+        <div className="il-section-block">
+          <h3 className="il-section-title">Recommended Links</h3>
+          {page.recommended.length === 0 ? (
+            <div className="il-empty-msg">All available source pages are already linking to this page.</div>
+          ) : (
+            <div className="il-table-wrapper">
+              <table className="il-table">
+                <thead>
+                  <tr>
+                    <th>Anchor Text</th>
+                    <th>Suggested Source Page</th>
+                    <th>AI Suggested Sentence</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {page.recommended.map(rec => (
+                    <tr key={rec.id}>
+                      <td>
+                        <span className="il-anchor-text-edit">
+                          {rec.anchorText} <span className="il-edit-icon">✏️</span>
+                        </span>
+                      </td>
+                      <td>
+                        <div className="il-source-page-cell">
+                          <span className="il-doc-icon">📄</span>
+                          <div>
+                            <div className="il-source-title">{rec.suggestedSourceTitle}</div>
+                            <div className="il-source-url">{rec.suggestedSourceUrl}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="col-sentence" colSpan={2}>
+                        {renderSentenceCell({
+                          ...rec,
+                          sourceUrl: rec.suggestedSourceUrl,
+                          targetUrl: page.url,
+                          sourcePageObj: rec.sourcePageObj
+                        })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="il-warning-banner">
+            ⚠️ Only {page.recommended.length} unique source pages are currently available. Add more content or configure additional pages to increase internal linking opportunities.
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderPagesTable = (pages, isPriorityTable = false) => {
+    return (
+      <div className="il-table-container">
+        <table className="il-priority-table">
+          <thead>
+            <tr>
+              <th className="th-priority">PRIORITY</th>
+              <th className="th-page">PAGE</th>
+              <th className="th-target">TARGET</th>
+              <th className="th-rank">UK RANK</th>
+              <th className="th-volume">VOLUME</th>
+              <th className="th-links-in">LINKS IN</th>
+              <th className="th-links-out">LINKS OUT</th>
+              <th className="th-status">STATUS</th>
+              <th className="th-action">ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pages.map((page, idx) => {
+              const isExpanded = expandedUrl === page.url
+              const pageTitle = extractSafeString(page.title || page.proposedTitle || 'Untitled Page')
+              const targetPhrase = extractSafeString(page.targetPhrase || page.target || '—')
+
+              return (
+                <tr key={page.url || idx} className={`il-page-row ${isExpanded ? 'il-row-expanded' : ''}`}>
+                  <td className="col-priority-star">
+                    <span className={`il-star-icon ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}>
+                      {page.isStarred ? '⭐' : '☆'}
+                    </span>
+                  </td>
+                  <td className="col-page-info">
+                    <div className="il-page-title-wrap">
+                      <div className="il-page-main-title">{pageTitle}</div>
+                      <div className="il-page-slug-text">{page.slug}</div>
+                    </div>
+                  </td>
+                  <td className="col-target-text">
+                    {targetPhrase && targetPhrase !== '—' ? (
+                      <span className="il-target-phrase">{targetPhrase}</span>
+                    ) : (
+                      <span className="il-target-empty">—</span>
+                    )}
+                  </td>
+                  <td className="col-rank-val">
+                    {renderRankCell(page)}
+                  </td>
+                  <td className="col-volume-val">
+                    {renderVolumeCell(page)}
+                  </td>
+                  <td className="col-links-count">
+                    <span className={`il-count-badge ${page.incomingCount > 0 ? 'has-links' : 'zero-links'}`}>
+                      {page.incomingCount}
+                    </span>
+                  </td>
+                  <td className="col-links-count">
+                    <span className={`il-count-badge ${page.outgoingCount > 0 ? 'has-links' : 'zero-links'}`}>
+                      {page.outgoingCount}
+                    </span>
+                  </td>
+                  <td className="col-status-badge">
+                    {page.needsLinks ? (
+                      <span className="il-status-chip status-needs-links" title={`Needs internal links (current: ${page.incomingCount})`}>
+                        Needs Links
+                      </span>
+                    ) : (
+                      <span className="il-status-chip status-optimal" title="Optimal Link Density">
+                        Optimal
+                      </span>
+                    )}
+                  </td>
+                  <td className="col-action-btn">
+                    <button
+                      type="button"
+                      className={`il-btn-review ${isExpanded ? 'active' : ''}`}
+                      onClick={() => toggleExpand(page.url)}
+                    >
+                      {isExpanded ? 'Hide' : 'Review'}
+                    </button>
+                  </td>
+                </tr>
+              )
+            }).flatMap((row, idx) => {
+              const page = pages[idx]
+              const isExpanded = expandedUrl === page.url
+              if (!isExpanded) return [row]
+              return [
+                row,
+                <tr key={`${page.url || idx}-expansion`} className="il-review-expansion-row">
+                  <td colSpan={9}>
+                    {renderPageReviewDetail(page)}
+                  </td>
+                </tr>
+              ]
+            })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
   if (isLoadingPackage && (!Array.isArray(activePages) || activePages.length === 0)) {
     return (
       <div className="il-page-container">
@@ -555,236 +883,67 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
         </button>
       </div>
 
-      {/* Page Type Summary Bar */}
-      <div className="il-type-summary-bar">
-        <div className="il-summary-chip total">
-          <span className="il-summary-dot" />
-          <span className="il-summary-label">Total Pages:</span>
-          <span className="il-summary-count">{typeCounts.total}</span>
+      {/* Compact Top Summary Row */}
+      <div className="il-compact-summary-bar">
+        <div className="il-compact-stat">
+          <span className="il-compact-stat-label">PRIORITY PAGES:</span>
+          <span className="il-compact-stat-val text-amber">{priorityPages.length}</span>
         </div>
-        <div className="il-summary-chip hub">
-          <span className="il-summary-dot" />
-          <span className="il-summary-label">Hub Pages:</span>
-          <span className="il-summary-count">{typeCounts.hub}</span>
+        <div className="il-compact-stat-divider">|</div>
+        <div className="il-compact-stat">
+          <span className="il-compact-stat-label">NEEDS LINKS:</span>
+          <span className="il-compact-stat-val text-rose">{priorityPages.filter(p => p.needsLinks).length}</span>
         </div>
-        <div className="il-summary-chip landing">
-          <span className="il-summary-dot" />
-          <span className="il-summary-label">Landing Pages:</span>
-          <span className="il-summary-count">{typeCounts.landing}</span>
-        </div>
-        <div className="il-summary-chip topical">
-          <span className="il-summary-dot" />
-          <span className="il-summary-label">Topical Pages:</span>
-          <span className="il-summary-count">{typeCounts.topical}</span>
-        </div>
-        <div className="il-summary-chip article">
-          <span className="il-summary-dot" />
-          <span className="il-summary-label">Article Pages:</span>
-          <span className="il-summary-count">{typeCounts.article}</span>
-        </div>
-        <div className="il-summary-chip excluded">
-          <span className="il-summary-dot" />
-          <span className="il-summary-label">Excluded Pages:</span>
-          <span className="il-summary-count">{typeCounts.excluded}</span>
+        <div className="il-compact-stat-divider">|</div>
+        <div className="il-compact-stat">
+          <span className="il-compact-stat-label">TOTAL CONTEXTUAL LINKS:</span>
+          <span className="il-compact-stat-val text-emerald">{totalContextualLinks}</span>
         </div>
       </div>
 
-      {/* Grouped Page Sections */}
-      <div className="il-sections-container">
-        {sections.map(sec => {
-          if (sec.pages.length === 0) return null
+      {/* Primary ⭐ PRIORITY PAGES Section */}
+      <div className="il-priority-section">
+        <div className="il-priority-header">
+          <div className="il-priority-title-wrap">
+            <h2 className="il-priority-title">⭐ PRIORITY PAGES</h2>
+            <span className="il-priority-subtext">Pages selected in W3 for SEO priority</span>
+          </div>
+          <span className="il-priority-count-badge">
+            {priorityPages.length} {priorityPages.length === 1 ? 'Page' : 'Pages'}
+          </span>
+        </div>
 
-          return (
-            <div key={sec.key} className={`il-group-section ${sec.colorClass}`}>
-              <div className="il-section-header">
-                <h2 className="il-section-title-heading" style={{ color: sec.color }}>
-                  <span className="il-header-dot" style={{ backgroundColor: sec.color }} />
-                  {sec.title}
-                </h2>
-                <span
-                  className="il-section-count-chip"
-                  style={{
-                    color: sec.color,
-                    backgroundColor: `${sec.color}20`,
-                    borderColor: `${sec.color}50`
-                  }}
-                >
-                  {sec.pages.length} {sec.pages.length === 1 ? 'Page' : 'Pages'}
-                </span>
-              </div>
-
-              <div className="il-pages-list">
-                {sec.pages.map(page => {
-                  const isExpanded = expandedUrl === page.url
-                  const targetPhrase = extractSafeString(page.targetPhrase || page.target || 'Not set')
-                  const pageTitle = extractSafeString(page.title || page.proposedTitle || 'Untitled Page')
-
-          return (
-            <div key={page.url} className={`il-page-card ${isExpanded ? 'il-page-card-expanded' : ''}`}>
-              {/* Closed / Accordion Header */}
-              <div className="il-card-header" onClick={() => toggleExpand(page.url)}>
-                <div className="il-card-slug" style={{ color: sec.color }}>{page.slug}</div>
-                <div className="il-card-meta">
-                  <div className="il-meta-col">
-                    <span className="il-meta-label">PAGE TITLE</span>
-                    <span className="il-meta-val">{pageTitle}</span>
-                  </div>
-                  <div className="il-meta-col">
-                    <span className="il-meta-label">TYPE & PRIORITY</span>
-                    <span className="il-meta-val" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span className={`il-badge-type ${
-                        (page.seoPageType || page.type || '').toLowerCase().includes('hub') ? 'hub' :
-                        (page.seoPageType || page.type || '').toLowerCase().includes('landing') ? 'landing' :
-                        (page.seoPageType || page.type || '').toLowerCase().includes('topical') ? 'topical' :
-                        (page.seoPageType || page.type || '').toLowerCase().includes('article') ? 'article' :
-                        'default'
-                      }`}>{page.seoPageType || page.type || 'Landing Page'}</span>
-                      <span className="il-badge-priority">Prio {page.priority !== undefined ? page.priority : 0}</span>
-                    </span>
-                  </div>
-                  <div className="il-meta-col">
-                    <span className="il-meta-label">TARGET PHRASE</span>
-                    <span className="il-meta-val">{targetPhrase}</span>
-                  </div>
-                  <div className="il-meta-col">
-                    <span className="il-meta-label">INCOMING INTERNAL LINKS</span>
-                    <span className="il-meta-val il-links-val" style={{ color: sec.color }}>
-                      {page.incomingCount} links {isExpanded ? '▲ Hide Details' : '▼ View Details'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Expanded Detail View */}
-              {isExpanded && (
-                <div className="il-card-details">
-                  {/* Stat Cards Row */}
-                  <div className="il-stats-grid">
-                    <div className="il-stat-box">
-                      <span className="il-stat-icon">&#x1F517;</span>
-                      <div>
-                        <span className="il-stat-label">CURRENT LINKS</span>
-                        <div className="il-stat-val">{page.incomingCount} links found</div>
-                      </div>
-                    </div>
-
-                    <div className="il-stat-box">
-                      <span className="il-stat-icon">&#x1F3AF;</span>
-                      <div>
-                        <span className="il-stat-label">RECOMMENDATIONS</span>
-                        <div className="il-stat-val">{page.recommended.length} suggested</div>
-                      </div>
-                    </div>
-
-                    <div className="il-stat-box il-stat-box-status">
-                      <span className="il-stat-icon">&#x1F4C8;</span>
-                      <div>
-                        <span className="il-stat-label">STATUS</span>
-                        <div className="il-stat-val-status">
-                          {page.needsLinks ? 'Needs Links' : 'Optimal Link Density'}
-                        </div>
-                        <div className="il-stat-subtext">
-                          {page.needsLinks
-                            ? `Add ${Math.max(0, 3 - page.incomingCount)} contextual internal links`
-                            : 'Target threshold met'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Existing Links Section */}
-                  <div className="il-section-block">
-                    <h3 className="il-section-title">Existing Links ({page.existing.length})</h3>
-                    {page.existing.length === 0 ? (
-                      <div className="il-empty-msg">No contextual incoming links found for this page yet.</div>
-                    ) : (
-                      <div className="il-table-wrapper">
-                        <table className="il-table">
-                          <thead>
-                            <tr>
-                              <th>Source Page Title</th>
-                              <th>Source Page URL</th>
-                              <th>Link Context</th>
-                              <th>Destination URL</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {page.existing.map(link => (
-                              <tr key={link.id}>
-                                <td className="font-bold">{link.sourceTitle}</td>
-                                <td className="col-url">{link.sourceUrl}</td>
-                                <td className="col-context">{renderHighlightedText(link.linkContext, link.anchorText)}</td>
-                                <td className="col-url">{link.destinationUrl}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Recommended Links Section */}
-                  <div className="il-section-block">
-                    <h3 className="il-section-title">Recommended Links</h3>
-                    {page.recommended.length === 0 ? (
-                      <div className="il-empty-msg">All available source pages are already linking to this page.</div>
-                    ) : (
-                      <div className="il-table-wrapper">
-                        <table className="il-table">
-                          <thead>
-                            <tr>
-                              <th>Anchor Text</th>
-                              <th>Suggested Source Page</th>
-                              <th>AI Suggested Sentence</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {page.recommended.map(rec => (
-                              <tr key={rec.id}>
-                                <td>
-                                  <span className="il-anchor-text-edit">
-                                    {rec.anchorText} <span className="il-edit-icon">&#x270F;&#xFE0F;</span>
-                                  </span>
-                                </td>
-                                <td>
-                                  <div className="il-source-page-cell">
-                                    <span className="il-doc-icon">&#x1F4C4;</span>
-                                    <div>
-                                      <div className="il-source-title">{rec.suggestedSourceTitle}</div>
-                                      <div className="il-source-url">{rec.suggestedSourceUrl}</div>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="col-sentence" colSpan={2}>
-                                  {renderSentenceCell({
-                                    ...rec,
-                                    sourceUrl: rec.suggestedSourceUrl,
-                                    targetUrl: page.url,
-                                    sourcePageObj: rec.sourcePageObj
-                                  })}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-
-                    <div className="il-warning-banner">
-                      &#x26A0;&#xFE0F; Only {page.recommended.length} unique source pages are currently available. Add more content or configure additional pages to increase internal linking opportunities.
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
-              </div>
-            </div>
-          )
-        })}
+        {priorityPages.length > 0 ? (
+          renderPagesTable(priorityPages, true)
+        ) : (
+          <div className="il-priority-empty">
+            <p>No pages starred in W3 yet.</p>
+            <span className="il-priority-empty-sub">Star pages in W3 Page Management to prioritize them for internal link building.</span>
+          </div>
+        )}
       </div>
+
+      {/* Secondary Collapsible Other Pages Section */}
+      {otherPages.length > 0 && (
+        <div className="il-other-pages-section">
+          <button
+            type="button"
+            className="il-btn-toggle-all-pages"
+            onClick={() => setShowAllPages(prev => !prev)}
+          >
+            {showAllPages ? `▲ Hide Other Pages (${otherPages.length})` : `▼ Show All Pages (${otherPages.length})`}
+          </button>
+
+          {showAllPages && (
+            <div className="il-other-pages-content">
+              <div className="il-other-pages-subtext">
+                Non-priority pages ({otherPages.length}) — click Review to inspect links or generate recommendations
+              </div>
+              {renderPagesTable(otherPages, false)}
+            </div>
+          )}
+        </div>
+      )}
 
       <W5LinkImplementationModal
         isOpen={Boolean(activeModalRec)}
@@ -802,3 +961,4 @@ export default function InternalLinkingPage({ site, pagesList, isLoadingPackage,
     </div>
   )
 }
+

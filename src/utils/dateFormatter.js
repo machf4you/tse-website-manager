@@ -55,6 +55,63 @@ export function formatReadableDateTime(ts) {
   return trimmed
 }
 
+const MONTH_ABBR = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+]
+
+export function formatCompactAuditDate(ts) {
+  if (!ts) return 'Never'
+  if (ts === 'Never' || ts === '—' || ts === '-') return 'Never'
+  if (ts === 'Audited ✓') return 'Audited ✓'
+
+  let d = null
+
+  if (typeof ts === 'number') {
+    d = new Date(ts > 1e11 ? ts : ts * 1000)
+  } else if (ts instanceof Date) {
+    d = ts
+  } else if (typeof ts === 'string') {
+    const trimmed = ts.trim()
+    if (!trimmed || trimmed === 'Never') return 'Never'
+    
+    // Check DD-MM-YYYY or DD/MM/YYYY
+    const ddmmyyyyMatch = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/)
+    if (ddmmyyyyMatch) {
+      const [, day, month, year] = ddmmyyyyMatch
+      const mIdx = parseInt(month, 10) - 1
+      if (mIdx >= 0 && mIdx < 12) {
+        return `${parseInt(day, 10)} ${MONTH_ABBR[mIdx]} ${String(year).slice(-2)}`
+      }
+    }
+
+    // Check "D(D) Month YYYY"
+    const textDateMatch = trimmed.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/)
+    if (textDateMatch) {
+      const [, day, monthName, year] = textDateMatch
+      const mIdx = MONTH_NAMES.findIndex(m => m.toLowerCase().startsWith(monthName.toLowerCase().slice(0, 3)))
+      if (mIdx >= 0) {
+        return `${parseInt(day, 10)} ${MONTH_ABBR[mIdx]} ${String(year).slice(-2)}`
+      }
+    }
+
+    const ms = Date.parse(trimmed)
+    if (!isNaN(ms) && ms > 0) {
+      d = new Date(ms)
+    }
+  }
+
+  if (d && !isNaN(d.getTime())) {
+    const day = d.getDate()
+    const month = MONTH_ABBR[d.getMonth()]
+    const year = String(d.getFullYear()).slice(-2)
+    return `${day} ${month} ${year}`
+  }
+
+  return 'Never'
+}
+
 export function getCurrentFormattedDateTime() {
   return formatReadableDateTime(new Date())
 }
+

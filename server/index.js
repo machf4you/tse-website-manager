@@ -1365,6 +1365,17 @@ app.post('/api/websites/:id/page-configs', (req, res) => {
           config_json: JSON.stringify(conf),
           updated_at: now
         })
+
+        // If page already has a stored ranking URL, re-evaluate is_url_match without DataForSEO call
+        const rankRow = db.prepare(`SELECT ranking_url FROM page_rankings WHERE site_id = ? AND page_key = ?`).get(id, pageKey)
+        if (rankRow && rankRow.ranking_url) {
+          const siteRow = getWebsiteByIdFromDb(id)
+          const siteUrl = siteRow?.url || ''
+          const normRanking = normalizeUrlForMatching(rankRow.ranking_url, siteUrl)
+          const normConfigured = normalizeUrlForMatching(conf.url || pageKey, siteUrl)
+          const isMatch = (normRanking && normConfigured && normRanking === normConfigured) ? 1 : 0
+          db.prepare(`UPDATE page_rankings SET is_url_match = ?, updated_at = ? WHERE site_id = ? AND page_key = ?`).run(isMatch, now, id, pageKey)
+        }
       }
     })
 
@@ -1771,6 +1782,9 @@ function getDataForSeoCredentials() {
   const envPaths = [
     path.join(process.cwd(), '.env'),
     path.join(process.cwd(), 'server', '.env'),
+    '/opt/tse-apps/keyword-research/server/.env',
+    '/opt/tse-apps/website-manager/server/.env',
+    '/opt/tse-apps/website-manager/.env',
     path.join('c:', 'Antigravity', 'tse-keyword-research', 'server', '.env'),
     path.join('c:', 'Antigravity', 'tse-lead-finder', 'server', '.env'),
     '/var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current/.env',
@@ -1855,6 +1869,8 @@ app.get('/api/websites/:id/rankings', (req, res) => {
         isTop100: Boolean(r.is_top_100),
         rankingUrl: r.ranking_url,
         isUrlMatch: Boolean(r.is_url_match),
+        searchVolume: r.search_volume !== null && r.search_volume !== undefined ? Number(r.search_volume) : null,
+        volumeCheckedAt: r.volume_checked_at,
         searchEngine: r.search_engine || 'google.co.uk',
         locationCode: r.location_code || 2826,
         device: r.device || 'desktop',
@@ -1918,7 +1934,7 @@ async function handleSinglePhraseRankCheck(req, res) {
       })
     }
 
-    // 4. Query DataForSEO Google Organic SERP Live Advanced API
+    // 4. Query DataForSEO Google Organic SERP Live Advanced API (Mobile Google UK)
     const authHeader = 'Basic ' + Buffer.from(`${creds.login}:${creds.password}`).toString('base64')
     const serpPayload = [
       {
@@ -1926,7 +1942,8 @@ async function handleSinglePhraseRankCheck(req, res) {
         location_code: 2826,
         language_code: 'en',
         se_domain: 'google.co.uk',
-        device: 'desktop',
+        device: 'mobile',
+        os: 'android',
         depth: 100
       }
     ]
@@ -1995,7 +2012,7 @@ async function handleSinglePhraseRankCheck(req, res) {
       INSERT INTO page_rankings (
         site_id, page_key, target_phrase, google_rank, is_top_100, ranking_url, is_url_match, search_engine, location_code, device, last_checked_at, updated_at
       ) VALUES (
-        @site_id, @page_key, @target_phrase, @google_rank, @is_top_100, @ranking_url, @is_url_match, 'google.co.uk', 2826, 'desktop', @last_checked_at, @updated_at
+        @site_id, @page_key, @target_phrase, @google_rank, @is_top_100, @ranking_url, @is_url_match, 'google.co.uk', 2826, 'mobile', @last_checked_at, @updated_at
       )
       ON CONFLICT(site_id, page_key) DO UPDATE SET
         target_phrase = excluded.target_phrase,
@@ -2003,6 +2020,7 @@ async function handleSinglePhraseRankCheck(req, res) {
         is_top_100 = excluded.is_top_100,
         ranking_url = excluded.ranking_url,
         is_url_match = excluded.is_url_match,
+        device = 'mobile',
         last_checked_at = excluded.last_checked_at,
         updated_at = excluded.updated_at
     `)
@@ -2032,7 +2050,7 @@ async function handleSinglePhraseRankCheck(req, res) {
       isUrlMatch: Boolean(isUrlMatch),
       searchEngine: 'google.co.uk',
       locationCode: 2826,
-      device: 'desktop',
+      device: 'mobile',
       lastCheckedAt: now,
       cost: taskCost
     })
@@ -2042,8 +2060,581 @@ async function handleSinglePhraseRankCheck(req, res) {
   }
 }
 
+// Check UK monthly search volume for a single page Target Phrase via DataForSEO Labs Historical Search Volume API
+async function handleSinglePhraseVolumeCheck(req, res) {
+  try {
+    const { id, pageKey: paramPageKey } = req.params
+    const pageKey = paramPageKey ? decodeURIComponent(paramPageKey) : (req.body?.pageKey || req.query?.pageKey)
+
+    if (!id || !pageKey) {
+      return res.status(400).json({ success: false, error: 'siteId and pageKey are required' })
+    }
+
+    // 1. Fetch website record
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) {
+      return res.status(404).json({ success: false, error: `Website with ID '${id}' not found` })
+    }
+
+    // 2. Fetch page configuration to determine target phrase
+    let targetPhrase = (req.body?.targetPhrase || req.body?.target || '').trim()
+    if (!targetPhrase) {
+      const configRow = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ? AND page_key = ?`).get(id, pageKey)
+      if (configRow) {
+        targetPhrase = (configRow.target_phrase || '').trim()
+      }
+    }
+
+    if (!targetPhrase) {
+      return res.status(400).json({ success: false, error: 'Target phrase is not configured for this page' })
+    }
+
+    // 3. Resolve DataForSEO Credentials
+    const creds = getDataForSeoCredentials()
+    if (!creds || !creds.login || !creds.password) {
+      return res.status(500).json({
+        success: false,
+        error: 'DataForSEO credentials not configured on server. Please ensure DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are set.'
+      })
+    }
+
+    // 4. Query DataForSEO Historical Search Volume API
+    const authHeader = 'Basic ' + Buffer.from(`${creds.login}:${creds.password}`).toString('base64')
+    const volumePayload = [
+      {
+        keywords: [targetPhrase],
+        location_code: 2826,
+        language_code: 'en'
+      }
+    ]
+
+    const volumeRes = await fetch('https://api.dataforseo.com/v3/dataforseo_labs/google/historical_search_volume/live', {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(volumePayload),
+      signal: AbortSignal.timeout(30000)
+    })
+
+    if (!volumeRes.ok) {
+      const errText = await volumeRes.text()
+      return res.status(volumeRes.status).json({
+        success: false,
+        error: `DataForSEO API error (${volumeRes.status}): ${errText.slice(0, 200)}`
+      })
+    }
+
+    const volumeData = await volumeRes.json()
+    const task = volumeData?.tasks?.[0]
+
+    if (!task || task.status_code !== 20000) {
+      return res.status(502).json({
+        success: false,
+        error: `DataForSEO task failed: ${task?.status_message || 'Unknown error'}`
+      })
+    }
+
+    const taskCost = task.cost !== undefined ? task.cost : null
+    const item = task?.result?.[0]?.items?.[0]
+    const searchVolume = item?.keyword_info?.search_volume !== undefined && item?.keyword_info?.search_volume !== null
+      ? Number(item.keyword_info.search_volume)
+      : (item?.search_volume !== undefined && item?.search_volume !== null ? Number(item.search_volume) : null)
+
+    const now = new Date().toISOString()
+
+    // 5. Save result to page_rankings table
+    const stmt = db.prepare(`
+      INSERT INTO page_rankings (
+        site_id, page_key, target_phrase, search_volume, volume_checked_at, last_checked_at, updated_at
+      ) VALUES (
+        @site_id, @page_key, @target_phrase, @search_volume, @volume_checked_at, @last_checked_at, @updated_at
+      )
+      ON CONFLICT(site_id, page_key) DO UPDATE SET
+        target_phrase = excluded.target_phrase,
+        search_volume = excluded.search_volume,
+        volume_checked_at = excluded.volume_checked_at,
+        updated_at = excluded.updated_at
+    `)
+
+    stmt.run({
+      site_id: id,
+      page_key: pageKey,
+      target_phrase: targetPhrase,
+      search_volume: searchVolume,
+      volume_checked_at: now,
+      last_checked_at: now,
+      updated_at: now
+    })
+
+    // 6. Return response
+    res.json({
+      success: true,
+      siteId: id,
+      pageKey,
+      targetPhrase,
+      searchVolume,
+      volumeCheckedAt: now,
+      cost: taskCost
+    })
+  } catch (err) {
+    console.error('Error during DataForSEO volume check:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
+// Batch Check Search Volume across configured target phrases (1 single DataForSEO Labs request)
+async function handleBatchVolumeCheck(req, res) {
+  try {
+    const { id } = req.params
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) {
+      return res.status(404).json({ success: false, error: `Website with ID '${id}' not found` })
+    }
+
+    // 1. Collect target phrases to check
+    let items = req.body?.items
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      const configRows = db.prepare(`
+        SELECT page_key, target_phrase, url
+        FROM page_configurations
+        WHERE site_id = ? AND is_excluded = 0 AND trim(target_phrase) != ''
+      `).all(id)
+      items = configRows.map(r => ({
+        pageKey: r.page_key,
+        targetPhrase: r.target_phrase.trim(),
+        url: r.url
+      }))
+    }
+
+    if (items.length === 0) {
+      return res.json({ success: true, count: 0, message: 'No target phrases found to check' })
+    }
+
+    const creds = getDataForSeoCredentials()
+    if (!creds || !creds.login || !creds.password) {
+      return res.status(500).json({ success: false, error: 'DataForSEO credentials not configured on server.' })
+    }
+
+    // Deduplicate keyword list
+    const uniqueKeywords = Array.from(new Set(items.map(i => i.targetPhrase.trim()).filter(Boolean)))
+    if (uniqueKeywords.length === 0) {
+      return res.json({ success: true, count: 0, message: 'No valid target phrases found' })
+    }
+
+    const authHeader = 'Basic ' + Buffer.from(`${creds.login}:${creds.password}`).toString('base64')
+    const volumePayload = [
+      {
+        keywords: uniqueKeywords,
+        location_code: 2826,
+        language_code: 'en'
+      }
+    ]
+
+    const volumeRes = await fetch('https://api.dataforseo.com/v3/dataforseo_labs/google/historical_search_volume/live', {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(volumePayload),
+      signal: AbortSignal.timeout(60000)
+    })
+
+    if (!volumeRes.ok) {
+      const errText = await volumeRes.text()
+      return res.status(volumeRes.status).json({
+        success: false,
+        error: `DataForSEO API error (${volumeRes.status}): ${errText.slice(0, 200)}`
+      })
+    }
+
+    const volumeData = await volumeRes.json()
+    const task = volumeData?.tasks?.[0]
+    if (!task || task.status_code !== 20000) {
+      return res.status(502).json({
+        success: false,
+        error: `DataForSEO batch task failed: ${task?.status_message || 'Unknown error'}`
+      })
+    }
+
+    const taskCost = task.cost !== undefined ? task.cost : null
+    const resultItems = task?.result?.[0]?.items || []
+
+    // Build map keyword -> search volume
+    const volumeByKeyword = new Map()
+    for (const rItem of resultItems) {
+      const kw = (rItem.keyword || '').trim().toLowerCase()
+      const vol = rItem?.keyword_info?.search_volume !== undefined && rItem?.keyword_info?.search_volume !== null
+        ? Number(rItem.keyword_info.search_volume)
+        : (rItem?.search_volume !== undefined && rItem?.search_volume !== null ? Number(rItem.search_volume) : 0)
+      if (kw) {
+        volumeByKeyword.set(kw, vol)
+      }
+    }
+
+    const now = new Date().toISOString()
+    const stmt = db.prepare(`
+      INSERT INTO page_rankings (
+        site_id, page_key, target_phrase, search_volume, volume_checked_at, last_checked_at, updated_at
+      ) VALUES (
+        @site_id, @page_key, @target_phrase, @search_volume, @volume_checked_at, @last_checked_at, @updated_at
+      )
+      ON CONFLICT(site_id, page_key) DO UPDATE SET
+        target_phrase = excluded.target_phrase,
+        search_volume = excluded.search_volume,
+        volume_checked_at = excluded.volume_checked_at,
+        updated_at = excluded.updated_at
+    `)
+
+    const updateMany = db.transaction((pageItems) => {
+      for (const p of pageItems) {
+        const kwLower = p.targetPhrase.toLowerCase()
+        const vol = volumeByKeyword.has(kwLower) ? volumeByKeyword.get(kwLower) : null
+        stmt.run({
+          site_id: id,
+          page_key: p.pageKey,
+          target_phrase: p.targetPhrase,
+          search_volume: vol,
+          volume_checked_at: now,
+          last_checked_at: now,
+          updated_at: now
+        })
+      }
+    })
+
+    updateMany(items)
+
+    res.json({
+      success: true,
+      siteId: id,
+      phrasesChecked: uniqueKeywords.length,
+      pagesUpdated: items.length,
+      cost: taskCost,
+      timestamp: now
+    })
+  } catch (err) {
+    console.error('Error during DataForSEO batch volume check:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
+// Submit Batch of Mobile Rank Tasks via DataForSEO Standard Queue (POST /v3/serp/google/organic/task_post)
+// Deduplicates identical target phrases across the site so exactly ONE task is submitted per phrase
+async function handleSubmitRankBatch(req, res) {
+  try {
+    const { id } = req.params
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) {
+      return res.status(404).json({ success: false, error: `Website with ID '${id}' not found` })
+    }
+
+    let items = req.body?.items
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      const configRows = db.prepare(`
+        SELECT page_key, target_phrase, url
+        FROM page_configurations
+        WHERE site_id = ? AND is_excluded = 0 AND trim(target_phrase) != ''
+      `).all(id)
+      items = configRows.map(r => ({
+        pageKey: r.page_key,
+        targetPhrase: r.target_phrase.trim(),
+        configuredUrl: r.url || r.page_key
+      }))
+    }
+
+    if (items.length === 0) {
+      return res.json({ success: true, count: 0, message: 'No target phrases found to queue' })
+    }
+
+    const creds = getDataForSeoCredentials()
+    if (!creds || !creds.login || !creds.password) {
+      return res.status(500).json({ success: false, error: 'DataForSEO credentials not configured on server.' })
+    }
+
+    // Group items by normalized target phrase (case-insensitive deduplication)
+    const phraseGroupMap = new Map()
+    for (const item of items) {
+      const phrase = (item.targetPhrase || '').trim()
+      if (!phrase) continue
+      const phraseKey = phrase.toLowerCase()
+      if (!phraseGroupMap.has(phraseKey)) {
+        phraseGroupMap.set(phraseKey, {
+          targetPhrase: phrase,
+          pages: []
+        })
+      }
+      phraseGroupMap.get(phraseKey).pages.push(item)
+    }
+
+    const uniquePhraseGroups = Array.from(phraseGroupMap.values())
+    if (uniquePhraseGroups.length === 0) {
+      return res.json({ success: true, count: 0, message: 'No valid target phrases found' })
+    }
+
+    const authHeader = 'Basic ' + Buffer.from(`${creds.login}:${creds.password}`).toString('base64')
+    const now = new Date().toISOString()
+
+    // Up to 100 unique tasks per batch
+    const taskPayload = uniquePhraseGroups.slice(0, 100).map((group, index) => ({
+      keyword: group.targetPhrase,
+      location_code: 2826,
+      language_code: 'en',
+      se_domain: 'google.co.uk',
+      device: 'mobile',
+      os: 'android',
+      depth: 100,
+      tag: String(index)
+    }))
+
+    const postRes = await fetch('https://api.dataforseo.com/v3/serp/google/organic/task_post', {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(taskPayload),
+      signal: AbortSignal.timeout(45000)
+    })
+
+    if (!postRes.ok) {
+      const errText = await postRes.text()
+      return res.status(postRes.status).json({
+        success: false,
+        error: `DataForSEO API error (${postRes.status}): ${errText.slice(0, 200)}`
+      })
+    }
+
+    const postData = await postRes.json()
+    const tasks = postData?.tasks || []
+    let totalCost = 0
+
+    const queueStmt = db.prepare(`
+      INSERT INTO serp_task_queue (
+        task_id, site_id, page_key, target_phrase, configured_url, device, status, submitted_at, cost
+      ) VALUES (
+        @task_id, @site_id, @page_key, @target_phrase, @configured_url, 'mobile', 'pending', @submitted_at, @cost
+      )
+      ON CONFLICT(task_id, page_key) DO UPDATE SET
+        status = 'pending',
+        submitted_at = excluded.submitted_at
+    `)
+
+    const insertedTaskIds = []
+    const queueTx = db.transaction(() => {
+      tasks.forEach((t, i) => {
+        if (t && t.id && uniquePhraseGroups[i]) {
+          const group = uniquePhraseGroups[i]
+          const cost = t.cost || 0
+          totalCost += cost
+          insertedTaskIds.push(t.id)
+
+          // Insert a queue record for EVERY page sharing this target phrase
+          for (const pageItem of group.pages) {
+            queueStmt.run({
+              task_id: t.id,
+              site_id: id,
+              page_key: pageItem.pageKey,
+              target_phrase: group.targetPhrase,
+              configured_url: pageItem.configuredUrl || pageItem.pageKey,
+              submitted_at: now,
+              cost: cost
+            })
+          }
+        }
+      })
+    })
+
+    queueTx()
+
+    res.json({
+      success: true,
+      siteId: id,
+      uniquePhrasesQueued: insertedTaskIds.length,
+      pagesMapped: items.length,
+      totalCost,
+      taskIds: insertedTaskIds
+    })
+  } catch (err) {
+    console.error('Error during DataForSEO submit rank batch:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
+// Collect Completed Standard Queue SERP Tasks (GET /v3/serp/google/organic/task_get/advanced/{id})
+async function handleCollectRankBatch(req, res) {
+  try {
+    const { id } = req.params
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) {
+      return res.status(404).json({ success: false, error: `Website with ID '${id}' not found` })
+    }
+
+    const siteDomain = extractHostnameFromUrl(site.url || site.name)
+    const creds = getDataForSeoCredentials()
+    if (!creds || !creds.login || !creds.password) {
+      return res.status(500).json({ success: false, error: 'DataForSEO credentials not configured on server.' })
+    }
+
+    const authHeader = 'Basic ' + Buffer.from(`${creds.login}:${creds.password}`).toString('base64')
+
+    // Find pending queue records
+    const pendingRows = db.prepare(`
+      SELECT * FROM serp_task_queue
+      WHERE site_id = ? AND status = 'pending'
+      ORDER BY submitted_at ASC
+    `).all(id)
+
+    if (pendingRows.length === 0) {
+      return res.json({ success: true, message: 'No pending tasks found for site', completedCount: 0, pendingCount: 0 })
+    }
+
+    // Group pending rows by task_id
+    const taskGroups = new Map()
+    for (const row of pendingRows) {
+      if (!taskGroups.has(row.task_id)) {
+        taskGroups.set(row.task_id, [])
+      }
+      taskGroups.get(row.task_id).push(row)
+    }
+
+    const completed = []
+    const stillPending = []
+    const now = new Date().toISOString()
+
+    const upsertRankingStmt = db.prepare(`
+      INSERT INTO page_rankings (
+        site_id, page_key, target_phrase, google_rank, is_top_100, ranking_url, is_url_match, search_engine, location_code, device, last_checked_at, updated_at
+      ) VALUES (
+        @site_id, @page_key, @target_phrase, @google_rank, @is_top_100, @ranking_url, @is_url_match, 'google.co.uk', 2826, 'mobile', @last_checked_at, @updated_at
+      )
+      ON CONFLICT(site_id, page_key) DO UPDATE SET
+        target_phrase = excluded.target_phrase,
+        google_rank = excluded.google_rank,
+        is_top_100 = excluded.is_top_100,
+        ranking_url = excluded.ranking_url,
+        is_url_match = excluded.is_url_match,
+        device = 'mobile',
+        last_checked_at = excluded.last_checked_at,
+        updated_at = excluded.updated_at
+    `)
+
+    const updateQueueStmt = db.prepare(`
+      UPDATE serp_task_queue
+      SET status = 'completed', completed_at = ?
+      WHERE task_id = ?
+    `)
+
+    for (const [taskId, queueRows] of taskGroups.entries()) {
+      try {
+        const getRes = await fetch(`https://api.dataforseo.com/v3/serp/google/organic/task_get/advanced/${taskId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': authHeader,
+            'Accept': 'application/json'
+          },
+          signal: AbortSignal.timeout(30000)
+        })
+
+        if (!getRes.ok) {
+          stillPending.push(taskId)
+          continue
+        }
+
+        const getData = await getRes.json()
+        const taskObj = getData?.tasks?.[0]
+        if (!taskObj || taskObj.status_code !== 20000 || !taskObj.result) {
+          stillPending.push(taskId)
+          continue
+        }
+
+        const resultItems = taskObj.result?.[0]?.items || []
+        let matchedItem = null
+        // 1. Iterate organic results in ranking order
+        for (const item of resultItems) {
+          if (item.type !== 'organic') continue
+          const itemDomain = extractHostnameFromUrl(item.domain || item.url || '')
+          // 2. Find the FIRST/HIGHEST result belonging to the website domain
+          if (itemDomain && siteDomain && (itemDomain === siteDomain || itemDomain.endsWith('.' + siteDomain) || siteDomain.endsWith('.' + itemDomain))) {
+            matchedItem = item
+            break
+          }
+        }
+
+        let googleRank = null
+        let isTop100 = 0
+        let rankingUrl = null
+
+        if (matchedItem) {
+          // 3. Highest site result sets google_rank and ranking_url
+          googleRank = matchedItem.rank_absolute || matchedItem.rank_group || null
+          rankingUrl = matchedItem.url || null
+          isTop100 = 1
+        }
+
+        // 4. Distribute this single site rank to EVERY page row configured with this target phrase
+        for (const qTask of queueRows) {
+          let isUrlMatch = 0
+          if (matchedItem && rankingUrl && qTask.configured_url) {
+            const normRanking = normalizeUrlForMatching(rankingUrl, site.url)
+            const normConfigured = normalizeUrlForMatching(qTask.configured_url, site.url)
+            isUrlMatch = (normRanking && normConfigured && normRanking === normConfigured) ? 1 : 0
+          }
+
+          upsertRankingStmt.run({
+            site_id: id,
+            page_key: qTask.page_key,
+            target_phrase: qTask.target_phrase,
+            google_rank: googleRank,
+            is_top_100: isTop100,
+            ranking_url: rankingUrl,
+            is_url_match: isUrlMatch,
+            last_checked_at: now,
+            updated_at: now
+          })
+
+          completed.push({
+            pageKey: qTask.page_key,
+            targetPhrase: qTask.target_phrase,
+            googleRank,
+            isTop100: Boolean(isTop100),
+            rankingUrl,
+            isUrlMatch: Boolean(isUrlMatch)
+          })
+        }
+
+        updateQueueStmt.run(now, taskId)
+      } catch (err) {
+        console.error(`Error retrieving task ${taskId}:`, err)
+        stillPending.push(taskId)
+      }
+    }
+
+    res.json({
+      success: true,
+      siteId: id,
+      completedCount: completed.length,
+      pendingCount: stillPending.length,
+      completed,
+      stillPending
+    })
+  } catch (err) {
+    console.error('Error during DataForSEO collect rank batch:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
 app.post('/api/websites/:id/check-rank', handleSinglePhraseRankCheck)
 app.post('/api/websites/:id/pages/:pageKey/check-rank', handleSinglePhraseRankCheck)
+app.post('/api/websites/:id/check-volume', handleSinglePhraseVolumeCheck)
+app.post('/api/websites/:id/pages/:pageKey/check-volume', handleSinglePhraseVolumeCheck)
+app.post('/api/websites/:id/batch-volume-check', handleBatchVolumeCheck)
+app.post('/api/websites/:id/tasks/submit-rank-batch', handleSubmitRankBatch)
+app.post('/api/websites/:id/tasks/collect-rank-batch', handleCollectRankBatch)
 
 app.listen(PORT, () => {
   console.log(`[Website Manager SQLite API] Running on http://localhost:${PORT}`)

@@ -430,3 +430,20 @@ export async function checkPageRankApi({ siteId: rawSiteId, pageKey, targetPhras
     throw e
   }
 }
+
+export async function checkSearchVolumeApi({ siteId: rawSiteId, pageKey, targetPhrase }) {
+  const siteId = normalizeSiteId(rawSiteId)
+  try {
+    return await fetchJson(`${API_BASE_URL}/websites/${siteId}/check-volume`, {
+      method: 'POST',
+      body: JSON.stringify({
+        pageKey,
+        targetPhrase
+      })
+    }, 35000)
+  } catch (e) {
+    console.error('[WM_API] Failed to check search volume:', e)
+    throw e
+  }
+}
+

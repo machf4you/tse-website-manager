@@ -9,6 +9,25 @@ import { normalizeUrlForMatching, getPathSlugForMatching } from './urlUtils.js'
 /**
  * Extract existing incoming internal links for a target URL from pagesList
  */
+/**
+ * Helper to strip non-editorial structural chrome, navigation, headers, footers, sidebars,
+ * and navigation widgets without stripping genuine Elementor editorial blocks (e.g. elementor-widget).
+ */
+export function cleanEditorialHtml(rawContent) {
+  if (!rawContent || typeof rawContent !== 'string') return ''
+  return rawContent
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
+    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+    // Exclude structural template wrappers, sidebars, navigation menus, and non-editorial widgets
+    .replace(/<div[^>]*class="[^"]*(site-header|site-footer|main-navigation|nav-menu|elementor-nav-menu|sidebar|sidebar-widget|widget_nav_menu|widget_meta|widget_search|widget_categories|widget_archive|widget_recent_entries|widget_recent_comments|image-switcher|breadcrumb|breadcrumbs)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
+    .replace(/<ul[^>]*class="[^"]*(menu|nav|breadcrumbs)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, '')
+}
+
+/**
+ * Extract existing incoming internal links for a target URL from pagesList
+ */
 export function getExistingInternalLinks(targetUrl, pagesList) {
   if (!targetUrl || !Array.isArray(pagesList)) return []
 
@@ -20,9 +39,16 @@ export function getExistingInternalLinks(targetUrl, pagesList) {
   pagesList.forEach(page => {
     if (!page || !page.url) return
     const pageNormUrl = normalizeUrlForMatching(page.url)
+    const pageSlug = getPathSlugForMatching(page.url)
 
     // Exclude self-referential links on the target page itself
-    if (targetNormUrl && pageNormUrl && targetNormUrl === pageNormUrl) return
+    if (
+      (targetNormUrl && pageNormUrl && targetNormUrl === pageNormUrl) ||
+      (targetSlug && pageSlug && targetSlug === pageSlug) ||
+      (targetUrl && page.url && targetUrl === page.url)
+    ) {
+      return
+    }
 
     const rawContent = (
       typeof page.content?.rendered === 'string' && page.content.rendered.trim() ? page.content.rendered.trim() :
@@ -36,13 +62,7 @@ export function getExistingInternalLinks(targetUrl, pagesList) {
     if (!rawContent) return
 
     // Strip header, nav, footer, logo, menu, image-switcher, and structural template components
-    const bodyOnly = rawContent
-      .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-      .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-      .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-      .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
-      .replace(/<div[^>]*class="[^"]*(header|nav|footer|logo|site-header|site-footer|menu|sidebar|widget|image-switcher|switcher|slider|carousel|banner|gallery|breadcrumb)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-      .replace(/<ul[^>]*class="[^"]*(menu|nav|breadcrumbs)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, '')
+    const bodyOnly = cleanEditorialHtml(rawContent)
 
     const linkRegex = /<a\s+[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi
     let match
@@ -88,6 +108,93 @@ export function getExistingInternalLinks(targetUrl, pagesList) {
       }
     }
   })
+
+  return results
+}
+
+/**
+ * Extract outgoing contextual internal links originating from sourcePage pointing to other internal pages
+ */
+export function getOutgoingInternalLinks(sourcePage, pagesList) {
+  if (!sourcePage) return []
+
+  const rawContent = (
+    typeof sourcePage.content?.rendered === 'string' && sourcePage.content.rendered.trim() ? sourcePage.content.rendered.trim() :
+    typeof sourcePage.content?.raw === 'string' && sourcePage.content.raw.trim() ? sourcePage.content.raw.trim() :
+    typeof sourcePage.content === 'string' && sourcePage.content.trim() ? sourcePage.content.trim() :
+    typeof sourcePage.post_content === 'string' && sourcePage.post_content.trim() ? sourcePage.post_content.trim() :
+    typeof sourcePage.body_text === 'string' && sourcePage.body_text.trim() ? sourcePage.body_text.trim() :
+    typeof sourcePage.html === 'string' && sourcePage.html.trim() ? sourcePage.html.trim() : ''
+  )
+
+  if (!rawContent) return []
+
+  // Strip header, nav, footer, logo, menu, image-switcher, and structural template components
+  const bodyOnly = cleanEditorialHtml(rawContent)
+
+  const sourceNormUrl = normalizeUrlForMatching(sourcePage.url)
+  const linkRegex = /<a\s+[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi
+  const results = []
+  let match
+
+  while ((match = linkRegex.exec(bodyOnly)) !== null) {
+    const href = match[1]
+    const rawAnchor = match[2]
+    const cleanAnchor = rawAnchor.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+
+    // Exclude empty or non-content template links
+    if (!cleanAnchor || cleanAnchor.toLowerCase() === 'contextual link' || cleanAnchor.toLowerCase().includes('client image-switcher')) {
+      continue
+    }
+    if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) {
+      continue
+    }
+
+    const normHref = normalizeUrlForMatching(href)
+    const hrefSlug = getPathSlugForMatching(href)
+    const sourceSlug = getPathSlugForMatching(sourcePage.url)
+
+    // Exclude self-referential links (both normalized and slug forms)
+    if (
+      (sourceNormUrl && normHref && sourceNormUrl === normHref) ||
+      (sourceSlug && hrefSlug && sourceSlug === hrefSlug) ||
+      (sourcePage.url && href && sourcePage.url === href)
+    ) {
+      continue
+    }
+
+    // Check if destination matches any internal page in pagesList
+    const destPage = Array.isArray(pagesList) ? pagesList.find(p => {
+      const pNorm = normalizeUrlForMatching(p.url)
+      return pNorm && pNorm === normHref
+    }) : null
+
+    let isInternal = Boolean(destPage) || href.startsWith('/')
+    if (!isInternal && sourcePage.url) {
+      try {
+        const u = sourcePage.url.startsWith('http') ? new URL(sourcePage.url) : new URL(sourcePage.url, 'https://example.com')
+        if (href.includes(u.hostname)) isInternal = true
+      } catch (e) {}
+    }
+
+    if (isInternal) {
+      const matchIdx = match.index
+      const startIdx = Math.max(0, matchIdx - 60)
+      const endIdx = Math.min(bodyOnly.length, matchIdx + match[0].length + 60)
+      let snippet = bodyOnly.slice(startIdx, endIdx).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      if (startIdx > 0) snippet = '...' + snippet
+      if (endIdx < bodyOnly.length) snippet = snippet + '...'
+
+      results.push({
+        id: `out_${sourcePage.url}_${matchIdx}`,
+        sourceUrl: getPathSlugForMatching(sourcePage.url) || sourcePage.url,
+        destinationUrl: getPathSlugForMatching(href) || href,
+        destinationTitle: destPage?.title || destPage?.proposedTitle || '',
+        anchorText: cleanAnchor,
+        linkContext: snippet
+      })
+    }
+  }
 
   return results
 }
@@ -172,16 +279,10 @@ export function generateContextualReplacement(sourcePage, anchorText) {
   }
 
   // 1. Strip structural chrome, navigation, header, footer, CTA, phone, forms and template wrappers
-  const bodyCleaned = rawContent
-    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
-    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-    .replace(/<aside[^>]*>[\s\S]*?<\/aside>/gi, '')
+  const bodyCleaned = cleanEditorialHtml(rawContent)
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
-    .replace(/<div[^>]*class="[^"]*(header|nav|footer|logo|site-header|site-footer|menu|sidebar|widget|image-switcher|top-bar|topbar)[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '')
-    .replace(/<ul[^>]*class="[^"]*(menu|nav|breadcrumbs)[^"]*"[^>]*>[\s\S]*?<\/ul>/gi, '')
 
   // 2. Extract block elements & sentence strings
   const blocks = bodyCleaned

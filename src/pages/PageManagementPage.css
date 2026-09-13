@@ -315,7 +315,7 @@
 }
 
 .col-page {
-  width: 41%;
+  width: 29%;
 }
 
 .w3-page-title {
@@ -332,7 +332,7 @@
 }
 
 .col-target {
-  width: 28%;
+  width: 20%;
   font-weight: 600;
   color: rgb(241, 245, 249);
   font-size: 0.88rem;
@@ -347,9 +347,83 @@
 }
 
 .col-type {
-  width: 10%;
+  width: 9%;
   color: rgb(203, 213, 225);
   font-size: 0.82rem;
+}
+
+.col-priority {
+  width: 7%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.col-rank {
+  width: 8%;
+  white-space: nowrap;
+}
+
+.col-volume {
+  width: 8%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.w3-volume-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.w3-volume-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.volume-value {
+  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.volume-unchecked {
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 16px;
+}
+
+.volume-checking {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.btn-last-audit-compact {
+  background: transparent;
+  border: none;
+  color: rgb(203, 213, 225);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.btn-last-audit-compact:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+  text-decoration: underline;
 }
 
 .col-priority {
@@ -357,6 +431,32 @@
   white-space: nowrap;
   color: rgb(203, 213, 225);
   font-size: 0.82rem;
+}
+
+.w3-rank-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.w3-rank-badge-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.w3-rank-mismatch-mark {
+  color: #f59e0b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: help;
+  user-select: none;
+  line-height: 1;
+  display: inline-block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 2px;
 }
 
 .w3-priority-cell {

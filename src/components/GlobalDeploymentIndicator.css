@@ -30,37 +30,40 @@
   font-size: 0.7rem;
 }
 
-/* Quick Refresh Header Button */
-.global-deploy-refresh-btn {
+/* Quick Refresh Header Button - Normal State (Green / Ready) */
+.global-deploy-refresh-normal {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 700;
   letter-spacing: 0.03em;
-  color: #f8fafc;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  padding: 4px 10px;
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  padding: 4px 12px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
   white-space: nowrap;
 }
 
-.global-deploy-refresh-btn:hover {
-  background: linear-gradient(135deg, #334155, #1e293b);
-  border-color: #38bdf8;
-  color: #38bdf8;
+.global-deploy-refresh-normal:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #34d399 !important;
+  color: #ffffff !important;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.2);
 }
 
-.global-deploy-refresh-btn .refresh-icon {
-  font-size: 0.85rem;
+.global-deploy-refresh-normal .refresh-icon {
+  font-size: 0.95rem;
   font-weight: 900;
-  color: #38bdf8;
+  color: #34d399 !important;
+}
+
+.global-deploy-refresh-normal:hover .refresh-icon {
+  color: #ffffff !important;
 }
 
 
@@ -102,18 +105,18 @@
   to { transform: rotate(360deg); }
 }
 
-/* 3. UPDATE READY State (PRESS CTRL+F5 - UPDATE READY) */
+/* 3. UPDATE READY State (CLICK TO REFRESH ALERT) */
 .global-deploy-ready {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(135deg, rgba(234, 88, 12, 0.95), rgba(16, 185, 129, 0.95));
-  border: 1px solid #fbbf24;
-  color: #ffffff;
+  background: linear-gradient(135deg, #ea580c, #dc2626) !important;
+  border: 1px solid #fed7aa !important;
+  color: #ffffff !important;
   padding: 5px 14px;
   border-radius: 6px;
   cursor: pointer;
-  box-shadow: 0 0 16px rgba(234, 88, 12, 0.5);
+  box-shadow: 0 0 16px rgba(234, 88, 12, 0.65);
   animation: deployReadyPulse 1.5s infinite;
   transition: transform 0.15s ease;
 }
@@ -138,15 +141,16 @@
 }
 
 .deploy-action-badge {
-  font-size: 0.7rem;
-  font-weight: 800;
-  background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  padding: 2px 7px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  background: #ffffff;
+  color: #dc2626;
+  border: 1px solid #ffffff;
+  padding: 3px 8px;
   border-radius: 4px;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 @keyframes deployReadyPulse {

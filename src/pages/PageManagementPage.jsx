@@ -8,12 +8,14 @@ import {
   getPageAuditsApi,
   savePageAuditApi,
   getPageRankingsApi,
-  checkPageRankApi
+  checkPageRankApi,
+  checkSearchVolumeApi
 } from '../services/websiteManagerApi'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
-import { formatReadableDateTime } from '../utils/dateFormatter'
+import { formatReadableDateTime, formatCompactAuditDate } from '../utils/dateFormatter'
 import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
+import { normalizeUrlForMatching } from '../utils/urlUtils'
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './PageManagementPage.css'
 
@@ -38,6 +40,7 @@ export default function PageManagementPage({
   const [bulkAuditSummary, setBulkAuditSummary] = useState(null)
   const [pageRankings, setPageRankings] = useState({})
   const [checkingRankKey, setCheckingRankKey] = useState(null)
+  const [checkingVolumeKey, setCheckingVolumeKey] = useState(null)
 
   const [configurations, setConfigurations] = useState(() => {
     try {
@@ -177,6 +180,48 @@ export default function PageManagementPage({
     }
   }
 
+  const handleCheckVolume = async (page) => {
+    const pageKey = page.id || page.url
+    const targetPhrase = (page.target || page.targetPhrase || '').trim()
+    if (!targetPhrase || !site?.id) return
+
+    setCheckingVolumeKey(pageKey)
+    try {
+      const res = await checkSearchVolumeApi({
+        siteId: site.id,
+        pageKey,
+        targetPhrase
+      })
+
+      if (res && res.success) {
+        setPageRankings(prev => ({
+          ...prev,
+          [pageKey]: {
+            ...(prev[pageKey] || {}),
+            siteId: site.id,
+            pageKey,
+            targetPhrase,
+            searchVolume: res.searchVolume,
+            volumeCheckedAt: res.volumeCheckedAt
+          }
+        }))
+      }
+    } catch (err) {
+      console.error('Failed to check volume:', err)
+    } finally {
+      setCheckingVolumeKey(null)
+    }
+  }
+
+  const getDisplayPath = (url) => {
+    if (!url) return ''
+    try {
+      const u = url.startsWith('http') ? new URL(url) : new URL(url, 'https://example.com')
+      return u.pathname || '/'
+    } catch {
+      return String(url).replace(/^https?:\/\/[^\/]+/i, '') || '/'
+    }
+  }
 
   const handleSort = (col) => {
     if (sortColumn === col) {
@@ -189,6 +234,12 @@ export default function PageManagementPage({
 
   const handleSavePageConfig = (config) => {
     const pageKey = config.pageId || config.url
+    const oldConfig = configurations[pageKey] || (config.url ? configurations[config.url] : null) || {}
+    const oldTarget = (oldConfig.targetPhrase || oldConfig.target || '').trim().toLowerCase()
+    const newTarget = (config.targetPhrase || config.target || '').trim().toLowerCase()
+    const oldUrl = (oldConfig.url || '').trim().toLowerCase()
+    const newUrl = (config.url || '').trim().toLowerCase()
+
     const updatedMap = {
       ...configurations,
       [pageKey]: config,
@@ -204,6 +255,36 @@ export default function PageManagementPage({
       console.error('Failed to save page configuration:', e)
     }
     setEditingPage(null)
+
+    // Save Workflow Trigger:
+    // 1. If Target Phrase changed: trigger immediate single live rank + volume check
+    if (newTarget && newTarget !== oldTarget) {
+      const targetPage = {
+        ...config,
+        id: config.pageId || pageKey,
+        url: config.url || pageKey,
+        target: config.targetPhrase || config.target,
+        targetPhrase: config.targetPhrase || config.target
+      }
+      handleCheckRank(targetPage)
+      handleCheckVolume(targetPage)
+    } else if (newUrl !== oldUrl && (config.targetPhrase || config.target)) {
+      // 2. If only Configured URL changed: recalculate isUrlMatch locally against existing rankingUrl
+      const rankInfo = pageRankings[pageKey] || (config.url ? pageRankings[config.url] : null)
+      if (rankInfo?.rankingUrl) {
+        const siteUrl = site?.url || ''
+        const normRanking = normalizeUrlForMatching(rankInfo.rankingUrl, siteUrl)
+        const normConfigured = normalizeUrlForMatching(config.url || pageKey, siteUrl)
+        const isMatch = Boolean(normRanking && normConfigured && normRanking === normConfigured)
+        setPageRankings(prev => ({
+          ...prev,
+          [pageKey]: {
+            ...(prev[pageKey] || rankInfo),
+            isUrlMatch: isMatch
+          }
+        }))
+      }
+    }
   }
 
   const handleSaveBulkConfigs = async (newConfigsMap) => {
@@ -229,6 +310,25 @@ export default function PageManagementPage({
       localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
     } catch (e) {
       console.error('Failed to save bulk page configs to localStorage:', e)
+    }
+
+    // Check for target phrase changes in bulk edits
+    for (const [key, conf] of Object.entries(newConfigsMap)) {
+      if (!conf) continue
+      const oldConfig = configurations[key] || {}
+      const oldTarget = (oldConfig.targetPhrase || oldConfig.target || '').trim().toLowerCase()
+      const newTarget = (conf.targetPhrase || conf.target || '').trim().toLowerCase()
+      if (newTarget && newTarget !== oldTarget) {
+        const targetPage = {
+          ...conf,
+          id: conf.pageId || key,
+          url: conf.url || key,
+          target: conf.targetPhrase || conf.target,
+          targetPhrase: conf.targetPhrase || conf.target
+        }
+        handleCheckRank(targetPage)
+        handleCheckVolume(targetPage)
+      }
     }
   }
 
@@ -601,11 +701,59 @@ export default function PageManagementPage({
       return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
     }
 
-    // 5. PRIORITY COLUMN (Default: Numerical 0, 1, 2, 3, 4 etc.)
+    // 5. RANK COLUMN (1-100 asc, >100, unchecked at end)
+    if (sortColumn === 'rank') {
+      const getRankVal = (p) => {
+        const pk = p.id || p.url
+        const r = pageRankings[pk] || (p.url ? pageRankings[p.url] : null) || (p.id ? pageRankings[String(p.id)] : null)
+        if (r?.isTop100 && r?.googleRank) return Number(r.googleRank)
+        if (r?.lastCheckedAt && !r?.isTop100) return 1000
+        return 9999
+      }
+      const rankA = getRankVal(a)
+      const rankB = getRankVal(b)
+      if (rankA !== rankB) {
+        return sortDirection === 'asc' ? rankA - rankB : rankB - rankA
+      }
+      return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
+    }
+
+    // 6. VOLUME COLUMN (Highest to lowest search volume, unchecked at end)
+    if (sortColumn === 'volume') {
+      const getVolumeVal = (p) => {
+        const pk = p.id || p.url
+        const r = pageRankings[pk] || (p.url ? pageRankings[p.url] : null) || (p.id ? pageRankings[String(p.id)] : null)
+        if (r?.searchVolume !== null && r?.searchVolume !== undefined) return Number(r.searchVolume)
+        return -1
+      }
+      const volA = getVolumeVal(a)
+      const volB = getVolumeVal(b)
+      if (volA !== volB) {
+        return sortDirection === 'asc' ? volA - volB : volB - volA
+      }
+      return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
+    }
+
+    // 7. PRIORITY COLUMN (⭐ Starred first, then Type priority 1, 2, 3, 4)
+    if (sortColumn === 'priority') {
+      const starA = a.isStarred ? 1 : 0
+      const starB = b.isStarred ? 1 : 0
+      if (starA !== starB) {
+        return sortDirection === 'asc' ? starB - starA : starA - starB
+      }
+      const pA = a.priority !== undefined && !isNaN(Number(a.priority)) ? Number(a.priority) : 0
+      const pB = b.priority !== undefined && !isNaN(Number(b.priority)) ? Number(b.priority) : 0
+      if (pA !== pB) {
+        return sortDirection === 'asc' ? pA - pB : pB - pA
+      }
+      return safeLower(getPageTitle(a)).localeCompare(safeLower(getPageTitle(b)))
+    }
+
+    // Default fallback sort
     const pA = a.priority !== undefined && !isNaN(Number(a.priority)) ? Number(a.priority) : 0
     const pB = b.priority !== undefined && !isNaN(Number(b.priority)) ? Number(b.priority) : 0
     if (pA !== pB) {
-      return sortDirection === 'asc' ? pA - pB : pB - pA
+      return pA - pB
     }
     const starA = a.isStarred ? 1 : 0
     const starB = b.isStarred ? 1 : 0
@@ -1177,20 +1325,26 @@ export default function PageManagementPage({
               <th className="sortable-th" onClick={() => handleSort('page')}>
                 Page {renderSortIndicator('page')}
               </th>
-              <th className="sortable-th" onClick={() => handleSort('type')}>
+              <th className="sortable-th col-type" onClick={() => handleSort('type')}>
                 Type {renderSortIndicator('type')}
               </th>
               <th className="sortable-th col-priority" onClick={() => handleSort('priority')}>
-                Priority {renderSortIndicator('priority')}
+                ⭐ Priority {renderSortIndicator('priority')}
+              </th>
+              <th className="sortable-th col-rank" onClick={() => handleSort('rank')}>
+                UK Rank {renderSortIndicator('rank')}
+              </th>
+              <th className="sortable-th col-volume" onClick={() => handleSort('volume')}>
+                Volume {renderSortIndicator('volume')}
               </th>
               <th className="sortable-th" onClick={() => handleSort('target')}>
                 Target {renderSortIndicator('target')}
               </th>
-              <th className="sortable-th" onClick={() => handleSort('lastAudit')}>
+              <th className="sortable-th col-last-audit" onClick={() => handleSort('lastAudit')}>
                 Last Audit {renderSortIndicator('lastAudit')}
               </th>
               <th className="col-audit-page">
-                Audit Page
+                Audit Score
               </th>
               <th className="col-actions">
                 Actions
@@ -1203,7 +1357,7 @@ export default function PageManagementPage({
                 if (row.type === 'SEPARATOR_ROW') {
                   return (
                     <tr key={row.id || `sep-${idx}`} className="w3-row-visual-separator">
-                      <td colSpan="7">
+                      <td colSpan="9">
                         <div className="w3-visual-separator-content" style={{ paddingLeft: `${(row.indent || 1) * 20 + 8}px` }}>
                           <span className="w3-separator-icon">📁</span>
                           <span className="w3-separator-label"><em>{row.title}</em></span>
@@ -1217,7 +1371,7 @@ export default function PageManagementPage({
                 if (row.type === 'SECTION_HEADER') {
                   return (
                     <tr key={row.id || `sec-${idx}`} className="w3-row-section-header">
-                      <td colSpan="7">
+                      <td colSpan="9">
                         <div className="w3-section-header-content">
                           <span className="w3-section-icon">📄</span>
                           <span className="w3-section-title">{row.title}</span>
@@ -1231,6 +1385,7 @@ export default function PageManagementPage({
                 const pageKey = page.id || page.url
                 const rankInfo = pageRankings[pageKey] || (page.url ? pageRankings[page.url] : null) || (page.id ? pageRankings[String(page.id)] : null)
                 const isCheckingThisRank = checkingRankKey === pageKey || (page.url && checkingRankKey === page.url) || (page.id && checkingRankKey === page.id)
+                const isCheckingThisVolume = checkingVolumeKey === pageKey || (page.url && checkingVolumeKey === page.url) || (page.id && checkingVolumeKey === page.id)
 
                 return (
                   <tr
@@ -1240,7 +1395,6 @@ export default function PageManagementPage({
                     <td className="col-page">
                       {row.isTopLevel ? (
                         <div className="w3-page-title-row">
-                          <span className="w3-top-cat-pill">TOP CATEGORY</span>
                           <span className="w3-page-title w3-top-cat-title">{page.title || 'Untitled Page'}</span>
                           <div className="w3-page-slug" style={{ width: '100%', marginTop: '2px' }}>{page.url || ''}</div>
                         </div>
@@ -1282,7 +1436,6 @@ export default function PageManagementPage({
                     </td>
                     <td className="col-priority">
                       <div className="w3-priority-cell">
-                        <span className="w3-priority-number">{page.priority !== undefined ? page.priority : 0}</span>
                         <button
                           type="button"
                           className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
@@ -1293,93 +1446,81 @@ export default function PageManagementPage({
                         </button>
                       </div>
                     </td>
+                    <td className="col-rank">
+                      <div className="w3-rank-cell">
+                        {isCheckingThisRank ? (
+                          <span className="w3-rank-badge rank-checking" title="Checking Google UK...">
+                            ⏳
+                          </span>
+                        ) : rankInfo?.isTop100 && rankInfo.googleRank ? (
+                          <div className="w3-rank-badge-wrapper">
+                            <span
+                              className={`w3-rank-badge ${rankInfo.googleRank <= 10 ? 'rank-top-10' : 'rank-top-100'}`}
+                              title={`Google UK Rank #${rankInfo.googleRank} (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
+                            >
+                              #{rankInfo.googleRank}
+                            </span>
+                            {!rankInfo.isUrlMatch && rankInfo.rankingUrl && (
+                              <span
+                                className="w3-rank-mismatch-mark"
+                                title={`Different ranking URL\nGoogle ranking URL: ${getDisplayPath(rankInfo.rankingUrl)}\nConfigured page: ${getDisplayPath(page.url)}`}
+                              >
+                                ?
+                              </span>
+                            )}
+                          </div>
+                        ) : rankInfo?.lastCheckedAt && !rankInfo.isTop100 ? (
+                          <span
+                            className="w3-rank-badge rank-not-top-100"
+                            title={`Not in Top 100 on Google UK (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
+                          >
+                            &gt;100
+                          </span>
+                        ) : (
+                          <span className="w3-rank-badge rank-unchecked" title="Not checked yet">
+                            —
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="col-volume">
+                      <div className="w3-volume-cell">
+                        {isCheckingThisVolume ? (
+                          <span className="w3-volume-badge volume-checking" title="Checking UK Monthly Search Volume...">
+                            ⏳
+                          </span>
+                        ) : rankInfo?.searchVolume !== null && rankInfo?.searchVolume !== undefined ? (
+                          <span
+                            className="w3-volume-badge volume-value"
+                            title={`UK Monthly Search Volume: ${Number(rankInfo.searchVolume).toLocaleString()}${rankInfo.volumeCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.volumeCheckedAt) || rankInfo.volumeCheckedAt})` : ''}`}
+                          >
+                            {Number(rankInfo.searchVolume).toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="w3-volume-badge volume-unchecked" title="Search volume not checked yet">
+                            —
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="col-target">
                       {(page.target || page.targetPhrase || '').trim() ? (
-                        <div className="w3-target-cell-content">
-                          <div className="w3-target-phrase-row">
-                            <span className="w3-target-phrase-text">{page.target || page.targetPhrase}</span>
-                            <div className="w3-rank-controls">
-                              {isCheckingThisRank ? (
-                                <span className="w3-rank-badge rank-checking" title="Checking Google UK...">
-                                  ⏳
-                                </span>
-                              ) : rankInfo?.isTop100 && rankInfo.googleRank ? (
-                                <span
-                                  className={`w3-rank-badge ${rankInfo.googleRank <= 10 ? 'rank-top-10' : 'rank-top-100'}`}
-                                  title={`Google UK Rank #${rankInfo.googleRank} (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
-                                >
-                                  #{rankInfo.googleRank}
-                                </span>
-                              ) : rankInfo?.lastCheckedAt && !rankInfo.isTop100 ? (
-                                <span
-                                  className="w3-rank-badge rank-not-top-100"
-                                  title={`Not Top 100 on Google UK (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
-                                >
-                                  &gt;100
-                                </span>
-                              ) : (
-                                <span className="w3-rank-badge rank-unchecked" title="Unchecked">
-                                  —
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                className={`btn-check-rank-row ${isCheckingThisRank ? 'is-checking' : ''}`}
-                                onClick={() => handleCheckRank(page)}
-                                disabled={isCheckingThisRank}
-                                title="Check Google UK rank via DataForSEO"
-                                id={`btn-check-rank-${page.id || idx}`}
-                              >
-                                🔄
-                              </button>
-                            </div>
-                          </div>
-                          {rankInfo?.rankingUrl && (
-                            <div className="w3-ranking-url-row">
-                              <a
-                                href={rankInfo.rankingUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w3-ranking-url-link"
-                                title={`Google Ranking URL: ${rankInfo.rankingUrl}`}
-                              >
-                                {rankInfo.rankingUrl.replace(/^https?:\/\/(www\.)?/, '')} ↗
-                              </a>
-                              {rankInfo.isTop100 && !rankInfo.isUrlMatch && (
-                                <span className="w3-rank-mismatch-pill" title={`Google ranked ${rankInfo.rankingUrl} instead of ${page.url}`}>
-                                  ⚠️ Different Ranking URL
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <span className="w3-target-phrase-text">{page.target || page.targetPhrase}</span>
                       ) : (
                         <span className="target-not-set">Not Set</span>
                       )}
                     </td>
                     <td className="col-last-audit">
                       {page.isAudited ? (
-                        page.isStale ? (
-                          <button
-                            type="button"
-                            className="btn-audit-stale-badge"
-                            onClick={() => onViewAudit && onViewAudit(page)}
-                            id={`btn-last-audit-${page.id || idx}`}
-                            title={page.staleReason || 'WordPress data changed after last audit'}
-                          >
-                            🟡 Audit Stale ({String(page.lastAuditDate || 'Stale')})
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn-audit-completed-badge"
-                            onClick={() => onViewAudit && onViewAudit(page)}
-                            id={`btn-last-audit-${page.id || idx}`}
-                            title="View completed audit results"
-                          >
-                            🟢 {String(page.lastAuditDate || 'Audited ✓')}
-                          </button>
-                        )
+                        <button
+                          type="button"
+                          className="btn-last-audit-compact"
+                          onClick={() => onViewAudit && onViewAudit(page)}
+                          id={`btn-last-audit-${page.id || idx}`}
+                          title={page.isStale ? `Stale: ${page.staleReason || 'Content modified'} (${formatReadableDateTime(page.lastAuditDate) || page.lastAuditDate})` : (formatReadableDateTime(page.lastAuditDate) || page.lastAuditDate)}
+                        >
+                          {formatCompactAuditDate(page.lastAuditDate || page.lastAuditTimestamp)}
+                        </button>
                       ) : (
                         <span className="w3-text-plain">Never</span>
                       )}

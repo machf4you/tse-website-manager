@@ -303,6 +303,12 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
     const rawPageTitle = extractSafeString(page.originalTitle || page.title || page.name) || 'Untitled Page'
     const finalProposedTitle = extractSafeString(override?.proposedTitle || page.proposedTitle || rawPageTitle) || rawPageTitle
 
+    const isStarred = Boolean(
+      override?.isStarred !== undefined
+        ? override.isStarred
+        : (page.isStarred || false)
+    )
+
     if (override) {
       return {
         ...page,
@@ -314,6 +320,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
         type: pageType,
         seoPageType: pageType,
         priority: pagePriority,
+        isStarred,
         isManualOverride,
         isConfigured,
         isExcluded,
@@ -329,6 +336,7 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
       type: pageType,
       seoPageType: pageType,
       priority: pagePriority,
+      isStarred,
       isConfigured,
       isExcluded
     }

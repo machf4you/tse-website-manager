@@ -95,13 +95,29 @@ db.exec(`
     is_top_100 INTEGER DEFAULT 0,
     ranking_url TEXT DEFAULT NULL,
     is_url_match INTEGER DEFAULT 0,
+    search_volume INTEGER DEFAULT NULL,
+    volume_checked_at TEXT DEFAULT NULL,
     search_engine TEXT DEFAULT 'google.co.uk',
     location_code INTEGER DEFAULT 2826,
-    device TEXT DEFAULT 'desktop',
+    device TEXT DEFAULT 'mobile',
     last_checked_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     PRIMARY KEY(site_id, page_key),
     FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS serp_task_queue (
+    task_id TEXT NOT NULL,
+    site_id TEXT NOT NULL,
+    page_key TEXT NOT NULL,
+    target_phrase TEXT NOT NULL,
+    configured_url TEXT,
+    device TEXT DEFAULT 'mobile',
+    status TEXT DEFAULT 'pending',
+    submitted_at TEXT NOT NULL,
+    completed_at TEXT,
+    cost REAL DEFAULT 0,
+    PRIMARY KEY(task_id, page_key)
   );
 `)
 
@@ -120,6 +136,19 @@ try {
   `)
 } catch (e) {
   console.error('Error ensuring domain_id column exists on websites table:', e)
+}
+
+// Safe idempotent migration: ensure search_volume and volume_checked_at columns exist on page_rankings
+try {
+  const rankingCols = db.pragma('table_info(page_rankings)')
+  if (!rankingCols.some(col => col.name === 'search_volume')) {
+    db.exec(`ALTER TABLE page_rankings ADD COLUMN search_volume INTEGER DEFAULT NULL;`)
+  }
+  if (!rankingCols.some(col => col.name === 'volume_checked_at')) {
+    db.exec(`ALTER TABLE page_rankings ADD COLUMN volume_checked_at TEXT DEFAULT NULL;`)
+  }
+} catch (e) {
+  console.error('Error ensuring search_volume columns exist on page_rankings table:', e)
 }
 
 export const getAllWebsitesStmt = db.prepare('SELECT * FROM websites')

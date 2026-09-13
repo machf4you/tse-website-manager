@@ -133,7 +133,7 @@ export default function GlobalDeploymentIndicator() {
           <div className="global-update-banner-content">
             <span className="banner-message">
               <span className="deploy-ready-pulse-dot" aria-hidden="true">⚠️</span>
-              <strong>NEW UPDATE AVAILABLE:</strong> Please press <kbd>Ctrl</kbd> + <kbd>F5</kbd> (or click Refresh) to load the latest changes!
+              <strong>NEW UPDATE AVAILABLE:</strong> Please click <strong>CLICK TO REFRESH</strong> to load the latest changes!
             </span>
             <button 
               type="button" 
@@ -143,7 +143,7 @@ export default function GlobalDeploymentIndicator() {
                 handleManualRefresh()
               }}
             >
-              ↻ Refresh Now (Ctrl + F5)
+              ↻ Click to Refresh
             </button>
           </div>
         </div>
@@ -153,17 +153,17 @@ export default function GlobalDeploymentIndicator() {
           tabIndex={0}
           onClick={handleManualRefresh}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleManualRefresh()}
-          title="New deployment is live! Click or press Ctrl+F5 to reload"
+          title="New deployment is live! Click to reload latest changes"
         >
           <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
           <span className="deploy-text-ready">V{serverVersion || CURRENT_BUILD_VERSION} | UPDATE READY</span>
-          <span className="deploy-action-badge">↻ Refresh</span>
+          <span className="deploy-action-badge">↻ CLICK TO REFRESH</span>
         </div>
       </>
     )
   }
 
-  // STATE 1: NORMAL (Idle / Up-to-Date Live Badge + Quick Refresh Button)
+  // STATE 1: NORMAL (Idle / Up-to-Date Live Badge + Green Refresh Control)
   return (
     <div className="global-deploy-indicator global-deploy-normal">
       <span className="global-deploy-live-badge">
@@ -171,9 +171,9 @@ export default function GlobalDeploymentIndicator() {
       </span>
       <button
         type="button"
-        className="global-deploy-refresh-btn"
+        className="global-deploy-refresh-btn global-deploy-refresh-normal"
         onClick={handleManualRefresh}
-        title="Refresh application (reload latest updates)"
+        title="Reload application"
         id="btn-global-header-refresh"
       >
         <span className="refresh-icon" aria-hidden="true">↻</span> Refresh
