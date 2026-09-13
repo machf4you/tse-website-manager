@@ -61,7 +61,10 @@ export default function InternalLinkingPage({
   isLoadingPackage,
   initialSelectedUrl,
   onNavigateTab,
-  onNavigateBack
+  onNavigateBack,
+  onSyncFromWordPress,
+  isSyncing = false,
+  lastSyncTimestamp = null
 }) {
   const [expandedUrl, setExpandedUrl] = useState(() => {
     return initialSelectedUrl || null
@@ -70,6 +73,29 @@ export default function InternalLinkingPage({
   const [showAllPages, setShowAllPages] = useState(false)
   const [pageRankings, setPageRankings] = useState({})
   const [pageConfigs, setPageConfigs] = useState({})
+
+  const [localSyncState, setLocalSyncState] = useState('idle')
+  const [syncErrorMessage, setSyncErrorMessage] = useState(null)
+  const [syncSuccessTimestamp, setSyncSuccessTimestamp] = useState(lastSyncTimestamp || null)
+
+  const handleTriggerSync = async () => {
+    if (isSyncing || localSyncState === 'syncing') return
+    setLocalSyncState('syncing')
+    setSyncErrorMessage(null)
+
+    try {
+      if (typeof onSyncFromWordPress === 'function') {
+        await onSyncFromWordPress()
+      }
+      const nowStr = formatReadableDateTime(new Date())
+      setSyncSuccessTimestamp(nowStr)
+      setLocalSyncState('success')
+    } catch (err) {
+      console.error('W5 Sync error:', err)
+      setLocalSyncState('error')
+      setSyncErrorMessage(err.message || 'Failed to synchronise website data from WordPress.')
+    }
+  }
 
   const storageKey = site?.id ? `tse_w5_recommendations_${site.id}` : 'tse_w5_recommendations_default'
 
@@ -572,14 +598,56 @@ export default function InternalLinkingPage({
             )}
 
             {isImplemented && (
-              <button
-                type="button"
-                className="w3-btn-emerald"
-                onClick={() => onNavigateTab ? onNavigateTab('dashboard') : onNavigateBack()}
-                style={{ padding: '4px 10px', fontSize: '0.74rem', fontWeight: '700', borderRadius: '4px' }}
-              >
-                🔄 Synchronise Website Data (W2)
-              </button>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="w3-btn-emerald"
+                  onClick={handleTriggerSync}
+                  disabled={isSyncing || localSyncState === 'syncing'}
+                  style={{
+                    padding: '5px 12px',
+                    fontSize: '0.74rem',
+                    fontWeight: '700',
+                    borderRadius: '4px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: (isSyncing || localSyncState === 'syncing') ? 0.75 : 1,
+                    cursor: (isSyncing || localSyncState === 'syncing') ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {(isSyncing || localSyncState === 'syncing') ? (
+                    <>
+                      <span className="spinner" style={{ width: '11px', height: '11px', borderWidth: '2px', display: 'inline-block' }} />
+                      <span>Synchronising Website Data...</span>
+                    </>
+                  ) : localSyncState === 'success' ? (
+                    <>
+                      <span>✓ Website Data Synchronised</span>
+                    </>
+                  ) : localSyncState === 'error' ? (
+                    <>
+                      <span>⚠️ Retry Synchronisation</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🔄 Synchronise Website Data (W2)</span>
+                    </>
+                  )}
+                </button>
+
+                {localSyncState === 'success' && (
+                  <span style={{ fontSize: '0.74rem', color: '#34d399', fontWeight: '600' }}>
+                    ✓ Metrics & links updated ({syncSuccessTimestamp || 'Just now'})
+                  </span>
+                )}
+
+                {localSyncState === 'error' && syncErrorMessage && (
+                  <span style={{ fontSize: '0.74rem', color: '#f87171' }}>
+                    ⚠️ {syncErrorMessage}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -1143,6 +1211,32 @@ export default function InternalLinkingPage({
           <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="il-site-url">
             {websiteUrl} &#x2197;
           </a>
+        </div>
+        <div className="il-title-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', fontWeight: '600' }}>WEBSITE DATA:</span>
+            <span style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: '600' }}>
+              {syncSuccessTimestamp ? `Synced: ${syncSuccessTimestamp}` : (lastSyncTimestamp ? `Synced: ${lastSyncTimestamp}` : 'Ready to Sync')}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="w3-btn-emerald"
+            onClick={handleTriggerSync}
+            disabled={isSyncing || localSyncState === 'syncing'}
+            style={{ padding: '6px 14px', fontSize: '0.78rem', fontWeight: '700', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            {(isSyncing || localSyncState === 'syncing') ? (
+              <>
+                <span className="spinner" style={{ width: '11px', height: '11px', borderWidth: '2px', display: 'inline-block' }} />
+                <span>Syncing...</span>
+              </>
+            ) : (
+              <>
+                <span>🔄 Sync W2 Data</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

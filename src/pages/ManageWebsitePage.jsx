@@ -575,6 +575,9 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
           else if (tab === 'w5-internal-linking' || tab === 'w4-internal-linking') setActiveTab('w4_internal_linking')
           else setActiveTab('w2')
         }}
+        onSyncFromWordPress={handleSynchroniseClick}
+        isSyncing={isSyncing}
+        lastSyncTimestamp={lastSyncDate || site?.lastSyncTimestamp}
       />
     )
   }
