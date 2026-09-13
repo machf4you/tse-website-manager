@@ -367,7 +367,103 @@ export function getRecommendedInternalLinks(targetUrl, targetPhrase, pagesList, 
 }
 
 /**
- * Analyze source page and target page context to generate an editorial, grammatically sound sentence
+ * Extract genuine editorial body paragraphs from raw HTML/Elementor content.
+ * Filters out short navigation boilerplate, headers, copyright, and testimonials.
+ */
+export function extractEditorialBlocks(rawContent) {
+  if (!rawContent || typeof rawContent !== 'string') return []
+  const bodyCleaned = cleanEditorialHtml(rawContent)
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
+
+  const pMatches = []
+  const pRegex = /<p[^>]*>([\s\S]*?)<\/p>/gi
+  let m
+  while ((m = pRegex.exec(bodyCleaned)) !== null) {
+    const pText = m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    if (
+      pText.length >= 45 &&
+      pText.length <= 600 &&
+      !/all rights reserved|copyright|privacy policy|cookie|rating on google|trusted by businesses|request an seo audit|book a strategy call/i.test(pText)
+    ) {
+      pMatches.push(pText)
+    }
+  }
+
+  // Fallback to text blocks if no <p> tags found
+  if (pMatches.length === 0) {
+    const fallbackBlocks = bodyCleaned
+      .replace(/<(p|div|section|article|li|h[1-6])[^>]*>/gi, '\n')
+      .replace(/<[^>]+>/g, ' ')
+      .split(/[\r\n]+/)
+      .map(b => b.replace(/\s+/g, ' ').trim())
+      .filter(b => b.length >= 50 && b.length <= 600 && !/all rights reserved|copyright|privacy policy|cookie|rating on google|trusted by businesses/i.test(b))
+    return fallbackBlocks
+  }
+
+  return pMatches
+}
+
+/**
+ * Score candidate paragraphs for contextual relevance to target page and anchor
+ */
+export function scoreParagraphForContext(paragraph, anchor, targetTitle, targetSlug) {
+  let score = 0
+  const lower = paragraph.toLowerCase()
+  const lowerAnchor = (anchor || '').toLowerCase()
+  
+  if (lowerAnchor && lower.includes(lowerAnchor)) score += 100
+  if (lower.includes('local') || lower.includes('area') || lower.includes('region')) score += 40
+  if (lower.includes('seo services') || lower.includes('search visibility') || lower.includes('optimisation') || lower.includes('optimization')) score += 30
+  if (lower.includes('strategy') || lower.includes('traffic') || lower.includes('rankings')) score += 20
+  if (lower.includes('commercial') || lower.includes('revenue') || lower.includes('converts')) score += 15
+  
+  // Penalize client testimonials & reviews so general editorial copy is preferred
+  if (/^we’d tried|^our ecommerce performance|^we didn’t need|testimonial|“|”/i.test(paragraph)) score -= 50
+  
+  return score
+}
+
+/**
+ * Naturally weaves anchor text into an existing source paragraph with minimal editorial footprint
+ */
+export function naturallyModifyEditorialBlock(originalBlock, anchor, targetPage, sourcePage) {
+  const cleanAnchor = (anchor || '').trim()
+  const lower = originalBlock.toLowerCase()
+  const lowerAnchor = cleanAnchor.toLowerCase()
+
+  // 1. If anchor text is already present in the block, keep it intact
+  if (lower.includes(lowerAnchor)) {
+    return originalBlock
+  }
+
+  // 2. If block mentions regional / local search, naturally weave into existing clause
+  if (lower.includes('local seo') || lower.includes('local area') || lower.includes('regional')) {
+    return originalBlock.replace(/local SEO|local area|regional/i, (m) => `${m}, including tailored ${cleanAnchor},`)
+  }
+
+  // 3. Location-based target (e.g. Bournemouth, Oxford, London)
+  const locMatch = ((targetPage?.url || '') + ' ' + (targetPage?.title || '') + ' ' + cleanAnchor).match(/\b(Bournemouth|Oxford|London|Exeter|Reading|Surrey|Banstead|Manchester|Birmingham|Leeds|Bristol|Southampton|Dorset)\b/i)
+  const location = locMatch ? locMatch[1] : ''
+
+  if (location) {
+    if (originalBlock.endsWith('.')) {
+      return `${originalBlock.slice(0, -1)}, complemented by dedicated ${cleanAnchor} for expanding regional search visibility.`
+    }
+    return `${originalBlock}. For regional market growth, tailored ${cleanAnchor} delivers high-intent local search visibility.`
+  }
+
+  // 4. General service target
+  if (originalBlock.endsWith('.')) {
+    return `${originalBlock.slice(0, -1)}, supported by strategic ${cleanAnchor} to maximise organic reach.`
+  }
+  return `${originalBlock}. Integrating ${cleanAnchor} provides sustainable organic growth.`
+}
+
+/**
+ * Analyze source page and target page context to locate an existing editorial block
+ * and generate a contextual replacement with the anchor.
  */
 export function generateContextualReplacement(sourceInput, anchorTextInput, targetInput) {
   let sourcePage = null
@@ -385,7 +481,7 @@ export function generateContextualReplacement(sourceInput, anchorTextInput, targ
   }
 
   if (!sourcePage) {
-    return { error: 'No suitable contextual placement found on this page' }
+    return { error: 'Suitable insertion point not found on source page.' }
   }
 
   const rawContent = (
@@ -399,94 +495,48 @@ export function generateContextualReplacement(sourceInput, anchorTextInput, targ
   )
 
   const cleanAnchor = (anchorText || '').trim()
+  const candidateBlocks = extractEditorialBlocks(rawContent)
 
-  // 1. Extract real body sentences from source page for candidate contextual placement
-  const bodyCleaned = cleanEditorialHtml(rawContent)
-    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-    .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, '')
-
-  const blocks = bodyCleaned
-    .replace(/<(p|div|section|article|li|h[1-6])[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .split(/[\r\n]+/)
-
-  const sentences = []
-  blocks.forEach(block => {
-    const cleanBlock = block.replace(/\s+/g, ' ').trim()
-    if (!cleanBlock) return
-    const parts = cleanBlock.split(/(?<=[.!?])\s+/)
-    parts.forEach(p => {
-      const s = p.trim()
-      if (s.length >= 35 && s.length <= 300 && !/all rights reserved|copyright|tel:|mailto:/i.test(s)) {
-        sentences.push(s)
-      }
-    })
-  })
-
-  // 2. Determine source page topic and audience
-  const sTitle = (sourcePage?.title || sourcePage?.proposedTitle || sourcePage?.pageTitle || '').replace(/[-|:].*$/, '').trim()
-  const sSlug = getPathSlugForMatching(sourcePage?.url || '') || ''
-  const tTitle = (targetPage?.title || targetPage?.proposedTitle || targetPage?.pageTitle || '').replace(/[-|:].*$/, '').trim()
-  const tSlug = getPathSlugForMatching(targetPage?.url || '') || ''
-
-  let sAudience = 'businesses and organisations'
-  if (/clinic/i.test(sTitle + sSlug)) sAudience = 'healthcare clinics and medical practices'
-  else if (/dentist/i.test(sTitle + sSlug)) sAudience = 'dental practices and specialists'
-  else if (/builder/i.test(sTitle + sSlug)) sAudience = 'builders and construction contractors'
-  else if (/law\s*firm|lawyer|solicitor/i.test(sTitle + sSlug)) sAudience = 'law firms and legal practices'
-  else if (/shopify|ecommerce/i.test(sTitle + sSlug)) sAudience = 'ecommerce brands and online retailers'
-  else if (/audit/i.test(sTitle + sSlug)) sAudience = 'companies auditing their search performance'
-  else if (/pricing|cost/i.test(sTitle + sSlug)) sAudience = 'businesses evaluating their marketing budget'
-  else if (/local\s*seo/i.test(sTitle + sSlug)) sAudience = 'companies targeting local search visibility'
-
-  // 3. Extract target location / core focus
-  const locMatch = (tSlug + ' ' + tTitle + ' ' + cleanAnchor).match(/\b(Bournemouth|Oxford|London|Exeter|Reading|Surrey|Banstead|Manchester|Birmingham|Leeds|Bristol|Southampton|Dorset)\b/i)
-  const location = locMatch ? (locMatch[1].charAt(0).toUpperCase() + locMatch[1].slice(1).toLowerCase()) : ''
-
-  const isPluralVerb = /\b(services|campaigns|specialists|solutions|consultants)\b/i.test(cleanAnchor)
-  const verbProvide = isPluralVerb ? 'provide' : 'provides'
-  const verbDeliver = isPluralVerb ? 'deliver' : 'delivers'
-
-  // 4. Synthesize natural, fluent editorial sentence
-  let replacement = ''
-  let recommendationType = 'Add New Sentence'
-
-  // Check if any existing sentence in source page already contains the clean anchor
-  const matchingSentence = sentences.find(s => s.toLowerCase().includes(cleanAnchor.toLowerCase()))
-  if (matchingSentence) {
-    replacement = matchingSentence
-    recommendationType = 'Modify Existing Text'
-  } else if (location) {
-    // Target is a location SEO page
-    if (/specialists|team|experts|consultant/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} seeking to grow their regional reach, partnering with ${cleanAnchor} ensures prominent placement across competitive local search queries.`
-    } else if (/^SEO\s+[A-Z]/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} looking to grow their regional visibility in Dorset and the South Coast, investing in dedicated ${cleanAnchor} significantly enhances local search rankings.`
-    } else if (/services|support|campaigns|strategy/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} looking to capture high-intent search traffic, tailored ${cleanAnchor} ${verbProvide} the authority and search presence needed to outpace local competitors.`
-    } else if (/optimisation|optimization/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} operating across the region, comprehensive ${cleanAnchor} ${verbDeliver} consistent inbound inquiries from nearby searchers.`
-    } else {
-      replacement = `For ${sAudience} aiming to strengthen their presence in the area, our ${cleanAnchor} ${verbProvide} the targeted visibility needed to attract qualified clients.`
+  if (candidateBlocks.length === 0) {
+    return {
+      currentSourceText: '',
+      suggestedReplacement: '',
+      recommendedAnchor: cleanAnchor,
+      error: 'Suitable insertion point not found on source page.'
     }
-  } else if (/google\s*business|gbp|maps/i.test(tSlug + tTitle + cleanAnchor)) {
-    replacement = `To complement overall organic growth, implementing a dedicated ${cleanAnchor} ensures maximum prominence in local map packs and high-converting search features.`
-  } else if (/technical/i.test(tSlug + tTitle + cleanAnchor)) {
-    replacement = `Alongside content and on-page improvements, maintaining robust ${cleanAnchor} ensures search engines can crawl, index, and rank key service pages without friction.`
-  } else if (/pricing|cost/i.test(tSlug + tTitle + cleanAnchor)) {
-    replacement = `Before launching a campaign, reviewing our ${cleanAnchor} helps clarify the expected investment and strategic deliverables needed for long-term organic ROI.`
-  } else if (/audit/i.test(tSlug + tTitle + cleanAnchor)) {
-    replacement = `To identify technical roadblocks and untapped ranking opportunities, conducting a thorough ${cleanAnchor} is the crucial first step in any organic strategy.`
-  } else {
-    replacement = `For ${sAudience} focused on scalable organic growth, integrating ${cleanAnchor} into your wider digital marketing strategy ${verbDeliver} sustainable search visibility.`
   }
 
+  // Filter out blocks that already have targetUrl link
+  const targetNormUrl = targetPage?.url ? normalizeUrlForMatching(targetPage.url) : ''
+  const eligibleBlocks = candidateBlocks.filter(b => {
+    if (targetNormUrl && b.toLowerCase().includes(targetNormUrl)) return false
+    return true
+  })
+
+  const poolToScore = eligibleBlocks.length > 0 ? eligibleBlocks : candidateBlocks
+
+  const scored = poolToScore.map(b => ({
+    block: b,
+    score: scoreParagraphForContext(b, cleanAnchor, targetPage?.title, targetPage?.url)
+  })).sort((a, b) => b.score - a.score)
+
+  const chosenBlock = scored[0]?.block || ''
+  if (!chosenBlock) {
+    return {
+      currentSourceText: '',
+      suggestedReplacement: '',
+      recommendedAnchor: cleanAnchor,
+      error: 'Suitable insertion point not found on source page.'
+    }
+  }
+
+  const proposedModified = naturallyModifyEditorialBlock(chosenBlock, cleanAnchor, targetPage, sourcePage)
+
   return {
-    currentSourceText: sentences[0] || '',
-    suggestedReplacement: replacement,
+    currentSourceText: chosenBlock,
+    suggestedReplacement: proposedModified,
     recommendedAnchor: cleanAnchor,
-    recommendationType
+    recommendationType: 'Modify Existing Block'
   }
 }
 
@@ -663,7 +713,7 @@ export function generateSimpleInternalLinkRecommendations(pagesList) {
  * Safely inserts a target hyperlink into source page content using the saved sentence & anchor text.
  * Preserves all surrounding HTML/content and prevents duplicate links.
  */
-export function buildModifiedSourceContent(sourcePage, targetUrl, anchorText, savedSentence) {
+export function buildModifiedSourceContent(sourcePage, targetUrl, anchorText, savedSentence, originalBlock = '') {
   if (!sourcePage) {
     return { success: false, message: 'Source page object missing.' }
   }
@@ -726,9 +776,13 @@ export function buildModifiedSourceContent(sourcePage, targetUrl, anchorText, sa
     }
   }
 
-  // 3. Locate and replace in rawContent
+  // 3. Locate and replace in rawContent strictly in-place
   let newContent = rawContent
-  if (rawContent.includes(savedSentence)) {
+  const cleanOriginal = (originalBlock || '').trim()
+
+  if (cleanOriginal && rawContent.includes(cleanOriginal)) {
+    newContent = rawContent.replace(cleanOriginal, hyperlinkedSentence)
+  } else if (rawContent.includes(savedSentence)) {
     newContent = rawContent.replace(savedSentence, hyperlinkedSentence)
   } else {
     const cleanSentenceStr = savedSentence.trim().replace(/\s+/g, ' ')
@@ -743,7 +797,10 @@ export function buildModifiedSourceContent(sourcePage, targetUrl, anchorText, sa
         const after = rawContent.slice(rawAnchorIdx + cleanAnchor.length)
         newContent = `${before}<a href="${targetUrl}">${matched}</a>${after}`
       } else {
-        newContent = `${rawContent}\n\n<p>${hyperlinkedSentence}</p>`
+        return {
+          success: false,
+          message: 'Suitable insertion point not found on source page. Content push aborted to prevent blind appending.'
+        }
       }
     }
   }

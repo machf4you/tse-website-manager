@@ -491,7 +491,8 @@ export async function updateWordPressPageContent({
   contentHtml,
   targetUrl,
   anchorText,
-  savedSentence
+  savedSentence,
+  originalBlock
 }) {
   if (!site || !sourcePage) return { success: false, message: 'Site or Source Page object missing' }
   let base = (site?.url || sourcePage?.url || '').trim().replace(/\/+$/, '')
@@ -573,39 +574,45 @@ export async function updateWordPressPageContent({
         }
 
         let targetWidgetNode = null
-        let fallbackTextWidget = null
 
         function findWidgetNode(nodes) {
           if (!Array.isArray(nodes) || targetWidgetNode) return
           for (const node of nodes) {
             if (node.widgetType === 'text-editor' && node.settings && typeof node.settings.editor === 'string') {
               const editorHtml = node.settings.editor
-              // Check if exact sentence or clean text exists in this widget
-              if (savedSentence && editorHtml.includes(savedSentence)) {
+              // Check if originalBlock, savedSentence, or cleanAnchor exists in this widget
+              if (originalBlock && editorHtml.includes(originalBlock.trim())) {
                 targetWidgetNode = node
                 return
               }
-              // Check if widget mentions target niche/topic
-              if (/local\s*seo|location|bournemouth/i.test(editorHtml)) {
-                if (!targetWidgetNode) targetWidgetNode = node
+              if (savedSentence && editorHtml.includes(savedSentence.trim())) {
+                targetWidgetNode = node
+                return
               }
-              if (!fallbackTextWidget) fallbackTextWidget = node
+              if (cleanAnchor && editorHtml.includes(cleanAnchor)) {
+                targetWidgetNode = node
+                return
+              }
             }
             if (Array.isArray(node.elements)) findWidgetNode(node.elements)
           }
         }
 
         findWidgetNode(tree)
-        const chosenNode = targetWidgetNode || fallbackTextWidget
 
-        if (chosenNode && chosenNode.settings) {
-          const currentEditor = chosenNode.settings.editor || ''
-          if (savedSentence && currentEditor.includes(savedSentence)) {
-            chosenNode.settings.editor = currentEditor.replace(savedSentence, hyperlinkedSentence)
-          } else if (!currentEditor.includes(cleanTarget)) {
-            chosenNode.settings.editor = `${currentEditor.trim()}\n<p>${hyperlinkedSentence}</p>`
+        if (targetWidgetNode && targetWidgetNode.settings) {
+          const currentEditor = targetWidgetNode.settings.editor || ''
+          const cleanOrig = (originalBlock || '').trim()
+          if (cleanOrig && currentEditor.includes(cleanOrig)) {
+            targetWidgetNode.settings.editor = currentEditor.replace(cleanOrig, hyperlinkedSentence)
+          } else if (savedSentence && currentEditor.includes(savedSentence.trim())) {
+            targetWidgetNode.settings.editor = currentEditor.replace(savedSentence.trim(), hyperlinkedSentence)
+          } else if (cleanAnchor && currentEditor.includes(cleanAnchor)) {
+            targetWidgetNode.settings.editor = currentEditor.replace(cleanAnchor, `<a href="${cleanTarget}">${cleanAnchor}</a>`)
           }
           updatedElementorJson = JSON.stringify(tree)
+        } else {
+          console.warn('[WORDPRESS_API] Matching editorial block not found in Elementor document tree. Preserving Elementor tree without blind appending.')
         }
       }
     } catch (eErr) {

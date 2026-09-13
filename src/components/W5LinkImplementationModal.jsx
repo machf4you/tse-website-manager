@@ -25,7 +25,8 @@ export default function W5LinkImplementationModal({
   const targetTitle = rec.targetTitle || 'Target Page'
   const targetUrl = rec.targetUrl || ''
   const anchorText = rec.anchorText || ''
-  const originalContext = rec.currentSourceText || 'New paragraph to be added to source page editorial content.'
+  const originalContext = rec.currentSourceText || ''
+  const hasInsertionPoint = Boolean(originalContext && originalContext.trim() && !rec.error)
 
   return (
     <div className="w4-modal-overlay" style={{ background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', zIndex: 9999 }}>
@@ -51,7 +52,7 @@ export default function W5LinkImplementationModal({
 
         {error && (
           <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '6px', padding: '10px 12px', color: '#fca5a5', fontSize: '0.8rem', marginBottom: '16px', lineHeight: '1.4' }}>
-            ⚠️ <strong>Push Failed:</strong> {error}
+            ⚠️ <strong>Notice:</strong> {error}
           </div>
         )}
 
@@ -100,38 +101,45 @@ export default function W5LinkImplementationModal({
           <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#94a3b8', fontWeight: '700', display: 'block', marginBottom: '4px' }}>
             1. ORIGINAL CONTENT (CURRENT SOURCE BLOCK - READ ONLY):
           </span>
-          <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '10px 12px', fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.5', maxHeight: '90px', overflowY: 'auto' }}>
-            {originalContext}
-          </div>
+          {hasInsertionPoint ? (
+            <div style={{ background: 'rgba(15, 23, 42, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px', padding: '10px 12px', fontSize: '0.8rem', color: '#cbd5e1', lineHeight: '1.5', maxHeight: '110px', overflowY: 'auto' }}>
+              {originalContext}
+            </div>
+          ) : (
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', padding: '10px 12px', fontSize: '0.8rem', color: '#fca5a5', lineHeight: '1.5' }}>
+              ⚠️ Suitable insertion point not found on source page.
+            </div>
+          )}
         </div>
 
         {/* PROPOSED CONTENT (Editable) */}
         <div style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
             <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#38bdf8', fontWeight: '700' }}>
-              2. PROPOSED CONTENT (EXACT EDITORIAL SENTENCE - EDITABLE BEFORE PUSH):
+              2. PROPOSED CONTENT (MODIFIED SOURCE BLOCK - EDITABLE BEFORE PUSH):
             </span>
             <span style={{ fontSize: '0.7rem', color: '#64748b' }}>✏️ Tweak text if needed</span>
           </div>
           <textarea
             value={editableSentence}
             onChange={(e) => setEditableSentence(e.target.value)}
-            disabled={isPushing}
-            rows={3}
+            disabled={isPushing || !hasInsertionPoint}
+            rows={4}
             style={{
               width: '100%',
               boxSizing: 'border-box',
               background: '#020617',
-              border: '1px solid #3b82f6',
+              border: hasInsertionPoint ? '1px solid #3b82f6' : '1px solid #475569',
               borderRadius: '6px',
               padding: '10px 12px',
               fontSize: '0.82rem',
               color: '#f8fafc',
               lineHeight: '1.5',
               resize: 'vertical',
-              fontFamily: 'inherit'
+              fontFamily: 'inherit',
+              opacity: hasInsertionPoint ? 1 : 0.6
             }}
-            placeholder="Proposed contextual sentence..."
+            placeholder={hasInsertionPoint ? "Proposed modified source block..." : "No suitable insertion point found on source page."}
           />
         </div>
 
@@ -147,9 +155,18 @@ export default function W5LinkImplementationModal({
           <button
             type="button"
             onClick={() => onConfirm(editableSentence)}
-            disabled={isPushing || !editableSentence.trim()}
+            disabled={isPushing || !editableSentence.trim() || !hasInsertionPoint}
             className="w3-btn-emerald"
-            style={{ padding: '8px 18px', fontSize: '0.82rem', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            style={{
+              padding: '8px 18px',
+              fontSize: '0.82rem',
+              fontWeight: '700',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              opacity: (isPushing || !editableSentence.trim() || !hasInsertionPoint) ? 0.5 : 1,
+              cursor: (isPushing || !editableSentence.trim() || !hasInsertionPoint) ? 'not-allowed' : 'pointer'
+            }}
           >
             {isPushing ? 'Pushing & Verifying in WordPress...' : '🚀 Confirm & Push to WordPress'}
           </button>

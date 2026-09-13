@@ -328,22 +328,42 @@ export default function InternalLinkingPage({
   const handleOpenImplementModal = (rec) => {
     const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
     const savedRecord = savedRecs[recKey]
-    const recToUse = {
-      ...rec,
-      savedSentence: savedRecord?.savedSentence || aiSentences[recKey]?.suggestedReplacement || ''
-    }
-    const sUrl = recToUse.sourceUrl || recToUse.suggestedSourceUrl
+    const aiResult = aiSentences[recKey]
+    const sUrl = rec.sourceUrl || rec.suggestedSourceUrl
     const sNorm = normalizeUrlForMatching(sUrl)
     const sSlug = getPathSlugForMatching(sUrl)
     const srcPageObj = activePages.find(p => {
       const pNorm = normalizeUrlForMatching(p.url)
       const pSlug = getPathSlugForMatching(p.url)
-      return (pNorm && pNorm === sNorm) || (pSlug && pSlug === sSlug) || p.url === sUrl || p.title === recToUse.sourceTitle
-    }) || recToUse.sourcePageObj
+      return (pNorm && pNorm === sNorm) || (pSlug && pSlug === sSlug) || p.url === sUrl || p.title === rec.sourceTitle
+    }) || rec.sourcePageObj
+
+    let currentSourceText = savedRecord?.currentSourceText || aiResult?.currentSourceText || rec.currentSourceText || ''
+    let savedSentence = savedRecord?.savedSentence || aiResult?.suggestedReplacement || ''
+    let initialError = null
+
+    if ((!currentSourceText || !savedSentence) && srcPageObj) {
+      const freshRes = generateContextualReplacement(srcPageObj, rec.anchorText || rec.targetTitle, rec.targetPageObj || rec.targetUrl)
+      if (freshRes) {
+        if (freshRes.error) {
+          initialError = freshRes.error
+        } else {
+          if (!currentSourceText) currentSourceText = freshRes.currentSourceText
+          if (!savedSentence) savedSentence = freshRes.suggestedReplacement
+        }
+      }
+    }
+
+    const recToUse = {
+      ...rec,
+      currentSourceText,
+      savedSentence,
+      error: initialError
+    }
 
     setActiveModalRec(recToUse)
     setActiveModalSourcePage(srcPageObj)
-    setModalError(null)
+    setModalError(initialError)
   }
 
   const handleConfirmPushLink = async (customSentence) => {
@@ -354,12 +374,14 @@ export default function InternalLinkingPage({
     const rec = activeModalRec
     const sentenceToUse = (typeof customSentence === 'string' && customSentence.trim()) ? customSentence.trim() : (rec.savedSentence || '')
     const sourcePage = activeModalSourcePage || rec.sourcePageObj
+    const originalBlock = rec.currentSourceText || ''
 
     const buildRes = buildModifiedSourceContent(
       sourcePage,
       rec.targetUrl,
       rec.anchorText || rec.targetTitle,
-      sentenceToUse
+      sentenceToUse,
+      originalBlock
     )
 
     if (!buildRes.success) {
@@ -375,7 +397,8 @@ export default function InternalLinkingPage({
         contentHtml: buildRes.newContent,
         targetUrl: rec.targetUrl,
         anchorText: rec.anchorText || rec.targetTitle,
-        savedSentence: sentenceToUse
+        savedSentence: sentenceToUse,
+        originalBlock: originalBlock
       })
 
       if (!pushRes || !pushRes.success || !pushRes.verified) {
@@ -393,6 +416,7 @@ export default function InternalLinkingPage({
         sourceUrl: rec.sourceUrl || rec.suggestedSourceUrl,
         targetUrl: rec.targetUrl,
         anchorText: rec.anchorText || rec.targetTitle,
+        currentSourceText: originalBlock,
         savedSentence: sentenceToUse,
         isSaved: true,
         isImplemented: true,
@@ -482,11 +506,13 @@ export default function InternalLinkingPage({
     if (!textToSave) return
 
     const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
+    const aiResult = aiSentences[recKey]
     const payload = {
       id: rec.id,
       sourceUrl: rec.sourceUrl || rec.suggestedSourceUrl,
       targetUrl: rec.targetUrl,
       anchorText: rec.anchorText || rec.targetTitle,
+      currentSourceText: aiResult?.currentSourceText || rec.currentSourceText || '',
       savedSentence: textToSave,
       isSaved: true,
       updatedAt: new Date().toISOString()
