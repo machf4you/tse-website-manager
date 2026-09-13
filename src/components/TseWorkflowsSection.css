@@ -78,11 +78,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 11px;
   border-radius: 8px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #f1f5f9;
@@ -110,7 +110,6 @@
   background: rgba(16, 185, 129, 0.08);
   border-color: rgba(16, 185, 129, 0.25);
   cursor: pointer;
-  border: 1px solid rgba(16, 185, 129, 0.25);
   font-family: inherit;
 }
 
@@ -137,7 +136,7 @@
   padding: 0 1px;
 }
 
-/* Full Explanation Grid */
+/* Full Explanation List */
 .tse-explanation-section {
   margin-bottom: 2.5rem;
 }
@@ -153,86 +152,127 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.tse-explanation-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
+.tse-stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.tse-explanation-card {
+.tse-stage-card {
   background: #0c101b;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
-  padding: 1.35rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  padding: 1.4rem 1.75rem;
   position: relative;
   overflow: hidden;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.tse-explanation-card:hover {
+.tse-stage-card:hover {
   border-color: rgba(56, 189, 248, 0.25);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 
-.tse-explanation-card::before {
+.tse-stage-card::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   width: 4px;
   height: 100%;
-  background: var(--card-accent, #38bdf8);
+  background: var(--stage-accent, #38bdf8);
 }
 
-.tse-card-header-row {
+.tse-stage-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 0.75rem;
 }
 
-.tse-card-title-group {
+.tse-stage-title-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.tse-card-num {
+.tse-stage-num-badge {
   font-size: 0.72rem;
   font-weight: 800;
-  color: var(--card-accent, #38bdf8);
+  color: var(--stage-accent, #38bdf8);
   background: rgba(255, 255, 255, 0.04);
   padding: 2px 7px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.tse-card-title {
+.tse-stage-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #f8fafc;
   margin: 0;
   letter-spacing: -0.01em;
 }
 
-.tse-card-lead {
+.tse-stage-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   font-size: 0.88rem;
-  font-weight: 600;
+  line-height: 1.6;
   color: #cbd5e1;
-  margin: 0;
-  line-height: 1.45;
 }
 
-.tse-card-body {
-  font-size: 0.835rem;
-  line-height: 1.55;
-  color: #94a3b8;
+.tse-stage-content p {
   margin: 0;
+}
+
+.tse-stage-list {
+  margin: 0.25rem 0 0.5rem 1.25rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 4px 16px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.tse-stage-list li {
+  margin-bottom: 2px;
+}
+
+.tse-highlight-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.02em;
+  margin: 0.35rem 0;
+}
+
+.tse-loop-flow {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin-top: 0.35rem;
+}
+
+.tse-loop-step {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #34d399;
 }
 
 .tse-card-link-btn {
@@ -269,6 +309,7 @@
   color: #34d399;
   cursor: pointer;
   font-family: inherit;
+  border: 1px solid rgba(16, 185, 129, 0.25);
   transition: all 0.15s ease;
 }
 
@@ -277,42 +318,73 @@
   color: #ffffff;
 }
 
-/* Bottom Line Banner */
-.tse-bottom-line-banner {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(14, 165, 233, 0.1) 50%, rgba(99, 102, 241, 0.1) 100%);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 12px;
-  padding: 1.25rem 1.75rem;
-  text-align: center;
-  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.25);
+/* The Principle Banner */
+.tse-principle-banner {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(12, 16, 27, 0.98) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 14px;
+  padding: 1.75rem 2rem;
+  text-align: left;
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
-.tse-bottom-line-label {
-  display: block;
-  font-size: 0.72rem;
+.tse-principle-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, #0ea5e9, #6366f1, #ec4899);
+}
+
+.tse-principle-label {
+  display: inline-block;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #38bdf8;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
-.tse-bottom-line-text {
+.tse-principle-statements {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
   font-family: 'Outfit', sans-serif;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: #f8fafc;
-  margin: 0;
+  margin-bottom: 1.25rem;
+  line-height: 1.4;
+}
+
+.tse-principle-statements span {
+  display: block;
+}
+
+.tse-principle-footer-text {
+  font-size: 0.88rem;
   line-height: 1.6;
+  color: #94a3b8;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+  margin: 0;
 }
 
 /* Responsive */
-@media (max-width: 960px) {
-  .tse-explanation-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 900px) {
+  .tse-how-title {
+    font-size: 1.75rem;
   }
-  .tse-bottom-line-text {
-    font-size: 0.95rem;
+  .tse-stage-card {
+    padding: 1.15rem 1.25rem;
+  }
+  .tse-principle-statements {
+    font-size: 1rem;
   }
 }
