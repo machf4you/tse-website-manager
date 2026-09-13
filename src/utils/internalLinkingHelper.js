@@ -441,6 +441,10 @@ export function generateContextualReplacement(sourceInput, anchorTextInput, targ
   const locMatch = (tSlug + ' ' + tTitle + ' ' + cleanAnchor).match(/\b(Bournemouth|Oxford|London|Exeter|Reading|Surrey|Banstead|Manchester|Birmingham|Leeds|Bristol|Southampton|Dorset)\b/i)
   const location = locMatch ? (locMatch[1].charAt(0).toUpperCase() + locMatch[1].slice(1).toLowerCase()) : ''
 
+  const isPluralVerb = /\b(services|campaigns|specialists|solutions|consultants)\b/i.test(cleanAnchor)
+  const verbProvide = isPluralVerb ? 'provide' : 'provides'
+  const verbDeliver = isPluralVerb ? 'deliver' : 'delivers'
+
   // 4. Synthesize natural, fluent editorial sentence
   let replacement = ''
   let recommendationType = 'Add New Sentence'
@@ -453,15 +457,15 @@ export function generateContextualReplacement(sourceInput, anchorTextInput, targ
   } else if (location) {
     // Target is a location SEO page
     if (/specialists|team|experts|consultant/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} seeking to expand their regional reach, partnering with ${cleanAnchor} ensures prominent placement across competitive local search queries.`
+      replacement = `For ${sAudience} seeking to grow their regional reach, partnering with ${cleanAnchor} ensures prominent placement across competitive local search queries.`
     } else if (/^SEO\s+[A-Z]/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} expanding their customer or patient base in Dorset and the South Coast, investing in dedicated ${cleanAnchor} significantly enhances regional search visibility.`
+      replacement = `For ${sAudience} looking to grow their regional visibility in Dorset and the South Coast, investing in dedicated ${cleanAnchor} significantly enhances local search rankings.`
     } else if (/services|support|campaigns|strategy/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} looking to capture high-intent search traffic, tailored ${cleanAnchor} provides the authority and rankings needed to outpace local competitors.`
+      replacement = `For ${sAudience} looking to capture high-intent search traffic, tailored ${cleanAnchor} ${verbProvide} the authority and search presence needed to outpace local competitors.`
     } else if (/optimisation|optimization/i.test(cleanAnchor)) {
-      replacement = `For ${sAudience} operating across the region, comprehensive ${cleanAnchor} drives consistent inbound inquiries from nearby searchers.`
+      replacement = `For ${sAudience} operating across the region, comprehensive ${cleanAnchor} ${verbDeliver} consistent inbound inquiries from nearby searchers.`
     } else {
-      replacement = `For ${sAudience} aiming to strengthen their presence in the area, our ${cleanAnchor} provides the targeted visibility needed to attract qualified clients.`
+      replacement = `For ${sAudience} aiming to strengthen their presence in the area, our ${cleanAnchor} ${verbProvide} the targeted visibility needed to attract qualified clients.`
     }
   } else if (/google\s*business|gbp|maps/i.test(tSlug + tTitle + cleanAnchor)) {
     replacement = `To complement overall organic growth, implementing a dedicated ${cleanAnchor} ensures maximum prominence in local map packs and high-converting search features.`
@@ -472,7 +476,7 @@ export function generateContextualReplacement(sourceInput, anchorTextInput, targ
   } else if (/audit/i.test(tSlug + tTitle + cleanAnchor)) {
     replacement = `To identify technical roadblocks and untapped ranking opportunities, conducting a thorough ${cleanAnchor} is the crucial first step in any organic strategy.`
   } else {
-    replacement = `For ${sAudience} focused on scalable organic growth, integrating ${cleanAnchor} into your wider digital marketing strategy delivers sustainable search visibility.`
+    replacement = `For ${sAudience} focused on scalable organic growth, integrating ${cleanAnchor} into your wider digital marketing strategy ${verbDeliver} sustainable search visibility.`
   }
 
   return {
