@@ -66,6 +66,7 @@ export default function InternalLinkingPage({
   const [expandedUrl, setExpandedUrl] = useState(() => {
     return initialSelectedUrl || null
   })
+  const [reviewTabs, setReviewTabs] = useState({})
   const [showAllPages, setShowAllPages] = useState(false)
   const [pageRankings, setPageRankings] = useState({})
   const [pageConfigs, setPageConfigs] = useState({})
@@ -185,23 +186,49 @@ export default function InternalLinkingPage({
       const outgoing = getOutgoingInternalLinks(page, activePages)
       const recommended = getRecommendedInternalLinks(page.url, targetPhrase, activePages, existing)
 
-      // Calculate Unique Body-Content Source Pages (LINKS IN)
-      const uniqueSourceUrls = new Set(
-        existing
-          .map(link => normalizeUrlForMatching(link.sourceUrl) || getPathSlugForMatching(link.sourceUrl) || link.sourceUrl)
-          .filter(Boolean)
-      )
-      const incomingCount = uniqueSourceUrls.size
+      // Group Incoming by unique source page (LINKS IN)
+      const incomingMap = new Map()
+      existing.forEach(link => {
+        const key = normalizeUrlForMatching(link.sourceUrl) || getPathSlugForMatching(link.sourceUrl) || link.sourceUrl
+        if (!key) return
+        if (!incomingMap.has(key)) {
+          incomingMap.set(key, {
+            sourceTitle: extractSafeString(link.sourceTitle || 'Untitled Page'),
+            sourceUrl: getPathSlugForMatching(link.sourceUrl) || link.sourceUrl,
+            rawUrl: link.sourceUrl,
+            occurrences: []
+          })
+        }
+        incomingMap.get(key).occurrences.push(link)
+      })
+      const groupedIncoming = Array.from(incomingMap.values()).map(grp => {
+        const distinctAnchors = Array.from(new Set(grp.occurrences.map(o => (o.anchorText || '').trim()).filter(Boolean)))
+        return { ...grp, distinctAnchors }
+      })
+      const incomingCount = groupedIncoming.length
 
-      // Calculate Unique Body-Content Destination Pages (LINKS OUT) - excluding self-links
+      // Group Outgoing by unique destination page (LINKS OUT) - excluding self-links
       const pageNorm = normalizeUrlForMatching(page.url)
       const pageSlug = getPathSlugForMatching(page.url)
-      const uniqueDestUrls = new Set(
-        outgoing
-          .map(link => normalizeUrlForMatching(link.destinationUrl) || getPathSlugForMatching(link.destinationUrl) || link.destinationUrl)
-          .filter(dest => Boolean(dest) && dest !== pageNorm && dest !== pageSlug && dest !== page.url)
-      )
-      const outgoingCount = uniqueDestUrls.size
+      const outgoingMap = new Map()
+      outgoing.forEach(link => {
+        const key = normalizeUrlForMatching(link.destinationUrl) || getPathSlugForMatching(link.destinationUrl) || link.destinationUrl
+        if (!key || key === pageNorm || key === pageSlug || key === page.url) return
+        if (!outgoingMap.has(key)) {
+          outgoingMap.set(key, {
+            destinationTitle: extractSafeString(link.destinationTitle || 'Untitled Page'),
+            destinationUrl: getPathSlugForMatching(link.destinationUrl) || link.destinationUrl,
+            rawUrl: link.destinationUrl,
+            occurrences: []
+          })
+        }
+        outgoingMap.get(key).occurrences.push(link)
+      })
+      const groupedOutgoing = Array.from(outgoingMap.values()).map(grp => {
+        const distinctAnchors = Array.from(new Set(grp.occurrences.map(o => (o.anchorText || '').trim()).filter(Boolean)))
+        return { ...grp, distinctAnchors }
+      })
+      const outgoingCount = groupedOutgoing.length
 
       const needsLinks = incomingCount < 3
 
@@ -213,6 +240,8 @@ export default function InternalLinkingPage({
         slug: getPathSlugForMatching(page.url) || page.url || '/',
         existing,
         outgoing,
+        groupedIncoming,
+        groupedOutgoing,
         recommended,
         incomingCount,
         outgoingCount,
@@ -244,8 +273,28 @@ export default function InternalLinkingPage({
     )
   }
 
-  const toggleExpand = (url) => {
-    setExpandedUrl(prev => (prev === url ? null : url))
+  const handleBadgeClick = (url, tab) => {
+    if (expandedUrl === url && reviewTabs[url] === tab) {
+      setExpandedUrl(null)
+    } else {
+      setExpandedUrl(url)
+      setReviewTabs(prev => ({ ...prev, [url]: tab }))
+    }
+  }
+
+  const handleReviewClick = (url) => {
+    if (expandedUrl === url) {
+      setExpandedUrl(null)
+    } else {
+      setExpandedUrl(url)
+      if (!reviewTabs[url]) {
+        setReviewTabs(prev => ({ ...prev, [url]: 'in' }))
+      }
+    }
+  }
+
+  const handleSelectTab = (url, tab) => {
+    setReviewTabs(prev => ({ ...prev, [url]: tab }))
   }
 
   const handleOpenImplementModal = (rec) => {
@@ -590,25 +639,57 @@ export default function InternalLinkingPage({
   }
 
   const renderPageReviewDetail = (page) => {
+    const activeTab = reviewTabs[page.url] || 'in'
+    const totalOutOccurrences = (page.groupedOutgoing || []).reduce((acc, grp) => acc + grp.occurrences.length, 0)
+
     return (
       <div className="il-card-details">
         {/* Stat Cards Row */}
         <div className="il-stats-grid">
-          <div className="il-stat-box">
+          <div
+            className={`il-stat-box il-stat-box-clickable ${activeTab === 'in' ? 'active' : ''}`}
+            onClick={() => handleSelectTab(page.url, 'in')}
+            title="View incoming body links"
+          >
             <span className="il-stat-icon">🔗</span>
             <div>
-              <span className="il-stat-label">CURRENT LINKS</span>
+              <span className="il-stat-label">LINKS IN (UNIQUE SOURCES)</span>
               <div className="il-stat-val">
-                {page.incomingCount} unique sources ({page.existing.length} body {page.existing.length === 1 ? 'link' : 'links'})
+                {page.incomingCount} {page.incomingCount === 1 ? 'source' : 'sources'}
+              </div>
+              <div className="il-stat-subtext">
+                {page.existing.length} total body {page.existing.length === 1 ? 'occurrence' : 'occurrences'}
               </div>
             </div>
           </div>
 
-          <div className="il-stat-box">
+          <div
+            className={`il-stat-box il-stat-box-clickable ${activeTab === 'out' ? 'active' : ''}`}
+            onClick={() => handleSelectTab(page.url, 'out')}
+            title="View outgoing body links"
+          >
             <span className="il-stat-icon">🎯</span>
+            <div>
+              <span className="il-stat-label">LINKS OUT (UNIQUE DESTINATIONS)</span>
+              <div className="il-stat-val">
+                {page.outgoingCount} {page.outgoingCount === 1 ? 'destination' : 'destinations'}
+              </div>
+              <div className="il-stat-subtext">
+                {totalOutOccurrences} total body {totalOutOccurrences === 1 ? 'occurrence' : 'occurrences'}
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`il-stat-box il-stat-box-clickable ${activeTab === 'rec' ? 'active' : ''}`}
+            onClick={() => handleSelectTab(page.url, 'rec')}
+            title="View link recommendations"
+          >
+            <span className="il-stat-icon">✨</span>
             <div>
               <span className="il-stat-label">RECOMMENDATIONS</span>
               <div className="il-stat-val">{page.recommended.length} suggested</div>
+              <div className="il-stat-subtext">Available linking opportunities</div>
             </div>
           </div>
 
@@ -621,96 +702,243 @@ export default function InternalLinkingPage({
               </div>
               <div className="il-stat-subtext">
                 {page.needsLinks
-                  ? `Add ${Math.max(0, 3 - page.incomingCount)} unique source page ${3 - page.incomingCount === 1 ? 'link' : 'links'}`
+                  ? `Add ${Math.max(0, 3 - page.incomingCount)} unique source ${3 - page.incomingCount === 1 ? 'page' : 'pages'}`
                   : 'Target threshold met (≥3 unique source pages)'}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Existing Links Section */}
-        <div className="il-section-block">
-          <h3 className="il-section-title">Existing Incoming Links ({page.existing.length})</h3>
-          {page.existing.length === 0 ? (
-            <div className="il-empty-msg">No contextual incoming links found for this page yet.</div>
-          ) : (
-            <div className="il-table-wrapper">
-              <table className="il-table">
-                <thead>
-                  <tr>
-                    <th>Source Page Title</th>
-                    <th>Source Page URL</th>
-                    <th>Link Context</th>
-                    <th>Destination URL</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {page.existing.map(link => (
-                    <tr key={link.id}>
-                      <td className="font-bold">{link.sourceTitle}</td>
-                      <td className="col-url">{link.sourceUrl}</td>
-                      <td className="col-context">{renderHighlightedText(link.linkContext, link.anchorText)}</td>
-                      <td className="col-url">{link.destinationUrl}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        {/* Sub-Tabs Bar inside Drawer */}
+        <div className="il-drawer-tabs-bar">
+          <button
+            type="button"
+            className={`il-drawer-tab ${activeTab === 'in' ? 'active' : ''}`}
+            onClick={() => handleSelectTab(page.url, 'in')}
+          >
+            🔗 LINKS IN ({page.incomingCount} unique sources / {page.existing.length} occ)
+          </button>
+          <button
+            type="button"
+            className={`il-drawer-tab ${activeTab === 'out' ? 'active' : ''}`}
+            onClick={() => handleSelectTab(page.url, 'out')}
+          >
+            🎯 LINKS OUT ({page.outgoingCount} unique destinations / {totalOutOccurrences} occ)
+          </button>
+          <button
+            type="button"
+            className={`il-drawer-tab ${activeTab === 'rec' ? 'active' : ''}`}
+            onClick={() => handleSelectTab(page.url, 'rec')}
+          >
+            ✨ RECOMMENDED LINKS ({page.recommended.length})
+          </button>
         </div>
 
-        {/* Recommended Links Section */}
-        <div className="il-section-block">
-          <h3 className="il-section-title">Recommended Links</h3>
-          {page.recommended.length === 0 ? (
-            <div className="il-empty-msg">All available source pages are already linking to this page.</div>
-          ) : (
-            <div className="il-table-wrapper">
-              <table className="il-table">
-                <thead>
-                  <tr>
-                    <th>Anchor Text</th>
-                    <th>Suggested Source Page</th>
-                    <th>AI Suggested Sentence</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {page.recommended.map(rec => (
-                    <tr key={rec.id}>
-                      <td>
-                        <span className="il-anchor-text-edit">
-                          {rec.anchorText} <span className="il-edit-icon">✏️</span>
-                        </span>
-                      </td>
-                      <td>
-                        <div className="il-source-page-cell">
-                          <span className="il-doc-icon">📄</span>
-                          <div>
-                            <div className="il-source-title">{rec.suggestedSourceTitle}</div>
-                            <div className="il-source-url">{rec.suggestedSourceUrl}</div>
-                          </div>
+        {/* Tab 1: LINKS IN Content */}
+        {activeTab === 'in' && (
+          <div className="il-section-block">
+            <div className="il-tab-pane-header">
+              <div>
+                <h3 className="il-section-title">
+                  Incoming Internal Body Links ({page.incomingCount} unique source pages, {page.existing.length} total occurrences)
+                </h3>
+                <p className="il-pane-subtext">
+                  Each unique source page counts as ONE incoming relationship towards headline SEO metrics, regardless of how many times it links.
+                </p>
+              </div>
+            </div>
+
+            {page.groupedIncoming.length === 0 ? (
+              <div className="il-empty-msg">No contextual incoming links found for this page yet.</div>
+            ) : (
+              <div className="il-audit-cards-list">
+                {page.groupedIncoming.map(grp => (
+                  <div key={grp.rawUrl || grp.sourceUrl} className="il-audit-card">
+                    <div className="il-audit-card-header">
+                      <div className="il-audit-card-title-group">
+                        <span className="il-doc-icon">📄</span>
+                        <div>
+                          <div className="il-audit-card-title">{grp.sourceTitle}</div>
+                          <div className="il-audit-card-url">{grp.sourceUrl}</div>
                         </div>
-                      </td>
-                      <td className="col-sentence" colSpan={2}>
-                        {renderSentenceCell({
-                          ...rec,
-                          sourceUrl: rec.suggestedSourceUrl,
-                          targetUrl: page.url,
-                          sourcePageObj: rec.sourcePageObj
-                        })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                      </div>
+                      <div className="il-audit-card-badges">
+                        <span className="il-audit-occ-badge">
+                          {grp.occurrences.length} {grp.occurrences.length === 1 ? 'occurrence' : 'occurrences'}
+                        </span>
+                        <span className="il-audit-rel-badge">
+                          Counts as 1 incoming relationship
+                        </span>
+                      </div>
+                    </div>
 
-          <div className="il-warning-banner">
-            ⚠️ Only {page.recommended.length} unique source pages are currently available. Add more content or configure additional pages to increase internal linking opportunities.
+                    <div className="il-audit-anchors-section">
+                      <div className="il-audit-anchors-label">
+                        Distinct Anchor Texts Used ({grp.distinctAnchors.length}):
+                      </div>
+                      <div className="il-audit-anchor-chips">
+                        {grp.distinctAnchors.map((anchor, aIdx) => (
+                          <span key={aIdx} className="il-audit-anchor-chip">
+                            "{anchor}"
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="il-audit-occurrences-section">
+                      <div className="il-audit-contexts-label">Occurrences in Editorial Body Content:</div>
+                      <div className="il-audit-contexts-list">
+                        {grp.occurrences.map((occ, oIdx) => (
+                          <div key={occ.id || oIdx} className="il-audit-occ-item">
+                            <div className="il-audit-occ-num">#{oIdx + 1}</div>
+                            <div className="il-audit-occ-body">
+                              <div className="il-audit-snippet">
+                                {renderHighlightedText(occ.linkContext, occ.anchorText)}
+                              </div>
+                              {occ.destinationUrl && (
+                                <div className="il-audit-target-tag">
+                                  Target: <span className="il-audit-target-url">{getPathSlugForMatching(occ.destinationUrl) || occ.destinationUrl}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        {/* Tab 2: LINKS OUT Content */}
+        {activeTab === 'out' && (
+          <div className="il-section-block">
+            <div className="il-tab-pane-header">
+              <div>
+                <h3 className="il-section-title">
+                  Outgoing Internal Body Links ({page.outgoingCount} unique destination pages, {totalOutOccurrences} total occurrences)
+                </h3>
+                <p className="il-pane-subtext">
+                  Each unique destination page counts as ONE outgoing relationship towards headline SEO metrics. Multiple links from this page to the same destination are grouped under that ONE destination.
+                </p>
+              </div>
+            </div>
+
+            {page.groupedOutgoing.length === 0 ? (
+              <div className="il-empty-msg">No contextual outgoing links found from this page.</div>
+            ) : (
+              <div className="il-audit-cards-list">
+                {page.groupedOutgoing.map(grp => (
+                  <div key={grp.rawUrl || grp.destinationUrl} className="il-audit-card">
+                    <div className="il-audit-card-header">
+                      <div className="il-audit-card-title-group">
+                        <span className="il-doc-icon">🎯</span>
+                        <div>
+                          <div className="il-audit-card-title">{grp.destinationTitle}</div>
+                          <div className="il-audit-card-url">{grp.destinationUrl}</div>
+                        </div>
+                      </div>
+                      <div className="il-audit-card-badges">
+                        <span className="il-audit-occ-badge">
+                          {grp.occurrences.length} {grp.occurrences.length === 1 ? 'occurrence' : 'occurrences'}
+                        </span>
+                        <span className="il-audit-rel-badge">
+                          Counts as 1 outgoing relationship
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="il-audit-anchors-section">
+                      <div className="il-audit-anchors-label">
+                        Distinct Anchor Texts Used ({grp.distinctAnchors.length}):
+                      </div>
+                      <div className="il-audit-anchor-chips">
+                        {grp.distinctAnchors.map((anchor, aIdx) => (
+                          <span key={aIdx} className="il-audit-anchor-chip">
+                            "{anchor}"
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="il-audit-occurrences-section">
+                      <div className="il-audit-contexts-label">Occurrences in Editorial Body Content:</div>
+                      <div className="il-audit-contexts-list">
+                        {grp.occurrences.map((occ, oIdx) => (
+                          <div key={occ.id || oIdx} className="il-audit-occ-item">
+                            <div className="il-audit-occ-num">#{oIdx + 1}</div>
+                            <div className="il-audit-occ-body">
+                              <div className="il-audit-snippet">
+                                {renderHighlightedText(occ.linkContext, occ.anchorText)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: RECOMMENDED LINKS Content */}
+        {activeTab === 'rec' && (
+          <div className="il-section-block">
+            <h3 className="il-section-title">Recommended Links ({page.recommended.length})</h3>
+            {page.recommended.length === 0 ? (
+              <div className="il-empty-msg">All available source pages are already linking to this page.</div>
+            ) : (
+              <div className="il-table-wrapper">
+                <table className="il-table">
+                  <thead>
+                    <tr>
+                      <th>Anchor Text</th>
+                      <th>Suggested Source Page</th>
+                      <th>AI Suggested Sentence</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {page.recommended.map(rec => (
+                      <tr key={rec.id}>
+                        <td>
+                          <span className="il-anchor-text-edit">
+                            {rec.anchorText} <span className="il-edit-icon">✏️</span>
+                          </span>
+                        </td>
+                        <td>
+                          <div className="il-source-page-cell">
+                            <span className="il-doc-icon">📄</span>
+                            <div>
+                              <div className="il-source-title">{rec.suggestedSourceTitle}</div>
+                              <div className="il-source-url">{rec.suggestedSourceUrl}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="col-sentence" colSpan={2}>
+                          {renderSentenceCell({
+                            ...rec,
+                            sourceUrl: rec.suggestedSourceUrl,
+                            targetUrl: page.url,
+                            sourcePageObj: rec.sourcePageObj
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="il-warning-banner">
+              ⚠️ Only {page.recommended.length} unique source pages are currently available. Add more content or configure additional pages to increase internal linking opportunities.
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -735,6 +963,7 @@ export default function InternalLinkingPage({
           <tbody>
             {pages.map((page, idx) => {
               const isExpanded = expandedUrl === page.url
+              const currentTab = reviewTabs[page.url] || 'in'
               const pageTitle = extractSafeString(page.title || page.proposedTitle || 'Untitled Page')
               const targetPhrase = extractSafeString(page.targetPhrase || page.target || '—')
 
@@ -765,14 +994,24 @@ export default function InternalLinkingPage({
                     {renderVolumeCell(page)}
                   </td>
                   <td className="col-links-count">
-                    <span className={`il-count-badge ${page.incomingCount > 0 ? 'has-links' : 'zero-links'}`}>
+                    <button
+                      type="button"
+                      className={`il-count-badge il-count-btn ${page.incomingCount > 0 ? 'has-links' : 'zero-links'} ${isExpanded && currentTab === 'in' ? 'active-badge' : ''}`}
+                      onClick={() => handleBadgeClick(page.url, 'in')}
+                      title={`Click to view ${page.incomingCount} unique incoming source pages (${page.existing.length} body occurrences)`}
+                    >
                       {page.incomingCount}
-                    </span>
+                    </button>
                   </td>
                   <td className="col-links-count">
-                    <span className={`il-count-badge ${page.outgoingCount > 0 ? 'has-links' : 'zero-links'}`}>
+                    <button
+                      type="button"
+                      className={`il-count-badge il-count-btn ${page.outgoingCount > 0 ? 'has-links' : 'zero-links'} ${isExpanded && currentTab === 'out' ? 'active-badge' : ''}`}
+                      onClick={() => handleBadgeClick(page.url, 'out')}
+                      title={`Click to view ${page.outgoingCount} unique outgoing destination pages`}
+                    >
                       {page.outgoingCount}
-                    </span>
+                    </button>
                   </td>
                   <td className="col-status-badge">
                     {page.needsLinks ? (
@@ -789,7 +1028,7 @@ export default function InternalLinkingPage({
                     <button
                       type="button"
                       className={`il-btn-review ${isExpanded ? 'active' : ''}`}
-                      onClick={() => toggleExpand(page.url)}
+                      onClick={() => handleReviewClick(page.url)}
                     >
                       {isExpanded ? 'Hide' : 'Review'}
                     </button>

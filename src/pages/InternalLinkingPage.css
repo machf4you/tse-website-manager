@@ -1008,6 +1008,24 @@
   font-family: monospace;
 }
 
+.il-count-btn {
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s ease-in-out;
+  outline: none;
+}
+
+.il-count-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+}
+
+.il-count-btn.active-badge {
+  box-shadow: 0 0 0 2px #38bdf8;
+  border-color: #38bdf8 !important;
+}
+
 .il-count-badge.zero-links {
   background: rgba(239, 68, 68, 0.15);
   color: #f87171;
@@ -1122,5 +1140,245 @@
   color: #64748b;
   margin-bottom: 10px;
   padding-left: 4px;
+}
+
+/* Clickable Stat Boxes */
+.il-stat-box-clickable {
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.il-stat-box-clickable:hover {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  transform: translateY(-1px);
+}
+
+.il-stat-box-clickable.active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.3);
+}
+
+/* Drawer Sub-Tabs Bar */
+.il-drawer-tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-bottom: 2px solid #1e293b;
+  margin: 20px 0 18px 0;
+  padding-bottom: 10px;
+}
+
+.il-drawer-tab {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.il-drawer-tab:hover {
+  color: #f8fafc;
+  background: #334155;
+  border-color: #475569;
+}
+
+.il-drawer-tab.active {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.2);
+}
+
+/* Tab Header & Subtext */
+.il-tab-pane-header {
+  margin-bottom: 16px;
+}
+
+.il-pane-subtext {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 4px 0 0 0;
+  line-height: 1.4;
+}
+
+/* Audit Cards List */
+.il-audit-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.il-audit-card {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 16px;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.il-audit-card:hover {
+  border-color: #374151;
+}
+
+.il-audit-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.il-audit-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.il-audit-card-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #f9fafb;
+  line-height: 1.3;
+}
+
+.il-audit-card-url {
+  font-size: 0.78rem;
+  color: #60a5fa;
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.il-audit-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.il-audit-occ-badge {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-family: monospace;
+}
+
+.il-audit-rel-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* Distinct Anchors Section */
+.il-audit-anchors-section {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.il-audit-anchors-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.il-audit-anchor-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.il-audit-anchor-chip {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+/* Occurrences Context Section */
+.il-audit-occurrences-section {
+  margin-top: 8px;
+}
+
+.il-audit-contexts-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.il-audit-contexts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.il-audit-occ-item {
+  display: flex;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 10px 12px;
+  align-items: flex-start;
+}
+
+.il-audit-occ-num {
+  background: #334155;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: monospace;
+  margin-top: 2px;
+}
+
+.il-audit-occ-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.il-audit-snippet {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.il-audit-target-tag {
+  margin-top: 4px;
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.il-audit-target-url {
+  color: #60a5fa;
+  font-family: monospace;
 }
 

@@ -1,7 +1,7 @@
-export const CURRENT_BUILD_VERSION = '2.24'
-export const CURRENT_BUILD_LABEL = 'V2.24 | READY'
-export const CURRENT_BUILD_HASH = 'w5uniquebody224'
-export const CURRENT_BUILD_TIMESTAMP = 1789210000000
+export const CURRENT_BUILD_VERSION = '2.25'
+export const CURRENT_BUILD_LABEL = 'V2.25 | READY'
+export const CURRENT_BUILD_HASH = 'w5auditview225'
+export const CURRENT_BUILD_TIMESTAMP = Date.now()
 
 
 
