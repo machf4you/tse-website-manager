@@ -49,9 +49,9 @@ export default function W4FixIssueDialog({
   const [pushedActuals, setPushedActuals] = useState(null)
 
   // Dynamic Actual live values computed directly from page prop or optimistic post-push state
-  const actualMetaTitle = extractSafeString(pushedActuals?.metaTitle || page?.actualMetaTitle || page?.metaTitle || '')
-  const actualMetaDescription = extractSafeString(pushedActuals?.metaDescription || page?.actualMetaDescription || page?.metaDescription || '')
-  const actualH1 = extractSafeString(pushedActuals?.h1 || page?.actualH1 || page?.h1 || '')
+  const actualMetaTitle = extractSafeString(pushedActuals?.metaTitle ?? page?.actualMetaTitle ?? '')
+  const actualMetaDescription = extractSafeString(pushedActuals?.metaDescription ?? page?.actualMetaDescription ?? '')
+  const actualH1 = extractSafeString(pushedActuals?.h1 ?? page?.actualH1 ?? '')
 
   // Pre-fill initial text from page object & reset workflow on open
   useEffect(() => {

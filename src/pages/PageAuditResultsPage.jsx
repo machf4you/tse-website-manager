@@ -207,15 +207,38 @@ export default function PageAuditResultsPage({
     )
   }
 
-  const snap = liveAuditData?.page_snapshot || {}
+  const snap = liveAuditData?.page_snapshot ||
+               liveAuditData?.auditResult?.page_snapshot ||
+               apiAuditRecord?.auditResult?.page_snapshot ||
+               apiAuditRecord?.page_snapshot ||
+               rawCurrentPage?.auditResult?.page_snapshot ||
+               rawCurrentPage?.page_snapshot ||
+               {}
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
 
   const snapH1 = Array.isArray(snap.h1) ? snap.h1[0] : (snap.h1 || '')
 
-  // Authoritative Actual Live values (Live audit snapshot takes precedence over imported/synced package defaults)
-  const actualMetaTitle = extractSafeString(overrideObj.pushedActualMetaTitle || snap.title || overrideObj.actualMetaTitle || rawCurrentPage.metaTitle || rawCurrentPage.title).trim()
-  const actualMetaDescription = extractSafeString(overrideObj.pushedActualMetaDescription || snap.meta_description || overrideObj.actualMetaDescription || rawCurrentPage.metaDescription).trim()
-  const actualH1 = extractSafeString(overrideObj.pushedActualH1 || snapH1 || overrideObj.actualH1 || rawCurrentPage.h1 || rawCurrentPage.title).trim()
+  // Authoritative Source of Truth: The Current Live Page Audit Snapshot (snap)
+  // NEVER fall back to WordPress post_title, body content, or excerpts as live metadata.
+  const actualMetaTitle = extractSafeString(
+    snap.title ||
+    overrideObj.pushedActualMetaTitle ||
+    rawCurrentPage.metaTitle ||
+    ''
+  ).trim()
+
+  const actualMetaDescription = extractSafeString(
+    snap.meta_description ||
+    overrideObj.pushedActualMetaDescription ||
+    ''
+  ).trim()
+
+  const actualH1 = extractSafeString(
+    snapH1 ||
+    overrideObj.pushedActualH1 ||
+    rawCurrentPage.h1 ||
+    ''
+  ).trim()
 
   // Target Phrase MUST come from Website Manager configuration data
   const recTargetPhrase = extractSafeString(
