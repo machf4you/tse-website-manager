@@ -210,10 +210,12 @@ export default function PageAuditResultsPage({
   const snap = liveAuditData?.page_snapshot || {}
   const overrideObj = localOverrides[rawCurrentPage.id || rawCurrentPage.url] || localOverrides[rawCurrentPage.url] || {}
 
-  // Strict per-field Actual Live/Synced values (prioritizes pushed/synced values over stale pre-push snapshot)
-  const actualMetaTitle = extractSafeString(overrideObj.pushedActualMetaTitle || overrideObj.actualMetaTitle || rawCurrentPage.metaTitle || rawCurrentPage.title || snap.title).trim()
-  const actualMetaDescription = extractSafeString(overrideObj.pushedActualMetaDescription || overrideObj.actualMetaDescription || rawCurrentPage.metaDescription || snap.meta_description).trim()
-  const actualH1 = extractSafeString(overrideObj.pushedActualH1 || overrideObj.actualH1 || rawCurrentPage.h1 || rawCurrentPage.title || (Array.isArray(snap.h1) ? snap.h1[0] : snap.h1)).trim()
+  const snapH1 = Array.isArray(snap.h1) ? snap.h1[0] : (snap.h1 || '')
+
+  // Authoritative Actual Live values (Live audit snapshot takes precedence over imported/synced package defaults)
+  const actualMetaTitle = extractSafeString(overrideObj.pushedActualMetaTitle || snap.title || overrideObj.actualMetaTitle || rawCurrentPage.metaTitle || rawCurrentPage.title).trim()
+  const actualMetaDescription = extractSafeString(overrideObj.pushedActualMetaDescription || snap.meta_description || overrideObj.actualMetaDescription || rawCurrentPage.metaDescription).trim()
+  const actualH1 = extractSafeString(overrideObj.pushedActualH1 || snapH1 || overrideObj.actualH1 || rawCurrentPage.h1 || rawCurrentPage.title).trim()
 
   // Target Phrase MUST come from Website Manager configuration data
   const recTargetPhrase = extractSafeString(

@@ -94,33 +94,10 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
   // 1. Meta Title / Page Title resolution
   let title = ''
 
-  // A. Check TSE Exporter nested seo.title, meta.title & content h1 (TSE Exporter v2.12.9 format)
-  if (typeof p.seo?.title === 'string' && p.seo.title.trim()) {
-    title = p.seo.title.trim()
-  } else if (typeof p.meta?.title === 'string' && p.meta.title.trim()) {
-    title = p.meta.title.trim()
-  } else if (Array.isArray(p.content?.h1) && typeof p.content.h1[0] === 'string' && p.content.h1[0].trim()) {
-    title = p.content.h1[0].trim()
-  } else if (typeof p.h1 === 'string' && p.h1.trim()) {
-    title = p.h1.trim()
-  }
-
-  // B. Check explicit meta title fields
-  if (!title && typeof p.metaTitle === 'string' && p.metaTitle.trim()) title = p.metaTitle.trim()
-  if (!title && typeof p.meta_title === 'string' && p.meta_title.trim()) title = p.meta_title.trim()
-  if (!title && typeof p.seo_title === 'string' && p.seo_title.trim()) title = p.seo_title.trim()
-  if (!title && typeof p.seoTitle === 'string' && p.seoTitle.trim()) title = p.seoTitle.trim()
-  if (!title && typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) title = p.yoast_head_json.title.trim()
-  if (!title && typeof p.rank_math_title === 'string' && p.rank_math_title.trim()) title = p.rank_math_title.trim()
-  if (!title && typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) title = p._yoast_wpseo_title.trim()
-
-  // C. Primary WordPress post object title field (post_title)
-  if (!title && typeof p.post_title === 'string' && p.post_title.trim() && p.post_title.trim().toLowerCase() !== 'home') {
+  // A. Primary WordPress post object title field (post_title)
+  if (typeof p.post_title === 'string' && p.post_title.trim() && p.post_title.trim().toLowerCase() !== 'home') {
     title = p.post_title.trim()
-  }
-
-  // D. WP REST API title field (title.rendered or string title)
-  if (!title && p.title) {
+  } else if (p.title) {
     if (typeof p.title === 'string' && p.title.trim() && p.title.trim() !== 'Untitled Page' && p.title.trim().toLowerCase() !== 'home') {
       title = p.title.trim()
     } else if (typeof p.title === 'object' && p.title !== null) {
@@ -128,7 +105,7 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
     }
   }
 
-  // E. Fallbacks for slug/name (convert slug to title if needed)
+  // B. Fallbacks for slug/name (convert slug to title if needed)
   if (!title && typeof p.post_title === 'string' && p.post_title.trim()) {
     title = p.post_title.trim()
   }
@@ -143,6 +120,12 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
     if (cleanSlug) {
       title = cleanSlug.charAt(0).toUpperCase() + cleanSlug.slice(1)
     }
+  }
+  if (!title && typeof p.seo?.title === 'string' && p.seo.title.trim()) {
+    title = p.seo.title.trim()
+  }
+  if (!title && typeof p.metaTitle === 'string' && p.metaTitle.trim()) {
+    title = p.metaTitle.trim()
   }
 
   title = title || 'Untitled Page'
@@ -297,35 +280,68 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
 
   const contentText = extractContentText(p)
 
-  // 6. Meta Title Resolution
+  // 6. Meta Title Resolution (Prioritize genuine SEO title metadata)
   let metaTitle = ''
-  if (typeof p.metaTitle === 'string' && p.metaTitle.trim()) metaTitle = p.metaTitle.trim()
-  if (!metaTitle && typeof p.meta_title === 'string' && p.meta_title.trim()) metaTitle = p.meta_title.trim()
-  if (!metaTitle && typeof p.seoTitle === 'string' && p.seoTitle.trim()) metaTitle = p.seoTitle.trim()
-  if (!metaTitle && typeof p.seo_title === 'string' && p.seo_title.trim()) metaTitle = p.seo_title.trim()
-  if (!metaTitle && typeof p.seo?.title === 'string' && p.seo.title.trim()) metaTitle = p.seo.title.trim()
-  if (!metaTitle && typeof p.yoast_wpseo_title === 'string' && p.yoast_wpseo_title.trim()) metaTitle = p.yoast_wpseo_title.trim()
-  if (!metaTitle && typeof p.meta?._yoast_wpseo_title === 'string' && p.meta._yoast_wpseo_title.trim()) metaTitle = p.meta._yoast_wpseo_title.trim()
-  if (!metaTitle && typeof p.meta?.yoast_wpseo_title === 'string' && p.meta.yoast_wpseo_title.trim()) metaTitle = p.meta.yoast_wpseo_title.trim()
-  if (!metaTitle && typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) metaTitle = p._yoast_wpseo_title.trim()
-  if (!metaTitle && typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) metaTitle = p.yoast_head_json.title.trim()
-  if (!metaTitle) metaTitle = title
+  if (typeof p.yoast_head_json?.title === 'string' && p.yoast_head_json.title.trim()) {
+    metaTitle = p.yoast_head_json.title.trim()
+  } else if (typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim() && !p._yoast_wpseo_title.includes('%%')) {
+    metaTitle = p._yoast_wpseo_title.trim()
+  } else if (typeof p.metaTitle === 'string' && p.metaTitle.trim()) {
+    metaTitle = p.metaTitle.trim()
+  } else if (typeof p.meta_title === 'string' && p.meta_title.trim()) {
+    metaTitle = p.meta_title.trim()
+  } else if (typeof p.seoTitle === 'string' && p.seoTitle.trim()) {
+    metaTitle = p.seoTitle.trim()
+  } else if (typeof p.seo_title === 'string' && p.seo_title.trim()) {
+    metaTitle = p.seo_title.trim()
+  } else if (typeof p.seo?.title === 'string' && p.seo.title.trim()) {
+    metaTitle = p.seo.title.trim()
+  } else if (typeof p.rank_math_title === 'string' && p.rank_math_title.trim()) {
+    metaTitle = p.rank_math_title.trim()
+  } else if (typeof p.yoast_wpseo_title === 'string' && p.yoast_wpseo_title.trim()) {
+    metaTitle = p.yoast_wpseo_title.trim()
+  } else if (typeof p.meta?._yoast_wpseo_title === 'string' && p.meta._yoast_wpseo_title.trim()) {
+    metaTitle = p.meta._yoast_wpseo_title.trim()
+  } else if (typeof p.meta?.yoast_wpseo_title === 'string' && p.meta.yoast_wpseo_title.trim()) {
+    metaTitle = p.meta.yoast_wpseo_title.trim()
+  } else if (typeof p._yoast_wpseo_title === 'string' && p._yoast_wpseo_title.trim()) {
+    metaTitle = p._yoast_wpseo_title.trim()
+  } else if (typeof p.meta?.title === 'string' && p.meta.title.trim()) {
+    metaTitle = p.meta.title.trim()
+  }
+  if (!metaTitle) {
+    metaTitle = title
+  }
 
-  // 7. Meta Description Resolution
+  // 7. Meta Description Resolution (Genuine SEO metadata only — never excerpt/body content fallback)
   let metaDescription = ''
-  if (typeof p.metaDescription === 'string' && p.metaDescription.trim()) metaDescription = p.metaDescription.trim()
-  if (!metaDescription && typeof p.meta_description === 'string' && p.meta_description.trim()) metaDescription = p.meta_description.trim()
-  if (!metaDescription && typeof p.seoDescription === 'string' && p.seoDescription.trim()) metaDescription = p.seoDescription.trim()
-  if (!metaDescription && typeof p.seo?.description === 'string' && p.seo.description.trim()) metaDescription = p.seo.description.trim()
-  if (!metaDescription && typeof p.yoast_wpseo_metadesc === 'string' && p.yoast_wpseo_metadesc.trim()) metaDescription = p.yoast_wpseo_metadesc.trim()
-  if (!metaDescription && typeof p.meta?._yoast_wpseo_metadesc === 'string' && p.meta._yoast_wpseo_metadesc.trim()) metaDescription = p.meta._yoast_wpseo_metadesc.trim()
-  if (!metaDescription && typeof p.meta?.yoast_wpseo_metadesc === 'string' && p.meta.yoast_wpseo_metadesc.trim()) metaDescription = p.meta.yoast_wpseo_metadesc.trim()
-  if (!metaDescription && typeof p._yoast_wpseo_metadesc === 'string' && p._yoast_wpseo_metadesc.trim()) metaDescription = p._yoast_wpseo_metadesc.trim()
-  if (!metaDescription && typeof p.yoast_head_json?.description === 'string' && p.yoast_head_json.description.trim()) metaDescription = p.yoast_head_json.description.trim()
-  if (!metaDescription && typeof p.yoast_head_json?.og_description === 'string' && p.yoast_head_json.og_description.trim()) metaDescription = p.yoast_head_json.og_description.trim()
-  if (!metaDescription && typeof p.post_excerpt === 'string' && p.post_excerpt.trim()) metaDescription = p.post_excerpt.trim()
-  if (!metaDescription && typeof p.excerpt?.rendered === 'string' && p.excerpt.rendered.trim()) metaDescription = p.excerpt.rendered.replace(/<[^>]+>/g, '').trim()
-  if (!metaDescription && typeof p.excerpt === 'string' && p.excerpt.trim()) metaDescription = p.excerpt.replace(/<[^>]+>/g, '').trim()
+  if (typeof p.yoast_head_json?.description === 'string' && p.yoast_head_json.description.trim()) {
+    metaDescription = p.yoast_head_json.description.trim()
+  } else if (typeof p.yoast_head_json?.og_description === 'string' && p.yoast_head_json.og_description.trim()) {
+    metaDescription = p.yoast_head_json.og_description.trim()
+  } else if (typeof p.metaDescription === 'string' && p.metaDescription.trim()) {
+    metaDescription = p.metaDescription.trim()
+  } else if (typeof p.meta_description === 'string' && p.meta_description.trim()) {
+    metaDescription = p.meta_description.trim()
+  } else if (typeof p.seoDescription === 'string' && p.seoDescription.trim()) {
+    metaDescription = p.seoDescription.trim()
+  } else if (typeof p.seo_description === 'string' && p.seo_description.trim()) {
+    metaDescription = p.seo_description.trim()
+  } else if (typeof p.seo?.description === 'string' && p.seo.description.trim()) {
+    metaDescription = p.seo.description.trim()
+  } else if (typeof p._yoast_wpseo_metadesc === 'string' && p._yoast_wpseo_metadesc.trim()) {
+    metaDescription = p._yoast_wpseo_metadesc.trim()
+  } else if (typeof p.yoast_wpseo_metadesc === 'string' && p.yoast_wpseo_metadesc.trim()) {
+    metaDescription = p.yoast_wpseo_metadesc.trim()
+  } else if (typeof p.meta?._yoast_wpseo_metadesc === 'string' && p.meta._yoast_wpseo_metadesc.trim()) {
+    metaDescription = p.meta._yoast_wpseo_metadesc.trim()
+  } else if (typeof p.meta?.yoast_wpseo_metadesc === 'string' && p.meta.yoast_wpseo_metadesc.trim()) {
+    metaDescription = p.meta.yoast_wpseo_metadesc.trim()
+  } else if (typeof p.rank_math_description === 'string' && p.rank_math_description.trim()) {
+    metaDescription = p.rank_math_description.trim()
+  } else if (typeof p.meta?.description === 'string' && p.meta.description.trim()) {
+    metaDescription = p.meta.description.trim()
+  }
 
   // 8. H1 Resolution (Explicit H1, inline <h1> tag, or theme post_title fallback)
   let h1 = ''
@@ -333,10 +349,6 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
     h1 = p.h1.trim()
   } else if (Array.isArray(p.h1) && typeof p.h1[0] === 'string' && p.h1[0].trim()) {
     h1 = p.h1[0].trim()
-  } else if (Array.isArray(p.content?.h1) && typeof p.content.h1[0] === 'string' && p.content.h1[0].trim()) {
-    h1 = p.content.h1[0].trim()
-  } else if (typeof p.content?.h1 === 'string' && p.content.h1.trim()) {
-    h1 = p.content.h1.trim()
   }
 
   if (!h1 && contentText) {
