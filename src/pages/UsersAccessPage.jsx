@@ -395,16 +395,34 @@ export default function UsersAccessPage({ currentUser }) {
       {showAddModal && (
         <div className="uap-modal-backdrop" onClick={() => !actionLoading && setShowAddModal(false)}>
           <div className="uap-modal" onClick={e => e.stopPropagation()} data-lpignore="true">
-            <div className="uap-modal-header">
+              <div className="uap-modal-header">
               <h3 className="uap-modal-title">Add New User</h3>
-              <button
-                type="button"
-                className="uap-modal-close"
-                onClick={() => setShowAddModal(false)}
-                disabled={actionLoading}
-              >
-                &times;
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="uap-btn uap-btn-primary"
+                  onClick={handleCreateUser}
+                  disabled={actionLoading}
+                  style={{
+                    backgroundColor: '#16a34a',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    padding: '0.35rem 0.85rem',
+                    fontSize: '0.8125rem',
+                    borderRadius: '6px'
+                  }}
+                >
+                  {actionLoading ? 'Creating...' : '✓ Create User'}
+                </button>
+                <button
+                  type="button"
+                  className="uap-modal-close"
+                  onClick={() => setShowAddModal(false)}
+                  disabled={actionLoading}
+                >
+                  &times;
+                </button>
+              </div>
             </div>
 
             <div className="uap-modal-body" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
@@ -550,25 +568,44 @@ export default function UsersAccessPage({ currentUser }) {
                   <span>Administrator accounts automatically receive full access to all TSE applications.</span>
                 </div>
               )}
-            </div>
 
-            <div className="uap-modal-footer">
-              <button
-                type="button"
-                className="uap-btn uap-btn-secondary"
-                onClick={() => setShowAddModal(false)}
-                disabled={actionLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="uap-btn uap-btn-primary"
-                onClick={handleCreateUser}
-                disabled={actionLoading}
-              >
-                {actionLoading ? 'Creating User...' : 'Create User'}
-              </button>
+              {/* Inline Action Bar */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginTop: '0.5rem',
+                paddingTop: '0.85rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <button
+                  type="button"
+                  className="uap-btn uap-btn-primary"
+                  onClick={handleCreateUser}
+                  disabled={actionLoading}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#16a34a',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {actionLoading ? 'Creating User...' : 'Create User'}
+                </button>
+                <button
+                  type="button"
+                  className="uap-btn uap-btn-secondary"
+                  onClick={() => setShowAddModal(false)}
+                  disabled={actionLoading}
+                  style={{ padding: '0.75rem 1.25rem' }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -580,14 +617,32 @@ export default function UsersAccessPage({ currentUser }) {
           <div className="uap-modal" onClick={e => e.stopPropagation()} data-lpignore="true">
             <div className="uap-modal-header">
               <h3 className="uap-modal-title">Edit User: {selectedUser.username}</h3>
-              <button
-                type="button"
-                className="uap-modal-close"
-                onClick={() => setShowEditModal(false)}
-                disabled={actionLoading}
-              >
-                &times;
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  className="uap-btn uap-btn-primary"
+                  onClick={handleUpdateUser}
+                  disabled={actionLoading}
+                  style={{
+                    backgroundColor: '#16a34a',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    padding: '0.35rem 0.85rem',
+                    fontSize: '0.8125rem',
+                    borderRadius: '6px'
+                  }}
+                >
+                  {actionLoading ? 'Saving...' : '✓ Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  className="uap-modal-close"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={actionLoading}
+                >
+                  &times;
+                </button>
+              </div>
             </div>
 
             <div className="uap-modal-body" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
@@ -711,25 +766,45 @@ export default function UsersAccessPage({ currentUser }) {
                   {selectedUser.password ? "Enter a new password or leave as-is." : "Enter a password to store against this user."}
                 </span>
               </div>
-            </div>
 
-            <div className="uap-modal-footer">
-              <button
-                type="button"
-                className="uap-btn uap-btn-secondary"
-                onClick={() => setShowEditModal(false)}
-                disabled={actionLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="uap-btn uap-btn-primary"
-                onClick={handleUpdateUser}
-                disabled={actionLoading}
-              >
-                {actionLoading ? 'Saving Changes...' : 'Save Changes'}
-              </button>
+              {/* DIRECT INLINE SAVE BUTTON — ALWAYS IN VIEW */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginTop: '0.5rem',
+                paddingTop: '0.85rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <button
+                  type="button"
+                  className="uap-btn uap-btn-primary"
+                  onClick={handleUpdateUser}
+                  disabled={actionLoading}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem 1.5rem',
+                    backgroundColor: '#16a34a',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)'
+                  }}
+                >
+                  {actionLoading ? 'Saving Changes...' : 'Save Changes'}
+                </button>
+                <button
+                  type="button"
+                  className="uap-btn uap-btn-secondary"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={actionLoading}
+                  style={{ padding: '0.75rem 1.25rem' }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
