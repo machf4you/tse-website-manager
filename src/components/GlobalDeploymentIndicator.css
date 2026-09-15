@@ -105,58 +105,51 @@
   to { transform: rotate(360deg); }
 }
 
-/* 3. UPDATE READY State (CLICK TO REFRESH ALERT) */
-.global-deploy-ready {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: linear-gradient(135deg, #ea580c, #dc2626) !important;
-  border: 1px solid #fed7aa !important;
+/* 3. UPDATE READY State (Solid RED button with pure WHITE text: CLICK TO REFRESH) */
+.global-deploy-update-ready-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background-color: #dc2626 !important;
   color: #ffffff !important;
-  padding: 5px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-  box-shadow: 0 0 16px rgba(234, 88, 12, 0.65);
-  animation: deployReadyPulse 1.5s infinite;
-  transition: transform 0.15s ease;
+  border: 2px solid #ffffff !important;
+  padding: 6px 16px !important;
+  border-radius: 6px !important;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  font-size: 0.85rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 16px rgba(220, 38, 38, 0.9), 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  animation: deployReadyPulse 1.2s infinite ease-in-out !important;
+  transition: all 0.15s ease-in-out !important;
+  white-space: nowrap !important;
 }
 
-.global-deploy-ready:hover {
-  transform: scale(1.03);
+.global-deploy-update-ready-btn:hover {
+  background-color: #b91c1c !important;
+  transform: scale(1.05) !important;
+  box-shadow: 0 0 22px rgba(220, 38, 38, 1) !important;
 }
 
-.deploy-ready-pulse-dot {
-  font-size: 0.9rem;
-  color: #fef08a;
+.global-deploy-update-ready-btn .deploy-ready-icon {
+  font-size: 1.05rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
 }
 
-.deploy-text-ready {
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: #ffffff;
-  white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.deploy-action-badge {
-  font-size: 0.74rem;
-  font-weight: 900;
-  background: #ffffff;
-  color: #dc2626;
-  border: 1px solid #ffffff;
-  padding: 3px 8px;
-  border-radius: 4px;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+.global-deploy-update-ready-btn .deploy-ready-text {
+  font-size: 0.85rem !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.06em !important;
 }
 
 @keyframes deployReadyPulse {
-  0% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.6); }
-  70% { box-shadow: 0 0 0 10px rgba(234, 88, 12, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(234, 88, 12, 0); }
+  0% { transform: scale(1); box-shadow: 0 0 12px rgba(220, 38, 38, 0.7); }
+  50% { transform: scale(1.03); box-shadow: 0 0 24px rgba(239, 68, 68, 1); }
+  100% { transform: scale(1); box-shadow: 0 0 12px rgba(220, 38, 38, 0.7); }
 }
 
 /* ── Top Announcement Full-Width Banners ── */

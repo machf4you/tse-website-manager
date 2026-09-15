@@ -423,10 +423,12 @@
   gap: 0.4rem;
 }
 
-.uap-form-group label {
+.uap-form-group label,
+.uap-form-group .uap-form-label {
   font-size: 0.8125rem;
   font-weight: 600;
   color: #cbd5e1;
+  display: block;
 }
 
 .uap-required {

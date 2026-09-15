@@ -427,15 +427,16 @@ export default function UsersAccessPage({ currentUser }) {
 
             <div className="uap-modal-body" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
               <div className="uap-form-group">
-                <label htmlFor="ctrl_new_uname">Username <span className="uap-required">*</span></label>
+                <span className="uap-form-label">Username <span className="uap-required">*</span></span>
                 <input
                   type="text"
-                  id="ctrl_new_uname"
-                  name="ctrl_new_uname"
-                  autoComplete="off"
+                  id="u_field_entry_u1"
+                  name="u_field_entry_u1"
+                  autoComplete="one-time-code"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
+                  aria-autocomplete="none"
                   data-lpignore="true"
                   data-1p-ignore="true"
                   data-bwignore="true"
@@ -444,22 +445,23 @@ export default function UsersAccessPage({ currentUser }) {
                   value={newUsername}
                   onChange={e => setNewUsername(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleCreateUser(e) }}
-                  placeholder="e.g. john or sarah"
+                  placeholder="Enter username"
                   required
                   autoFocus
                 />
               </div>
 
               <div className="uap-form-group">
-                <label htmlFor="ctrl_new_contact">Email Address <span className="uap-required">*</span></label>
+                <span className="uap-form-label">Email Address <span className="uap-required">*</span></span>
                 <input
                   type="text"
-                  id="ctrl_new_contact"
-                  name="ctrl_new_contact"
-                  autoComplete="off"
+                  id="u_field_entry_e1"
+                  name="u_field_entry_e1"
+                  autoComplete="one-time-code"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
+                  aria-autocomplete="none"
                   data-lpignore="true"
                   data-1p-ignore="true"
                   data-bwignore="true"
@@ -468,29 +470,29 @@ export default function UsersAccessPage({ currentUser }) {
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleCreateUser(e) }}
-                  placeholder="e.g. staff@thesearchequation.co.uk"
+                  placeholder="Enter email address"
                   required
                 />
               </div>
 
               <div className="uap-form-group">
-                <label htmlFor="ctrl_new_u_tok_val">Initial Password <span className="uap-required">*</span></label>
+                <span className="uap-form-label">Initial Password <span className="uap-required">*</span></span>
                 <div className="uap-password-input-wrapper" data-lpignore="true">
                   <input
                     type="text"
-                    id="ctrl_new_u_tok_val"
-                    name="ctrl_new_u_tok_val"
+                    id="u_field_entry_p1"
+                    name="u_field_entry_p1"
                     className={newShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
                     autoComplete="one-time-code"
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
+                    aria-autocomplete="none"
                     data-lpignore="true"
                     data-1p-ignore="true"
                     data-bwignore="true"
                     data-form-type="other"
                     data-private="true"
-                    aria-autocomplete="none"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleCreateUser(e) }}
@@ -647,15 +649,16 @@ export default function UsersAccessPage({ currentUser }) {
 
             <div className="uap-modal-body" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
               <div className="uap-form-group">
-                <label htmlFor="ctrl_u_contact_val">Email Address <span className="uap-required">*</span></label>
+                <span className="uap-form-label">Email Address <span className="uap-required">*</span></span>
                 <input
                   type="text"
-                  id="ctrl_u_contact_val"
-                  name="ctrl_u_contact_val"
-                  autoComplete="off"
+                  id="u_field_entry_e2"
+                  name="u_field_entry_e2"
+                  autoComplete="one-time-code"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck={false}
+                  aria-autocomplete="none"
                   data-lpignore="true"
                   data-1p-ignore="true"
                   data-bwignore="true"
@@ -664,6 +667,7 @@ export default function UsersAccessPage({ currentUser }) {
                   value={editEmail}
                   onChange={e => setEditEmail(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') handleUpdateUser(e) }}
+                  placeholder="Enter email address"
                   required
                 />
               </div>
@@ -730,23 +734,23 @@ export default function UsersAccessPage({ currentUser }) {
               )}
 
               <div className="uap-form-group">
-                <label htmlFor="ctrl_u_tok_val">Password / Reset Password</label>
+                <span className="uap-form-label">Password / Reset Password</span>
                 <div className="uap-password-input-wrapper" data-lpignore="true">
                   <input
                     type="text"
-                    id="ctrl_u_tok_val"
-                    name="ctrl_u_tok_val"
+                    id="u_field_entry_p2"
+                    name="u_field_entry_p2"
                     className={editShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
                     autoComplete="one-time-code"
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
+                    aria-autocomplete="none"
                     data-lpignore="true"
                     data-1p-ignore="true"
                     data-bwignore="true"
                     data-form-type="other"
                     data-private="true"
-                    aria-autocomplete="none"
                     value={editPassword}
                     onChange={e => setEditPassword(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleUpdateUser(e) }}
