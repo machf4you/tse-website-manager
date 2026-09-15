@@ -584,9 +584,10 @@
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  max-width: 190px;
+  max-width: 220px;
 }
 
+.uap-table-password-text,
 .uap-table-password-input {
   background: transparent !important;
   border: none !important;
@@ -596,9 +597,13 @@
   color: #cbd5e1 !important;
   font-family: monospace;
   font-size: 0.8125rem !important;
-  width: 100px;
   letter-spacing: 0.05em;
   user-select: all;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+  display: inline-block;
 }
 
 .uap-table-password-toggle {
@@ -619,4 +624,18 @@
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.25);
 }
+
+/* Hide LastPass, Bitwarden, 1Password injected icons in user management */
+.users-access-page [data-lastpass-icon-root],
+.users-access-page [data-lastpass-root],
+.users-access-page div[id*="__lpform_"],
+.users-access-page [class*="lastpass"],
+.users-access-page [data-1p-ignore] + div,
+.uap-modal [data-lastpass-icon-root],
+.uap-modal [data-lastpass-root] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 

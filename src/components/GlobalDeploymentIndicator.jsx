@@ -14,7 +14,7 @@ export default function GlobalDeploymentIndicator() {
         if (deploymentStatus.isDeploymentInProgress) {
           setDeployState('updating')
         } else if (
-          (deploymentStatus.buildTimestamp && Number(deploymentStatus.buildTimestamp) > CURRENT_BUILD_TIMESTAMP)
+          deploymentStatus.version && deploymentStatus.version !== CURRENT_BUILD_VERSION
         ) {
           setDeployState('update_ready')
         } else {
@@ -28,16 +28,14 @@ export default function GlobalDeploymentIndicator() {
     let isMounted = true
 
     function isServerNewer(sVer, sTimestamp) {
-      if (sTimestamp && Number(sTimestamp) > CURRENT_BUILD_TIMESTAMP) return true
-      if (sVer && sVer !== CURRENT_BUILD_VERSION) {
-        const sParts = String(sVer).split('.').map(n => parseInt(n, 10) || 0)
-        const cParts = String(CURRENT_BUILD_VERSION).split('.').map(n => parseInt(n, 10) || 0)
-        for (let i = 0; i < Math.max(sParts.length, cParts.length); i++) {
-          const sNum = sParts[i] || 0
-          const cNum = cParts[i] || 0
-          if (sNum > cNum) return true
-          if (sNum < cNum) return false
-        }
+      if (!sVer || sVer === CURRENT_BUILD_VERSION) return false
+      const sParts = String(sVer).split('.').map(n => parseInt(n, 10) || 0)
+      const cParts = String(CURRENT_BUILD_VERSION).split('.').map(n => parseInt(n, 10) || 0)
+      for (let i = 0; i < Math.max(sParts.length, cParts.length); i++) {
+        const sNum = sParts[i] || 0
+        const cNum = cParts[i] || 0
+        if (sNum > cNum) return true
+        if (sNum < cNum) return false
       }
       return false
     }
@@ -135,42 +133,16 @@ export default function GlobalDeploymentIndicator() {
 
   if (deployState === 'update_ready') {
     return (
-      <>
-        <div 
-          className="global-update-banner" 
-          role="alert"
-          onClick={handleManualRefresh}
-        >
-          <div className="global-update-banner-content">
-            <span className="banner-message">
-              <span className="deploy-ready-pulse-dot" aria-hidden="true">⚠️</span>
-              <strong>NEW UPDATE AVAILABLE:</strong> Please click <strong>CLICK TO REFRESH</strong> to load the latest changes!
-            </span>
-            <button 
-              type="button" 
-              className="banner-action-button"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleManualRefresh()
-              }}
-            >
-              ↻ Click to Refresh
-            </button>
-          </div>
-        </div>
-        <div 
-          className="global-deploy-indicator global-deploy-ready" 
-          role="button" 
-          tabIndex={0}
-          onClick={handleManualRefresh}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleManualRefresh()}
-          title="New deployment is live! Click to reload latest changes"
-        >
-          <span className="deploy-ready-pulse-dot" aria-hidden="true">⚡</span>
-          <span className="deploy-text-ready">V{serverVersion || CURRENT_BUILD_VERSION} | UPDATE READY</span>
-          <span className="deploy-action-badge">↻ CLICK TO REFRESH</span>
-        </div>
-      </>
+      <button 
+        type="button"
+        className="global-deploy-indicator global-deploy-update-ready-btn" 
+        onClick={handleManualRefresh}
+        title="New version is live! Click to reload latest changes"
+        id="btn-global-click-to-refresh"
+      >
+        <span className="deploy-ready-icon" aria-hidden="true">↻</span>
+        <span className="deploy-ready-text">CLICK TO REFRESH</span>
+      </button>
     )
   }
 

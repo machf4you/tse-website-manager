@@ -107,7 +107,7 @@ export default function UsersAccessPage({ currentUser }) {
     setEditEmail(user.email || '')
     setEditRole(user.role || 'staff')
     setEditApps(Array.isArray(user.allowed_apps) ? [...user.allowed_apps] : [])
-    setEditPassword(userPasswordMap[user.id] || userPasswordMap[user.username] || '')
+    setEditPassword(user.password || userPasswordMap[user.id] || userPasswordMap[user.username] || '')
     setEditShowPassword(false)
     setShowEditModal(true)
   }
@@ -220,7 +220,7 @@ export default function UsersAccessPage({ currentUser }) {
   const staffCount = users.filter(u => u.role === 'staff').length
 
   return (
-    <div className="users-access-page">
+    <div className="users-access-page" data-lpignore="true">
       {/* Page Header */}
       <div className="uap-header">
         <div>
@@ -295,7 +295,7 @@ export default function UsersAccessPage({ currentUser }) {
       </div>
 
       {/* Users Table */}
-      <div className="uap-table-container">
+      <div className="uap-table-container" data-lpignore="true">
         {loading ? (
           <div className="uap-loading-state">
             <div className="uap-spinner" />
@@ -306,7 +306,7 @@ export default function UsersAccessPage({ currentUser }) {
             <p>No user accounts found.</p>
           </div>
         ) : (
-          <table className="uap-table">
+          <table className="uap-table" data-lpignore="true">
             <thead>
               <tr>
                 <th>User</th>
@@ -346,19 +346,23 @@ export default function UsersAccessPage({ currentUser }) {
                       </span>
                     </td>
                     <td>
-                      <div className="uap-table-password-cell">
-                        <input
-                          type={showPasswordMap[u.id] ? 'text' : 'password'}
-                          className="uap-table-password-input"
-                          value={showPasswordMap[u.id] ? (userPasswordMap[u.id] || userPasswordMap[u.username] || '••••••••') : '••••••••'}
-                          readOnly
-                          aria-label={`Password for ${u.username}`}
-                        />
+                      <div className="uap-table-password-cell" data-lpignore="true">
+                        <span
+                          className="uap-table-password-text"
+                          data-lpignore="true"
+                          data-1p-ignore="true"
+                          data-bwignore="true"
+                        >
+                          {showPasswordMap[u.id]
+                            ? (u.password || userPasswordMap[u.id] || userPasswordMap[u.username] || '(Not recorded — reset via Edit)')
+                            : '••••••••••••'}
+                        </span>
                         <button
                           type="button"
                           className="uap-table-password-toggle"
                           onClick={() => toggleShowPassword(u.id)}
                           title={showPasswordMap[u.id] ? 'Hide password' : 'Show password'}
+                          data-lpignore="true"
                         >
                           {showPasswordMap[u.id] ? 'Hide' : 'Show'}
                         </button>
@@ -419,7 +423,7 @@ export default function UsersAccessPage({ currentUser }) {
       {/* ── ADD USER MODAL ── */}
       {showAddModal && (
         <div className="uap-modal-backdrop" onClick={() => !actionLoading && setShowAddModal(false)}>
-          <div className="uap-modal" onClick={e => e.stopPropagation()}>
+          <div className="uap-modal" onClick={e => e.stopPropagation()} data-lpignore="true">
             <div className="uap-modal-header">
               <h3 className="uap-modal-title">Add New User</h3>
               <button
@@ -432,15 +436,22 @@ export default function UsersAccessPage({ currentUser }) {
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser}>
+            <form onSubmit={handleCreateUser} data-lpignore="true" data-1p-ignore="true" data-bwignore="true" autoComplete="off">
               <div className="uap-modal-body">
                 <div className="uap-form-group">
                   <label htmlFor="add-username">Username <span className="uap-required">*</span></label>
                   <input
                     type="text"
                     id="add-username"
-                    name="username"
-                    autocomplete="off"
+                    name="add-user-name-field"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
                     value={newUsername}
                     onChange={e => setNewUsername(e.target.value)}
                     placeholder="e.g. john or sarah"
@@ -452,10 +463,17 @@ export default function UsersAccessPage({ currentUser }) {
                 <div className="uap-form-group">
                   <label htmlFor="add-email">Email Address <span className="uap-required">*</span></label>
                   <input
-                    type="email"
+                    type="text"
                     id="add-email"
-                    name="email"
-                    autocomplete="off"
+                    name="add-user-contact-field"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
                     value={newEmail}
                     onChange={e => setNewEmail(e.target.value)}
                     placeholder="e.g. staff@thesearchequation.co.uk"
@@ -465,12 +483,19 @@ export default function UsersAccessPage({ currentUser }) {
 
                 <div className="uap-form-group">
                   <label htmlFor="add-password">Initial Password <span className="uap-required">*</span></label>
-                  <div className="uap-password-input-wrapper">
+                  <div className="uap-password-input-wrapper" data-lpignore="true">
                     <input
                       type={newShowPassword ? 'text' : 'password'}
                       id="add-password"
-                      name="password"
-                      autocomplete="new-password"
+                      name="add-user-auth-secret"
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
                       placeholder="Minimum 6 characters"
@@ -481,6 +506,7 @@ export default function UsersAccessPage({ currentUser }) {
                       type="button"
                       className="uap-password-toggle"
                       onClick={() => setNewShowPassword(!newShowPassword)}
+                      data-lpignore="true"
                     >
                       {newShowPassword ? 'Hide' : 'Show'}
                     </button>
@@ -573,7 +599,7 @@ export default function UsersAccessPage({ currentUser }) {
       {/* ── EDIT USER MODAL ── */}
       {showEditModal && selectedUser && (
         <div className="uap-modal-backdrop" onClick={() => !actionLoading && setShowEditModal(false)}>
-          <div className="uap-modal" onClick={e => e.stopPropagation()}>
+          <div className="uap-modal" onClick={e => e.stopPropagation()} data-lpignore="true">
             <div className="uap-modal-header">
               <h3 className="uap-modal-title">Edit User: {selectedUser.username}</h3>
               <button
@@ -586,15 +612,22 @@ export default function UsersAccessPage({ currentUser }) {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateUser}>
+            <form onSubmit={handleUpdateUser} data-lpignore="true" data-1p-ignore="true" data-bwignore="true" autoComplete="off">
               <div className="uap-modal-body">
                 <div className="uap-form-group">
                   <label htmlFor="edit-email">Email Address <span className="uap-required">*</span></label>
                   <input
-                    type="email"
+                    type="text"
                     id="edit-email"
-                    name="email"
-                    autocomplete="off"
+                    name="edit-user-contact-field"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-form-type="other"
                     value={editEmail}
                     onChange={e => setEditEmail(e.target.value)}
                     required
@@ -663,27 +696,37 @@ export default function UsersAccessPage({ currentUser }) {
                 )}
 
                 <div className="uap-form-group">
-                  <label htmlFor="edit-password">Reset Password (Optional)</label>
-                  <div className="uap-password-input-wrapper">
+                  <label htmlFor="edit-password">Password / Reset Password</label>
+                  <div className="uap-password-input-wrapper" data-lpignore="true">
                     <input
                       type={editShowPassword ? 'text' : 'password'}
                       id="edit-password"
-                      name="password"
-                      autocomplete="new-password"
+                      name="edit-user-auth-secret"
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       value={editPassword}
                       onChange={e => setEditPassword(e.target.value)}
-                      placeholder="Leave blank to keep current password"
+                      placeholder={selectedUser.password ? "Enter new password or keep existing" : "Enter password to set/reset"}
                       minLength={6}
                     />
                     <button
                       type="button"
                       className="uap-password-toggle"
                       onClick={() => setEditShowPassword(!editShowPassword)}
+                      data-lpignore="true"
                     >
                       {editShowPassword ? 'Hide' : 'Show'}
                     </button>
                   </div>
-                  <span className="uap-input-hint">Changing password will revoke existing sessions for this user.</span>
+                  <span className="uap-input-hint">
+                    {selectedUser.password ? "Enter a new password or leave as-is." : "Enter a password to store against this user."}
+                  </span>
                 </div>
               </div>
 
