@@ -14,27 +14,8 @@ export default function UsersAccessPage({ currentUser }) {
   const [error, setError] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
 
-  // Per-user password storage & show/hide visibility map
-  const [userPasswordMap, setUserPasswordMap] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tse_user_passwords_v1')
-      return saved ? JSON.parse(saved) : {}
-    } catch (e) {
-      return {}
-    }
-  })
+  // Per-user show/hide visibility map
   const [showPasswordMap, setShowPasswordMap] = useState({})
-
-  const saveUserPassword = (userIdOrUsername, password) => {
-    if (!password) return
-    setUserPasswordMap(prev => {
-      const updated = { ...prev, [userIdOrUsername]: password }
-      try {
-        localStorage.setItem('tse_user_passwords_v1', JSON.stringify(updated))
-      } catch (e) {}
-      return updated
-    })
-  }
 
   const toggleShowPassword = (userId) => {
     setShowPasswordMap(prev => ({
@@ -107,7 +88,7 @@ export default function UsersAccessPage({ currentUser }) {
     setEditEmail(user.email || '')
     setEditRole(user.role || 'staff')
     setEditApps(Array.isArray(user.allowed_apps) ? [...user.allowed_apps] : [])
-    setEditPassword(user.password || userPasswordMap[user.id] || userPasswordMap[user.username] || '')
+    setEditPassword(user.password || '')
     setEditShowPassword(false)
     setShowEditModal(true)
   }
@@ -118,7 +99,7 @@ export default function UsersAccessPage({ currentUser }) {
   }
 
   const handleCreateUser = async (e) => {
-    e.preventDefault()
+    if (e && e.preventDefault) e.preventDefault()
     if (!newUsername.trim() || !newEmail.trim() || !newPassword.trim()) {
       showToast('Please fill in all required fields', true)
       return
@@ -131,22 +112,17 @@ export default function UsersAccessPage({ currentUser }) {
     setActionLoading(true)
     try {
       const appsPayload = newRole === 'admin' ? ['*'] : newApps
-      const createdUser = await createAdminUser({
+      await createAdminUser({
         username: newUsername.trim(),
         email: newEmail.trim(),
-        password: newPassword,
+        password: newPassword.trim(),
         role: newRole,
         allowed_apps: appsPayload
       })
 
-      if (createdUser?.id) {
-        saveUserPassword(createdUser.id, newPassword.trim())
-      }
-      saveUserPassword(newUsername.trim(), newPassword.trim())
-
       showToast(`User '${newUsername.trim()}' created successfully`)
       setShowAddModal(false)
-      loadUsers()
+      await loadUsers()
     } catch (err) {
       showToast(err.message || 'Failed to create user', true)
     } finally {
@@ -155,7 +131,7 @@ export default function UsersAccessPage({ currentUser }) {
   }
 
   const handleUpdateUser = async (e) => {
-    e.preventDefault()
+    if (e && e.preventDefault) e.preventDefault()
     if (!selectedUser) return
 
     setActionLoading(true)
@@ -177,14 +153,9 @@ export default function UsersAccessPage({ currentUser }) {
 
       await updateAdminUser(selectedUser.id, payload)
 
-      if (editPassword.trim()) {
-        saveUserPassword(selectedUser.id, editPassword.trim())
-        saveUserPassword(selectedUser.username, editPassword.trim())
-      }
-
       showToast(`User '${selectedUser.username}' updated successfully`)
       setShowEditModal(false)
-      loadUsers()
+      await loadUsers()
     } catch (err) {
       showToast(err.message || 'Failed to update user', true)
     } finally {
@@ -354,7 +325,7 @@ export default function UsersAccessPage({ currentUser }) {
                           data-bwignore="true"
                         >
                           {showPasswordMap[u.id]
-                            ? (u.password || userPasswordMap[u.id] || userPasswordMap[u.username] || '(Not recorded — reset via Edit)')
+                            ? (u.password || '(Not recorded — reset via Edit)')
                             : '••••••••••••'}
                         </span>
                         <button
@@ -436,164 +407,169 @@ export default function UsersAccessPage({ currentUser }) {
               </button>
             </div>
 
-            <form onSubmit={handleCreateUser} data-lpignore="true" data-1p-ignore="true" data-bwignore="true" autoComplete="off">
-              <div className="uap-modal-body">
-                <div className="uap-form-group">
-                  <label htmlFor="add-username">Username <span className="uap-required">*</span></label>
+            <div className="uap-modal-body" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+              <div className="uap-form-group">
+                <label htmlFor="ctrl_new_uname">Username <span className="uap-required">*</span></label>
+                <input
+                  type="text"
+                  id="ctrl_new_uname"
+                  name="ctrl_new_uname"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  data-private="true"
+                  value={newUsername}
+                  onChange={e => setNewUsername(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleCreateUser(e) }}
+                  placeholder="e.g. john or sarah"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="uap-form-group">
+                <label htmlFor="ctrl_new_contact">Email Address <span className="uap-required">*</span></label>
+                <input
+                  type="text"
+                  id="ctrl_new_contact"
+                  name="ctrl_new_contact"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  data-private="true"
+                  value={newEmail}
+                  onChange={e => setNewEmail(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleCreateUser(e) }}
+                  placeholder="e.g. staff@thesearchequation.co.uk"
+                  required
+                />
+              </div>
+
+              <div className="uap-form-group">
+                <label htmlFor="ctrl_new_u_tok_val">Initial Password <span className="uap-required">*</span></label>
+                <div className="uap-password-input-wrapper" data-lpignore="true">
                   <input
                     type="text"
-                    id="add-username"
-                    name="add-user-name-field"
-                    autoComplete="off"
+                    id="ctrl_new_u_tok_val"
+                    name="ctrl_new_u_tok_val"
+                    className={newShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
+                    autoComplete="one-time-code"
                     autoCorrect="off"
                     autoCapitalize="off"
-                    spellCheck="false"
+                    spellCheck={false}
                     data-lpignore="true"
                     data-1p-ignore="true"
                     data-bwignore="true"
                     data-form-type="other"
-                    value={newUsername}
-                    onChange={e => setNewUsername(e.target.value)}
-                    placeholder="e.g. john or sarah"
+                    data-private="true"
+                    aria-autocomplete="none"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleCreateUser(e) }}
+                    placeholder="Minimum 6 characters"
                     required
-                    autoFocus
+                    minLength={6}
                   />
-                </div>
-
-                <div className="uap-form-group">
-                  <label htmlFor="add-email">Email Address <span className="uap-required">*</span></label>
-                  <input
-                    type="text"
-                    id="add-email"
-                    name="add-user-contact-field"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck="false"
+                  <button
+                    type="button"
+                    className="uap-password-toggle"
+                    onClick={() => setNewShowPassword(!newShowPassword)}
                     data-lpignore="true"
-                    data-1p-ignore="true"
-                    data-bwignore="true"
-                    data-form-type="other"
-                    value={newEmail}
-                    onChange={e => setNewEmail(e.target.value)}
-                    placeholder="e.g. staff@thesearchequation.co.uk"
-                    required
-                  />
+                  >
+                    {newShowPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
+              </div>
 
-                <div className="uap-form-group">
-                  <label htmlFor="add-password">Initial Password <span className="uap-required">*</span></label>
-                  <div className="uap-password-input-wrapper" data-lpignore="true">
+              <div className="uap-form-group">
+                <label>Account Role</label>
+                <div className="uap-role-options">
+                  <label className={`uap-role-card ${newRole === 'staff' ? 'active' : ''}`}>
                     <input
-                      type="text"
-                      id="add-password"
-                      name="tse_admin_user_pass_input"
-                      className={newShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      data-form-type="other"
-                      aria-autocomplete="none"
-                      value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)}
-                      placeholder="Minimum 6 characters"
-                      required
-                      minLength={6}
+                      type="radio"
+                      name="add-role-opt"
+                      value="staff"
+                      checked={newRole === 'staff'}
+                      onChange={() => setNewRole('staff')}
                     />
-                    <button
-                      type="button"
-                      className="uap-password-toggle"
-                      onClick={() => setNewShowPassword(!newShowPassword)}
-                      data-lpignore="true"
-                    >
-                      {newShowPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="uap-form-group">
-                  <label>Account Role</label>
-                  <div className="uap-role-options">
-                    <label className={`uap-role-card ${newRole === 'staff' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="add-role"
-                        value="staff"
-                        checked={newRole === 'staff'}
-                        onChange={() => setNewRole('staff')}
-                      />
-                      <div>
-                        <strong>Staff User</strong>
-                        <span>Assigned specific applications only</span>
-                      </div>
-                    </label>
-                    <label className={`uap-role-card ${newRole === 'admin' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="add-role"
-                        value="admin"
-                        checked={newRole === 'admin'}
-                        onChange={() => setNewRole('admin')}
-                      />
-                      <div>
-                        <strong>Administrator</strong>
-                        <span>Full access to all applications & user management</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {newRole === 'staff' ? (
-                  <div className="uap-form-group">
-                    <label>Assigned Applications</label>
-                    <div className="uap-apps-picker">
-                      {AVAILABLE_APPS.map(app => (
-                        <label key={app.key} className="uap-app-checkbox-row">
-                          <input
-                            type="checkbox"
-                            checked={newApps.includes(app.key)}
-                            onChange={() => toggleAppSelection(newApps, setNewApps, app.key)}
-                          />
-                          <div className="uap-app-picker-info">
-                            <strong>{app.label}</strong>
-                            <span>{app.desc}</span>
-                          </div>
-                        </label>
-                      ))}
+                    <div>
+                      <strong>Staff User</strong>
+                      <span>Assigned specific applications only</span>
                     </div>
-                  </div>
-                ) : (
-                  <div className="uap-admin-note">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                    </svg>
-                    <span>Administrator accounts automatically receive full access to all TSE applications.</span>
-                  </div>
-                )}
+                  </label>
+                  <label className={`uap-role-card ${newRole === 'admin' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="add-role-opt"
+                      value="admin"
+                      checked={newRole === 'admin'}
+                      onChange={() => setNewRole('admin')}
+                    />
+                    <div>
+                      <strong>Administrator</strong>
+                      <span>Full access to all applications & user management</span>
+                    </div>
+                  </label>
+                </div>
               </div>
 
-              <div className="uap-modal-footer">
-                <button
-                  type="button"
-                  className="uap-btn uap-btn-secondary"
-                  onClick={() => setShowAddModal(false)}
-                  disabled={actionLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="uap-btn uap-btn-primary"
-                  disabled={actionLoading}
-                >
-                  {actionLoading ? 'Creating User...' : 'Create User'}
-                </button>
-              </div>
-            </form>
+              {newRole === 'staff' ? (
+                <div className="uap-form-group">
+                  <label>Assigned Applications</label>
+                  <div className="uap-apps-picker">
+                    {AVAILABLE_APPS.map(app => (
+                      <label key={app.key} className="uap-app-checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={newApps.includes(app.key)}
+                          onChange={() => toggleAppSelection(newApps, setNewApps, app.key)}
+                        />
+                        <div className="uap-app-picker-info">
+                          <strong>{app.label}</strong>
+                          <span>{app.desc}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="uap-admin-note">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Administrator accounts automatically receive full access to all TSE applications.</span>
+                </div>
+              )}
+            </div>
+
+            <div className="uap-modal-footer">
+              <button
+                type="button"
+                className="uap-btn uap-btn-secondary"
+                onClick={() => setShowAddModal(false)}
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="uap-btn uap-btn-primary"
+                onClick={handleCreateUser}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Creating User...' : 'Create User'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -614,144 +590,147 @@ export default function UsersAccessPage({ currentUser }) {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateUser} data-lpignore="true" data-1p-ignore="true" data-bwignore="true" autoComplete="off">
-              <div className="uap-modal-body">
+            <div className="uap-modal-body" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
+              <div className="uap-form-group">
+                <label htmlFor="ctrl_u_contact_val">Email Address <span className="uap-required">*</span></label>
+                <input
+                  type="text"
+                  id="ctrl_u_contact_val"
+                  name="ctrl_u_contact_val"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
+                  data-private="true"
+                  value={editEmail}
+                  onChange={e => setEditEmail(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleUpdateUser(e) }}
+                  required
+                />
+              </div>
+
+              <div className="uap-form-group">
+                <label>Account Role</label>
+                <div className="uap-role-options">
+                  <label className={`uap-role-card ${editRole === 'staff' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="edit-role-opt"
+                      value="staff"
+                      checked={editRole === 'staff'}
+                      onChange={() => setEditRole('staff')}
+                      disabled={selectedUser.role === 'admin' && adminCount <= 1}
+                    />
+                    <div>
+                      <strong>Staff User</strong>
+                      <span>Assigned specific applications only</span>
+                    </div>
+                  </label>
+                  <label className={`uap-role-card ${editRole === 'admin' ? 'active' : ''}`}>
+                    <input
+                      type="radio"
+                      name="edit-role-opt"
+                      value="admin"
+                      checked={editRole === 'admin'}
+                      onChange={() => setEditRole('admin')}
+                    />
+                    <div>
+                      <strong>Administrator</strong>
+                      <span>Full access to all applications</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {editRole === 'staff' ? (
                 <div className="uap-form-group">
-                  <label htmlFor="edit-email">Email Address <span className="uap-required">*</span></label>
+                  <label>Assigned Applications</label>
+                  <div className="uap-apps-picker">
+                    {AVAILABLE_APPS.map(app => (
+                      <label key={app.key} className="uap-app-checkbox-row">
+                        <input
+                          type="checkbox"
+                          checked={editApps.includes(app.key)}
+                          onChange={() => toggleAppSelection(editApps, setEditApps, app.key)}
+                        />
+                        <div className="uap-app-picker-info">
+                          <strong>{app.label}</strong>
+                          <span>{app.desc}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="uap-admin-note">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  <span>Administrator accounts automatically receive full access to all TSE applications.</span>
+                </div>
+              )}
+
+              <div className="uap-form-group">
+                <label htmlFor="ctrl_u_tok_val">Password / Reset Password</label>
+                <div className="uap-password-input-wrapper" data-lpignore="true">
                   <input
                     type="text"
-                    id="edit-email"
-                    name="edit-user-contact-field"
-                    autoComplete="off"
+                    id="ctrl_u_tok_val"
+                    name="ctrl_u_tok_val"
+                    className={editShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
+                    autoComplete="one-time-code"
                     autoCorrect="off"
                     autoCapitalize="off"
-                    spellCheck="false"
+                    spellCheck={false}
                     data-lpignore="true"
                     data-1p-ignore="true"
                     data-bwignore="true"
                     data-form-type="other"
-                    value={editEmail}
-                    onChange={e => setEditEmail(e.target.value)}
-                    required
+                    data-private="true"
+                    aria-autocomplete="none"
+                    value={editPassword}
+                    onChange={e => setEditPassword(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleUpdateUser(e) }}
+                    placeholder={selectedUser.password ? "Enter new password or keep existing" : "Enter password to set/reset"}
+                    minLength={6}
                   />
+                  <button
+                    type="button"
+                    className="uap-password-toggle"
+                    onClick={() => setEditShowPassword(!editShowPassword)}
+                    data-lpignore="true"
+                  >
+                    {editShowPassword ? 'Hide' : 'Show'}
+                  </button>
                 </div>
-
-                <div className="uap-form-group">
-                  <label>Account Role</label>
-                  <div className="uap-role-options">
-                    <label className={`uap-role-card ${editRole === 'staff' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="edit-role"
-                        value="staff"
-                        checked={editRole === 'staff'}
-                        onChange={() => setEditRole('staff')}
-                        disabled={selectedUser.role === 'admin' && adminCount <= 1}
-                      />
-                      <div>
-                        <strong>Staff User</strong>
-                        <span>Assigned specific applications only</span>
-                      </div>
-                    </label>
-                    <label className={`uap-role-card ${editRole === 'admin' ? 'active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="edit-role"
-                        value="admin"
-                        checked={editRole === 'admin'}
-                        onChange={() => setEditRole('admin')}
-                      />
-                      <div>
-                        <strong>Administrator</strong>
-                        <span>Full access to all applications</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {editRole === 'staff' ? (
-                  <div className="uap-form-group">
-                    <label>Assigned Applications</label>
-                    <div className="uap-apps-picker">
-                      {AVAILABLE_APPS.map(app => (
-                        <label key={app.key} className="uap-app-checkbox-row">
-                          <input
-                            type="checkbox"
-                            checked={editApps.includes(app.key)}
-                            onChange={() => toggleAppSelection(editApps, setEditApps, app.key)}
-                          />
-                          <div className="uap-app-picker-info">
-                            <strong>{app.label}</strong>
-                            <span>{app.desc}</span>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="uap-admin-note">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                    </svg>
-                    <span>Administrator accounts automatically receive full access to all TSE applications.</span>
-                  </div>
-                )}
-
-                <div className="uap-form-group">
-                  <label htmlFor="edit-password">Password / Reset Password</label>
-                  <div className="uap-password-input-wrapper" data-lpignore="true">
-                    <input
-                      type="text"
-                      id="edit-password"
-                      name="tse_admin_user_pass_input"
-                      className={editShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      data-form-type="other"
-                      aria-autocomplete="none"
-                      value={editPassword}
-                      onChange={e => setEditPassword(e.target.value)}
-                      placeholder={selectedUser.password ? "Enter new password or keep existing" : "Enter password to set/reset"}
-                      minLength={6}
-                    />
-                    <button
-                      type="button"
-                      className="uap-password-toggle"
-                      onClick={() => setEditShowPassword(!editShowPassword)}
-                      data-lpignore="true"
-                    >
-                      {editShowPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </div>
-                  <span className="uap-input-hint">
-                    {selectedUser.password ? "Enter a new password or leave as-is." : "Enter a password to store against this user."}
-                  </span>
-                </div>
+                <span className="uap-input-hint">
+                  {selectedUser.password ? "Enter a new password or leave as-is." : "Enter a password to store against this user."}
+                </span>
               </div>
+            </div>
 
-              <div className="uap-modal-footer">
-                <button
-                  type="button"
-                  className="uap-btn uap-btn-secondary"
-                  onClick={() => setShowEditModal(false)}
-                  disabled={actionLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="uap-btn uap-btn-primary"
-                  disabled={actionLoading}
-                >
-                  {actionLoading ? 'Saving Changes...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
+            <div className="uap-modal-footer">
+              <button
+                type="button"
+                className="uap-btn uap-btn-secondary"
+                onClick={() => setShowEditModal(false)}
+                disabled={actionLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="uap-btn uap-btn-primary"
+                onClick={handleUpdateUser}
+                disabled={actionLoading}
+              >
+                {actionLoading ? 'Saving Changes...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       )}
