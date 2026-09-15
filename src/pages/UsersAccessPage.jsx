@@ -485,10 +485,11 @@ export default function UsersAccessPage({ currentUser }) {
                   <label htmlFor="add-password">Initial Password <span className="uap-required">*</span></label>
                   <div className="uap-password-input-wrapper" data-lpignore="true">
                     <input
-                      type={newShowPassword ? 'text' : 'password'}
+                      type="text"
                       id="add-password"
-                      name="add-user-auth-secret"
-                      autoComplete="new-password"
+                      name="tse_admin_user_pass_input"
+                      className={newShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
+                      autoComplete="off"
                       autoCorrect="off"
                       autoCapitalize="off"
                       spellCheck="false"
@@ -496,6 +497,7 @@ export default function UsersAccessPage({ currentUser }) {
                       data-1p-ignore="true"
                       data-bwignore="true"
                       data-form-type="other"
+                      aria-autocomplete="none"
                       value={newPassword}
                       onChange={e => setNewPassword(e.target.value)}
                       placeholder="Minimum 6 characters"
@@ -699,10 +701,11 @@ export default function UsersAccessPage({ currentUser }) {
                   <label htmlFor="edit-password">Password / Reset Password</label>
                   <div className="uap-password-input-wrapper" data-lpignore="true">
                     <input
-                      type={editShowPassword ? 'text' : 'password'}
+                      type="text"
                       id="edit-password"
-                      name="edit-user-auth-secret"
-                      autoComplete="new-password"
+                      name="tse_admin_user_pass_input"
+                      className={editShowPassword ? 'uap-revealed-password-input' : 'uap-masked-password-input'}
+                      autoComplete="off"
                       autoCorrect="off"
                       autoCapitalize="off"
                       spellCheck="false"
@@ -710,6 +713,7 @@ export default function UsersAccessPage({ currentUser }) {
                       data-1p-ignore="true"
                       data-bwignore="true"
                       data-form-type="other"
+                      aria-autocomplete="none"
                       value={editPassword}
                       onChange={e => setEditPassword(e.target.value)}
                       placeholder={selectedUser.password ? "Enter new password or keep existing" : "Enter password to set/reset"}

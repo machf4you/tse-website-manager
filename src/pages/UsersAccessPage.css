@@ -638,4 +638,19 @@
   pointer-events: none !important;
 }
 
+/* Chrome Password Manager & autofill suppression with visual masking */
+.uap-masked-password-input {
+  -webkit-text-security: disc !important;
+  text-security: disc !important;
+  font-family: inherit !important;
+  letter-spacing: 0.1em;
+}
+
+.uap-revealed-password-input {
+  -webkit-text-security: none !important;
+  text-security: none !important;
+  font-family: monospace, inherit !important;
+  letter-spacing: normal;
+}
+
 
