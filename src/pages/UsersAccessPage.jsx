@@ -14,6 +14,35 @@ export default function UsersAccessPage({ currentUser }) {
   const [error, setError] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
 
+  // Per-user password storage & show/hide visibility map
+  const [userPasswordMap, setUserPasswordMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tse_user_passwords_v1')
+      return saved ? JSON.parse(saved) : {}
+    } catch (e) {
+      return {}
+    }
+  })
+  const [showPasswordMap, setShowPasswordMap] = useState({})
+
+  const saveUserPassword = (userIdOrUsername, password) => {
+    if (!password) return
+    setUserPasswordMap(prev => {
+      const updated = { ...prev, [userIdOrUsername]: password }
+      try {
+        localStorage.setItem('tse_user_passwords_v1', JSON.stringify(updated))
+      } catch (e) {}
+      return updated
+    })
+  }
+
+  const toggleShowPassword = (userId) => {
+    setShowPasswordMap(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }))
+  }
+
   // Dialog states
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -78,7 +107,7 @@ export default function UsersAccessPage({ currentUser }) {
     setEditEmail(user.email || '')
     setEditRole(user.role || 'staff')
     setEditApps(Array.isArray(user.allowed_apps) ? [...user.allowed_apps] : [])
-    setEditPassword('')
+    setEditPassword(userPasswordMap[user.id] || userPasswordMap[user.username] || '')
     setEditShowPassword(false)
     setShowEditModal(true)
   }
@@ -102,13 +131,19 @@ export default function UsersAccessPage({ currentUser }) {
     setActionLoading(true)
     try {
       const appsPayload = newRole === 'admin' ? ['*'] : newApps
-      await createAdminUser({
+      const createdUser = await createAdminUser({
         username: newUsername.trim(),
         email: newEmail.trim(),
         password: newPassword,
         role: newRole,
         allowed_apps: appsPayload
       })
+
+      if (createdUser?.id) {
+        saveUserPassword(createdUser.id, newPassword.trim())
+      }
+      saveUserPassword(newUsername.trim(), newPassword.trim())
+
       showToast(`User '${newUsername.trim()}' created successfully`)
       setShowAddModal(false)
       loadUsers()
@@ -141,6 +176,12 @@ export default function UsersAccessPage({ currentUser }) {
       }
 
       await updateAdminUser(selectedUser.id, payload)
+
+      if (editPassword.trim()) {
+        saveUserPassword(selectedUser.id, editPassword.trim())
+        saveUserPassword(selectedUser.username, editPassword.trim())
+      }
+
       showToast(`User '${selectedUser.username}' updated successfully`)
       setShowEditModal(false)
       loadUsers()
@@ -271,6 +312,7 @@ export default function UsersAccessPage({ currentUser }) {
                 <th>User</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Password</th>
                 <th>Allowed Applications</th>
                 <th>Created</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
@@ -302,6 +344,25 @@ export default function UsersAccessPage({ currentUser }) {
                       <span className={`uap-badge ${isAdmin ? 'uap-badge-admin' : 'uap-badge-staff'}`}>
                         {isAdmin ? 'Admin' : 'Staff'}
                       </span>
+                    </td>
+                    <td>
+                      <div className="uap-table-password-cell">
+                        <input
+                          type={showPasswordMap[u.id] ? 'text' : 'password'}
+                          className="uap-table-password-input"
+                          value={showPasswordMap[u.id] ? (userPasswordMap[u.id] || userPasswordMap[u.username] || '••••••••') : '••••••••'}
+                          readOnly
+                          aria-label={`Password for ${u.username}`}
+                        />
+                        <button
+                          type="button"
+                          className="uap-table-password-toggle"
+                          onClick={() => toggleShowPassword(u.id)}
+                          title={showPasswordMap[u.id] ? 'Hide password' : 'Show password'}
+                        >
+                          {showPasswordMap[u.id] ? 'Hide' : 'Show'}
+                        </button>
+                      </div>
                     </td>
                     <td>
                       <div className="uap-apps-list">

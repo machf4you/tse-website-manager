@@ -574,3 +574,49 @@
   color: #c7d2fe;
   font-size: 0.75rem;
 }
+
+/* Table Password Cell */
+.uap-table-password-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  max-width: 190px;
+}
+
+.uap-table-password-input {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: #cbd5e1 !important;
+  font-family: monospace;
+  font-size: 0.8125rem !important;
+  width: 100px;
+  letter-spacing: 0.05em;
+  user-select: all;
+}
+
+.uap-table-password-toggle {
+  background: rgba(51, 65, 85, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.uap-table-password-toggle:hover {
+  background: rgba(71, 85, 105, 1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
