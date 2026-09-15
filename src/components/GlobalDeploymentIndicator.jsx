@@ -27,7 +27,13 @@ export default function GlobalDeploymentIndicator() {
   useEffect(() => {
     let isMounted = true
 
-    function isServerNewer(sVer, sTimestamp) {
+    function isServerNewer(sVer, sTimestamp, sHash) {
+      if (sTimestamp && CURRENT_BUILD_TIMESTAMP && Number(sTimestamp) > Number(CURRENT_BUILD_TIMESTAMP)) {
+        return true
+      }
+      if (sHash && CURRENT_BUILD_HASH && sHash !== CURRENT_BUILD_HASH) {
+        return true
+      }
       if (!sVer || sVer === CURRENT_BUILD_VERSION) return false
       const sParts = String(sVer).split('.').map(n => parseInt(n, 10) || 0)
       const cParts = String(CURRENT_BUILD_VERSION).split('.').map(n => parseInt(n, 10) || 0)
@@ -45,6 +51,7 @@ export default function GlobalDeploymentIndicator() {
         let isUpdating = false
         let serverVer = CURRENT_BUILD_VERSION
         let serverTimestamp = CURRENT_BUILD_TIMESTAMP
+        let serverHash = CURRENT_BUILD_HASH
 
         // 1. Primary check: Server API /api/deployment/status
         try {
@@ -58,6 +65,7 @@ export default function GlobalDeploymentIndicator() {
             }
             if (apiData.version) serverVer = apiData.version
             if (apiData.buildTimestamp) serverTimestamp = Number(apiData.buildTimestamp)
+            if (apiData.buildHash) serverHash = apiData.buildHash
           }
         } catch (_e) {}
 
@@ -74,6 +82,7 @@ export default function GlobalDeploymentIndicator() {
             }
             if (staticData.version) serverVer = staticData.version
             if (staticData.buildTimestamp) serverTimestamp = Number(staticData.buildTimestamp)
+            if (staticData.buildHash) serverHash = staticData.buildHash
           }
         } catch (_e) {}
 
@@ -83,7 +92,7 @@ export default function GlobalDeploymentIndicator() {
 
         if (isUpdating) {
           setDeployState('updating')
-        } else if (isServerNewer(serverVer, serverTimestamp)) {
+        } else if (isServerNewer(serverVer, serverTimestamp, serverHash)) {
           setDeployState('update_ready')
         } else {
           setDeployState('normal')
@@ -94,7 +103,7 @@ export default function GlobalDeploymentIndicator() {
     }
 
     checkDeploymentStatus()
-    const interval = setInterval(checkDeploymentStatus, 3000)
+    const interval = setInterval(checkDeploymentStatus, 2500)
 
     return () => {
       isMounted = false
@@ -133,16 +142,26 @@ export default function GlobalDeploymentIndicator() {
 
   if (deployState === 'update_ready') {
     return (
-      <button 
-        type="button"
-        className="global-deploy-indicator global-deploy-update-ready-btn" 
-        onClick={handleManualRefresh}
-        title="New version is live! Click to reload latest changes"
-        id="btn-global-click-to-refresh"
-      >
-        <span className="deploy-ready-icon" aria-hidden="true">↻</span>
-        <span className="deploy-ready-text">CLICK TO REFRESH</span>
-      </button>
+      <>
+        <div className="global-updating-banner global-update-ready-banner" role="status" aria-live="polite" onClick={handleManualRefresh} style={{ cursor: 'pointer' }}>
+          <div className="global-update-banner-content">
+            <span className="banner-message">
+              <span className="deploy-ready-icon" aria-hidden="true">↻</span>
+              <strong>NEW VERSION READY:</strong> An update has been deployed. <strong>Click here to refresh</strong> and load the latest changes.
+            </span>
+          </div>
+        </div>
+        <button 
+          type="button"
+          className="global-deploy-indicator global-deploy-update-ready-btn" 
+          onClick={handleManualRefresh}
+          title="New version is live! Click to reload latest changes"
+          id="btn-global-click-to-refresh"
+        >
+          <span className="deploy-ready-icon" aria-hidden="true">↻</span>
+          <span className="deploy-ready-text">CLICK TO REFRESH</span>
+        </button>
+      </>
     )
   }
 
