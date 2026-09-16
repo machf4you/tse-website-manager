@@ -6,11 +6,7 @@
 import { normalizeSiteId } from '../utils/siteKeyHelper.js'
 import { broadcastWebsiteManagerEvent, REALTIME_EVENTS } from './supabaseRealtime.js'
 
-export const API_BASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_WEBSITE_MANAGER_API_URL)
-  ? process.env.VITE_WEBSITE_MANAGER_API_URL
-  : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBSITE_MANAGER_API_URL)
-      ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
-      : '/api')
+export const API_BASE_URL = '/api'
 
 async function fetchJson(url, options = {}, timeoutMs = 10000) {
   const controller = new AbortController()

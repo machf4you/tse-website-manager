@@ -1,8 +1,8 @@
 {
-  "version": "2.47",
-  "buildHash": "wm-mu3qf8nk-8d0mv",
+  "version": "2.48",
+  "buildHash": "wm-mu3qwo6g-nk3rt",
   "building": "",
   "isDeploymentInProgress": false,
-  "buildTimestamp": 1789540859792,
-  "lastDeployedAt": "2026-09-16T06:40:59.792Z"
+  "buildTimestamp": 1789541673064,
+  "lastDeployedAt": "2026-09-16T06:54:33.064Z"
 }
