@@ -51,6 +51,59 @@ EXPLICIT_MILESTONES = [
         ]
     },
     {
+        'id': 'sr-v2.19-full-disaster-recovery',
+        'app': 'Site Registry',
+        'version': 'v2.19-sr-stable',
+        'gitTag': 'sr-v2.19-full-disaster-recovery',
+        'commit': 'c2810e6',
+        'date': '16-09-2026 10:50',
+        'title': 'Site Registry V2.19 Full Disaster-Recovery Milestone',
+        'description': 'Full disaster-recovery restore point containing verified cold PostgreSQL database snapshot (43 tables, 5.38MB), complete application source, Nginx reverse-proxy definitions, PM2 process configuration, and Supabase migrations.',
+        'status': 'Current',
+        'docFile': 'RESTORE-POINT-v2.19-full-disaster-recovery-site-registry.md',
+        'purpose': 'Complete disaster recovery snapshot capable of rebuilding Site Registry from scratch.',
+        'verifiedWorking': [
+            'Complete application source tree and dependency manifests',
+            'Cold production PostgreSQL database snapshot (43 public tables, 5.38MB verified)',
+            'Nginx reverse-proxy & TLS/SSL certificates configuration',
+            'PM2 process supervisor specification (site-registry-api on port 3006)',
+            'Restored sortable domain table columns, editing, and accurate auto-renew status',
+            'Supabase SQL schema migrations baseline'
+        ],
+        'filesChanged': [
+            'RESTORE-POINT-v2.19-full-disaster-recovery-site-registry.md',
+            'scripts/tse_deploy_engine.py',
+            'src/pages/DomainsPage.tsx',
+            'src/components/EditDomainDialog.tsx'
+        ]
+    },
+    {
+        'id': 'kr-v1.4.5-full-disaster-recovery',
+        'app': 'Keyword Research',
+        'version': 'v1.4.5-kr-stable',
+        'gitTag': 'kr-v1.4.5-full-disaster-recovery',
+        'commit': 'eb5d63c',
+        'date': '16-09-2026 10:52',
+        'title': 'Keyword Research V1.4.5 Full Disaster-Recovery Milestone',
+        'description': 'Full disaster-recovery restore point containing verified cold database snapshot (7 tables, 1.90MB), complete application source, Nginx reverse-proxy definitions, PM2 process configuration, and DataForSEO/Central Forms integrations.',
+        'status': 'Current',
+        'docFile': 'RESTORE-POINT-v1.4.5-full-disaster-recovery-keyword-research.md',
+        'purpose': 'Complete disaster recovery snapshot capable of rebuilding Keyword Research from scratch.',
+        'verifiedWorking': [
+            'Complete application source tree and dependency manifests',
+            'Cold production database snapshot (7 tables, 1.90MB verified)',
+            'Nginx reverse-proxy & TLS/SSL certificates configuration',
+            'PM2 process supervisor specification (keyword-research-api on port 5005)',
+            'DataForSEO keyword research and clustering workflows',
+            'Central forms API and static enquiry form generator'
+        ],
+        'filesChanged': [
+            'RESTORE-POINT-v1.4.5-full-disaster-recovery-keyword-research.md',
+            'src/components/NewProjectModal.jsx',
+            'server/index.js'
+        ]
+    },
+    {
         'id': 'sr-v2.19-accepted-production',
         'app': 'Site Registry',
         'version': 'v2.19-sr-accepted',
@@ -59,7 +112,7 @@ EXPLICIT_MILESTONES = [
         'date': '16-09-2026 10:15',
         'title': 'Site Registry V2.19 Production Accepted & Domains Restoration',
         'description': 'Confirmed production accepted baseline for TSE Site Registry: 3-item restoration (Sortable domain table columns, Domain Details edit dialog persistence, and Auto-Renew unknown normalization to No/False), softer dashboard outline styling, medium headline typography, and Awaiting Indexing / Articles module.',
-        'status': 'Current',
+        'status': 'Superseded',
         'docFile': 'V2.19-STABLE-INDEXCHECKER-RECONCILIATION-NORMALIZATION.md',
         'purpose': 'Production accepted baseline for Site Registry with restored domain sorting, editing, and accurate auto-renew status.',
         'verifiedWorking': [
