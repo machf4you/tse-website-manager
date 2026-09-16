@@ -5,6 +5,18 @@
  */
 export const restorePointIndexData = [
   {
+    "id": "v2.52-full-disaster-recovery-apps-hub-migration",
+    "app": "Website Manager",
+    "version": "v2.52-full-disaster-recovery-apps-hub-migration",
+    "gitTag": "",
+    "commit": "[AUTO]",
+    "date": "16-09-2026 17:02",
+    "title": "TSE Website Manager \u2014 Full Disaster-Recovery Restore Point",
+    "description": "This document provides the authoritative **Full Disaster-Recovery Specification and Restore Point** for the TSE Website Manager application following the structural migration of the central Apps Platform Hub to `https://auth.thesearchequation.co.uk/`.",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-v2.52-full-disaster-recovery-apps-hub-migration.md"
+  },
+  {
     "id": "leadgen-v1.42-full-disaster-recovery",
     "app": "Lead Generator",
     "version": "v1.42-lg-stable",
@@ -13,7 +25,7 @@ export const restorePointIndexData = [
     "date": "16-09-2026 11:12",
     "title": "Lead Generator V1.42 Full Disaster-Recovery Milestone",
     "description": "Full disaster-recovery restore point containing verified cold SQLite database snapshot (972KB, 8 master templates, saved searches), complete application source, Nginx reverse-proxy definitions, and Node/PM2 process configuration.",
-    "status": "Current",
+    "status": "Superseded",
     "docFile": "RESTORE-POINT-v1.42-full-disaster-recovery-lead-generator.md",
     "purpose": "Complete disaster recovery snapshot capable of rebuilding Lead Generator from scratch.",
     "verifiedWorking": [
