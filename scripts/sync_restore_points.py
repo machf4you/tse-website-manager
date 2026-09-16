@@ -155,6 +155,33 @@ EXPLICIT_MILESTONES = [
         ]
     },
     {
+        'id': 'leadgen-v1.42-full-disaster-recovery',
+        'app': 'Lead Generator',
+        'version': 'v1.42-lg-stable',
+        'gitTag': 'lg-v1.42-full-disaster-recovery',
+        'commit': '4f7b121',
+        'date': '16-09-2026 11:12',
+        'title': 'Lead Generator V1.42 Full Disaster-Recovery Milestone',
+        'description': 'Full disaster-recovery restore point containing verified cold SQLite database snapshot (972KB, 8 master templates, saved searches), complete application source, Nginx reverse-proxy definitions, and Node/PM2 process configuration.',
+        'status': 'Current',
+        'docFile': 'RESTORE-POINT-v1.42-full-disaster-recovery-lead-generator.md',
+        'purpose': 'Complete disaster recovery snapshot capable of rebuilding Lead Generator from scratch.',
+        'verifiedWorking': [
+            'Complete application source tree and dependency manifests',
+            'Cold production SQLite database snapshot (972KB, 8 master templates, saved searches verified)',
+            'Nginx reverse-proxy & TLS/SSL certificates configuration',
+            'Node.js backend daemon specification on port 5000',
+            'Master email templates editor with personalisations variables',
+            'Opportunity Score 70+ highlights and full outreach pack workflow'
+        ],
+        'filesChanged': [
+            'RESTORE-POINT-v1.42-full-disaster-recovery-lead-generator.md',
+            'client/src/App.jsx',
+            'server/server.js',
+            'server/db.js'
+        ]
+    },
+    {
         'id': 'leadgen-v1.42-stable-prior-to-user-workspace-separation',
         'app': 'Lead Generator',
         'version': 'v1.42-lg-stable',
