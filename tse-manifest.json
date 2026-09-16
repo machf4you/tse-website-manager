@@ -2,7 +2,7 @@
   "app": "website-manager",
   "task": "Restore W1 Connected Websites 14-site production baseline",
   "baselineTag": "wm-v2.43-baseline",
-  "candidateCommit": "008e71cecd3ec12d52d29136bc282708aa11fa2d",
+  "candidateCommit": "8b539b7d8090b69126c017b48aee044830a61ed6",
   "allowedFiles": [
     "public/version.json",
     "server/db.js",
