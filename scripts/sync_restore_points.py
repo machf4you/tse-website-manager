@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
-# TSE Automated Restore Point Synchronization Engine
+# TSE Automated Restore Point Synchronization & Retention Engine
 import os
 import re
 import json
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
+
+# Reference time is current system time (2026-09-16)
+CURRENT_TIME = datetime(2026, 9, 16, 10, 25, 21)
+RETENTION_DAYS = 7
+CUTOFF_DATE = (CURRENT_TIME - timedelta(days=RETENTION_DAYS)).date()
 
 TSE_REPOS = [
     ('TSE Website Manager', r'c:\Antigravity\tse-website-manager'),
@@ -160,28 +165,50 @@ EXPLICIT_MILESTONES = [
     }
 ]
 
-def parse_date_sort_key(date_str):
-    if not date_str:
-        return '1970-01-01 00:00'
-    m = re.search(r'(\d{2})[-/](\d{2})[-/](\d{4})(?:\s+(\d{2}):(\d{2}))?', date_str)
+def parse_date_to_datetime(raw_str, fullpath=None):
+    if not raw_str and fullpath and os.path.exists(fullpath):
+        mtime = os.path.getmtime(fullpath)
+        return datetime.fromtimestamp(mtime)
+    if not raw_str:
+        return datetime(1970, 1, 1)
+
+    clean = re.sub(r'^\*\*\s*', '', raw_str).replace('`', '').strip()
+    # DD-MM-YYYY HH:MM or DD-MM-YYYY
+    m = re.search(r'(\d{2})[-/](\d{2})[-/](\d{4})(?:\s+(\d{2}):(\d{2}))?', clean)
     if m:
-        day, month, year = m.group(1), m.group(2), m.group(3)
-        hour = m.group(4) or '00'
-        minute = m.group(5) or '00'
-        return f"{year}-{month}-{day} {hour}:{minute}"
-    m = re.search(r'(\d{4})[-/](\d{2})[-/](\d{2})', date_str)
+        day, month, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        hour = int(m.group(4) or 0)
+        minute = int(m.group(5) or 0)
+        return datetime(year, month, day, hour, minute)
+
+    # YYYY-MM-DD HH:MM or YYYY-MM-DD
+    m = re.search(r'(\d{4})[-/](\d{2})[-/](\d{2})(?:\s+(\d{2}):(\d{2}))?', clean)
     if m:
-        year, month, day = m.group(1), m.group(2), m.group(3)
-        return f"{year}-{month}-{day} 00:00"
+        year, month, day = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        hour = int(m.group(4) or 0)
+        minute = int(m.group(5) or 0)
+        return datetime(year, month, day, hour, minute)
+
+    # DD Month YYYY
     try:
-        dt = datetime.strptime(date_str.replace(',', '').strip(), '%B %d %Y')
-        return dt.strftime('%Y-%m-%d 00:00')
+        return datetime.strptime(clean.replace(',', '').strip(), '%d %B %Y')
     except Exception:
         pass
-    return date_str
+
+    # Month DD, YYYY
+    try:
+        return datetime.strptime(clean.replace(',', '').strip(), '%B %d %Y')
+    except Exception:
+        pass
+
+    if fullpath and os.path.exists(fullpath):
+        mtime = os.path.getmtime(fullpath)
+        return datetime.fromtimestamp(mtime)
+
+    return datetime(1970, 1, 1)
 
 def extract_from_md(app_label, filename, fullpath):
-    with open(fullpath, 'r', encoding='utf-8', errors='ignore') as f:
+    with open(fullpath, 'r', encoding='utf-8-sig', errors='ignore') as f:
         content = f.read()
 
     title_match = re.search(r'^#\s+(.+)$', content, re.MULTILINE)
@@ -192,17 +219,21 @@ def extract_from_md(app_label, filename, fullpath):
     if not version_match:
         version_match = re.search(r'Version:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
 
-    date_match = re.search(r'\*\*Date\*\*:\s*([^\r\n]+)', content, re.IGNORECASE)
+    date_match = re.search(r'\*\*(?:Timestamp|Date)\*\*:\s*([^\r\n]+)', content, re.IGNORECASE)
     if not date_match:
-        date_match = re.search(r'Date:\s*([^\r\n]+)', content, re.IGNORECASE)
+        date_match = re.search(r'(?:Timestamp|Date):\s*([^\r\n]+)', content, re.IGNORECASE)
 
     tag_match = re.search(r'\*\*Git Tag\*\*:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
     if not tag_match:
         tag_match = re.search(r'Git Tag:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
 
-    commit_match = re.search(r'\*\*Commit\*\*:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
+    commit_match = re.search(r'\*\*(?:Commit|Baseline Commit|Canonical Commit)\*\*:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
     if not commit_match:
-        commit_match = re.search(r'Commit:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
+        commit_match = re.search(r'(?:Commit|Baseline Commit|Canonical Commit):\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
+
+    status_match = re.search(r'\*\*Status\*\*:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
+    if not status_match:
+        status_match = re.search(r'Status:\s*`?([^`\r\n]+)`?', content, re.IGNORECASE)
 
     desc = ""
     desc_match = re.search(r'## (?:Executive )?Summary\s*\n\n([^\n#]+)', content)
@@ -222,16 +253,15 @@ def extract_from_md(app_label, filename, fullpath):
         version = vm.group(1).lower() if vm else 'v1.0'
 
     raw_date = date_match.group(1).strip() if date_match else ''
-    raw_date = re.sub(r'^\*\*\s*', '', raw_date).strip()
-    if not raw_date:
-        mtime = os.path.getmtime(fullpath)
-        raw_date = datetime.fromtimestamp(mtime).strftime('%d-%m-%Y %H:%M')
+    raw_date = re.sub(r'^\*\*\s*', '', raw_date).replace('`', '').strip()
+    dt = parse_date_to_datetime(raw_date, fullpath)
+    formatted_date = dt.strftime('%d-%m-%Y %H:%M') if dt.hour or dt.minute else dt.strftime('%d-%m-%Y')
 
     gitTag = tag_match.group(1).strip() if tag_match else filename.replace('.md', '').lower().replace('restore-point-', '')
-    gitTag = re.sub(r'^\*\*\s*', '', gitTag).strip()
+    gitTag = re.sub(r'^\*\*\s*', '', gitTag).replace('`', '').strip()
 
     commit = commit_match.group(1).strip() if commit_match else '[AUTO]'
-    commit = re.sub(r'^\*\*\s*', '', commit).strip()
+    commit = re.sub(r'^\*\*\s*', '', commit).replace('`', '').strip()
 
     base_id = filename.replace('.md', '').lower()
     if base_id.startswith('restore-point-'):
@@ -242,17 +272,27 @@ def extract_from_md(app_label, filename, fullpath):
         'version': version,
         'gitTag': gitTag,
         'commit': commit if commit else '[AUTO]',
-        'date': raw_date,
+        'date': formatted_date,
+        'parsed_dt': dt,
         'title': f"{title}",
         'description': desc[:350] if desc else f"Confirmed stable restore point for {title}.",
         'status': 'Superseded',
         'docFile': filename
     }
 
-def collect_all_restore_points():
-    combined = list(EXPLICIT_MILESTONES)
-    seen_ids = set(item['id'] for item in combined)
-    seen_docs = set(item['docFile'] for item in combined if item.get('docFile'))
+def collect_retained_restore_points():
+    combined = []
+    seen_ids = set()
+    seen_docs = set()
+
+    for item in EXPLICIT_MILESTONES:
+        dt = parse_date_to_datetime(item.get('date', ''))
+        if dt.date() >= CUTOFF_DATE:
+            entry = dict(item)
+            entry['parsed_dt'] = dt
+            combined.append(entry)
+            seen_ids.add(entry['id'])
+            seen_docs.add(entry['docFile'])
 
     for app_label, repo_path in TSE_REPOS:
         if not os.path.exists(repo_path):
@@ -267,32 +307,37 @@ def collect_all_restore_points():
                     full = os.path.join(root, f)
                     try:
                         rp = extract_from_md(app_label, f, full)
-                        if rp['id'] not in seen_ids and rp['docFile'] not in seen_docs:
-                            if app_label != 'TSE Website Manager' and not rp['title'].startswith('TSE'):
-                                rp['title'] = f"{app_label} — {rp['title']}"
-                            combined.append(rp)
-                            seen_ids.add(rp['id'])
-                            seen_docs.add(rp['docFile'])
+                        if rp['parsed_dt'].date() >= CUTOFF_DATE:
+                            if rp['id'] not in seen_ids and rp['docFile'] not in seen_docs:
+                                if app_label != 'TSE Website Manager' and not rp['title'].startswith('TSE'):
+                                    rp['title'] = f"{app_label} — {rp['title']}"
+                                combined.append(rp)
+                                seen_ids.add(rp['id'])
+                                seen_docs.add(rp['docFile'])
                     except Exception as e:
                         print(f"Error parsing {full}: {e}")
 
-    combined.sort(key=lambda x: parse_date_sort_key(x.get('date', '')), reverse=True)
+    # Sort descending by date
+    combined.sort(key=lambda x: x['parsed_dt'], reverse=True)
 
     for idx, item in enumerate(combined):
         item['status'] = 'Current' if idx == 0 else 'Superseded'
+        # Remove helper field before serialization
+        if 'parsed_dt' in item:
+            del item['parsed_dt']
 
     return combined
 
 def sync_restore_points():
     print("============================================================")
-    print("[RESTORE POINT SYNCHRONIZER] Scanning all TSE workspaces...")
+    print(f"[RESTORE POINT CLEANUP] Retaining only restore points <= {RETENTION_DAYS} days old (>= {CUTOFF_DATE})...")
     print("============================================================")
 
-    restore_points = collect_all_restore_points()
-    print(f"Found and indexed {len(restore_points)} restore points.")
+    retained = collect_retained_restore_points()
+    print(f"Retained {len(retained)} restore points.")
 
-    js_content = "/**\n * Master restore point data representing RESTORE-POINT-INDEX.md.\n * Authoritative single source of truth for the Restore Points manager.\n * AUTOMATICALLY GENERATED BY scripts/sync_restore_points.py\n */\nexport const restorePointIndexData = "
-    js_content += json.dumps(restore_points, indent=2)
+    js_content = "/**\n * Master restore point data representing RESTORE-POINT-INDEX.md.\n * Authoritative single source of truth for the Restore Points manager.\n * AUTOMATICALLY GENERATED BY scripts/sync_restore_points.py (7-day retention)\n */\nexport const restorePointIndexData = "
+    js_content += json.dumps(retained, indent=2)
     js_content += ";\n"
 
     with open(TARGET_JS, 'w', encoding='utf-8') as f:
@@ -302,8 +347,8 @@ def sync_restore_points():
     md_lines = [
         "# Restore Point Index",
         "",
-        "Master index of all restore points for the TSE ecosystem.",
-        "AUTOMATICALLY SYNCHRONIZED by `scripts/sync_restore_points.py` during deployment & snapshot creation.",
+        "Master index of active restore points for the TSE ecosystem (7-Day Rolling Retention).",
+        "AUTOMATICALLY SYNCHRONIZED by `scripts/sync_restore_points.py`.",
         "",
         "---",
         "",
@@ -311,7 +356,7 @@ def sync_restore_points():
         "|---|---|---|---|---|---|"
     ]
 
-    for rp in restore_points:
+    for rp in retained:
         v = rp.get('version', '')
         t = f"`{rp.get('gitTag', '')}`" if rp.get('gitTag') else '-'
         c = f"`{rp.get('commit', '')}`" if rp.get('commit') else '-'
@@ -327,7 +372,8 @@ def sync_restore_points():
     with open(TARGET_MD, 'w', encoding='utf-8') as f:
         f.write('\n'.join(md_lines))
     print(f"[UPDATED] {TARGET_MD}")
-    print("[PASS] Restore point synchronization complete.")
+    print("[PASS] 7-day retention cleanup and synchronization complete.")
+    return retained
 
 if __name__ == '__main__':
     sync_restore_points()
