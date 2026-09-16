@@ -23,6 +23,7 @@
     "scripts/tse-safety-gate.mjs",
     "scripts/tse_deploy_engine.py",
     "scripts/tse_regression_gate.py",
+    ".gitignore",
     "tse-manifest.json"
   ]
 }
