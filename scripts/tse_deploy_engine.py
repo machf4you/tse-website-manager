@@ -106,6 +106,17 @@ class TseDeployEngine:
         print(f"[PASS] Gate 2: All {len(diff_files)} changed files are within declared manifest scope.")
         return True
 
+    def sync_restore_point_index(self):
+        print("\n[AUTOMATED RESTORE POINT SYNC] Synchronizing Global Settings Restore Points...")
+        sync_script = r"c:\Antigravity\tse-website-manager\scripts\sync_restore_points.py"
+        if os.path.exists(sync_script):
+            res = subprocess.run([sys.executable, sync_script], capture_output=True, text=True)
+            if res.returncode == 0:
+                print("  - Global Settings Restore Points & RESTORE-POINT-INDEX.md synchronized successfully.")
+            else:
+                print(f"  - [WARNING] Restore point sync reported non-zero code: {res.stderr}")
+        return True
+
     def pre_deployment_snapshot(self):
         print("\n[PRE-DEPLOYMENT SNAPSHOT] Preserving current live state on VPS...")
         ts = int(time.time())
@@ -123,6 +134,9 @@ class TseDeployEngine:
         out, err = self.run_remote(f"if [ -f {db_target} ]; then sqlite3 {db_target} \".backup '{db_snap_file}'\"; echo 'DB backed up successfully'; fi")
         print(f"  - Database safe snapshot (.backup) created: {db_snap_file}")
         print("  - [CRITICAL RULE] Auto-database rollback is permanently DISABLED.")
+        
+        # PERMANENT RULE: Automatically sync Global Settings Restore Points list
+        self.sync_restore_point_index()
         return snap_file, db_snap_file
 
     def establish_immutable_release_structure(self):
@@ -143,4 +157,3 @@ class TseDeployEngine:
         print(f"[PASS] Application rolled back to {previous_release_id}. Database was 100% UNTOUCHED.")
         return True
 
-# temporary unstaged modification

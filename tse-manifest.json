@@ -23,6 +23,12 @@
     "scripts/tse-safety-gate.mjs",
     "scripts/tse_deploy_engine.py",
     "scripts/tse_regression_gate.py",
+    "scripts/sync_restore_points.py",
+    "package.json",
+    "src/data/restorePointData.js",
+    "RESTORE-POINT-INDEX.md",
+    "RESTORE-POINT-v1.30-fix-platform-state-persistence.md",
+    "RESTORE-POINT-v1.46-w4-h1-replacement-and-push-loading-indicator-fix.md",
     ".gitignore",
     "tse-manifest.json"
   ]

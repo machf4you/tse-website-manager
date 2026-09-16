@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "prebuild": "python scripts/sync_restore_points.py",
+    "sync-restore-points": "python scripts/sync_restore_points.py",
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",

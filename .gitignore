@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 __pycache__
 *.pyc
+scratch/
+*.tar.gz
+scratch_*.mjs
+datetime
