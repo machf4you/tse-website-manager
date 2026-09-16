@@ -17,7 +17,7 @@ export default function WebsitesDashboard() {
   const [editingSite, setEditingSite] = useState(null)
   const [sites, setSites] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('tse_website_dashboard_sites')
+      const saved = localStorage.getItem('tse_website_dashboard_sites')
       if (saved) {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -130,7 +130,6 @@ export default function WebsitesDashboard() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sites))
       localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(sites))
     } catch (e) {}
   }, [sites])
