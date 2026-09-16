@@ -1,0 +1,59 @@
+{
+  "application": "website-manager",
+  "baselineTag": "wm-v2.50-full-disaster-recovery",
+  "baselineVersion": "v2.50-wm-stable",
+  "baselineCommit": "1d7741a4",
+  "acceptedDate": "16 SEP 2026",
+  "macAccepted": true,
+  "macAcceptedTimestamp": 1789548452961,
+  "status": "Authoritative Accepted Production Baseline",
+  "protectedFeatures": {
+    "views": [
+      "apps-dashboard",
+      "website-manager",
+      "websites",
+      "global-settings"
+    ],
+    "globalSettingsTabs": [
+      "restore-points",
+      "users-access",
+      "deployment-recovery",
+      "import-rules",
+      "page-type-classifications",
+      "internal-linking-rules",
+      "page-auditor-rules"
+    ],
+    "components": [
+      "src/pages/WebsitesDashboard.jsx",
+      "src/pages/GlobalSettings.jsx",
+      "src/pages/RestorePointsPage.jsx",
+      "src/pages/UsersAccessPage.jsx",
+      "src/pages/AppsDashboard.jsx",
+      "src/components/AddWebsiteDialog.jsx",
+      "src/components/BulkConfigureTargetPhrasesDialog.jsx",
+      "src/components/CreateRestorePointDialog.jsx",
+      "src/components/W4FixIssueDialog.jsx",
+      "src/components/GlobalDeploymentIndicator.jsx"
+    ],
+    "apiEndpoints": [
+      "/api/websites",
+      "/api/websites/:id",
+      "/api/websites/:id/page-configs",
+      "/api/websites/:id/audits",
+      "/api/deployment/status",
+      "/api/health"
+    ],
+    "databaseTables": [
+      "websites",
+      "page_configs",
+      "audits",
+      "user_profiles",
+      "target_phrases"
+    ],
+    "invariants": {
+      "minimumWebsitesCount": 14,
+      "restorePointsCategorised": true,
+      "restorePointsFourColumns": true
+    }
+  }
+}

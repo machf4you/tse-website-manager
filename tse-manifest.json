@@ -1,7 +1,7 @@
 {
   "app": "website-manager",
-  "task": "Restore W1 Connected Websites 14-site production baseline",
-  "baselineTag": "wm-v2.43-baseline",
+  "task": "Implement Production Baseline Lock for Website Manager V2.50",
+  "baselineTag": "wm-v2.50-full-disaster-recovery",
   "candidateCommit": "HEAD",
   "allowedFiles": [
     "public/version.json",
@@ -23,6 +23,9 @@
     "scripts/tse-safety-gate.mjs",
     "scripts/tse_deploy_engine.py",
     "scripts/tse_regression_gate.py",
+    "scripts/tse_baseline_lock.py",
+    "scripts/wm_production_baseline.json",
+    "scripts/advance_production_baseline.py",
     "src/pages/RestorePointsPage.jsx",
     "src/pages/RestorePointsPage.css",
     "scripts/sync_restore_points.py",

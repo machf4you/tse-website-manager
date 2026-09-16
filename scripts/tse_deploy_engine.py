@@ -34,6 +34,15 @@ class TseDeployEngine:
             self.manifest = json.load(f)
         return self.manifest
 
+    def gate0_production_baseline_lock(self):
+        """PRE-DEPLOYMENT PRODUCTION BASELINE LOCK FOR WEBSITE MANAGER"""
+        if self.app_name == "website-manager":
+            from tse_baseline_lock import run_baseline_lock_check
+            if not self.manifest:
+                self.load_manifest()
+            run_baseline_lock_check(self.repo_path, self.manifest)
+        return True
+
     def gate1_clean_tree(self):
         print("\n[GATE 1] Running Strict Clean-Tree Check...")
         if not self.manifest:
