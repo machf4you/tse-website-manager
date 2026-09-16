@@ -91,7 +91,7 @@ function formatNowDDMMYYYYHHMM() {
   return `${day}-${month}-${year} ${hours}:${minutes}`
 }
 
-export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite }) {
+export default function ManageWebsitePage({ site: rawSite, currentPath, navigate, onBack, onUpdateSite }) {
   const site = rawSite ? {
     ...rawSite,
     wpUser: rawSite.wpUser || rawSite.connectedUser || rawSite.configData?.wpUser || rawSite.configData?.connectedUser || '',
@@ -116,22 +116,43 @@ export default function ManageWebsitePage({ site: rawSite, onBack, onUpdateSite 
   const [apiConfigs, setApiConfigs] = useState({})
   const activeTabStorageKey = site?.id ? `tse_active_tab_${site.id}` : 'tse_active_tab_default'
 
-  const [activeTab, setActiveTabState] = useState(() => {
+  const getTabFromPath = (path) => {
+    if (!path) return null
+    if (path === '/w2-website-dashboard' || path === '/w2') return 'w2'
+    if (path === '/w3-page-management' || path === '/w3' || path === '/w3-manage-pages') return 'w3'
+    if (path === '/w4-audit-results' || path === '/w4' || path === '/w4-page-audit' || path === '/w3-audit-results') return 'w4'
+    if (path === '/w5-internal-linking' || path === '/w5' || path === '/w4-internal-linking' || path === '/w5-all-internal-links' || path === '/w5-review-links') return 'w5'
+    return null
+  }
+
+  const [internalActiveTab, setInternalActiveTab] = useState(() => {
+    const fromPath = getTabFromPath(currentPath)
+    if (fromPath) return fromPath
     try {
       const saved = localStorage.getItem(activeTabStorageKey) || localStorage.getItem('tse_active_tab_v1')
       if (saved) return saved
     } catch (e) {
       console.error('Failed to load active tab from localStorage:', e)
     }
-    return 'w3'
+    return 'w2'
   })
 
+  const pathTab = getTabFromPath(currentPath)
+  const activeTab = pathTab || internalActiveTab
+
   const setActiveTab = (tab) => {
-    setActiveTabState(tab)
+    setInternalActiveTab(tab)
     try {
       localStorage.setItem(activeTabStorageKey, tab)
       localStorage.setItem('tse_active_tab_v1', tab)
     } catch (e) {}
+
+    if (navigate) {
+      if (tab === 'w2') navigate('/w2-website-dashboard')
+      else if (tab === 'w3' || tab === 'w3-manage-pages') navigate('/w3-page-management')
+      else if (tab === 'w4' || tab === 'w3_audit_results' || tab === 'w4-audit-results') navigate('/w4-audit-results')
+      else if (tab === 'w5' || tab === 'w4_internal_linking' || tab === 'w4-internal-linking' || tab === 'w5-internal-linking' || tab === 'w5_all_internal_links' || tab === 'w5_review_links') navigate('/w5-internal-linking')
+    }
   }
 
   useEffect(() => {

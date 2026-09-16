@@ -2684,6 +2684,18 @@ app.post('/api/websites/:id/batch-volume-check', handleBatchVolumeCheck)
 app.post('/api/websites/:id/tasks/submit-rank-batch', handleSubmitRankBatch)
 app.post('/api/websites/:id/tasks/collect-rank-batch', handleCollectRankBatch)
 
+// Serve frontend static files and handle SPA clean route fallback if dist exists
+const distPath = path.join(__dirname, '..', 'dist')
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath))
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api/')) {
+      return res.status(404).json({ error: 'API endpoint not found' })
+    }
+    res.sendFile(path.join(distPath, 'index.html'))
+  })
+}
+
 app.listen(PORT, () => {
   console.log(`[Website Manager SQLite API] Running on http://localhost:${PORT}`)
 })

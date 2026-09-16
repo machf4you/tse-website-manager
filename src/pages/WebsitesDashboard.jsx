@@ -12,7 +12,7 @@ import {
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './WebsitesDashboard.css'
 
-export default function WebsitesDashboard() {
+export default function WebsitesDashboard({ currentPath, navigate }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSite, setEditingSite] = useState(null)
   const [sites, setSites] = useState(() => {
@@ -76,7 +76,18 @@ export default function WebsitesDashboard() {
 
           // 2. Authoritative Server State Hydration: Update active managedSite from fresh server record
           setManagedSiteState(prevManaged => {
-            if (!prevManaged || !prevManaged.id) return prevManaged
+            if (!prevManaged || !prevManaged.id) {
+              // If on a W-page route directly, hydrate first site if nothing was selected
+              const savedObj = localStorage.getItem('tse_managed_site_object_v1')
+              if (savedObj) {
+                try {
+                  const parsed = JSON.parse(savedObj)
+                  const matched = apiSites.find(s => String(s.id) === String(parsed.id))
+                  if (matched) return matched
+                } catch (e) {}
+              }
+              return apiSites[0] || null
+            }
             const freshSite = apiSites.find(s => String(s.id) === String(prevManaged.id))
             if (freshSite) {
               try {
@@ -113,6 +124,24 @@ export default function WebsitesDashboard() {
     } catch (e) {}
     return null
   })
+
+  // Ensure managedSite is hydrated if user lands directly on a W2/W3/W4/W5 route
+  useEffect(() => {
+    if (!managedSite && sites.length > 0 && ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)) {
+      const savedObj = localStorage.getItem('tse_managed_site_object_v1')
+      if (savedObj) {
+        try {
+          const parsed = JSON.parse(savedObj)
+          const matched = sites.find(s => String(s.id) === String(parsed.id))
+          if (matched) {
+            setManagedSiteState(matched)
+            return
+          }
+        } catch (e) {}
+      }
+      setManagedSiteState(sites[0])
+    }
+  }, [currentPath, sites, managedSite])
 
   const setManagedSite = (site) => {
     setManagedSiteState(site)
@@ -207,17 +236,31 @@ export default function WebsitesDashboard() {
       return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
     })
 
-  if (managedSite) {
+  const isW1 = currentPath === '/w1-connected-sites' || (!managedSite && !['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath))
+
+  if (managedSite && !isW1) {
     return (
       <ManageWebsitePage
         site={managedSite}
-        onBack={() => setManagedSite(null)}
+        currentPath={currentPath}
+        navigate={navigate}
+        onBack={() => {
+          setManagedSite(null)
+          if (navigate) navigate('/w1-connected-sites')
+        }}
         onUpdateSite={(updated) => {
           setManagedSite(updated)
           handleUpdateWebsite(updated)
         }}
       />
     )
+  }
+
+  const handleManageSite = (site) => {
+    setManagedSite(site)
+    if (navigate) {
+      navigate('/w2-website-dashboard')
+    }
   }
 
   return (
@@ -252,8 +295,8 @@ export default function WebsitesDashboard() {
 
         <button
           type="button"
-          className="btn-add-website"
-          id="btn-add-website"
+          className="w1-btn-add-website"
+          id="btn-add-website-top"
           onClick={() => {
             setEditingSite(null)
             setDialogOpen(true)
@@ -274,7 +317,7 @@ export default function WebsitesDashboard() {
           <WebsiteTile
             key={site.id}
             site={site}
-            onManage={setManagedSite}
+            onManage={handleManageSite}
             onEdit={setEditingSite}
           />
         ))}

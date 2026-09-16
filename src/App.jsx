@@ -106,43 +106,146 @@ const ChevronDownIcon = () => (
   </svg>
 )
 
+export function parseRoute(pathname) {
+  const path = (pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')).toLowerCase().replace(/\/+$/, '') || '/'
+
+  if (path === '' || path === '/') {
+    return {
+      currentView: 'apps-dashboard',
+      activeNavTab: 'websites',
+      wPage: null,
+      canonicalPath: '/'
+    }
+  }
+
+  if (path === '/global-settings' || path === '/settings') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'global-settings',
+      wPage: null,
+      canonicalPath: '/global-settings'
+    }
+  }
+
+  if (path === '/w1-connected-sites' || path === '/w1' || path === '/websites') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w1',
+      canonicalPath: '/w1-connected-sites'
+    }
+  }
+
+  if (path === '/w2-website-dashboard' || path === '/w2') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w2',
+      canonicalPath: '/w2-website-dashboard'
+    }
+  }
+
+  if (path === '/w3-page-management' || path === '/w3' || path === '/w3-manage-pages') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w3',
+      canonicalPath: '/w3-page-management'
+    }
+  }
+
+  if (path === '/w4-audit-results' || path === '/w4' || path === '/w4-page-audit' || path === '/w3-audit-results') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w4',
+      canonicalPath: '/w4-audit-results'
+    }
+  }
+
+  if (path === '/w5-internal-linking' || path === '/w5' || path === '/w4-internal-linking' || path === '/w5-all-internal-links' || path === '/w5-review-links') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w5',
+      canonicalPath: '/w5-internal-linking'
+    }
+  }
+
+  // Fallback to W1
+  return {
+    currentView: 'website-manager',
+    activeNavTab: 'websites',
+    wPage: 'w1',
+    canonicalPath: '/w1-connected-sites'
+  }
+}
+
 function App() {
-  const [currentView, setCurrentViewState] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tse_current_view_v1')
-      if (saved && (saved === 'apps-dashboard' || saved === 'website-manager')) {
-        return saved
+  const [currentPath, setCurrentPath] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const parsed = parseRoute(window.location.pathname)
+      if (window.location.pathname !== parsed.canonicalPath) {
+        window.history.replaceState(null, '', parsed.canonicalPath)
       }
-      const hasManagedSite = localStorage.getItem('tse_managed_site_object_v1') || localStorage.getItem('tse_managed_site_id_v1')
-      if (hasManagedSite) {
-        return 'website-manager'
-      }
-    } catch (e) {}
-    return 'apps-dashboard'
+      return parsed.canonicalPath
+    }
+    return '/'
   })
 
-  const [activeNavTab, setActiveNavTabState] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tse_active_nav_tab_v1')
-      if (saved && (saved === 'websites' || saved === 'global-settings')) {
-        return saved
-      }
-    } catch (e) {}
-    return 'websites'
-  })
+  const initialRoute = parseRoute(currentPath)
+  const [currentView, setCurrentViewState] = useState(initialRoute.currentView)
+  const [activeNavTab, setActiveNavTabState] = useState(initialRoute.activeNavTab)
 
-  const setCurrentView = (view) => {
-    setCurrentViewState(view)
+  const navigate = (path, replace = false) => {
+    const parsed = parseRoute(path)
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname !== parsed.canonicalPath) {
+        if (replace) {
+          window.history.replaceState(null, '', parsed.canonicalPath)
+        } else {
+          window.history.pushState(null, '', parsed.canonicalPath)
+        }
+      }
+    }
+    setCurrentPath(parsed.canonicalPath)
+    setCurrentViewState(parsed.currentView)
+    setActiveNavTabState(parsed.activeNavTab)
     try {
-      localStorage.setItem('tse_current_view_v1', view)
+      localStorage.setItem('tse_current_view_v1', parsed.currentView)
+      localStorage.setItem('tse_active_nav_tab_v1', parsed.activeNavTab)
     } catch (e) {}
   }
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const parsed = parseRoute(window.location.pathname)
+      setCurrentPath(parsed.canonicalPath)
+      setCurrentViewState(parsed.currentView)
+      setActiveNavTabState(parsed.activeNavTab)
+      try {
+        localStorage.setItem('tse_current_view_v1', parsed.currentView)
+        localStorage.setItem('tse_active_nav_tab_v1', parsed.activeNavTab)
+      } catch (e) {}
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const setCurrentView = (view) => {
+    if (view === 'apps-dashboard') {
+      navigate('/')
+    } else {
+      navigate('/w1-connected-sites')
+    }
+  }
+
   const setActiveNavTab = (tab) => {
-    setActiveNavTabState(tab)
-    try {
-      localStorage.setItem('tse_active_nav_tab_v1', tab)
-    } catch (e) {}
+    if (tab === 'global-settings') {
+      navigate('/global-settings')
+    } else {
+      navigate('/w1-connected-sites')
+    }
   }
 
   const [currentUser, setCurrentUser] = useState(null)
@@ -174,7 +277,7 @@ function App() {
                 type="button"
                 className="back-to-apps"
                 aria-label="Back to Apps"
-                onClick={() => setCurrentView('apps-dashboard')}
+                onClick={() => navigate('/')}
                 id="btn-back-to-apps"
               >
                 <ArrowLeftIcon />
@@ -207,7 +310,13 @@ function App() {
                 className={`nav-tab ${activeNavTab === 'websites' ? 'active' : ''}`}
                 aria-current={activeNavTab === 'websites' ? 'page' : undefined}
                 id="nav-tab-websites"
-                onClick={() => setActiveNavTab('websites')}
+                onClick={() => {
+                  if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)) {
+                    navigate(currentPath)
+                  } else {
+                    navigate('/w1-connected-sites')
+                  }
+                }}
               >
                 <GlobeIcon />
                 Websites
@@ -217,7 +326,7 @@ function App() {
                 className={`nav-tab ${activeNavTab === 'global-settings' ? 'active' : ''}`}
                 aria-current={activeNavTab === 'global-settings' ? 'page' : undefined}
                 id="nav-tab-global-settings"
-                onClick={() => setActiveNavTab('global-settings')}
+                onClick={() => navigate('/global-settings')}
               >
                 <SlidersIcon />
                 Global Settings
@@ -291,17 +400,14 @@ function App() {
           {currentView === 'apps-dashboard' && (
             <AppsDashboard
               currentUser={currentUser}
-              onOpenWebsiteManager={() => {
-                setCurrentView('website-manager')
-                setActiveNavTab('websites')
-              }}
+              onOpenWebsiteManager={() => navigate('/w1-connected-sites')}
             />
           )}
           {currentView === 'website-manager' && activeNavTab === 'websites' && (
-            <WebsitesDashboard />
+            <WebsitesDashboard currentPath={currentPath} navigate={navigate} />
           )}
           {currentView === 'website-manager' && activeNavTab === 'global-settings' && (
-            <GlobalSettings currentUser={currentUser} />
+            <GlobalSettings currentUser={currentUser} currentPath={currentPath} navigate={navigate} />
           )}
         </ErrorBoundary>
       </main>
