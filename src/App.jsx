@@ -109,12 +109,12 @@ const ChevronDownIcon = () => (
 export function parseRoute(pathname) {
   const path = (pathname || (typeof window !== 'undefined' ? window.location.pathname : '/')).toLowerCase().replace(/\/+$/, '') || '/'
 
-  if (path === '' || path === '/') {
+  if (path === '' || path === '/' || path === '/w1-connected-sites' || path === '/w1' || path === '/websites') {
     return {
-      currentView: 'apps-dashboard',
+      currentView: 'website-manager',
       activeNavTab: 'websites',
-      wPage: null,
-      canonicalPath: '/'
+      wPage: 'w1',
+      canonicalPath: '/w1-connected-sites'
     }
   }
 
@@ -269,70 +269,56 @@ function App() {
     <div className="app">
       <header className="app-header" role="banner">
 
-        {/* Left: Back to Apps (when in Website Manager) + Title */}
+        {/* Left: Back to Apps + Title */}
         <div className="header-left">
-          {currentView === 'website-manager' ? (
-            <>
-              <button
-                type="button"
-                className="back-to-apps"
-                aria-label="Back to Apps"
-                onClick={() => navigate('/')}
-                id="btn-back-to-apps"
-              >
-                <ArrowLeftIcon />
-                <span className="back-label">Back to Apps</span>
-              </button>
+          <a
+            href="https://auth.thesearchequation.co.uk/"
+            className="back-to-apps"
+            aria-label="Back to Apps"
+            id="btn-back-to-apps"
+            style={{ textDecoration: 'none' }}
+          >
+            <ArrowLeftIcon />
+            <span className="back-label">Back to Apps</span>
+          </a>
 
-              <div className="header-divider" aria-hidden="true" />
+          <div className="header-divider" aria-hidden="true" />
 
-              <div className="app-identity">
-                <span className="app-name">
-                  <span className="app-name-accent">TSE</span> Website Management
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="app-identity">
-              <span className="app-name">
-                <span className="app-name-accent">TSE</span> Apps Platform
-              </span>
-            </div>
-          )}
+          <div className="app-identity">
+            <span className="app-name">
+              <span className="app-name-accent">TSE</span> Website Management
+            </span>
+          </div>
         </div>
 
         {/* Centre: Navigation tabs (when in Website Manager) */}
         <nav className="header-nav" aria-label="Primary navigation">
-          {currentView === 'website-manager' && (
-            <>
-              <button
-                type="button"
-                className={`nav-tab ${activeNavTab === 'websites' ? 'active' : ''}`}
-                aria-current={activeNavTab === 'websites' ? 'page' : undefined}
-                id="nav-tab-websites"
-                onClick={() => {
-                  if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)) {
-                    navigate(currentPath)
-                  } else {
-                    navigate('/w1-connected-sites')
-                  }
-                }}
-              >
-                <GlobeIcon />
-                Websites
-              </button>
-              <button
-                type="button"
-                className={`nav-tab ${activeNavTab === 'global-settings' ? 'active' : ''}`}
-                aria-current={activeNavTab === 'global-settings' ? 'page' : undefined}
-                id="nav-tab-global-settings"
-                onClick={() => navigate('/global-settings')}
-              >
-                <SlidersIcon />
-                Global Settings
-              </button>
-            </>
-          )}
+          <button
+            type="button"
+            className={`nav-tab ${activeNavTab === 'websites' ? 'active' : ''}`}
+            aria-current={activeNavTab === 'websites' ? 'page' : undefined}
+            id="nav-tab-websites"
+            onClick={() => {
+              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)) {
+                navigate(currentPath)
+              } else {
+                navigate('/w1-connected-sites')
+              }
+            }}
+          >
+            <GlobeIcon />
+            Websites
+          </button>
+          <button
+            type="button"
+            className={`nav-tab ${activeNavTab === 'global-settings' ? 'active' : ''}`}
+            aria-current={activeNavTab === 'global-settings' ? 'page' : undefined}
+            id="nav-tab-global-settings"
+            onClick={() => navigate('/global-settings')}
+          >
+            <SlidersIcon />
+            Global Settings
+          </button>
         </nav>
 
         {/* Right: Global Deployment + Account / Logout Menu */}
@@ -397,16 +383,10 @@ function App() {
         aria-label="Main content"
       >
         <ErrorBoundary>
-          {currentView === 'apps-dashboard' && (
-            <AppsDashboard
-              currentUser={currentUser}
-              onOpenWebsiteManager={() => navigate('/w1-connected-sites')}
-            />
-          )}
-          {currentView === 'website-manager' && activeNavTab === 'websites' && (
+          {activeNavTab === 'websites' && (
             <WebsitesDashboard currentPath={currentPath} navigate={navigate} />
           )}
-          {currentView === 'website-manager' && activeNavTab === 'global-settings' && (
+          {activeNavTab === 'global-settings' && (
             <GlobalSettings currentUser={currentUser} currentPath={currentPath} navigate={navigate} />
           )}
         </ErrorBoundary>
