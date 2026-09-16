@@ -10,7 +10,7 @@ export const API_BASE_URL = (typeof process !== 'undefined' && process.env && pr
   ? process.env.VITE_WEBSITE_MANAGER_API_URL
   : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WEBSITE_MANAGER_API_URL)
       ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
-      : 'https://api-website-manager.thesearchequation.co.uk/api')
+      : '/api')
 
 async function fetchJson(url, options = {}, timeoutMs = 2500) {
   const controller = new AbortController()
@@ -19,6 +19,7 @@ async function fetchJson(url, options = {}, timeoutMs = 2500) {
   try {
     const res = await fetch(url, {
       signal: controller.signal,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...(options.headers || {})
@@ -47,6 +48,42 @@ export async function pushMediaAltTextApi({ siteId, siteUrl, pageId, pageUrl, up
   }, 60000)
 }
 
+export async function getActiveRegistryDomainsApi() {
+  const SUPABASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_URL)
+    ? process.env.VITE_SUPABASE_URL
+    : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL)
+        ? import.meta.env.VITE_SUPABASE_URL
+        : 'https://cbdfjdxqhqajzjblysqd.supabase.co')
+
+  const SUPABASE_KEY = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+    ? process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+    : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+        ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        : 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5')
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/domains?status=eq.active&select=id,canonical_domain,display_name,primary_url,admin_url,platform,portfolio,status&order=canonical_domain.asc`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data)) return data
+    }
+  } catch (err) {
+    console.warn('[WM_REGISTRY_FETCH] Direct Supabase fetch warning:', err)
+  }
+
+  try {
+    const backendData = await fetchJson(`${API_BASE_URL}/registry/domains?status=active`)
+    if (Array.isArray(backendData)) return backendData
+  } catch (e) {}
+
+  return []
+}
+
 export async function getWebsitesApi() {
   try {
     const list = await fetchJson(`${API_BASE_URL}/websites`)
@@ -59,6 +96,8 @@ export async function getWebsitesApi() {
         cfg = cfg || {}
         return {
           ...s,
+          domain_id: s.domain_id || s.domainId || null,
+          domainId: s.domain_id || s.domainId || null,
           configData: cfg,
           wpUser: s.wpUser || cfg.wpUser || s.connectedUser || cfg.connectedUser || '',
           wpPass: s.wpPass || cfg.wpPass || ''
@@ -75,8 +114,11 @@ export async function getWebsitesApi() {
 export async function saveWebsiteApi(siteRecord) {
   if (!siteRecord || siteRecord.id === undefined) return
   const statusVal = typeof siteRecord.status === 'object' ? JSON.stringify(siteRecord.status) : siteRecord.status
+  const domainId = siteRecord.domain_id || siteRecord.domainId || null
   const configData = {
     ...(siteRecord.configData || {}),
+    domain_id: domainId,
+    domainId: domainId,
     wpUser: siteRecord.wpUser || siteRecord.connectedUser || siteRecord.configData?.wpUser || '',
     wpPass: siteRecord.wpPass || siteRecord.configData?.wpPass || ''
   }
@@ -84,6 +126,8 @@ export async function saveWebsiteApi(siteRecord) {
   const payload = {
     ...siteRecord,
     id: String(siteRecord.id),
+    domain_id: domainId,
+    domainId: domainId,
     status: statusVal,
     configData
   }

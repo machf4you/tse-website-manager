@@ -289,6 +289,9 @@ export default function W4FixIssueDialog({
                     value={metaTitleVal}
                     onChange={(e) => setMetaTitleVal(e.target.value)}
                     placeholder="Enter proposed Meta Title..."
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
                   />
                 </div>
               </div>
@@ -323,6 +326,9 @@ export default function W4FixIssueDialog({
                     value={metaDescVal}
                     onChange={(e) => setMetaDescVal(e.target.value)}
                     placeholder="Enter proposed Meta Description..."
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
                   />
                 </div>
               </div>
@@ -357,6 +363,9 @@ export default function W4FixIssueDialog({
                     value={h1Val}
                     onChange={(e) => setH1Val(e.target.value)}
                     placeholder="Enter proposed H1 Tag..."
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
                   />
                 </div>
               </div>

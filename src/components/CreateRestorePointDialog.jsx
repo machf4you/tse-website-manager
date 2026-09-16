@@ -103,7 +103,7 @@ export default function CreateRestorePointDialog({ isOpen, onClose, onSuccess })
         </div>
 
         {/* Form */}
-        <form id="crp-form" className="crp-form" onSubmit={handleSubmit}>
+        <form id="crp-form" className="crp-form" onSubmit={handleSubmit} data-lpignore="true" data-form-type="other">
           {errorMsg && (
             <div className="crp-error-banner" role="alert">
               {errorMsg}
@@ -130,6 +130,8 @@ export default function CreateRestorePointDialog({ isOpen, onClose, onSuccess })
               onChange={e => setVersion(e.target.value)}
               disabled={isSubmitting}
               autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
             />
           </div>
 
@@ -147,6 +149,8 @@ export default function CreateRestorePointDialog({ isOpen, onClose, onSuccess })
               onChange={e => setTitle(e.target.value)}
               disabled={isSubmitting}
               autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
             />
           </div>
 

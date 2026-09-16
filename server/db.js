@@ -4,7 +4,8 @@ import { fileURLToPath } from 'url'
 import fs from 'fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const dbDir = process.env.PERSISTENT_STORAGE_DIR || __dirname
+const sharedDbDir = path.resolve(__dirname, '..', 'shared_db')
+let dbDir = process.env.PERSISTENT_STORAGE_DIR || (fs.existsSync(path.join(sharedDbDir, 'website_manager.db')) ? sharedDbDir : __dirname)
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true })
 }

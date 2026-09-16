@@ -209,6 +209,9 @@ export default function BulkConfigureTargetPhrasesDialog({
                         value={item.proposedPhrase}
                         placeholder="Enter primary target phrase..."
                         onChange={e => handlePhraseChange(item.pageId, e.target.value)}
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
                       />
                     </td>
                   </tr>

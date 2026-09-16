@@ -63,6 +63,7 @@ export async function executePageAudit({ siteId, pageId, url, siteUrl, targetPhr
 
   const response = await fetch(`${PAGE_AUDITOR_API_BASE}/audit`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },

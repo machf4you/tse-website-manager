@@ -2,7 +2,11 @@ import express from 'express'
 import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const app = express()
 const PORT = process.env.PORT || 3005
@@ -12,9 +16,9 @@ app.use(express.json({ limit: '50mb' }))
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
-  version: '2.12',
-  buildHash: 'cleantiles212',
-  buildTimestamp: 1788780000000,
+  version: '2.42',
+  buildHash: 'wm-init',
+  buildTimestamp: Date.now(),
   isDeploymentInProgress: false,
   lastDeployedAt: new Date().toISOString()
 }
@@ -24,7 +28,28 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'website-
 app.get('/api/page-auditor-health', (req, res) => res.json({ status: 'ok', service: 'page-auditor-proxy' }))
 
 app.get('/api/deployment/status', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  })
   try {
+    const distVersionPath = path.join(__dirname, '..', 'dist', 'version.json')
+    if (fs.existsSync(distVersionPath)) {
+      const fileData = JSON.parse(fs.readFileSync(distVersionPath, 'utf-8'))
+      const row = db.prepare(`SELECT value_json FROM global_settings WHERE key = 'deployment_status'`).get()
+      const dbData = (row && row.value_json) ? JSON.parse(row.value_json) : {}
+      return res.json({
+        status: 'ok',
+        version: fileData.version || dbData.version || '2.42',
+        buildHash: fileData.buildHash || dbData.buildHash || 'wm-default',
+        buildTimestamp: fileData.buildTimestamp || dbData.buildTimestamp || Date.now(),
+        isDeploymentInProgress: dbData.isDeploymentInProgress || false,
+        building: dbData.building || '',
+        lastDeployedAt: fileData.lastDeployedAt || dbData.lastDeployedAt || new Date().toISOString()
+      })
+    }
+
     const row = db.prepare(`SELECT value_json FROM global_settings WHERE key = 'deployment_status'`).get()
     if (row && row.value_json) {
       const parsed = JSON.parse(row.value_json)
@@ -558,6 +583,29 @@ app.post('/api/websites/batch', (req, res) => {
     res.json({ success: true, count: sites.length })
   } catch (e) {
     res.status(500).json({ error: e.message })
+  }
+})
+
+// Active Domains from Site Registry
+app.get('/api/registry/domains', async (req, res) => {
+  try {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://cbdfjdxqhqajzjblysqd.supabase.co'
+    const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5'
+    const statusFilter = req.query.status || 'active'
+
+    const fetchRes = await fetch(`${supabaseUrl}/rest/v1/domains?status=eq.${encodeURIComponent(statusFilter)}&select=id,canonical_domain,display_name,primary_url,admin_url,platform,portfolio,status&order=canonical_domain.asc`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    })
+    if (!fetchRes.ok) {
+      return res.status(fetchRes.status).json({ success: false, error: `Supabase returned ${fetchRes.status}` })
+    }
+    const domains = await fetchRes.json()
+    res.json(domains)
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
   }
 })
 

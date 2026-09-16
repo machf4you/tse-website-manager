@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import WebsiteTile from '../components/WebsiteTile'
 import AddWebsiteDialog from '../components/AddWebsiteDialog'
 import ManageWebsitePage from './ManageWebsitePage'
-import { mockSiteTile } from '../data/mockData'
 import {
   getWebsitesApi,
   saveWebsiteApi,
@@ -26,7 +25,7 @@ export default function WebsitesDashboard() {
         }
       }
     } catch (e) {}
-    return [mockSiteTile]
+    return []
   })
 
   // Real-time multi-user synchronization hook
@@ -288,6 +287,7 @@ export default function WebsitesDashboard() {
         onUpdateWebsite={handleUpdateWebsite}
         onDeleteWebsite={handleDeleteWebsite}
         editingSite={editingSite}
+        connectedSites={sites}
       />
 
     </div>

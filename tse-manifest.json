@@ -1,0 +1,28 @@
+{
+  "app": "website-manager",
+  "task": "Restore W1 Connected Websites 14-site production baseline",
+  "baselineTag": "wm-v2.43-baseline",
+  "candidateCommit": "HEAD",
+  "allowedFiles": [
+    "public/version.json",
+    "server/db.js",
+    "server/index.js",
+    "src/components/AddWebsiteDialog.css",
+    "src/components/AddWebsiteDialog.jsx",
+    "src/components/BulkConfigureTargetPhrasesDialog.jsx",
+    "src/components/CreateRestorePointDialog.jsx",
+    "src/components/GlobalDeploymentIndicator.css",
+    "src/components/GlobalDeploymentIndicator.jsx",
+    "src/components/W4FixIssueDialog.jsx",
+    "src/config/version.js",
+    "src/data/mockData.js",
+    "src/pages/WebsitesDashboard.jsx",
+    "src/services/pageAuditorApi.js",
+    "src/services/websiteManagerApi.js",
+    "vite.config.js",
+    "scripts/tse-safety-gate.mjs",
+    "scripts/tse_deploy_engine.py",
+    "scripts/tse_regression_gate.py",
+    "tse-manifest.json"
+  ]
+}

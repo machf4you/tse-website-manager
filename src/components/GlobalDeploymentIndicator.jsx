@@ -4,9 +4,42 @@ import { API_BASE_URL } from '../services/websiteManagerApi'
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './GlobalDeploymentIndicator.css'
 
+export function isServerNewer(sVer, sTimestamp, sHash) {
+  if (!sVer && !sTimestamp && !sHash) return false
+
+  // 1. Compare semantic/dot versions numerically (e.g. "2.42" vs "2.41")
+  if (sVer && CURRENT_BUILD_VERSION) {
+    const sParts = String(sVer).split('.').map(n => parseInt(n, 10) || 0)
+    const cParts = String(CURRENT_BUILD_VERSION).split('.').map(n => parseInt(n, 10) || 0)
+    const maxLen = Math.max(sParts.length, cParts.length)
+    for (let i = 0; i < maxLen; i++) {
+      const sNum = sParts[i] || 0
+      const cNum = cParts[i] || 0
+      if (sNum > cNum) return true // Server has higher version number
+      if (sNum < cNum) return false // Client has higher version number
+    }
+  }
+
+  // 2. If version numbers are identical, check build timestamp if available
+  if (sTimestamp && CURRENT_BUILD_TIMESTAMP) {
+    const sTime = Number(sTimestamp)
+    const cTime = Number(CURRENT_BUILD_TIMESTAMP)
+    if (!isNaN(sTime) && !isNaN(cTime)) {
+      if (sTime > cTime) return true
+      if (sTime < cTime) return false
+    }
+  }
+
+  // 3. If hash differs and is present
+  if (sHash && CURRENT_BUILD_HASH && sHash !== CURRENT_BUILD_HASH) {
+    return true
+  }
+
+  return false
+}
+
 export default function GlobalDeploymentIndicator() {
   const [deployState, setDeployState] = useState('normal') // 'normal' | 'updating' | 'update_ready'
-  const [serverVersion, setServerVersion] = useState(CURRENT_BUILD_VERSION)
 
   useWebsiteManagerRealtime({
     onDeploymentStatusChanged: ({ deploymentStatus }) => {
@@ -14,7 +47,7 @@ export default function GlobalDeploymentIndicator() {
         if (deploymentStatus.isDeploymentInProgress) {
           setDeployState('updating')
         } else if (
-          deploymentStatus.version && deploymentStatus.version !== CURRENT_BUILD_VERSION
+          isServerNewer(deploymentStatus.version, deploymentStatus.buildTimestamp, deploymentStatus.buildHash)
         ) {
           setDeployState('update_ready')
         } else {
@@ -26,25 +59,6 @@ export default function GlobalDeploymentIndicator() {
 
   useEffect(() => {
     let isMounted = true
-
-    function isServerNewer(sVer, sTimestamp, sHash) {
-      if (sTimestamp && CURRENT_BUILD_TIMESTAMP && Number(sTimestamp) > Number(CURRENT_BUILD_TIMESTAMP)) {
-        return true
-      }
-      if (sHash && CURRENT_BUILD_HASH && sHash !== CURRENT_BUILD_HASH) {
-        return true
-      }
-      if (!sVer || sVer === CURRENT_BUILD_VERSION) return false
-      const sParts = String(sVer).split('.').map(n => parseInt(n, 10) || 0)
-      const cParts = String(CURRENT_BUILD_VERSION).split('.').map(n => parseInt(n, 10) || 0)
-      for (let i = 0; i < Math.max(sParts.length, cParts.length); i++) {
-        const sNum = sParts[i] || 0
-        const cNum = cParts[i] || 0
-        if (sNum > cNum) return true
-        if (sNum < cNum) return false
-      }
-      return false
-    }
 
     async function checkDeploymentStatus() {
       try {
@@ -88,8 +102,6 @@ export default function GlobalDeploymentIndicator() {
 
         if (!isMounted) return
 
-        setServerVersion(serverVer || CURRENT_BUILD_VERSION)
-
         if (isUpdating) {
           setDeployState('updating')
         } else if (isServerNewer(serverVer, serverTimestamp, serverHash)) {
@@ -97,9 +109,7 @@ export default function GlobalDeploymentIndicator() {
         } else {
           setDeployState('normal')
         }
-      } catch (_err) {
-        // Fallback for offline / network errors
-      }
+      } catch (_err) {}
     }
 
     checkDeploymentStatus()
@@ -111,19 +121,26 @@ export default function GlobalDeploymentIndicator() {
     }
   }, [])
 
-  const handleManualRefresh = () => {
-    // Cache bust reload
-    const url = new URL(window.location.href)
-    url.searchParams.set('_v', Date.now().toString())
-    window.location.href = url.toString()
-    setTimeout(() => {
+  const handleManualRefresh = async () => {
+    try {
+      if ('caches' in window) {
+        try {
+          const cacheKeys = await caches.keys()
+          await Promise.all(cacheKeys.map(k => caches.delete(k)))
+        } catch (_e) {}
+      }
+      const url = new URL(window.location.href)
+      url.searchParams.set('_t', Date.now().toString())
+      window.location.href = url.toString()
+    } catch (_e) {
       window.location.reload()
-    }, 100)
+    }
   }
 
-  if (deployState === 'updating') {
-    return (
-      <>
+  return (
+    <>
+      {/* 1. Full-Width Updating Banner (Deployment in progress) */}
+      {deployState === 'updating' && (
         <div className="global-updating-banner" role="status" aria-live="polite">
           <div className="global-update-banner-content">
             <span className="banner-message">
@@ -132,55 +149,53 @@ export default function GlobalDeploymentIndicator() {
             </span>
           </div>
         </div>
-        <div className="global-deploy-indicator global-deploy-updating" role="status" aria-live="polite" title="Build/Deployment in progress - Do NOT refresh yet">
-          <span className="deploy-spin-icon" aria-hidden="true">⏳</span>
-          <span className="deploy-text-updating">V{serverVersion || CURRENT_BUILD_VERSION} | UPDATING — DO NOT PRESS CTRL+F5</span>
-        </div>
-      </>
-    )
-  }
+      )}
 
-  if (deployState === 'update_ready') {
-    return (
-      <>
-        <div className="global-updating-banner global-update-ready-banner" role="status" aria-live="polite" onClick={handleManualRefresh} style={{ cursor: 'pointer' }}>
+      {/* 2. Full-Width New Version Ready Banner (Single Authoritative Update Notification) */}
+      {deployState === 'update_ready' && (
+        <div
+          className="global-updating-banner global-update-ready-banner"
+          role="status"
+          aria-live="polite"
+          onClick={handleManualRefresh}
+          style={{ cursor: 'pointer' }}
+          id="banner-new-version-ready"
+        >
           <div className="global-update-banner-content">
             <span className="banner-message">
               <span className="deploy-ready-icon" aria-hidden="true">↻</span>
               <strong>NEW VERSION READY:</strong> An update has been deployed. <strong>Click here to refresh</strong> and load the latest changes.
             </span>
+            <button
+              type="button"
+              className="banner-action-button"
+              onClick={(e) => {
+                e.stopPropagation()
+                handleManualRefresh()
+              }}
+            >
+              Refresh Now
+            </button>
           </div>
         </div>
-        <button 
-          type="button"
-          className="global-deploy-indicator global-deploy-update-ready-btn" 
-          onClick={handleManualRefresh}
-          title="New version is live! Click to reload latest changes"
-          id="btn-global-click-to-refresh"
-        >
-          <span className="deploy-ready-icon" aria-hidden="true">↻</span>
-          <span className="deploy-ready-text">CLICK TO REFRESH</span>
-        </button>
-      </>
-    )
-  }
+      )}
 
-  // STATE 1: NORMAL (Idle / Up-to-Date Live Badge + Green Refresh Control)
-  return (
-    <div className="global-deploy-indicator global-deploy-normal">
-      <span className="global-deploy-live-badge">
-        <span className="deploy-live-dot">●</span> {CURRENT_BUILD_LABEL}
-      </span>
-      <button
-        type="button"
-        className="global-deploy-refresh-btn global-deploy-refresh-normal"
-        onClick={handleManualRefresh}
-        title="Reload application"
-        id="btn-global-header-refresh"
-      >
-        <span className="refresh-icon" aria-hidden="true">↻</span> Refresh
-      </button>
-    </div>
+      {/* 3. Global Header Live Badge & Refresh Control */}
+      <div className="global-deploy-indicator global-deploy-normal">
+        <span className="global-deploy-live-badge">
+          <span className="deploy-live-dot">●</span> {CURRENT_BUILD_LABEL}
+        </span>
+        <button
+          type="button"
+          className="global-deploy-refresh-btn global-deploy-refresh-normal"
+          onClick={handleManualRefresh}
+          title="Reload application"
+          id="btn-global-header-refresh"
+        >
+          <span className="refresh-icon" aria-hidden="true">↻</span> Refresh
+        </button>
+      </div>
+    </>
   )
 }
 

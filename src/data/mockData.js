@@ -22,15 +22,18 @@ export const mockSiteTile = {
 }
 
 // ── Factory: build a Stage 3 (Platform Connected) record after WP connection
-export function buildWordPressSite({ name, url, portfolio, serverType, elementorEnabled, user, wpUser, wpPass }) {
+export function buildWordPressSite({ id, domain_id, domainId, name, url, portfolio, serverType, elementorEnabled, user, wpUser, wpPass, configData }) {
+  const resolvedDomainId = domain_id || domainId || null
   return {
-    id: Date.now(),
+    id: id || Date.now(),
+    domain_id: resolvedDomainId,
+    domainId: resolvedDomainId,
     name,
     url,
     platform: 'wordpress',
-    portfolio,
+    portfolio: portfolio || 'tse',
     serverType: serverType || 'Unknown',
-    elementorEnabled,
+    elementorEnabled: Boolean(elementorEnabled),
     wpUser: wpUser || (user ? user.name : ''),
     wpPass: wpPass || '',
     connectedUser: user ? user.name : (wpUser || null),
@@ -39,6 +42,17 @@ export function buildWordPressSite({ name, url, portfolio, serverType, elementor
     isSynchronised: false,
     lastSyncTimestamp: null,
     taskCount: 0,
+    configData: {
+      ...(configData || {}),
+      domain_id: resolvedDomainId,
+      domainId: resolvedDomainId,
+      platform: 'wordpress',
+      wpUser: wpUser || (user ? user.name : ''),
+      wpPass: wpPass || '',
+      connectedUser: user ? user.name : (wpUser || null),
+      serverType: serverType || 'Unknown',
+      elementorEnabled: Boolean(elementorEnabled)
+    },
     status: {
       connection:       { label: 'Connected',         value: 'Connected',          variant: 'green'  },
       platformApi:      { label: 'WordPress API',     value: 'Securely Connected', variant: 'green', icon: 'lock' },
