@@ -23,6 +23,8 @@
     "scripts/tse-safety-gate.mjs",
     "scripts/tse_deploy_engine.py",
     "scripts/tse_regression_gate.py",
+    "src/pages/RestorePointsPage.jsx",
+    "src/pages/RestorePointsPage.css",
     "scripts/sync_restore_points.py",
     "package.json",
     "src/data/restorePointData.js",

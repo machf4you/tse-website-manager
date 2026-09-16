@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# TSE Automated Restore Point Synchronization & Retention Engine
+# TSE Automated Restore Point Synchronization & Categorisation Engine
 import os
 import re
 import json
@@ -12,25 +12,29 @@ RETENTION_DAYS = 7
 CUTOFF_DATE = (CURRENT_TIME - timedelta(days=RETENTION_DAYS)).date()
 
 TSE_REPOS = [
-    ('TSE Website Manager', r'c:\Antigravity\tse-website-manager'),
-    ('TSE Site Registry', r'c:\Antigravity\tse-site-registry'),
-    ('TSE Keyword Research', r'c:\Antigravity\tse-keyword-research'),
-    ('TSE Lead Generator', r'c:\Antigravity\Lead Gen'),
-    ('TSE Page Auditor', r'c:\Antigravity\tse-page-auditor'),
-    ('TSE Chatza', r'c:\Antigravity\Chatza')
+    ('Website Manager', r'c:\Antigravity\tse-website-manager'),
+    ('Site Registry', r'c:\Antigravity\tse-site-registry'),
+    ('Keyword Research', r'c:\Antigravity\tse-keyword-research'),
+    ('Lead Generator', r'c:\Antigravity\Lead Gen'),
+    ('Page Auditor', r'c:\Antigravity\tse-page-auditor'),
+    ('Chatza', r'c:\Antigravity\Chatza')
 ]
 
 TARGET_JS = r'c:\Antigravity\tse-website-manager\src\data\restorePointData.js'
 TARGET_MD = r'c:\Antigravity\tse-website-manager\RESTORE-POINT-INDEX.md'
 
+# Only the 3 official application sections; any other is marked Uncategorised
+VALID_APPS = {'Website Manager', 'Lead Generator', 'Site Registry'}
+
 EXPLICIT_MILESTONES = [
     {
         'id': 'sr-v2.19-accepted-production',
+        'app': 'Site Registry',
         'version': 'v2.19-sr-accepted',
         'gitTag': 'sr-v2.19-accepted',
         'commit': 'cc1566d',
         'date': '16-09-2026 10:15',
-        'title': 'TSE Site Registry V2.19 Production Accepted & Domains Restoration',
+        'title': 'Site Registry V2.19 Production Accepted & Domains Restoration',
         'description': 'Confirmed production accepted baseline for TSE Site Registry: 3-item restoration (Sortable domain table columns, Domain Details edit dialog persistence, and Auto-Renew unknown normalization to No/False), softer dashboard outline styling, medium headline typography, and Awaiting Indexing / Articles module.',
         'status': 'Current',
         'docFile': 'V2.19-STABLE-INDEXCHECKER-RECONCILIATION-NORMALIZATION.md',
@@ -52,11 +56,12 @@ EXPLICIT_MILESTONES = [
     },
     {
         'id': 'wm-v2.43-baseline',
+        'app': 'Website Manager',
         'version': 'v2.43-wm-stable',
         'gitTag': 'wm-v2.43-baseline',
         'commit': '2b4274f',
         'date': '15-09-2026 11:59',
-        'title': 'TSE Website Manager V2.43 Users & Access Management Baseline',
+        'title': 'Website Manager V2.43 Users & Access Management Baseline',
         'description': 'Confirmed stable baseline V2.43: globally suppressed browser address and credential autofill in modals, fixed password retrieval and show/hide functionality, verified Edit User modal footer visibility, and updated build versioning.',
         'status': 'Superseded',
         'docFile': 'RESTORE-POINT-v2.21-stable-classification-engine-hostname-isolation-fix.md',
@@ -75,11 +80,12 @@ EXPLICIT_MILESTONES = [
     },
     {
         'id': 'leadgen-v1.42-stable-prior-to-user-workspace-separation',
+        'app': 'Lead Generator',
         'version': 'v1.42-lg-stable',
         'gitTag': 'V1.42-STABLE-PRIOR-TO-USER-WORKSPACE-SEPARATION',
         'commit': '1863136',
         'date': '15-09-2026 12:32',
-        'title': 'TSE Lead Generator V1.42 Stable Baseline',
+        'title': 'Lead Generator V1.42 Stable Baseline',
         'description': 'Confirmed stable release V1.42 capturing Master Email Templates management, personalisations variables panel, 70+ opportunity score highlighting, single template creation bar, website desktop preview, and full outreach pack workflow.',
         'status': 'Superseded',
         'docFile': 'RESTORE-POINT-V1.42-STABLE-PRIOR-TO-USER-WORKSPACE-SEPARATION.md',
@@ -98,11 +104,12 @@ EXPLICIT_MILESTONES = [
     },
     {
         'id': 'wm-v2.24-stable-w5-contextual-sentence-generator',
+        'app': 'Website Manager',
         'version': 'v2.24-wm-stable',
         'gitTag': 'v2.24-stable-w5-contextual-sentence-and-internal-linking-suite',
         'commit': 'fdb459e',
         'date': '13-09-2026 12:46',
-        'title': 'TSE Website Manager V2.24 W5 Internal Linking Engine & 11-Stage Workflow',
+        'title': 'Website Manager V2.24 W5 Internal Linking Engine & 11-Stage Workflow',
         'description': 'Confirmed stable release V2.24: real 11-stage connected TSE website workflow journey on homepage, W5 in-place editorial block updates with Elementor _elementor_data push pipeline, natural anchor text generation with contextual AI sentence synthesis, and unique body-content internal link counts.',
         'status': 'Superseded',
         'docFile': 'RESTORE-POINT-v2.20-realtime-multi-user-website-manager.md',
@@ -121,11 +128,12 @@ EXPLICIT_MILESTONES = [
     },
     {
         'id': 'kr-v1.4.5-iframe-form-submission-fix',
+        'app': 'Uncategorised',
         'version': 'v1.4.5-kr-stable',
         'gitTag': 'v1.4.5-iframe-form-submission-fix',
         'commit': '4253174',
         'date': '12-09-2026 11:42',
-        'title': 'TSE Keyword Research V1.4.5 Central Forms API & Static Generator',
+        'title': 'Keyword Research V1.4.5 Central Forms API & Static Generator',
         'description': 'Central TSE Forms API integration with server-side notification routing, responsive static enquiry form generation, and allow-forms iframe preview support.',
         'status': 'Superseded',
         'docFile': 'RESTORE-POINT-v1.4.3-stable-end-to-end-static-website-build-confirmed.md',
@@ -143,11 +151,12 @@ EXPLICIT_MILESTONES = [
     },
     {
         'id': 'kr-v1.4.3-stable-end-to-end-static-website-build-confirmed',
+        'app': 'Uncategorised',
         'version': 'v1.4.3-kr-stable',
         'gitTag': 'v1.4.3-stable-end-to-end-static-website-build-confirmed',
         'commit': 'c8c4b86',
         'date': '12-09-2026 11:00',
-        'title': 'TSE Keyword Research & Static Website Generator Engine (V1.4.3)',
+        'title': 'Keyword Research & Static Website Generator Engine (V1.4.3)',
         'description': 'Confirmed stable end-to-end Keyword Research to Static Website Generator build: approved 4-page hierarchy, approved content copy, Premium + Warm Contemporary design, royalty-free stock photography, 7-file static package (HTML/CSS/sitemap/robots), server persistence in Supabase, and full-width preview layout.',
         'status': 'Superseded',
         'docFile': 'RESTORE-POINT-v1.4.3-stable-end-to-end-static-website-build-confirmed.md',
@@ -165,6 +174,18 @@ EXPLICIT_MILESTONES = [
     }
 ]
 
+def determine_app_category(app_label, filename, content):
+    content_lower = content.lower()
+    fn_lower = filename.lower()
+
+    if app_label == 'Website Manager' or 'website manager' in content_lower or 'website-manager' in fn_lower:
+        return 'Website Manager'
+    if app_label == 'Lead Generator' or 'lead generator' in content_lower or 'lead-gen' in fn_lower or 'lead gen' in content_lower:
+        return 'Lead Generator'
+    if app_label == 'Site Registry' or 'site registry' in content_lower or 'site-registry' in fn_lower or 'backlink' in content_lower:
+        return 'Site Registry'
+    return 'Uncategorised'
+
 def parse_date_to_datetime(raw_str, fullpath=None):
     if not raw_str and fullpath and os.path.exists(fullpath):
         mtime = os.path.getmtime(fullpath)
@@ -173,7 +194,6 @@ def parse_date_to_datetime(raw_str, fullpath=None):
         return datetime(1970, 1, 1)
 
     clean = re.sub(r'^\*\*\s*', '', raw_str).replace('`', '').strip()
-    # DD-MM-YYYY HH:MM or DD-MM-YYYY
     m = re.search(r'(\d{2})[-/](\d{2})[-/](\d{4})(?:\s+(\d{2}):(\d{2}))?', clean)
     if m:
         day, month, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
@@ -181,7 +201,6 @@ def parse_date_to_datetime(raw_str, fullpath=None):
         minute = int(m.group(5) or 0)
         return datetime(year, month, day, hour, minute)
 
-    # YYYY-MM-DD HH:MM or YYYY-MM-DD
     m = re.search(r'(\d{4})[-/](\d{2})[-/](\d{2})(?:\s+(\d{2}):(\d{2}))?', clean)
     if m:
         year, month, day = int(m.group(1)), int(m.group(2)), int(m.group(3))
@@ -189,13 +208,11 @@ def parse_date_to_datetime(raw_str, fullpath=None):
         minute = int(m.group(5) or 0)
         return datetime(year, month, day, hour, minute)
 
-    # DD Month YYYY
     try:
         return datetime.strptime(clean.replace(',', '').strip(), '%d %B %Y')
     except Exception:
         pass
 
-    # Month DD, YYYY
     try:
         return datetime.strptime(clean.replace(',', '').strip(), '%B %d %Y')
     except Exception:
@@ -267,8 +284,11 @@ def extract_from_md(app_label, filename, fullpath):
     if base_id.startswith('restore-point-'):
         base_id = base_id[14:]
 
+    app = determine_app_category(app_label, filename, content)
+
     return {
         'id': base_id,
+        'app': app,
         'version': version,
         'gitTag': gitTag,
         'commit': commit if commit else '[AUTO]',
@@ -309,20 +329,16 @@ def collect_retained_restore_points():
                         rp = extract_from_md(app_label, f, full)
                         if rp['parsed_dt'].date() >= CUTOFF_DATE:
                             if rp['id'] not in seen_ids and rp['docFile'] not in seen_docs:
-                                if app_label != 'TSE Website Manager' and not rp['title'].startswith('TSE'):
-                                    rp['title'] = f"{app_label} — {rp['title']}"
                                 combined.append(rp)
                                 seen_ids.add(rp['id'])
                                 seen_docs.add(rp['docFile'])
                     except Exception as e:
                         print(f"Error parsing {full}: {e}")
 
-    # Sort descending by date
     combined.sort(key=lambda x: x['parsed_dt'], reverse=True)
 
     for idx, item in enumerate(combined):
         item['status'] = 'Current' if idx == 0 else 'Superseded'
-        # Remove helper field before serialization
         if 'parsed_dt' in item:
             del item['parsed_dt']
 
@@ -330,13 +346,13 @@ def collect_retained_restore_points():
 
 def sync_restore_points():
     print("============================================================")
-    print(f"[RESTORE POINT CLEANUP] Retaining only restore points <= {RETENTION_DAYS} days old (>= {CUTOFF_DATE})...")
+    print(f"[RESTORE POINT CATEGORISATION] Categorising restore points into 3 application sections...")
     print("============================================================")
 
     retained = collect_retained_restore_points()
-    print(f"Retained {len(retained)} restore points.")
+    print(f"Total active restore points: {len(retained)}")
 
-    js_content = "/**\n * Master restore point data representing RESTORE-POINT-INDEX.md.\n * Authoritative single source of truth for the Restore Points manager.\n * AUTOMATICALLY GENERATED BY scripts/sync_restore_points.py (7-day retention)\n */\nexport const restorePointIndexData = "
+    js_content = "/**\n * Master restore point data representing RESTORE-POINT-INDEX.md.\n * Authoritative single source of truth for the Restore Points manager.\n * AUTOMATICALLY GENERATED BY scripts/sync_restore_points.py\n */\nexport const restorePointIndexData = "
     js_content += json.dumps(retained, indent=2)
     js_content += ";\n"
 
@@ -347,23 +363,23 @@ def sync_restore_points():
     md_lines = [
         "# Restore Point Index",
         "",
-        "Master index of active restore points for the TSE ecosystem (7-Day Rolling Retention).",
-        "AUTOMATICALLY SYNCHRONIZED by `scripts/sync_restore_points.py`.",
+        "Master index of active restore points for the TSE ecosystem, grouped by application.",
         "",
         "---",
         "",
-        "| Version | Git Tag | Commit | Date | Summary | Status |",
-        "|---|---|---|---|---|---|"
+        "| Section | Version | Git Tag | Commit | Date | Summary | Status |",
+        "|---|---|---|---|---|---|---|"
     ]
 
     for rp in retained:
+        sec = rp.get('app', 'Uncategorised')
         v = rp.get('version', '')
         t = f"`{rp.get('gitTag', '')}`" if rp.get('gitTag') else '-'
         c = f"`{rp.get('commit', '')}`" if rp.get('commit') else '-'
         d = rp.get('date', '')
         s = rp.get('description', '').replace('|', '\\|')
         st = f"**{rp.get('status', 'Superseded')}**" if rp.get('status') == 'Current' else rp.get('status', 'Superseded')
-        md_lines.append(f"| {v} | {t} | {c} | {d} | {s} | {st} |")
+        md_lines.append(f"| {sec} | {v} | {t} | {c} | {d} | {s} | {st} |")
 
     md_lines.append("")
     md_lines.append("---")
@@ -372,7 +388,7 @@ def sync_restore_points():
     with open(TARGET_MD, 'w', encoding='utf-8') as f:
         f.write('\n'.join(md_lines))
     print(f"[UPDATED] {TARGET_MD}")
-    print("[PASS] 7-day retention cleanup and synchronization complete.")
+    print("[PASS] Categorisation and synchronization complete.")
     return retained
 
 if __name__ == '__main__':

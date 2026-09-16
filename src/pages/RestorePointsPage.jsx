@@ -33,52 +33,93 @@ export default function RestorePointsPage() {
         </button>
       </div>
 
-      {/* Table of Restore Points */}
-      <div className="rp-table-wrapper">
-        <table className="rp-table" aria-label="Restore Points History">
-          <thead>
-            <tr>
-              <th>Version</th>
-              <th>Git Tag</th>
-              <th>Commit</th>
-              <th>Date</th>
-              <th>Title</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {restorePoints.map((item) => {
-              const isSelected = selectedPoint?.id === item.id
-              return (
-                <tr
-                  key={item.id}
-                  className={`rp-row ${isSelected ? 'rp-row-selected' : ''}`}
-                  onClick={() => setSelectedPoint(item)}
-                  tabIndex={0}
-                  role="button"
-                  aria-pressed={isSelected}
-                >
-                  <td className="rp-cell-version">
-                    <span className="rp-version-badge">{item.version}</span>
-                    {item.status === 'Current' && (
-                      <span className="rp-current-badge">CURRENT</span>
-                    )}
-                  </td>
-                  <td className="rp-cell-tag">
-                    <code>{item.gitTag}</code>
-                  </td>
-                  <td className="rp-cell-commit">
-                    <code>{item.commit}</code>
-                  </td>
-                  <td className="rp-cell-date">{item.date}</td>
-                  <td className="rp-cell-title">{item.title}</td>
-                  <td className="rp-cell-desc">{item.description}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Application Sections */}
+      {(() => {
+        const sections = [
+          { key: 'Website Manager', title: 'Website Manager', badgeClass: 'badge-wm' },
+          { key: 'Lead Generator', title: 'Lead Generator', badgeClass: 'badge-lg' },
+          { key: 'Site Registry', title: 'Site Registry', badgeClass: 'badge-sr' }
+        ]
+
+        // Also check if any uncategorised items exist
+        const uncategorisedItems = restorePoints.filter(
+          item => !sections.some(sec => sec.key === item.app)
+        )
+        if (uncategorisedItems.length > 0) {
+          sections.push({ key: 'Uncategorised', title: 'Uncategorised', badgeClass: 'badge-uncategorised' })
+        }
+
+        return sections.map((sec) => {
+          const items = sec.key === 'Uncategorised'
+            ? uncategorisedItems
+            : restorePoints.filter(item => item.app === sec.key)
+
+          return (
+            <div key={sec.key} className="rp-section-block">
+              <div className="rp-section-header">
+                <div className="rp-section-title-wrap">
+                  <h3 className="rp-section-name">{sec.title}</h3>
+                  <span className={`rp-section-badge ${sec.badgeClass}`}>
+                    {items.length} {items.length === 1 ? 'Restore Point' : 'Restore Points'}
+                  </span>
+                </div>
+              </div>
+
+              {items.length === 0 ? (
+                <div className="rp-empty-section">
+                  No active restore points recorded for {sec.title}.
+                </div>
+              ) : (
+                <div className="rp-table-wrapper">
+                  <table className="rp-table" aria-label={`${sec.title} Restore Points`}>
+                    <thead>
+                      <tr>
+                        <th>Version</th>
+                        <th>Git Tag</th>
+                        <th>Commit</th>
+                        <th>Date</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item) => {
+                        const isSelected = selectedPoint?.id === item.id
+                        return (
+                          <tr
+                            key={item.id}
+                            className={`rp-row ${isSelected ? 'rp-row-selected' : ''}`}
+                            onClick={() => setSelectedPoint(item)}
+                            tabIndex={0}
+                            role="button"
+                            aria-pressed={isSelected}
+                          >
+                            <td className="rp-cell-version">
+                              <span className="rp-version-badge">{item.version}</span>
+                              {item.status === 'Current' && (
+                                <span className="rp-current-badge">CURRENT</span>
+                              )}
+                            </td>
+                            <td className="rp-cell-tag">
+                              <code>{item.gitTag || '-'}</code>
+                            </td>
+                            <td className="rp-cell-commit">
+                              <code>{item.commit || '-'}</code>
+                            </td>
+                            <td className="rp-cell-date">{item.date}</td>
+                            <td className="rp-cell-title">{item.title}</td>
+                            <td className="rp-cell-desc">{item.description}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )
+        })
+      })()}
 
       {/* Create Restore Point Dialog */}
       <CreateRestorePointDialog
