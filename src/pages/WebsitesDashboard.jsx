@@ -64,22 +64,17 @@ export default function WebsitesDashboard() {
     }
   })
 
-  // One-time localStorage migration & SQLite initial load on mount
+  // Authoritative SQLite initial load on mount & background migration
   useEffect(() => {
     let isMounted = true
     async function initData() {
-      // 1. Run one-time migration if localStorage has data
-      try {
-        await triggerLocalStorageMigrationApi()
-      } catch (err) {}
-
-      // 2. Fetch latest websites from SQLite API (Authoritative Server State)
+      // 1. Fetch latest websites from SQLite API (Authoritative Server State) FIRST
       try {
         const apiSites = await getWebsitesApi()
         if (isMounted && Array.isArray(apiSites) && apiSites.length > 0) {
           setSites(apiSites)
 
-          // 3. Authoritative Server State Hydration: Update active managedSite from fresh server record
+          // 2. Authoritative Server State Hydration: Update active managedSite from fresh server record
           setManagedSiteState(prevManaged => {
             if (!prevManaged || !prevManaged.id) return prevManaged
             const freshSite = apiSites.find(s => String(s.id) === String(prevManaged.id))
@@ -92,6 +87,13 @@ export default function WebsitesDashboard() {
             return prevManaged
           })
         }
+      } catch (err) {
+        console.error('Failed to load websites from API:', err)
+      }
+
+      // 3. Run one-time migration in background if needed
+      try {
+        await triggerLocalStorageMigrationApi()
       } catch (err) {}
     }
     initData()

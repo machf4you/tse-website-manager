@@ -12,7 +12,7 @@ export const API_BASE_URL = (typeof process !== 'undefined' && process.env && pr
       ? import.meta.env.VITE_WEBSITE_MANAGER_API_URL
       : '/api')
 
-async function fetchJson(url, options = {}, timeoutMs = 2500) {
+async function fetchJson(url, options = {}, timeoutMs = 10000) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
