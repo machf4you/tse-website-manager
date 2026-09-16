@@ -31,6 +31,7 @@
     "RESTORE-POINT-INDEX.md",
     "RESTORE-POINT-v1.30-fix-platform-state-persistence.md",
     "RESTORE-POINT-v1.46-w4-h1-replacement-and-push-loading-indicator-fix.md",
+    "RESTORE-POINT-v2.50-full-disaster-recovery-website-manager.md",
     ".gitignore",
     "tse-manifest.json"
   ]

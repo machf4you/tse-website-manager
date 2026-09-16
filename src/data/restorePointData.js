@@ -5,6 +5,33 @@
  */
 export const restorePointIndexData = [
   {
+    "id": "wm-v2.50-full-disaster-recovery",
+    "app": "Website Manager",
+    "version": "v2.50-wm-stable",
+    "gitTag": "wm-v2.50-full-disaster-recovery",
+    "commit": "fb2e3c0",
+    "date": "16-09-2026 10:45",
+    "title": "Website Manager V2.50 Full Disaster-Recovery Milestone",
+    "description": "Full disaster-recovery restore point containing verified cold SQLite database snapshot, complete application source, Nginx reverse-proxy definitions, PM2 process configuration, environment parameters, and multi-user access manifests.",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-v2.50-full-disaster-recovery-website-manager.md",
+    "purpose": "Complete disaster recovery snapshot capable of rebuilding Website Manager from scratch.",
+    "verifiedWorking": [
+      "Complete application source tree and dependency manifests",
+      "Cold production SQLite database snapshot (41MB, 14 active domains verified)",
+      "Nginx reverse-proxy & SSL certificates configuration",
+      "PM2 process supervisor specification (website-manager-api on port 3005)",
+      "Multi-user live synchronization & access control engine",
+      "11-stage connected TSE website workflow journey"
+    ],
+    "filesChanged": [
+      "RESTORE-POINT-v2.50-full-disaster-recovery-website-manager.md",
+      "scripts/sync_restore_points.py",
+      "src/data/restorePointData.js",
+      "RESTORE-POINT-INDEX.md"
+    ]
+  },
+  {
     "id": "sr-v2.19-accepted-production",
     "app": "Site Registry",
     "version": "v2.19-sr-accepted",
@@ -13,7 +40,7 @@ export const restorePointIndexData = [
     "date": "16-09-2026 10:15",
     "title": "Site Registry V2.19 Production Accepted & Domains Restoration",
     "description": "Confirmed production accepted baseline for TSE Site Registry: 3-item restoration (Sortable domain table columns, Domain Details edit dialog persistence, and Auto-Renew unknown normalization to No/False), softer dashboard outline styling, medium headline typography, and Awaiting Indexing / Articles module.",
-    "status": "Current",
+    "status": "Superseded",
     "docFile": "V2.19-STABLE-INDEXCHECKER-RECONCILIATION-NORMALIZATION.md",
     "purpose": "Production accepted baseline for Site Registry with restored domain sorting, editing, and accurate auto-renew status.",
     "verifiedWorking": [
