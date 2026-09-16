@@ -666,202 +666,239 @@ export default function AddWebsiteDialog({
             </div>
           )}
 
-          {/* STEP 1: SITE REGISTRY DOMAIN SELECTION (Only when adding new website) */}
-          {!editingSite && (
-            <div className="aw-registry-section">
-              <label className="aw-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>SELECT WEBSITE (SITE REGISTRY)</span>
-                <span className="aw-available-count">
-                  {isLoadingRegistry ? 'Loading active sites…' : `${availableRegistryDomains.length} active sites available`}
-                </span>
-              </label>
+          <div className="aw-two-column-layout">
 
-              {!selectedDomain ? (
-                <div className="aw-dropdown-container">
-                  <div className="aw-search-input-wrap">
-                    <svg className="aw-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                    </svg>
-                    <input
-                      type="text"
-                      id="registry-domain-search"
-                      className="aw-input aw-search-input"
-                      placeholder="Search or select active website from Site Registry..."
-                      value={searchQuery}
-                      onChange={e => {
-                        setSearchQuery(e.target.value)
-                        setIsDropdownOpen(true)
-                      }}
-                      onFocus={() => setIsDropdownOpen(true)}
-                      autoComplete="off"
-                    />
-                    {searchQuery && (
-                      <button type="button" className="aw-clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
-                    )}
-                  </div>
+            {/* ══════════════ LEFT COLUMN ══════════════ */}
+            <div className="aw-column aw-column-left">
 
-                  {isDropdownOpen && (
-                    <div className="aw-dropdown-list">
-                      {filteredRegistryDomains.length === 0 ? (
-                        <div className="aw-dropdown-empty">
-                          {isLoadingRegistry ? 'Loading available active domains…' : 'No matching active unconnected websites found.'}
+              {/* STEP 1: SITE REGISTRY DOMAIN SELECTION (Only when adding new website) */}
+              {!editingSite && (
+                <div className="aw-registry-section">
+                  <label className="aw-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>SELECT WEBSITE (SITE REGISTRY)</span>
+                    <span className="aw-available-count">
+                      {isLoadingRegistry ? 'Loading active sites…' : `${availableRegistryDomains.length} active sites available`}
+                    </span>
+                  </label>
+
+                  {!selectedDomain ? (
+                    <div className="aw-dropdown-container">
+                      <div className="aw-search-input-wrap">
+                        <svg className="aw-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                        <input
+                          type="text"
+                          id="registry-domain-search"
+                          className="aw-input aw-search-input"
+                          placeholder="Search or select active website from Site Registry..."
+                          value={searchQuery}
+                          onChange={e => {
+                            setSearchQuery(e.target.value)
+                            setIsDropdownOpen(true)
+                          }}
+                          onFocus={() => setIsDropdownOpen(true)}
+                          autoComplete="off"
+                        />
+                        {searchQuery && (
+                          <button type="button" className="aw-clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
+                        )}
+                      </div>
+
+                      {isDropdownOpen && (
+                        <div className="aw-dropdown-list">
+                          {filteredRegistryDomains.length === 0 ? (
+                            <div className="aw-dropdown-empty">
+                              {isLoadingRegistry ? 'Loading available active domains…' : 'No matching active unconnected websites found.'}
+                            </div>
+                          ) : (
+                            filteredRegistryDomains.map(d => (
+                              <div
+                                key={d.id}
+                                className="aw-dropdown-item"
+                                onClick={() => handleSelectRegistryDomain(d)}
+                              >
+                                <div className="aw-item-left">
+                                  <span className="aw-item-name">{d.display_name || d.canonical_domain}</span>
+                                  <span className="aw-item-canonical">{d.canonical_domain}</span>
+                                </div>
+                                <div className="aw-item-badges">
+                                  <span className={`aw-badge-platform aw-badge-${(d.platform || 'wordpress').toLowerCase()}`}>
+                                    {d.platform === 'magento' ? 'Magento' : (d.platform === 'other' ? 'Other' : 'WordPress')}
+                                  </span>
+                                  <span className="aw-badge-portfolio">{d.portfolio || 'TSE'}</span>
+                                </div>
+                              </div>
+                            ))
+                          )}
                         </div>
-                      ) : (
-                        filteredRegistryDomains.map(d => (
-                          <div
-                            key={d.id}
-                            className="aw-dropdown-item"
-                            onClick={() => handleSelectRegistryDomain(d)}
-                          >
-                            <div className="aw-item-left">
-                              <span className="aw-item-name">{d.display_name || d.canonical_domain}</span>
-                              <span className="aw-item-canonical">{d.canonical_domain}</span>
-                            </div>
-                            <div className="aw-item-badges">
-                              <span className={`aw-badge-platform aw-badge-${(d.platform || 'wordpress').toLowerCase()}`}>
-                                {d.platform === 'magento' ? 'Magento' : (d.platform === 'other' ? 'Other' : 'WordPress')}
-                              </span>
-                              <span className="aw-badge-portfolio">{d.portfolio || 'TSE'}</span>
-                            </div>
-                          </div>
-                        ))
                       )}
                     </div>
-                  )}
-                </div>
-              ) : (
-                /* Selected Registry Domain summary card */
-                <div className="aw-selected-card">
-                  <div className="aw-selected-header">
-                    <div className="aw-selected-info">
-                      <div className="aw-selected-title-row">
-                        <span className="aw-selected-title">{selectedDomain.display_name || selectedDomain.canonical_domain}</span>
-                        <span className="aw-verified-pill">✓ Site Registry Verified</span>
-                      </div>
-                      <span className="aw-selected-url">{selectedDomain.primary_url || ('https://' + selectedDomain.canonical_domain)}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="aw-change-site-btn"
-                      onClick={() => setSelectedDomain(null)}
-                      disabled={isConnecting}
-                    >
-                      Change Website
-                    </button>
-                  </div>
-                  <div className="aw-selected-meta">
-                    <span className="aw-meta-item"><strong>Platform:</strong> {platform === 'magento' ? 'Magento' : 'WordPress'}</span>
-                    <span className="aw-meta-item"><strong>Portfolio:</strong> {portfolio.toUpperCase()}</span>
-                    <span className="aw-meta-item"><strong>Domain ID:</strong> <code>{selectedDomain.id.substring(0, 8)}…</code></span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* STEP 2: CREDENTIALS & CONNECTION DETAILS */}
-          {(editingSite || selectedDomain) && (
-            <>
-              {/* Permanent / Read-only platform indicator for selected or editing site */}
-              <div className="aw-platform-readonly-badge">
-                <span className="aw-section-subtitle">Platform: <strong>{platform === 'magento' ? 'Magento' : (platform === 'other' ? 'Other' : 'WordPress')}</strong></span>
-                <span className="aw-locked-badge">Locked to Site Registry</span>
-              </div>
-
-              {platform === 'wordpress' && (
-                <>
-                  <Field
-                    label="Website Name"
-                    id="wp-name"
-                    placeholder="e.g. Ascent Builders"
-                    value={wpName}
-                    readOnly={true}
-                    disabled={isConnecting}
-                  />
-                  <Field
-                    label="Website URL"
-                    id="wp-url"
-                    placeholder="https://www.example.co.uk"
-                    value={wpUrl}
-                    readOnly={true}
-                    disabled={isConnecting}
-                  />
-                  <Field
-                    label="WordPress Admin Username"
-                    id="wp-user"
-                    placeholder="admin"
-                    value={wpUser}
-                    onChange={setWpUser}
-                    disabled={isConnecting}
-                  />
-                  <PasswordField
-                    label="WordPress Application Password"
-                    id="wp-pass"
-                    placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
-                    value={wpPass}
-                    onChange={setWpPass}
-                    disabled={isConnecting}
-                  />
-                  <PortfolioSelect
-                    id="wp-portfolio"
-                    value={portfolio}
-                    readOnly={true}
-                    disabled={isConnecting}
-                  />
-                  <ServerTypeSelect
-                    id="wp-server-type"
-                    value={serverType}
-                    onChange={setServerType}
-                    disabled={isConnecting}
-                  />
-                  <Toggle
-                    label="Elementor Enabled"
-                    id="wp-elementor"
-                    checked={elementorEnabled}
-                    onChange={setElementorEnabled}
-                    disabled={isConnecting}
-                  />
-
-                  {isConnecting && (
-                    <div className="aw-steps-container">
-                      {WP_STEPS.map(step => {
-                        const st = stepStates[step.id] || 'pending'
-                        return (
-                          <div key={step.id} className={`aw-step-item aw-step-status-${st}`}>
-                            {st === 'loading' && <span className="aw-spinner" />}
-                            {st === 'done' && <span>✓</span>}
-                            {st === 'error' && <span>✗</span>}
-                            {st === 'pending' && <span>○</span>}
-                            <span>{step.label}</span>
+                  ) : (
+                    /* Selected Registry Domain summary card */
+                    <div className="aw-selected-card">
+                      <div className="aw-selected-header">
+                        <div className="aw-selected-info">
+                          <div className="aw-selected-title-row">
+                            <span className="aw-selected-title">{selectedDomain.display_name || selectedDomain.canonical_domain}</span>
+                            <span className="aw-verified-pill">✓ Site Registry Verified</span>
                           </div>
-                        )
-                      })}
+                          <span className="aw-selected-url">{selectedDomain.primary_url || ('https://' + selectedDomain.canonical_domain)}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="aw-change-site-btn"
+                          onClick={() => setSelectedDomain(null)}
+                          disabled={isConnecting}
+                        >
+                          Change Website
+                        </button>
+                      </div>
+                      <div className="aw-selected-meta">
+                        <span className="aw-meta-item"><strong>Platform:</strong> {platform === 'magento' ? 'Magento' : 'WordPress'}</span>
+                        <span className="aw-meta-item"><strong>Portfolio:</strong> {portfolio.toUpperCase()}</span>
+                        <span className="aw-meta-item"><strong>Domain ID:</strong> <code>{selectedDomain.id.substring(0, 8)}…</code></span>
+                      </div>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Website Info fields (Left Column) */}
+              {(editingSite || selectedDomain) && (
+                <>
+                  {platform === 'wordpress' && (
+                    <>
+                      <Field
+                        label="Website Name"
+                        id="wp-name"
+                        placeholder="e.g. Ascent Builders"
+                        value={wpName}
+                        readOnly={true}
+                        disabled={isConnecting}
+                      />
+                      <Field
+                        label="Website URL"
+                        id="wp-url"
+                        placeholder="https://www.example.co.uk"
+                        value={wpUrl}
+                        readOnly={true}
+                        disabled={isConnecting}
+                      />
+                      <PortfolioSelect
+                        id="wp-portfolio"
+                        value={portfolio}
+                        readOnly={true}
+                        disabled={isConnecting}
+                      />
+                      <ServerTypeSelect
+                        id="wp-server-type"
+                        value={serverType}
+                        onChange={setServerType}
+                        disabled={isConnecting}
+                      />
+                    </>
+                  )}
+
+                  {platform === 'magento' && (
+                    <>
+                      <Field label="Website Name" id="mg-name" value={mgName} readOnly={true} disabled={isConnecting} />
+                      <Field label="Website URL (Frontend)" id="mg-url" value={mgUrl} readOnly={true} disabled={isConnecting} />
+                      <Field label="Magento Backend URL" id="mg-backend" placeholder="https://www.example.co.uk/admin" value={mgBackend} onChange={setMgBackend} disabled={isConnecting} />
+                      <PortfolioSelect id="mg-portfolio" value={mgPortfolio} readOnly={true} disabled={isConnecting} />
+                      <ServerTypeSelect id="mg-server-type" value={mgServerType} onChange={setMgServerType} disabled={isConnecting} />
+                    </>
                   )}
                 </>
               )}
 
-              {platform === 'magento' && (
-                <>
-                  <Field label="Website Name" id="mg-name" value={mgName} readOnly={true} disabled={isConnecting} />
-                  <Field label="Website URL (Frontend)" id="mg-url" value={mgUrl} readOnly={true} disabled={isConnecting} />
-                  <Field label="Magento Backend URL" id="mg-backend" placeholder="https://www.example.co.uk/admin" value={mgBackend} onChange={setMgBackend} disabled={isConnecting} />
-                  <Field label="API Base URL" id="mg-api" placeholder="https://www.example.co.uk/rest/V1" value={mgApi} onChange={setMgApi} disabled={isConnecting} />
-                  <Field label="API Username" id="mg-api-user" placeholder="api_user" value={mgUser} onChange={setMgUser} disabled={isConnecting} />
-                  <PasswordField label="API Password / Token" id="mg-api-pass" placeholder="••••••••••••••••" value={mgPass} onChange={setMgPass} disabled={isConnecting} />
-                  <StoreViewSelect id="mg-store" value={mgStore} onChange={setMgStore} disabled={isConnecting} />
-                  <PortfolioSelect id="mg-portfolio" value={mgPortfolio} readOnly={true} disabled={isConnecting} />
-                  <ServerTypeSelect id="mg-server-type" value={mgServerType} onChange={setMgServerType} disabled={isConnecting} />
-                </>
-              )}
+            </div>
 
-              {platform === 'other' && (
-                <div className="aw-other-placeholder">
-                  <span>Support for additional platforms is coming soon.</span>
+            {/* ══════════════ RIGHT COLUMN ══════════════ */}
+            <div className="aw-column aw-column-right">
+
+              {(editingSite || selectedDomain) ? (
+                <>
+                  {/* Permanent / Read-only platform indicator */}
+                  <div className="aw-platform-readonly-badge">
+                    <span className="aw-section-subtitle">Platform: <strong>{platform === 'magento' ? 'Magento' : (platform === 'other' ? 'Other' : 'WordPress')}</strong></span>
+                    <span className="aw-locked-badge">Locked to Site Registry</span>
+                  </div>
+
+                  {platform === 'wordpress' && (
+                    <>
+                      <Field
+                        label="WordPress Admin Username"
+                        id="wp-user"
+                        placeholder="admin"
+                        value={wpUser}
+                        onChange={setWpUser}
+                        disabled={isConnecting}
+                      />
+                      <PasswordField
+                        label="WordPress Application Password"
+                        id="wp-pass"
+                        placeholder="xxxx xxxx xxxx xxxx xxxx xxxx"
+                        value={wpPass}
+                        onChange={setWpPass}
+                        disabled={isConnecting}
+                      />
+                      <Toggle
+                        label="Elementor Enabled"
+                        id="wp-elementor"
+                        checked={elementorEnabled}
+                        onChange={setElementorEnabled}
+                        disabled={isConnecting}
+                      />
+
+                      {isConnecting && (
+                        <div className="aw-steps-container">
+                          {WP_STEPS.map(step => {
+                            const st = stepStates[step.id] || 'pending'
+                            return (
+                              <div key={step.id} className={`aw-step-item aw-step-status-${st}`}>
+                                {st === 'loading' && <span className="aw-spinner" />}
+                                {st === 'done' && <span>✓</span>}
+                                {st === 'error' && <span>✗</span>}
+                                {st === 'pending' && <span>○</span>}
+                                <span>{step.label}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {platform === 'magento' && (
+                    <>
+                      <Field label="API Base URL" id="mg-api" placeholder="https://www.example.co.uk/rest/V1" value={mgApi} onChange={setMgApi} disabled={isConnecting} />
+                      <Field label="API Username" id="mg-api-user" placeholder="api_user" value={mgUser} onChange={setMgUser} disabled={isConnecting} />
+                      <PasswordField label="API Password / Token" id="mg-api-pass" placeholder="••••••••••••••••" value={mgPass} onChange={setMgPass} disabled={isConnecting} />
+                      <StoreViewSelect id="mg-store" value={mgStore} onChange={setMgStore} disabled={isConnecting} />
+                    </>
+                  )}
+
+                  {platform === 'other' && (
+                    <div className="aw-other-placeholder">
+                      <span>Support for additional platforms is coming soon.</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Helper placeholder when no site is selected yet */
+                <div className="aw-placeholder-right">
+                  <div className="aw-placeholder-icon">🔗</div>
+                  <h3 className="aw-placeholder-title">Select Website to Connect</h3>
+                  <p className="aw-placeholder-desc">
+                    Choose an active website from Site Registry on the left to automatically populate website metadata and configure connection credentials.
+                  </p>
                 </div>
               )}
-            </>
-          )}
+
+            </div>
+
+          </div>
         </form>
 
         {/* Footer */}
