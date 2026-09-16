@@ -2688,7 +2688,7 @@ app.post('/api/websites/:id/tasks/collect-rank-batch', handleCollectRankBatch)
 const distPath = path.join(__dirname, '..', 'dist')
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath))
-  app.get('*', (req, res) => {
+  app.use((req, res) => {
     if (req.path.startsWith('/api/')) {
       return res.status(404).json({ error: 'API endpoint not found' })
     }
