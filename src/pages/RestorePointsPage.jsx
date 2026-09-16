@@ -3,6 +3,47 @@ import { getRestorePointIndex } from '../services/restorePointService'
 import CreateRestorePointDialog from '../components/CreateRestorePointDialog'
 import './RestorePointsPage.css'
 
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '-'
+  // DD-MM-YYYY or DD/MM/YYYY
+  let m = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/)
+  if (m) {
+    const day = parseInt(m[1], 10)
+    const month = parseInt(m[2], 10)
+    const year = m[3]
+    const monthName = MONTHS[month - 1] || 'SEP'
+    return `${day} ${monthName} ${year}`
+  }
+  // YYYY-MM-DD
+  m = dateStr.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+  if (m) {
+    const year = m[1]
+    const month = parseInt(m[2], 10)
+    const day = parseInt(m[3], 10)
+    const monthName = MONTHS[month - 1] || 'SEP'
+    return `${day} ${monthName} ${year}`
+  }
+  // DD Month YYYY (e.g. 11 September 2026)
+  m = dateStr.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/)
+  if (m) {
+    const day = parseInt(m[1], 10)
+    const monthWord = m[2].toUpperCase().slice(0, 3)
+    const year = m[3]
+    return `${day} ${monthWord} ${year}`
+  }
+  // Month DD, YYYY (e.g. September 7, 2026)
+  m = dateStr.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/)
+  if (m) {
+    const monthWord = m[1].toUpperCase().slice(0, 3)
+    const day = parseInt(m[2], 10)
+    const year = m[3]
+    return `${day} ${monthWord} ${year}`
+  }
+  return dateStr
+}
+
 export default function RestorePointsPage() {
   const [selectedPoint, setSelectedPoint] = useState(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -75,12 +116,10 @@ export default function RestorePointsPage() {
                   <table className="rp-table" aria-label={`${sec.title} Restore Points`}>
                     <thead>
                       <tr>
-                        <th>Version</th>
-                        <th>Git Tag</th>
-                        <th>Commit</th>
-                        <th>Date</th>
-                        <th>Title</th>
-                        <th>Description</th>
+                        <th className="rp-th-date">DATE</th>
+                        <th className="rp-th-version">VERSION</th>
+                        <th className="rp-th-title">TITLE</th>
+                        <th className="rp-th-desc">DESCRIPTION</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -95,21 +134,31 @@ export default function RestorePointsPage() {
                             role="button"
                             aria-pressed={isSelected}
                           >
-                            <td className="rp-cell-version">
-                              <span className="rp-version-badge">{item.version}</span>
-                              {item.status === 'Current' && (
-                                <span className="rp-current-badge">CURRENT</span>
-                              )}
+                            <td className="rp-cell-date">
+                              <span className="rp-cell-date-badge">
+                                {formatDateDisplay(item.date)}
+                              </span>
                             </td>
-                            <td className="rp-cell-tag">
-                              <code>{item.gitTag || '-'}</code>
+                            <td className="rp-cell-version-stacked">
+                              <div className="rp-ver-line-1">
+                                <span className="rp-version-badge">{item.version}</span>
+                                {item.status === 'Current' && (
+                                  <span className="rp-current-badge">CURRENT</span>
+                                )}
+                              </div>
+                              <div className="rp-ver-line-2">
+                                <code title={item.gitTag || '-'}>{item.gitTag || '-'}</code>
+                              </div>
+                              <div className="rp-ver-line-3">
+                                <code title={item.commit || '-'}>{item.commit || '-'}</code>
+                              </div>
                             </td>
-                            <td className="rp-cell-commit">
-                              <code>{item.commit || '-'}</code>
+                            <td className="rp-cell-title-col">
+                              <div className="rp-cell-title-text">{item.title}</div>
                             </td>
-                            <td className="rp-cell-date">{item.date}</td>
-                            <td className="rp-cell-title">{item.title}</td>
-                            <td className="rp-cell-desc">{item.description}</td>
+                            <td className="rp-cell-desc-col">
+                              <div className="rp-cell-desc-text">{item.description}</div>
+                            </td>
                           </tr>
                         )
                       })}

@@ -145,24 +145,41 @@
   text-align: left;
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
+  table-layout: fixed;
 }
 
 .rp-table th {
   background-color: rgba(255, 255, 255, 0.03);
   color: rgb(148, 163, 184);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rp-th-date {
+  width: 130px;
+}
+
+.rp-th-version {
+  width: 320px;
+}
+
+.rp-th-title {
+  width: 320px;
+}
+
+.rp-th-desc {
+  width: auto;
 }
 
 .rp-table td {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   color: rgb(226, 232, 240);
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 .rp-row {
@@ -178,17 +195,41 @@
   background-color: rgba(16, 185, 129, 0.08);
 }
 
-/* Cell specifics */
-.rp-cell-version {
+/* 1. Date Column */
+.rp-cell-date {
+  width: 130px;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.rp-cell-date-badge {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgb(241, 245, 249);
+  white-space: nowrap;
+}
+
+/* 2. Version Column (3-line stack) */
+.rp-cell-version-stacked {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  vertical-align: top;
+}
+
+.rp-ver-line-1 {
   display: flex;
   align-items: center;
   gap: 8px;
-  white-space: nowrap;
 }
 
 .rp-version-badge {
   font-weight: 700;
   color: rgb(248, 250, 252);
+  font-size: 0.875rem;
 }
 
 .rp-current-badge {
@@ -202,32 +243,52 @@
   letter-spacing: 0.04em;
 }
 
-.rp-cell-tag code,
-.rp-cell-commit code {
+.rp-ver-line-2,
+.rp-ver-line-3 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.rp-ver-line-2 code,
+.rp-ver-line-3 code {
   font-family: monospace;
-  font-size: 0.8rem;
-  background-color: rgba(0, 0, 0, 0.25);
-  padding: 3px 6px;
+  font-size: 0.775rem;
+  background-color: rgba(0, 0, 0, 0.28);
+  padding: 2px 6px;
   border-radius: 4px;
   color: rgb(148, 163, 184);
-}
-
-.rp-cell-date {
   white-space: nowrap;
-  color: rgb(148, 163, 184);
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
 }
 
-.rp-cell-title {
+/* 3. Title Column */
+.rp-cell-title-col {
+  width: 320px;
+  vertical-align: top;
+}
+
+.rp-cell-title-text {
   font-weight: 600;
   color: rgb(248, 250, 252);
-  white-space: nowrap;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
-.rp-cell-desc {
+/* 4. Description Column */
+.rp-cell-desc-col {
+  vertical-align: top;
+}
+
+.rp-cell-desc-text {
   color: rgb(148, 163, 184);
-  max-width: 800px;
-  min-width: 400px;
-  line-height: 1.4;
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 /* Modal / Detail View */
