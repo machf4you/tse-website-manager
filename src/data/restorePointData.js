@@ -117,7 +117,7 @@ export const restorePointIndexData = [
   },
   {
     "id": "kr-v1.4.5-iframe-form-submission-fix",
-    "app": "Uncategorised",
+    "app": "Keyword Research",
     "version": "v1.4.5-kr-stable",
     "gitTag": "v1.4.5-iframe-form-submission-fix",
     "commit": "4253174",
@@ -140,7 +140,7 @@ export const restorePointIndexData = [
   },
   {
     "id": "kr-v1.4.3-stable-end-to-end-static-website-build-confirmed",
-    "app": "Uncategorised",
+    "app": "Keyword Research",
     "version": "v1.4.3-kr-stable",
     "gitTag": "v1.4.3-stable-end-to-end-static-website-build-confirmed",
     "commit": "c8c4b86",
@@ -163,7 +163,7 @@ export const restorePointIndexData = [
   },
   {
     "id": "v1.0.6-stable-keyword-groups-research-workflow",
-    "app": "Uncategorised",
+    "app": "Keyword Research",
     "version": "V1.0.6 (Stable Production Release)",
     "gitTag": "",
     "commit": "[AUTO]",
@@ -175,7 +175,7 @@ export const restorePointIndexData = [
   },
   {
     "id": "v1.1.1-stable-keyword-research-to-site-architecture-workflow",
-    "app": "Uncategorised",
+    "app": "Keyword Research",
     "version": "V1.1.1 (Stable Production Release)",
     "gitTag": "",
     "commit": "[AUTO]",
@@ -235,7 +235,7 @@ export const restorePointIndexData = [
   },
   {
     "id": "v2.18-stable-create-backlink-source-ranking-and-modern-order-source",
-    "app": "Website Manager",
+    "app": "Site Registry",
     "version": "v2.18-stable-create-backlink-source-ranking-and-modern-order-source",
     "gitTag": "v2.18-stable-create-backlink-source-ranking-and-modern-order-source",
     "commit": "87c294a",

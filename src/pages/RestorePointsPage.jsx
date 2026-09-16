@@ -38,7 +38,8 @@ export default function RestorePointsPage() {
         const sections = [
           { key: 'Website Manager', title: 'Website Manager', badgeClass: 'badge-wm' },
           { key: 'Lead Generator', title: 'Lead Generator', badgeClass: 'badge-lg' },
-          { key: 'Site Registry', title: 'Site Registry', badgeClass: 'badge-sr' }
+          { key: 'Site Registry', title: 'Site Registry', badgeClass: 'badge-sr' },
+          { key: 'Keyword Research', title: 'Keyword Research', badgeClass: 'badge-kr' }
         ]
 
         // Also check if any uncategorised items exist

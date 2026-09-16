@@ -6,7 +6,6 @@ import json
 import subprocess
 from datetime import datetime, timedelta
 
-# Reference time is current system time (2026-09-16)
 CURRENT_TIME = datetime(2026, 9, 16, 10, 25, 21)
 RETENTION_DAYS = 7
 CUTOFF_DATE = (CURRENT_TIME - timedelta(days=RETENTION_DAYS)).date()
@@ -22,9 +21,6 @@ TSE_REPOS = [
 
 TARGET_JS = r'c:\Antigravity\tse-website-manager\src\data\restorePointData.js'
 TARGET_MD = r'c:\Antigravity\tse-website-manager\RESTORE-POINT-INDEX.md'
-
-# Only the 3 official application sections; any other is marked Uncategorised
-VALID_APPS = {'Website Manager', 'Lead Generator', 'Site Registry'}
 
 EXPLICIT_MILESTONES = [
     {
@@ -128,7 +124,7 @@ EXPLICIT_MILESTONES = [
     },
     {
         'id': 'kr-v1.4.5-iframe-form-submission-fix',
-        'app': 'Uncategorised',
+        'app': 'Keyword Research',
         'version': 'v1.4.5-kr-stable',
         'gitTag': 'v1.4.5-iframe-form-submission-fix',
         'commit': '4253174',
@@ -151,7 +147,7 @@ EXPLICIT_MILESTONES = [
     },
     {
         'id': 'kr-v1.4.3-stable-end-to-end-static-website-build-confirmed',
-        'app': 'Uncategorised',
+        'app': 'Keyword Research',
         'version': 'v1.4.3-kr-stable',
         'gitTag': 'v1.4.3-stable-end-to-end-static-website-build-confirmed',
         'commit': 'c8c4b86',
@@ -175,15 +171,21 @@ EXPLICIT_MILESTONES = [
 ]
 
 def determine_app_category(app_label, filename, content):
-    content_lower = content.lower()
     fn_lower = filename.lower()
-
-    if app_label == 'Website Manager' or 'website manager' in content_lower or 'website-manager' in fn_lower:
-        return 'Website Manager'
-    if app_label == 'Lead Generator' or 'lead generator' in content_lower or 'lead-gen' in fn_lower or 'lead gen' in content_lower:
-        return 'Lead Generator'
-    if app_label == 'Site Registry' or 'site registry' in content_lower or 'site-registry' in fn_lower or 'backlink' in content_lower:
+    
+    # 1. Direct repo authority
+    if app_label == 'Site Registry' or 'site-registry' in fn_lower or 'create-backlink' in fn_lower or 'indexchecker' in fn_lower:
         return 'Site Registry'
+    if app_label == 'Keyword Research' or 'keyword-research' in fn_lower or 'keyword' in fn_lower:
+        return 'Keyword Research'
+    if app_label == 'Lead Generator' or 'lead-gen' in fn_lower or 'lead gen' in fn_lower:
+        return 'Lead Generator'
+    if app_label == 'Website Manager' or 'website-manager' in fn_lower or 'w4-' in fn_lower or 'w3-' in fn_lower or 'w5-' in fn_lower:
+        return 'Website Manager'
+
+    if app_label in {'Website Manager', 'Lead Generator', 'Site Registry', 'Keyword Research'}:
+        return app_label
+
     return 'Uncategorised'
 
 def parse_date_to_datetime(raw_str, fullpath=None):
@@ -346,7 +348,7 @@ def collect_retained_restore_points():
 
 def sync_restore_points():
     print("============================================================")
-    print(f"[RESTORE POINT CATEGORISATION] Categorising restore points into 3 application sections...")
+    print(f"[RESTORE POINT CATEGORISATION] Categorising restore points into 4 application sections...")
     print("============================================================")
 
     retained = collect_retained_restore_points()
