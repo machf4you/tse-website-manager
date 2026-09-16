@@ -224,6 +224,9 @@ export default function WebsitesDashboard() {
       {/* ── ROW 1: Connected Websites Heading ── */}
       <div className="w1-row-1">
         <h1 className="w1-title">Connected Websites</h1>
+        <div style={{ color: '#FACC15', fontSize: '36px', fontWeight: 'bold', padding: '16px', background: '#000', border: '3px solid #FACC15', margin: '16px 0', textAlign: 'center', letterSpacing: '4px' }}>
+          TEST
+        </div>
       </div>
 
       {/* ── ROW 2: W1 Badge + Server Type Filters (Left) | Add Website Button (Right) ── */}

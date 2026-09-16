@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename)
 
 function generateVersionPlugin() {
   const buildTime = Date.now()
-  const baseVer = '2.45'
+  const baseVer = '2.46'
   const buildHash = 'wm-' + buildTime.toString(36) + '-' + Math.random().toString(36).substring(2, 7)
   const buildLabel = `V${baseVer} | READY`
 
