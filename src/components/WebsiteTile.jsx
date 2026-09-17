@@ -85,7 +85,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   }
 
   const rawPages = extractPagesFromPackage(pkg)
-  const totalPages = rawPages.length
+  const totalPages = rawPages.length > 0 ? rawPages.length : (site.totalPages || site.total_pages || 0)
 
   const hasValidPackage = totalPages > 0 || Boolean(pkg && (pkg.pages?.length > 0 || pkg.posts?.length > 0 || pkg.data?.pages?.length > 0))
 
@@ -131,27 +131,33 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
     }
   })()
 
-  const configuredPagesCount = rawPages.filter(p => {
-    const override = (p.url ? savedConfigs[p.url] : null) ||
-                     (p.url ? savedConfigs[p.url.replace(/\/$/, '')] : null) ||
-                     (p.url ? savedConfigs[p.url + '/'] : null) ||
-                     (p.id ? savedConfigs[p.id] : null)
+  const configuredPagesCount = rawPages.length > 0
+    ? rawPages.filter(p => {
+        const override = (p.url ? savedConfigs[p.url] : null) ||
+                         (p.url ? savedConfigs[p.url.replace(/\/$/, '')] : null) ||
+                         (p.url ? savedConfigs[p.url + '/'] : null) ||
+                         (p.id ? savedConfigs[p.id] : null)
 
-    const targetPhraseStr = (override?.targetPhrase || override?.target || p.targetPhrase || p.target || '').trim()
-    const isConfigured = Boolean(targetPhraseStr.length > 0)
-    const isExcluded = Boolean(override?.isExcluded || override?.type === 'Excluded' || p.isExcluded || p.type === 'Excluded')
-    return isConfigured && !isExcluded
-  }).length
+        const targetPhraseStr = (override?.targetPhrase || override?.target || p.targetPhrase || p.target || '').trim()
+        const isConfigured = Boolean(targetPhraseStr.length > 0)
+        const isExcluded = Boolean(override?.isExcluded || override?.type === 'Excluded' || p.isExcluded || p.type === 'Excluded')
+        return isConfigured && !isExcluded
+      }).length
+    : (site.configuredCount || site.configured_count || 0)
 
   let configuredText = totalPages > 0 ? `${configuredPagesCount} of ${totalPages}` : 'Not Configured'
   let configuredVariant = totalPages > 0 ? (configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')) : 'grey'
 
-  let serverTypeValue = site.serverType || site.server_type || site.configData?.serverType || 'Unknown'
-  let serverTypeVariant = 'grey'
-  if (serverTypeValue === 'Caddy') serverTypeVariant = 'blue'
-  else if (serverTypeValue === 'LiteSpeed') serverTypeVariant = 'green'
-  else if (serverTypeValue === 'Nginx') serverTypeVariant = 'purple'
-  else if (serverTypeValue === 'Apache') serverTypeVariant = 'amber'
+  const rawPortfolio = site.portfolio || site.portfolio_name || 'Other'
+  let portfolioValue = String(rawPortfolio).trim()
+  if (portfolioValue.toLowerCase() === 'tse') portfolioValue = 'TSE'
+  else if (portfolioValue.toLowerCase() === 'chili' || portfolioValue.toLowerCase() === 'scm') portfolioValue = 'Chili'
+  else if (portfolioValue !== 'TSE' && portfolioValue !== 'Chili') portfolioValue = 'Other'
+
+  let portfolioVariant = 'grey'
+  if (portfolioValue === 'TSE') portfolioVariant = 'blue'
+  else if (portfolioValue === 'Chili') portfolioVariant = 'amber'
+  else if (portfolioValue === 'Other') portfolioVariant = 'grey'
 
   const connectionValue = isRegistryShell ? 'Setup Required' : isConnected ? 'Connected' : 'Disconnected'
   const connectionVariant = isRegistryShell ? 'amber' : isConnected ? 'green' : 'red'
@@ -159,7 +165,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const liveStatusRows = [
     { label: 'Connection',       value: connectionValue, variant: connectionVariant },
     { label: 'WordPress API',    value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
-    { label: 'Server Type',      value: serverTypeValue, variant: serverTypeVariant },
+    { label: 'Portfolio',        value: portfolioValue, variant: portfolioVariant },
     { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
     { label: 'Configured',       value: configuredText, variant: configuredVariant },
   ]

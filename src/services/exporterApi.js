@@ -1,25 +1,67 @@
+import { API_BASE_URL } from './websiteManagerApi.js'
+
 /**
  * Integration Service: TSE WordPress Exporter Client
- * Connects to the TSE WordPress Exporter REST endpoint.
- *
- * Endpoint: GET {websiteUrl}/wp-json/tse-site-exporter/v1/export
- * Authentication: WordPress Application Password (Basic Auth)
+ * Connects to the TSE WordPress Exporter REST endpoint via backend proxy or direct fallback.
  */
 
 export async function fetchTseWordPressExportPackage({
+  websiteId,
+  site,
   websiteUrl,
   username,
   applicationPassword,
 }) {
-  if (!websiteUrl) {
+  const targetId = websiteId || site?.id
+  const targetUrl = websiteUrl || site?.url
+
+  // 1. First priority: Server-Side Backend WordPress Sync
+  if (targetId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/websites/${encodeURIComponent(targetId)}/wordpress-sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          websiteUrl: targetUrl,
+          username,
+          applicationPassword
+        })
+      })
+
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.includes('application/json')) {
+        const data = await response.json()
+        if (response.ok && data.success) {
+          return {
+            success: true,
+            packageData: data.packageData
+          }
+        }
+        if (!response.ok && data.error) {
+          return {
+            success: false,
+            status: response.status,
+            error: data.error,
+            message: data.message || `WordPress synchronisation failed (${data.error}).`
+          }
+        }
+      }
+    } catch (backendErr) {
+      console.warn('Backend WordPress sync attempt failed, trying direct fallback:', backendErr.message)
+    }
+  }
+
+  if (!targetUrl) {
     return { success: false, error: 'MISSING_URL', message: 'Website URL is required.' }
   }
 
-  // 1. Normalize Website Base URL
-  const cleanUrl = websiteUrl.trim().replace(/\/+$/, '')
+  // 2. Direct Browser Fetch Fallback (if backend is unreachable)
+  const cleanUrl = targetUrl.trim().replace(/\/+$/, '')
   const endpoint = `${cleanUrl}/wp-json/tse-site-exporter/v1/export`
 
-  // 2. Prepare Standard Request Headers
   const headers = {
     'Accept': 'application/json',
   }
@@ -29,7 +71,6 @@ export async function fetchTseWordPressExportPackage({
     headers['Authorization'] = `Basic ${authString}`
   }
 
-  // 3. Issue GET Request
   try {
     const response = await fetch(endpoint, {
       method: 'GET',
@@ -83,40 +124,8 @@ export async function fetchTseWordPressExportPackage({
 
     const packageData = await response.json()
 
-    // If WordPress returns a WP_Error payload (e.g. { code: '...', message: '...' })
+    // If WordPress returns a WP_Error payload
     if (packageData && packageData.code && packageData.message && !packageData.pages && !packageData.data?.pages) {
-      // Fallback to public REST API pages, posts, and projects
-      try {
-        const [pagesRes, postsRes, projRes] = await Promise.all([
-          fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`),
-          fetch(`${cleanUrl}/wp-json/wp/v2/posts?per_page=100`),
-          fetch(`${cleanUrl}/wp-json/wp/v2/projects?per_page=100`)
-        ])
-
-        const pages = pagesRes.ok ? await pagesRes.json() : []
-        const posts = postsRes.ok ? await postsRes.json() : []
-        const projects = projRes.ok ? await projRes.json() : []
-
-        const combinedPages = [
-          ...(Array.isArray(pages) ? pages : []),
-          ...(Array.isArray(posts) ? posts : []),
-          ...(Array.isArray(projects) ? projects : [])
-        ]
-
-        if (combinedPages.length > 0) {
-          return {
-            success: true,
-            packageData: {
-              pages: combinedPages,
-              posts,
-              site_info: { url: cleanUrl }
-            }
-          }
-        }
-      } catch (fbError) {
-        console.error('WP REST fallback failed:', fbError)
-      }
-
       return {
         success: false,
         error: packageData.code,
@@ -147,6 +156,7 @@ export async function callTseWordPressExporter({
   applicationPassword,
 }) {
   const result = await fetchTseWordPressExportPackage({
+    websiteId,
     websiteUrl,
     username,
     applicationPassword,
@@ -162,8 +172,6 @@ export async function callTseWordPressExporter({
 
   return result
 }
-
-import { API_BASE_URL } from './websiteManagerApi.js'
 
 /**
  * Integration Service: Server-Side Magento REST API Exporter Client

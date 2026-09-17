@@ -480,6 +480,8 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
           site
         })
       : fetchTseWordPressExportPackage({
+          websiteId: site.id,
+          site,
           websiteUrl: site.url,
           username: site.wpUser || site.connectedUser || '',
           applicationPassword: site.wpPass || '',

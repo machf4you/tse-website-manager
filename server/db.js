@@ -30,6 +30,7 @@ db.exec(`
     last_audit_timestamp TEXT,
     sync_status TEXT,
     last_sync_timestamp TEXT,
+    total_pages INTEGER DEFAULT 0,
     config_data TEXT,
     created_at TEXT,
     updated_at TEXT
@@ -131,12 +132,18 @@ try {
       ALTER TABLE websites ADD COLUMN domain_id TEXT DEFAULT NULL;
     `)
   }
+  const hasTotalPages = colCheck.some(col => col.name === 'total_pages')
+  if (!hasTotalPages) {
+    db.exec(`
+      ALTER TABLE websites ADD COLUMN total_pages INTEGER DEFAULT 0;
+    `)
+  }
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_websites_domain_id ON websites(domain_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_websites_unique_domain_id ON websites(domain_id) WHERE domain_id IS NOT NULL;
   `)
 } catch (e) {
-  console.error('Error ensuring domain_id column exists on websites table:', e)
+  console.error('Error ensuring schema columns exist on websites table:', e)
 }
 
 // Safe idempotent migration: ensure search_volume and volume_checked_at columns exist on page_rankings

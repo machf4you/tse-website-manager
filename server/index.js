@@ -450,16 +450,46 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
 // Get all connected websites
 app.get('/api/websites', (req, res) => {
   try {
-    const rows = db.prepare(`SELECT * FROM websites ORDER BY created_at DESC`).all()
-    const websites = rows.map(r => ({
-      ...r,
-      domainId: r.domain_id || null,
-      syncStatus: r.sync_status || r.syncStatus || 'Synced',
-      lastSyncTimestamp: r.last_sync_timestamp || r.lastSyncTimestamp || null,
-      isAudited: Boolean(r.is_audited),
-      lastAuditTimestamp: r.last_audit_timestamp,
-      configData: r.config_data ? JSON.parse(r.config_data) : null
-    }))
+    const rows = db.prepare(`
+      SELECT w.*,
+        (SELECT COUNT(*) FROM page_configurations pc WHERE pc.site_id = w.id AND pc.is_excluded = 0 AND (pc.target_phrase IS NOT NULL AND pc.target_phrase != '')) AS configured_count
+      FROM websites w
+      ORDER BY w.created_at DESC
+    `).all()
+
+    const websites = rows.map(r => {
+      let pageCount = r.total_pages || 0
+      if (!pageCount) {
+        try {
+          const pkgRow = db.prepare(`SELECT package_data FROM wp_packages WHERE site_id = ?`).get(r.id)
+          if (pkgRow && pkgRow.package_data) {
+            const raw = JSON.parse(pkgRow.package_data)
+            const pkg = raw.packageData || raw.data || raw
+            const pages = Array.isArray(pkg.pages) ? pkg.pages.length : (Array.isArray(pkg['pages.json']) ? pkg['pages.json'].length : 0)
+            const posts = Array.isArray(pkg.posts) ? pkg.posts.length : (Array.isArray(pkg['posts.json']) ? pkg['posts.json'].length : 0)
+            const projects = Array.isArray(pkg.projects) ? pkg.projects.length : 0
+            pageCount = pages || (pages + posts + projects)
+            if (pageCount > 0) {
+              db.prepare(`UPDATE websites SET total_pages = ? WHERE id = ?`).run(pageCount, r.id)
+            }
+          }
+        } catch (_e) {}
+      }
+
+      return {
+        ...r,
+        domainId: r.domain_id || null,
+        syncStatus: r.sync_status || r.syncStatus || 'Synced',
+        lastSyncTimestamp: r.last_sync_timestamp || r.lastSyncTimestamp || null,
+        totalPages: pageCount,
+        total_pages: pageCount,
+        configuredCount: r.configured_count || 0,
+        configured_count: r.configured_count || 0,
+        isAudited: Boolean(r.is_audited),
+        lastAuditTimestamp: r.last_audit_timestamp,
+        configData: r.config_data ? JSON.parse(r.config_data) : null
+      }
+    })
     res.json(websites)
   } catch (e) {
     res.status(500).json({ error: e.message })
@@ -477,9 +507,9 @@ app.post('/api/websites', (req, res) => {
     const now = new Date().toISOString()
     const stmt = db.prepare(`
       INSERT INTO websites (
-        id, domain_id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
+        id, domain_id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, total_pages, config_data, created_at, updated_at
       ) VALUES (
-        @id, @domain_id, @name, @url, @platform, @portfolio, @status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @config_data, @created_at, @updated_at
+        @id, @domain_id, @name, @url, @platform, @portfolio, @status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @total_pages, @config_data, @created_at, @updated_at
       )
       ON CONFLICT(id) DO UPDATE SET
         domain_id = COALESCE(excluded.domain_id, websites.domain_id),
@@ -492,6 +522,10 @@ app.post('/api/websites', (req, res) => {
         last_audit_timestamp = excluded.last_audit_timestamp,
         sync_status = excluded.sync_status,
         last_sync_timestamp = excluded.last_sync_timestamp,
+        total_pages = CASE
+          WHEN excluded.total_pages > 0 THEN excluded.total_pages
+          ELSE websites.total_pages
+        END,
         config_data = CASE
           WHEN excluded.config_data IS NOT NULL AND excluded.config_data != '' AND excluded.config_data != '{"wpUser":"","wpPass":""}' THEN excluded.config_data
           ELSE websites.config_data
@@ -500,6 +534,7 @@ app.post('/api/websites', (req, res) => {
     `)
 
     const statusVal = typeof site.status === 'object' ? JSON.stringify(site.status) : (site.status || 'Active')
+    const totalPagesVal = Number(site.totalPages || site.total_pages || 0)
 
     stmt.run({
       id: String(site.id),
@@ -513,6 +548,7 @@ app.post('/api/websites', (req, res) => {
       last_audit_timestamp: site.lastAuditTimestamp || null,
       sync_status: site.syncStatus || 'Synced',
       last_sync_timestamp: site.lastSyncTimestamp || null,
+      total_pages: totalPagesVal,
       config_data: site.configData ? JSON.stringify(site.configData) : null,
       created_at: site.createdAt || now,
       updated_at: now
@@ -926,6 +962,12 @@ app.post('/api/websites/:id/package', (req, res) => {
       ? rawBody.packageData
       : (rawBody.pages || rawBody.posts ? rawBody : (rawBody.packageData || rawBody))
 
+    // Calculate total pages
+    const rawPages = Array.isArray(cleanPackageData?.pages) ? cleanPackageData.pages : (Array.isArray(cleanPackageData?.data?.pages) ? cleanPackageData.data.pages : [])
+    const rawPosts = Array.isArray(cleanPackageData?.posts) ? cleanPackageData.posts : (Array.isArray(cleanPackageData?.data?.posts) ? cleanPackageData.data.posts : [])
+    const rawProjects = Array.isArray(cleanPackageData?.projects) ? cleanPackageData.projects : []
+    const totalPagesCount = rawPages.length || (rawPages.length + rawPosts.length + rawProjects.length)
+
     const now = new Date().toISOString()
     const syncTx = db.transaction(() => {
       // 1. Save clean package to wp_packages table
@@ -937,14 +979,15 @@ app.post('/api/websites/:id/package', (req, res) => {
           updated_at = excluded.updated_at
       `).run(id, JSON.stringify(cleanPackageData), now)
 
-      // 2. Update websites table sync_status and last_sync_timestamp
+      // 2. Update websites table sync_status, total_pages, and last_sync_timestamp
       db.prepare(`
         UPDATE websites
         SET sync_status = 'Synced',
+            total_pages = CASE WHEN ? > 0 THEN ? ELSE total_pages END,
             last_sync_timestamp = ?,
             updated_at = ?
         WHERE id = ?
-      `).run(now, now, id)
+      `).run(totalPagesCount, totalPagesCount, now, now, id)
     })
 
     syncTx()
@@ -1337,6 +1380,238 @@ app.post('/api/websites/:id/magento-sync', async (req, res) => {
       success: false,
       error: 'SERVER_MAGENTO_SYNC_ERROR',
       message: `Backend failed to sync with Magento REST API: ${error.message}`
+    })
+  }
+})
+
+// Helper to fetch paginated WordPress items
+async function fetchWordPressItemsPaginated(baseUrl, endpointPath, authHeader) {
+  const items = []
+  let page = 1
+  const perPage = 20
+  const maxPages = 50 // Cap at 1000 items per post type for safety
+
+  const headers = {
+    'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  }
+  if (authHeader) {
+    headers['Authorization'] = authHeader
+  }
+
+  while (page <= maxPages) {
+    const url = `${baseUrl}/wp-json/wp/v2/${endpointPath}?per_page=${perPage}&page=${page}&_fields=id,date,modified,slug,status,type,link,title,content,excerpt,yoast_head,yoast_head_json,parent`
+    try {
+      const res = await fetch(url, {
+        method: 'GET',
+        headers,
+        signal: AbortSignal.timeout(15000)
+      })
+      if (!res.ok) {
+        if (page === 1 && (res.status === 404 || res.status === 400 || res.status === 401)) {
+          break
+        }
+        if (page > 1 && (res.status === 400 || res.status === 404)) {
+          break
+        }
+        break
+      }
+      const data = await res.json()
+      if (!Array.isArray(data) || data.length === 0) {
+        break
+      }
+      items.push(...data)
+      const totalPagesHeader = res.headers.get('x-wp-totalpages')
+      if (totalPagesHeader && page >= parseInt(totalPagesHeader, 10)) {
+        break
+      }
+      if (data.length < perPage) {
+        break
+      }
+      page++
+    } catch (err) {
+      console.warn(`[WP Sync] Error fetching ${endpointPath} page ${page}:`, err.message)
+      break
+    }
+  }
+
+  return items
+}
+
+function normalizeWordPressBaseUrl(rawUrl) {
+  if (!rawUrl) return ''
+  let clean = String(rawUrl).trim()
+  if (!/^https?:\/\//i.test(clean)) {
+    clean = 'https://' + clean
+  }
+  clean = clean.replace(/\/wp-admin(?:\/.*)?$/i, '')
+  clean = clean.replace(/\/wp-login\.php(?:\/.*)?$/i, '')
+  clean = clean.replace(/\/+$/, '')
+  return clean
+}
+
+// Server-side WordPress Sync function
+async function syncWordPressSite(rawSiteUrl, username, password) {
+  const cleanSiteUrl = normalizeWordPressBaseUrl(rawSiteUrl)
+  if (!cleanSiteUrl) {
+    return { success: false, error: 'MISSING_URL', message: 'Website URL is invalid or missing.' }
+  }
+
+  let authHeader = null
+  if (username && password) {
+    const cleanUser = String(username).trim()
+    const cleanPass = String(password).trim().replace(/\s+/g, '')
+    authHeader = 'Basic ' + Buffer.from(`${cleanUser}:${cleanPass}`).toString('base64')
+  }
+
+  const defaultHeaders = {
+    'Accept': 'application/json',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  }
+  if (authHeader) {
+    defaultHeaders['Authorization'] = authHeader
+  }
+
+  // 1. Try TSE Exporter endpoint first
+  try {
+    const exporterRes = await fetch(`${cleanSiteUrl}/wp-json/tse-site-exporter/v1/export`, {
+      method: 'GET',
+      headers: defaultHeaders,
+      signal: AbortSignal.timeout(15000)
+    })
+    if (exporterRes.ok) {
+      const pkg = await exporterRes.json()
+      if (pkg && (Array.isArray(pkg.pages) || Array.isArray(pkg.data?.pages) || Array.isArray(pkg.packageData?.pages))) {
+        return { success: true, packageData: pkg, source: 'tse-exporter' }
+      }
+    }
+  } catch (_expErr) {
+    // TSE Exporter not active or timed out, fallback to paginated WP REST API
+  }
+
+  // 2. Paginated WP REST API fallback
+  const [pages, posts, projects] = await Promise.all([
+    fetchWordPressItemsPaginated(cleanSiteUrl, 'pages', authHeader),
+    fetchWordPressItemsPaginated(cleanSiteUrl, 'posts', authHeader),
+    fetchWordPressItemsPaginated(cleanSiteUrl, 'projects', authHeader)
+  ])
+
+  const combinedPages = [
+    ...(Array.isArray(pages) ? pages : []),
+    ...(Array.isArray(posts) ? posts : []),
+    ...(Array.isArray(projects) ? projects : [])
+  ]
+
+  if (combinedPages.length === 0) {
+    return {
+      success: false,
+      error: 'NO_PAGES_FOUND',
+      message: `Failed to retrieve pages or posts from WordPress REST API for ${cleanSiteUrl}.`
+    }
+  }
+
+  const packageData = {
+    site_info: {
+      url: cleanSiteUrl,
+      platform: 'wordpress'
+    },
+    pages: combinedPages,
+    posts: posts || [],
+    projects: projects || []
+  }
+
+  return { success: true, packageData, source: 'wp-rest-paginated' }
+}
+
+// Server-side WordPress sync endpoint
+app.post('/api/websites/:id/wordpress-sync', async (req, res) => {
+  try {
+    const { id } = req.params
+    const siteRow = getWebsiteByIdFromDb(id)
+    if (!siteRow) {
+      return res.status(404).json({ success: false, error: 'SITE_NOT_FOUND', message: `Website ID '${id}' not found in database.` })
+    }
+
+    let configData = {}
+    try {
+      if (siteRow.config_data) configData = JSON.parse(siteRow.config_data)
+    } catch (_e) {}
+
+    const websiteUrl = siteRow.url || req.body?.websiteUrl || ''
+    const cleanSiteUrl = normalizeWordPressBaseUrl(websiteUrl)
+    if (!cleanSiteUrl) {
+      return res.status(400).json({ success: false, error: 'MISSING_URL', message: 'Website URL is missing.' })
+    }
+
+    const username = configData.wpUser || siteRow.connected_user || req.body?.username || ''
+    const password = siteRow.wp_pass || configData.wpPass || req.body?.applicationPassword || ''
+
+    const result = await syncWordPressSite(cleanSiteUrl, username, password)
+    if (!result.success) {
+      return res.status(500).json(result)
+    }
+
+    const pagesCount = Array.isArray(result.packageData?.pages) ? result.packageData.pages.length : 0
+    const postsCount = Array.isArray(result.packageData?.posts) ? result.packageData.posts.length : 0
+    const projectsCount = Array.isArray(result.packageData?.projects) ? result.packageData.projects.length : 0
+    const totalPagesCount = pagesCount || (pagesCount + postsCount + projectsCount)
+
+    const now = new Date().toISOString()
+    // Save to wp_packages table
+    db.prepare(`
+      INSERT INTO wp_packages (site_id, package_data, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(site_id) DO UPDATE SET
+        package_data = excluded.package_data,
+        updated_at = excluded.updated_at
+    `).run(String(id), JSON.stringify(result.packageData), now)
+
+    // Update website sync status, total_pages, and normalized url
+    db.prepare(`
+      UPDATE websites
+      SET url = ?, sync_status = 'Synced', total_pages = ?, last_sync_timestamp = ?, updated_at = ?
+      WHERE id = ?
+    `).run(cleanSiteUrl, totalPagesCount, now, now, String(id))
+
+    res.json({
+      success: true,
+      totalPages: totalPagesCount,
+      packageData: result.packageData,
+      source: result.source
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'SERVER_WP_SYNC_ERROR',
+      message: `Backend WordPress sync failed: ${error.message}`
+    })
+  }
+})
+
+// Generic WordPress sync endpoint (by payload if ID is not in DB)
+app.post('/api/wordpress/sync', async (req, res) => {
+  try {
+    const { websiteUrl, username, applicationPassword } = req.body || {}
+    const cleanSiteUrl = (websiteUrl || '').trim().replace(/\/+$/, '')
+    if (!cleanSiteUrl) {
+      return res.status(400).json({ success: false, error: 'MISSING_URL', message: 'Website URL is required.' })
+    }
+
+    const result = await syncWordPressSite(cleanSiteUrl, username, applicationPassword)
+    if (!result.success) {
+      return res.status(500).json(result)
+    }
+
+    res.json({
+      success: true,
+      packageData: result.packageData,
+      source: result.source
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'SERVER_WP_SYNC_ERROR',
+      message: `Backend WordPress sync failed: ${error.message}`
     })
   }
 })

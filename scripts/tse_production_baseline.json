@@ -1,0 +1,8 @@
+{
+  "appName": "website-manager",
+  "acceptedVersion": "2.52",
+  "acceptedTag": "wm-v2.52-full-disaster-recovery",
+  "acceptedCommit": "28f2dc3",
+  "status": "Authoritative Accepted Production Baseline",
+  "enforceAncestryLock": true
+}

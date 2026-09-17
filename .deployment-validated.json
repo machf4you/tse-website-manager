@@ -1,0 +1,10 @@
+{
+  "appName": "website-manager",
+  "acceptedVersion": "2.52",
+  "acceptedTag": "wm-v2.52-full-disaster-recovery",
+  "acceptedCommit": "28f2dc3",
+  "candidateHead": "c7b8eaf83ead6233a808c88f317bdbc8adb8ea8f",
+  "validatedAt": "2026-09-17T07:05:05.021Z",
+  "timestamp": 1789628705023,
+  "signature": "TSE_VALIDATED_c7b8eaf8_28f2dc3"
+}

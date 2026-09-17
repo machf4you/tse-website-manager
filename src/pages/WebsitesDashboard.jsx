@@ -357,7 +357,7 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         {filteredSites.map(site => (
           <WebsiteTile
             key={site.id}
-            site={site}
+            site={{ ...site, portfolio: getSitePortfolio(site) }}
             onManage={handleManageSite}
             onEdit={setEditingSite}
           />

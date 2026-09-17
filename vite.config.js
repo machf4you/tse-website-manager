@@ -9,7 +9,17 @@ const __dirname = path.dirname(__filename)
 
 function generateVersionPlugin() {
   const buildTime = Date.now()
-  const baseVer = '2.51'
+  let baseVer = '2.52'
+  try {
+    const baselinePath = path.resolve(__dirname, 'scripts', 'tse_production_baseline.json')
+    if (fs.existsSync(baselinePath)) {
+      const baselineData = JSON.parse(fs.readFileSync(baselinePath, 'utf-8'))
+      if (baselineData.acceptedVersion) {
+        baseVer = baselineData.acceptedVersion
+      }
+    }
+  } catch (e) {}
+
   const buildHash = 'wm-' + buildTime.toString(36) + '-' + Math.random().toString(36).substring(2, 7)
   const buildLabel = `V${baseVer} | READY`
 

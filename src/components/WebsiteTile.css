@@ -182,6 +182,12 @@
   border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
+.badge-blue {
+  background-color: rgba(59, 130, 246, 0.08);
+  color: rgb(96, 165, 250);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+}
+
 .badge-grey {
   background-color: rgba(100, 116, 139, 0.08);
   color: rgb(100, 116, 139);
