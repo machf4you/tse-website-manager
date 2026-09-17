@@ -714,16 +714,7 @@ export default function AddWebsiteDialog({
                                 className="aw-dropdown-item"
                                 onClick={() => handleSelectRegistryDomain(d)}
                               >
-                                <div className="aw-item-left">
-                                  <span className="aw-item-name">{d.display_name || d.canonical_domain}</span>
-                                  <span className="aw-item-canonical">{d.canonical_domain}</span>
-                                </div>
-                                <div className="aw-item-badges">
-                                  <span className={`aw-badge-platform aw-badge-${(d.platform || 'wordpress').toLowerCase()}`}>
-                                    {d.platform === 'magento' ? 'Magento' : (d.platform === 'other' ? 'Other' : 'WordPress')}
-                                  </span>
-                                  <span className="aw-badge-portfolio">{d.portfolio || 'TSE'}</span>
-                                </div>
+                                <span className="aw-item-domain">{d.canonical_domain}</span>
                               </div>
                             ))
                           )}

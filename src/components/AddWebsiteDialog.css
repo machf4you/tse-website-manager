@@ -490,7 +490,6 @@
 .aw-dropdown-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 10px 14px;
   cursor: pointer;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -505,22 +504,11 @@
   background-color: rgba(59, 130, 246, 0.15);
 }
 
-.aw-item-left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.aw-item-name {
+.aw-item-domain {
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   color: #f8fafc;
-}
-
-.aw-item-canonical {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  font-family: monospace;
+  font-family: 'Inter', sans-serif;
 }
 
 .aw-item-badges {
