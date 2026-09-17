@@ -3,8 +3,8 @@
   "acceptedVersion": "2.52",
   "acceptedTag": "wm-v2.52-full-disaster-recovery",
   "acceptedCommit": "28f2dc3",
-  "candidateHead": "dbde9fe7d9e2658e6c0dbe191be7b49db9eb622b",
-  "validatedAt": "2026-09-17T13:46:58.243Z",
-  "timestamp": 1789652818245,
-  "signature": "TSE_VALIDATED_dbde9fe7_28f2dc3"
+  "candidateHead": "6f2847747b691d680b0d15b9145322ddad90e762",
+  "validatedAt": "2026-09-17T13:54:25.978Z",
+  "timestamp": 1789653265979,
+  "signature": "TSE_VALIDATED_6f284774_28f2dc3"
 }

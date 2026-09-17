@@ -343,42 +343,55 @@ export async function generateOnsiteArticle({ promptData, provider = 'claude', m
   const anthropicKey = resolveAiApiKey('anthropic')
   const openAiKey = resolveAiApiKey('openai')
 
+  let claudeError = null
+
+  // 1. Attempt Anthropic Claude if requested and key is available
   if ((provider === 'claude' || provider === 'anthropic' || !openAiKey) && anthropicKey) {
-    const selectedModel = model || 'claude-3-5-sonnet-20241022'
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: selectedModel,
-        max_tokens: 2500,
-        messages: [{ role: 'user', content: structuredPrompt }]
+    try {
+      const selectedModel = model || 'claude-3-5-sonnet-20241022'
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: selectedModel,
+          max_tokens: 2500,
+          messages: [{ role: 'user', content: structuredPrompt }]
+        })
       })
-    })
 
-    if (!response.ok) {
-      const errText = await response.text()
-      throw new Error(`Anthropic Claude API error (${response.status}): ${errText}`)
-    }
+      if (!response.ok) {
+        const errText = await response.text()
+        throw new Error(`Anthropic Claude API error (${response.status}): ${errText}`)
+      }
 
-    const data = await response.json()
-    const rawContent = data.content?.[0]?.text || ''
-    const parsed = parseArticleOutput(rawContent)
+      const data = await response.json()
+      const rawContent = data.content?.[0]?.text || ''
+      const parsed = parseArticleOutput(rawContent)
 
-    return {
-      success: true,
-      provider: 'claude',
-      model: selectedModel,
-      rawContent,
-      ...parsed
+      return {
+        success: true,
+        provider: 'claude',
+        model: selectedModel,
+        rawContent,
+        ...parsed
+      }
+    } catch (err) {
+      claudeError = err
+      console.warn(`[AI Generator] Anthropic Claude failed (${err.message}). Attempting fallback to OpenAI...`)
+      // If we don't have OpenAI key, rethrow the error
+      if (!openAiKey) {
+        throw err
+      }
     }
   }
 
+  // 2. Attempt OpenAI (primary or fallback)
   if (openAiKey) {
-    const selectedModel = model || 'gpt-4o'
+    const selectedModel = model && !model.startsWith('claude') ? model : 'gpt-4o'
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -397,7 +410,10 @@ export async function generateOnsiteArticle({ promptData, provider = 'claude', m
 
     if (!response.ok) {
       const errText = await response.text()
-      throw new Error(`OpenAI API error (${response.status}): ${errText}`)
+      const combinedErrMsg = claudeError
+        ? `OpenAI error (${response.status}): ${errText} (Claude also failed: ${claudeError.message})`
+        : `OpenAI API error (${response.status}): ${errText}`
+      throw new Error(combinedErrMsg)
     }
 
     const data = await response.json()
@@ -411,6 +427,10 @@ export async function generateOnsiteArticle({ promptData, provider = 'claude', m
       rawContent,
       ...parsed
     }
+  }
+
+  if (claudeError) {
+    throw claudeError
   }
 
   throw new Error('No AI provider API key found (ANTHROPIC_API_KEY or OPENAI_API_KEY). Please configure credentials in the environment or Global Settings.')
