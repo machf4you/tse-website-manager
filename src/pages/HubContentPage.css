@@ -8,6 +8,31 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
+.hub-back-row {
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.hub-btn-back-home {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.925rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.hub-btn-back-home:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
 .hub-content-header {
   margin-bottom: 2rem;
 }

@@ -335,6 +335,19 @@ export default function HubContentPage({ currentUser, navigate }) {
 
   return (
     <div className="hub-content-container">
+      {/* Top Navigation Row: Back to Home */}
+      <div className="hub-back-row">
+        <button
+          type="button"
+          className="hub-btn-back-home"
+          id="btn-back-to-home"
+          onClick={() => navigate ? navigate('/w1-connected-sites') : window.location.assign('/w1-connected-sites')}
+          title="Return to Connected Websites Home"
+        >
+          ← Back to Home
+        </button>
+      </div>
+
       {/* Header */}
       <div className="hub-content-header">
         <div className="hub-header-title-row">
@@ -382,26 +395,34 @@ export default function HubContentPage({ currentUser, navigate }) {
       {/* Main Tab 1: Generate */}
       {activeTab === 'generate' && (
         <div className="hub-generate-view">
-          {/* Portfolio Selector */}
+          {/* Portfolio Selector Bar */}
           <div className="hub-portfolio-bar">
-            <span className="hub-portfolio-label">PORTFOLIO:</span>
-            <button
-              type="button"
-              className={`hub-portfolio-btn ${selectedPortfolio === 'TSE' ? 'active' : ''}`}
-              onClick={() => handlePortfolioChange('TSE')}
-            >
-              TSE ({sites.filter(s => getSitePortfolio(s) === 'TSE').length})
-            </button>
-            <button
-              type="button"
-              className={`hub-portfolio-btn ${selectedPortfolio === 'CHILI' ? 'active' : ''}`}
-              onClick={() => handlePortfolioChange('CHILI')}
-            >
-              CHILI ({sites.filter(s => getSitePortfolio(s) === 'CHILI').length})
-            </button>
+            <div className="hub-portfolio-label">PORTFOLIO:</div>
+            <div className="hub-portfolio-buttons">
+              <button
+                type="button"
+                className={`hub-portfolio-btn ${selectedPortfolio === 'TSE' ? 'active-tse' : ''}`}
+                onClick={() => handlePortfolioChange('TSE')}
+              >
+                TSE
+                <span className="portfolio-count-badge">
+                  {sites.filter(s => getSitePortfolio(s) === 'TSE').length}
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`hub-portfolio-btn ${selectedPortfolio === 'CHILI' ? 'active-chili' : ''}`}
+                onClick={() => handlePortfolioChange('CHILI')}
+              >
+                CHILI
+                <span className="portfolio-count-badge">
+                  {sites.filter(s => getSitePortfolio(s) === 'CHILI').length}
+                </span>
+              </button>
+            </div>
           </div>
 
-          {/* Website Selection Table */}
+          {/* Website Selection Panel (Card Grid) */}
           <div className="hub-panel">
             <div className="hub-panel-header">
               <div className="hub-panel-header-left">
@@ -410,12 +431,12 @@ export default function HubContentPage({ currentUser, navigate }) {
                   {selectedSiteIds.size} of {portfolioSites.length} selected
                 </span>
               </div>
-              <div className="hub-panel-header-right">
+              <div className="hub-panel-header-actions">
                 <button
                   type="button"
                   className="hub-btn-secondary"
                   onClick={handleSelectAll}
-                  disabled={portfolioSites.length === 0}
+                  disabled={generating || portfolioSites.length === 0}
                 >
                   Select All
                 </button>
@@ -423,7 +444,7 @@ export default function HubContentPage({ currentUser, navigate }) {
                   type="button"
                   className="hub-btn-secondary"
                   onClick={handleDeselectAll}
-                  disabled={selectedSiteIds.size === 0}
+                  disabled={generating || selectedSiteIds.size === 0}
                 >
                   Deselect All
                 </button>
@@ -433,69 +454,46 @@ export default function HubContentPage({ currentUser, navigate }) {
             {loadingSites ? (
               <div className="hub-loading-state">Loading websites...</div>
             ) : portfolioSites.length === 0 ? (
-              <div className="hub-empty-state">No websites found in {selectedPortfolio} portfolio.</div>
+              <div className="hub-empty-state">
+                No websites configured in the {selectedPortfolio} portfolio.
+              </div>
             ) : (
-              <div className="hub-table-wrapper">
-                <table className="hub-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '48px', textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedSiteIds.size === portfolioSites.length && portfolioSites.length > 0}
-                          onChange={(e) => e.target.checked ? handleSelectAll() : handleDeselectAll()}
-                        />
-                      </th>
-                      <th>Website / Business Name</th>
-                      <th>Domain</th>
-                      <th>Platform</th>
-                      <th>Portfolio</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {portfolioSites.map(site => {
-                      const isSelected = selectedSiteIds.has(site.id)
-                      const domain = (site.url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
-                      return (
-                        <tr
-                          key={site.id}
-                          className={isSelected ? 'selected-row' : ''}
-                          onClick={() => handleToggleSite(site.id)}
-                        >
-                          <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleToggleSite(site.id)}
-                            />
-                          </td>
-                          <td className="site-name-cell">
-                            <strong>{site.name || domain}</strong>
-                          </td>
-                          <td className="site-domain-cell">
-                            <a href={site.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                              {domain}
-                            </a>
-                          </td>
-                          <td>
-                            <span className="hub-badge platform-badge">{site.platform || 'WordPress'}</span>
-                          </td>
-                          <td>
-                            <span className={`hub-badge portfolio-badge ${selectedPortfolio.toLowerCase()}`}>
-                              {selectedPortfolio}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+              <div className="hub-sites-grid">
+                {portfolioSites.map(site => {
+                  const isChecked = selectedSiteIds.has(site.id)
+                  const cleanUrl = (site.url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '')
+                  
+                  return (
+                    <label
+                      key={site.id}
+                      className={`hub-site-card ${isChecked ? 'selected' : ''}`}
+                      onClick={(e) => {
+                        if (e.target.tagName !== 'INPUT') {
+                          handleToggleSite(site.id)
+                        }
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        className="hub-site-checkbox"
+                        checked={isChecked}
+                        onChange={() => handleToggleSite(site.id)}
+                        disabled={generating}
+                      />
+                      <div className="hub-site-info">
+                        <div className="hub-site-name">{site.name || cleanUrl}</div>
+                        <div className="hub-site-url">{cleanUrl}</div>
+                      </div>
+                      <span className="hub-site-badge">{site.platform || 'WordPress'}</span>
+                    </label>
+                  )
+                })}
               </div>
             )}
 
-            {/* Action Bar */}
-            <div className="hub-action-bar">
-              <div className="hub-action-summary">
+            {/* Action Footer */}
+            <div className="hub-action-footer">
+              <div className="hub-action-info">
                 {selectedSiteIds.size > 0 ? (
                   <span>Ready to generate <strong>{selectedSiteIds.size}</strong> article{selectedSiteIds.size === 1 ? '' : 's'}.</span>
                 ) : (

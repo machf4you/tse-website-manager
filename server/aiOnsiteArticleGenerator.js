@@ -9,7 +9,9 @@
  * - Natural UK English spelling & grammar.
  * - Strict anti-SEO jargon prohibition.
  * - Structured 4-5 section H2 flow.
- * - Inclusion of 2–3 relevant W3 Gold Star Priority Page contextual internal links when available.
+ * - Contextual internal links to 2–3 relevant W3 Gold Star Priority Pages when available.
+ * - CRITICAL: Target phrases are RELEVANCE SIGNALS ONLY. Never force awkward exact-match anchors.
+ *   The AI writes completely natural editorial sentences and picks fluid, natural anchor phrases.
  * - If 0 Gold Star Priority Pages exist: zero links added, no hallucinated internal links.
  * - Structured metadata (Meta Title, Meta Description, Slug, Article Title, Body HTML).
  */
@@ -166,7 +168,10 @@ export function buildOnsiteArticlePrompt(data) {
       const pTitle = p.title || p.targetPhrase || 'our service'
       const pUrl = p.url || '/'
       const pPhrase = p.targetPhrase || p.title || 'relevant solutions'
-      return `Priority Page ${i + 1}:\n- Destination URL: ${pUrl}\n- Page Title / Topic: ${pTitle}\n- Suggested Concept / Anchor: "${pPhrase}"`
+      return `Priority Destination ${i + 1}:
+- Full URL: ${pUrl}
+- Page Topic / Title: ${pTitle}
+- Target Topic (Relevance Signal Only): "${pPhrase}"`
     }).join('\n\n')
 
     internalLinksSection = `
@@ -177,13 +182,30 @@ You must embed natural contextual internal links to the following relevant Prior
 
 ${priorityLinksBlock}
 
-INTERNAL LINKING RULES:
-1. Embed 2–3 of the above Priority Page links naturally across the article body copy.
-2. Seamless Context: Embed each link into a complete, informative sentence surrounded by natural editorial context.
-3. Natural Varied Anchors: Use natural, varied phrasing that reads smoothly in the sentence. Do not repeatedly force robotic exact-match phrases.
-4. Exact URLs: Use the EXACT destination URL specified above. Never invent, truncate, or alter any URL.
-5. Single Link per Destination: Never link to the same destination URL more than once in the article.
-6. No Self-Linking: Do not link to the article being generated itself.
+CRITICAL NATURAL INTERNAL LINKING MANDATE:
+1. Target Phrase is a RELEVANCE SIGNAL ONLY, NOT mandatory anchor text.
+   - Use the Target Topic only to understand what the destination page is about.
+   - Do NOT treat the target phrase as required anchor text.
+   - Do NOT force awkward exact-match phrasing into sentences.
+2. Natural Editorial English:
+   - Write a completely natural, informative sentence written for a human reader.
+   - Choose natural, contextual anchor text from within that sentence that smoothly describes the destination.
+   - The anchor does NOT need to contain the complete target phrase.
+   - The anchor does NOT need to be exact match (partial-match, descriptive, or topic-based phrasing is encouraged).
+   - The anchor must make perfect grammatical sense in the surrounding sentence.
+3. Concrete Examples of What to Do:
+   - BAD (Awkward / Robotic): "...when exploring SEO Oxford for your business..."
+   - EXCELLENT (Natural English): "...for businesses in Oxford looking to improve their search visibility, tailored local strategies deliver the greatest impact." -> link: "businesses in Oxford looking to improve their search visibility" or "tailored local strategies"
+   - BAD (Awkward / Robotic): "...learning about AI Growth is essential..."
+   - EXCELLENT (Natural English): "...leveraging artificial intelligence growth strategies enables modern enterprises to scale operations efficiently." -> link: "artificial intelligence growth strategies"
+   - BAD (Awkward / Robotic): "...contact us for SEO Bournemouth today..."
+   - EXCELLENT (Natural English): "...companies operating across Bournemouth and the South Coast benefit significantly from targeted search marketing." -> link: "operating across Bournemouth" or "targeted search marketing"
+4. Exact URLs:
+   - Use the EXACT destination URL specified above. Never invent, truncate, or alter any URL.
+5. Embed 2–3 Distinct Links:
+   - Embed 2–3 of the above Priority Page links across different body paragraphs.
+   - Never link to the same destination URL more than once in the article.
+   - Do not link to the article itself.
 `.trim()
   } else {
     internalLinksSection = `
