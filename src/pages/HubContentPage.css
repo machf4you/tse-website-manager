@@ -630,8 +630,7 @@
   padding: 1.25rem;
   background: #ffffff;
   min-height: 250px;
-  max-height: 450px;
-  overflow-y: auto;
+  overflow: visible;
   font-size: 0.95rem;
   line-height: 1.65;
   color: #334155;
@@ -658,6 +657,8 @@
   font-size: 0.85rem;
   line-height: 1.5;
   background: #f8fafc;
+  min-height: 350px;
+  resize: vertical;
 }
 
 .hub-card-footer {

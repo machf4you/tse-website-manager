@@ -533,8 +533,7 @@
   border-radius: 6px;
   padding: 1.5rem;
   min-height: 350px;
-  max-height: 500px;
-  overflow-y: auto;
+  overflow: visible;
   line-height: 1.7;
   font-size: 0.9375rem;
   color: #1e293b;
