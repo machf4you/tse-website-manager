@@ -223,10 +223,25 @@ export default function HubContentPage({ currentUser, navigate }) {
   // Single Article Word (.docx) Download
   const handleDownloadWord = async (article) => {
     try {
-      const blob = await generateArticleDocxBlob(article)
-      const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website')
+      const site = sites.find(s => String(s.id) === String(article.siteId || article.site_id))
+      const cleanDomain = site?.url ? site.url.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '') : (
+        article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '') : (
+          article.targetPageUrl || article.target_page_url ? (article.targetPageUrl || article.target_page_url).replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '') : ''
+        ))
+      )
+      const businessName = site?.name || article.businessName || article.siteName || (cleanDomain ? cleanDomain : 'The Search Equation')
+
+      const enrichedArticle = {
+        ...article,
+        businessName,
+        siteName: businessName,
+        domain: cleanDomain,
+        siteUrl: site?.url || article.siteUrl
+      }
+
+      const blob = await generateArticleDocxBlob(enrichedArticle)
       const slug = article.slug || 'hub-article'
-      const filename = `${domain}-${slug}.docx`
+      const filename = `${cleanDomain || 'website'}-${slug}.docx`
 
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

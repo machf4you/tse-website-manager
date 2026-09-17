@@ -96,33 +96,132 @@ function parseInlineHtml(htmlSnippet) {
 }
 
 /**
- * Generates a clean, formatted Word (.docx) document from an article object
+ * Extract clean domain name from URL or text
  */
-export async function generateArticleDocxBlob(article) {
-  const title = article.title || 'Untitled Article'
-  const metaTitle = article.metaTitle || article.meta_title || ''
-  const metaDescription = article.metaDescription || article.meta_description || ''
-  const slug = article.slug || ''
-  const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : '')
-  const businessName = article.businessName || article.siteName || domain || 'Website'
+function extractDomain(urlOrDomain) {
+  if (!urlOrDomain) return ''
+  return String(urlOrDomain)
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .replace(/\/.*$/, '')
+}
 
-  let bodyContent = (article.bodyHtml || article.body_html || '')
+/**
+ * Parse article body into sequential structured blocks (Headings, Paragraphs, Lists)
+ */
+function parseBodyBlocks(bodyContent) {
+  const cleanBody = (bodyContent || '')
     .replace(/^Meta\s*Title\s*:[^\n\r<]*[\r\n]*/gim, '')
     .replace(/^Meta\s*Description\s*:[^\n\r<]*[\r\n]*/gim, '')
     .replace(/^Slug\s*:[^\n\r<]*[\r\n]*/gim, '')
     .replace(/^Article\s*Title\s*:[^\n\r<]*[\r\n]*/gim, '')
     .trim()
 
+  // Split by block-level HTML tags (h2, h3, ul, ol) while capturing delimiters
+  const blockSplitRegex = /(<(?:h2|h3|ul|ol)[^>]*>[\s\S]*?<\/(?:h2|h3|ul|ol)>)/gi
+  const rawParts = cleanBody.split(blockSplitRegex)
+  const blocks = []
+
+  for (const part of rawParts) {
+    if (!part) continue
+    const trimmed = part.trim()
+    if (!trimmed) continue
+
+    const h2Match = /^<h2[^>]*>([\s\S]*?)<\/h2>$/i.exec(trimmed)
+    if (h2Match) {
+      blocks.push({ type: 'h2', content: h2Match[1].trim() })
+      continue
+    }
+
+    const h3Match = /^<h3[^>]*>([\s\S]*?)<\/h3>$/i.exec(trimmed)
+    if (h3Match) {
+      blocks.push({ type: 'h3', content: h3Match[1].trim() })
+      continue
+    }
+
+    const ulMatch = /^<ul[^>]*>([\s\S]*?)<\/ul>$/i.exec(trimmed)
+    if (ulMatch) {
+      blocks.push({ type: 'ul', content: ulMatch[1].trim() })
+      continue
+    }
+
+    const olMatch = /^<ol[^>]*>([\s\S]*?)<\/ol>$/i.exec(trimmed)
+    if (olMatch) {
+      blocks.push({ type: 'ol', content: olMatch[1].trim() })
+      continue
+    }
+
+    // Paragraph chunk (could contain multiple <p> tags or newline-separated paragraphs)
+    if (/<p[^>]*>/i.test(trimmed)) {
+      const pMatches = trimmed.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)
+      let foundP = false
+      for (const pm of pMatches) {
+        if (pm[1] && pm[1].trim()) {
+          foundP = true
+          blocks.push({ type: 'p', content: pm[1].trim() })
+        }
+      }
+      if (!foundP) {
+        const cleanP = cleanHtmlTags(trimmed).trim()
+        if (cleanP) blocks.push({ type: 'p', content: cleanP })
+      }
+    } else {
+      const paragraphs = trimmed.split(/\n\s*\n/)
+      for (const p of paragraphs) {
+        const pTrimmed = p.trim()
+        if (!pTrimmed) continue
+        if (pTrimmed.startsWith('## ')) {
+          blocks.push({ type: 'h2', content: pTrimmed.slice(3).trim() })
+        } else if (pTrimmed.startsWith('### ')) {
+          blocks.push({ type: 'h3', content: pTrimmed.slice(4).trim() })
+        } else if (pTrimmed.startsWith('# ')) {
+          blocks.push({ type: 'h1', content: pTrimmed.slice(2).trim() })
+        } else {
+          blocks.push({ type: 'p', content: pTrimmed })
+        }
+      }
+    }
+  }
+
+  return blocks
+}
+
+/**
+ * Build docx elements array
+ */
+function buildDocElements(article) {
+  const title = article.title || 'Untitled Article'
+  const metaTitle = article.metaTitle || article.meta_title || ''
+  const metaDescription = article.metaDescription || article.meta_description || ''
+  const slug = article.slug || ''
+  
+  // Authoritative Domain & Business Name resolution
+  let domain = extractDomain(article.domain || article.siteUrl || article.url || article.target_page_url || article.targetPageUrl || '')
+  let businessName = article.businessName || article.siteName || article.name || ''
+  
+  if (!businessName && domain) {
+    businessName = domain
+  } else if (!businessName) {
+    businessName = 'The Search Equation'
+  }
+  
+  if (!domain && article.target_page_url) {
+    domain = extractDomain(article.target_page_url)
+  }
+
+  const websiteLabel = domain && domain !== businessName
+    ? `${businessName} (${domain})`
+    : (domain ? `${businessName} (${domain})` : businessName)
+
   const docElements = []
 
-  // ==========================================
   // 1. METADATA HEADER SECTION
-  // ==========================================
   docElements.push(
     new Paragraph({
       children: [
         new TextRun({ text: 'Website: ', bold: true, size: 22, font: 'Calibri', color: '475569' }),
-        new TextRun({ text: `${businessName} (${domain})`, size: 22, font: 'Calibri' })
+        new TextRun({ text: websiteLabel, size: 22, font: 'Calibri' })
       ],
       spacing: { after: 120 }
     })
@@ -172,9 +271,7 @@ export async function generateArticleDocxBlob(article) {
     })
   )
 
-  // ==========================================
   // 2. ARTICLE TITLE (Heading 1)
-  // ==========================================
   docElements.push(
     new Paragraph({
       text: title,
@@ -183,48 +280,48 @@ export async function generateArticleDocxBlob(article) {
     })
   )
 
-  // ==========================================
-  // 3. PARSE FORMATTED ARTICLE BODY
-  // ==========================================
-  const blockRegex = /<(h2|h3|p|ul|ol)[^>]*>(.*?)<\/\1>/gis
-  let blockMatch
-  let blockCount = 0
+  // 3. SEQUENTIAL BODY BLOCKS (Headings, Paragraphs, Lists)
+  const bodyContent = article.bodyHtml || article.body_html || ''
+  const blocks = parseBodyBlocks(bodyContent)
 
-  while ((blockMatch = blockRegex.exec(bodyContent)) !== null) {
-    blockCount++
-    const tag = blockMatch[1].toLowerCase()
-    const innerHtml = blockMatch[2].trim()
-
-    if (tag === 'h2') {
-      const cleanH2 = cleanHtmlTags(innerHtml.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' '))
-      docElements.push(
-        new Paragraph({
-          text: cleanH2,
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 280, after: 140 }
-        })
-      )
-    } else if (tag === 'h3') {
-      const cleanH3 = cleanHtmlTags(innerHtml.replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' '))
-      docElements.push(
-        new Paragraph({
-          text: cleanH3,
-          heading: HeadingLevel.HEADING_3,
-          spacing: { before: 200, after: 100 }
-        })
-      )
-    } else if (tag === 'p') {
-      const children = parseInlineHtml(innerHtml)
-      docElements.push(
-        new Paragraph({
-          children,
-          spacing: { after: 180, line: 300 } // Clean line spacing
-        })
-      )
-    } else if (tag === 'ul' || tag === 'ol') {
-      const liRegex = /<li[^>]*>(.*?)<\/li>/gis
-      let liMatch
-      while ((liMatch = liRegex.exec(innerHtml)) !== null) {
+  for (const block of blocks) {
+    if (block.type === 'h2') {
+      const cleanH2 = cleanHtmlTags(block.content)
+      if (cleanH2) {
+        docElements.push(
+          new Paragraph({
+            text: cleanH2,
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 300, after: 140 }
+          })
+        )
+      }
+    } else if (block.type === 'h3') {
+      const cleanH3 = cleanHtmlTags(block.content)
+      if (cleanH3) {
+        docElements.push(
+          new Paragraph({
+            text: cleanH3,
+            heading: HeadingLevel.HEADING_3,
+            spacing: { before: 220, after: 100 }
+          })
+        )
+      }
+    } else if (block.type === 'p') {
+      const children = parseInlineHtml(block.content)
+      if (children.length > 0) {
+        docElements.push(
+          new Paragraph({
+            children,
+            spacing: { after: 180, line: 300 }
+          })
+        )
+      }
+    } else if (block.type === 'ul' || block.type === 'ol') {
+      const liMatches = block.content.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)
+      let hasLi = false
+      for (const liMatch of liMatches) {
+        hasLi = true
         const liChildren = parseInlineHtml(liMatch[1])
         docElements.push(
           new Paragraph({
@@ -234,43 +331,28 @@ export async function generateArticleDocxBlob(article) {
           })
         )
       }
-    }
-  }
-
-  // Fallback if no block tags found
-  if (blockCount === 0) {
-    const rawParas = bodyContent.split(/\n\s*\n/)
-    for (const p of rawParas) {
-      const trimmed = p.trim()
-      if (!trimmed) continue
-      if (trimmed.startsWith('# ')) {
-        docElements.push(
-          new Paragraph({
-            text: trimmed.slice(2).trim(),
-            heading: HeadingLevel.HEADING_1,
-            spacing: { before: 240, after: 120 }
-          })
-        )
-      } else if (trimmed.startsWith('## ')) {
-        docElements.push(
-          new Paragraph({
-            text: trimmed.slice(3).trim(),
-            heading: HeadingLevel.HEADING_2,
-            spacing: { before: 280, after: 140 }
-          })
-        )
-      } else {
-        const children = parseInlineHtml(trimmed)
-        docElements.push(
-          new Paragraph({
-            children,
-            spacing: { after: 180, line: 300 }
-          })
-        )
+      if (!hasLi) {
+        const cleanUl = cleanHtmlTags(block.content)
+        if (cleanUl) {
+          docElements.push(
+            new Paragraph({
+              children: parseInlineHtml(cleanUl),
+              spacing: { after: 180, line: 300 }
+            })
+          )
+        }
       }
     }
   }
 
+  return docElements
+}
+
+/**
+ * Generates a clean, formatted Word (.docx) Blob from an article object (for browser)
+ */
+export async function generateArticleDocxBlob(article) {
+  const docElements = buildDocElements(article)
   const doc = new Document({
     sections: [
       {
@@ -279,6 +361,21 @@ export async function generateArticleDocxBlob(article) {
       }
     ]
   })
-
   return await Packer.toBlob(doc)
+}
+
+/**
+ * Generates a clean, formatted Word (.docx) Buffer from an article object (for Node.js)
+ */
+export async function generateArticleDocxBuffer(article) {
+  const docElements = buildDocElements(article)
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children: docElements
+      }
+    ]
+  })
+  return await Packer.toBuffer(doc)
 }

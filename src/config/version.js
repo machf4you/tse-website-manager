@@ -1,4 +1,4 @@
 export const CURRENT_BUILD_VERSION = '2.52'
 export const CURRENT_BUILD_LABEL = 'V2.52 | READY'
-export const CURRENT_BUILD_HASH = 'wm-mu5occr3-1mkg7'
-export const CURRENT_BUILD_TIMESTAMP = 1789658298255
+export const CURRENT_BUILD_HASH = 'wm-mu5oiwpj-1n79j'
+export const CURRENT_BUILD_TIMESTAMP = 1789658604055

@@ -3471,6 +3471,22 @@ app.post('/api/articles/generate', async (req, res) => {
   }
 })
 
+// Helper to enrich draft with authoritative website record
+const enrichDraftWithSite = (d) => {
+  if (!d) return d
+  const site = getWebsiteByIdFromDb(d.site_id)
+  const cleanDomain = site?.url ? site.url.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '') : (
+    d.target_page_url ? d.target_page_url.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '') : ''
+  )
+  return {
+    ...d,
+    siteName: site?.name || cleanDomain,
+    businessName: site?.name || cleanDomain,
+    domain: cleanDomain,
+    siteUrl: site?.url || ''
+  }
+}
+
 // GET /api/articles/drafts & GET /api/hub-content/drafts
 const handleGetDrafts = (req, res) => {
   try {
@@ -3481,7 +3497,8 @@ const handleGetDrafts = (req, res) => {
     } else {
       rows = db.prepare('SELECT * FROM article_drafts ORDER BY created_at DESC').all()
     }
-    res.json({ success: true, drafts: rows })
+    const enriched = rows.map(enrichDraftWithSite)
+    res.json({ success: true, drafts: enriched })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
@@ -3495,7 +3512,7 @@ const handleGetDraftById = (req, res) => {
     const { id } = req.params
     const draft = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(id)
     if (!draft) return res.status(404).json({ success: false, error: 'Draft not found.' })
-    res.json({ success: true, draft })
+    res.json({ success: true, draft: enrichDraftWithSite(draft) })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
