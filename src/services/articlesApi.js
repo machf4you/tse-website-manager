@@ -67,6 +67,16 @@ export async function generateArticleApi(payload) {
 }
 
 /**
+ * Batch generate Hub Content for multiple websites (1 article per site)
+ */
+export async function batchGenerateHubContentApi({ siteIds, provider = 'claude', model = null }) {
+  return await fetchJson(`${API_BASE_URL}/hub-content/batch-generate`, {
+    method: 'POST',
+    body: JSON.stringify({ siteIds, provider, model })
+  }, 120000) // 120s timeout for batch generation
+}
+
+/**
  * Get all article drafts
  */
 export async function getArticleDraftsApi(siteId = null) {

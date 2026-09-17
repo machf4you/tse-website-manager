@@ -5,7 +5,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
-import { suggestArticleOpportunity, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
+import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -3230,6 +3230,136 @@ app.post('/api/articles/suggest-opportunity', (req, res) => {
   }
 })
 
+// POST /api/hub-content/batch-generate & POST /api/articles/batch-generate
+const handleBatchGenerateArticles = async (req, res) => {
+  try {
+    const { siteIds = [], provider, model } = req.body || {}
+    if (!Array.isArray(siteIds) || siteIds.length === 0) {
+      return res.status(400).json({ success: false, error: 'siteIds array is required.' })
+    }
+
+    const results = []
+    const errors = []
+
+    for (const siteId of siteIds) {
+      try {
+        const site = getWebsiteByIdFromDb(siteId)
+        if (!site) {
+          errors.push({ siteId, error: `Website ${siteId} not found in database.` })
+          continue
+        }
+
+        const cleanSiteUrl = (site.url || '').trim().replace(/\/+$/, '')
+        const siteDomain = cleanSiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+
+        // 1. Get existing posts for deduplication
+        let existingPosts = []
+        try {
+          const pkgRow = db.prepare('SELECT package_data FROM wp_packages WHERE site_id = ?').get(siteId)
+          if (pkgRow && pkgRow.package_data) {
+            const parsed = JSON.parse(pkgRow.package_data)
+            existingPosts = Array.isArray(parsed.posts) ? parsed.posts : (Array.isArray(parsed.packageData?.posts) ? parsed.packageData.posts : [])
+          }
+        } catch (_e) {}
+
+        // 2. Get page configs and rankings
+        let pageConfigs = []
+        try {
+          pageConfigs = db.prepare('SELECT * FROM page_configurations WHERE website_id = ?').all(siteId) || []
+        } catch (_e) {}
+
+        let pageRankings = []
+        try {
+          pageRankings = db.prepare('SELECT * FROM page_rankings WHERE site_id = ?').all(siteId) || []
+        } catch (_e) {}
+
+        // 3. Formulate opportunity automatically
+        const opp = suggestArticleOpportunityForSite({ site, existingPosts, pageConfigs, pageRankings })
+
+        // 4. Generate AI article
+        const genResult = await generateOnsiteArticle({
+          promptData: {
+            siteDomain,
+            proposedTitle: opp.proposedTitle,
+            primaryTopic: opp.primaryTopic,
+            targetPageUrl: opp.targetHubUrl,
+            targetAnchor: opp.suggestedAnchor || opp.targetPhrase || 'our services',
+            targetPhrase: opp.targetPhrase,
+            notes: ''
+          },
+          provider: provider || 'claude',
+          model
+        })
+
+        const draftId = `draft-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+        const now = new Date().toISOString()
+
+        db.prepare(`
+          INSERT INTO article_drafts (
+            id, site_id, target_page_url, target_page_title, target_phrase, topic,
+            title, meta_title, meta_description, slug, body_html,
+            primary_link_url, primary_link_anchor, status, created_at, updated_at
+          ) VALUES (
+            ?, ?, ?, ?, ?, ?,
+            ?, ?, ?, ?, ?,
+            ?, ?, 'Generated', ?, ?
+          )
+        `).run(
+          draftId,
+          siteId,
+          opp.targetHubUrl,
+          opp.targetHubTitle || '',
+          opp.targetPhrase || '',
+          opp.primaryTopic || '',
+          genResult.title,
+          genResult.metaTitle,
+          genResult.metaDescription,
+          genResult.slug,
+          genResult.bodyHtml,
+          opp.targetHubUrl,
+          opp.suggestedAnchor || opp.targetPhrase || '',
+          now,
+          now
+        )
+
+        results.push({
+          siteId,
+          siteName: site.name || siteDomain,
+          domain: siteDomain,
+          siteUrl: cleanSiteUrl,
+          draftId,
+          targetPageUrl: opp.targetHubUrl,
+          targetPhrase: opp.targetPhrase,
+          title: genResult.title,
+          metaTitle: genResult.metaTitle,
+          metaDescription: genResult.metaDescription,
+          slug: genResult.slug,
+          bodyHtml: genResult.bodyHtml,
+          status: 'Generated',
+          createdAt: now
+        })
+      } catch (siteErr) {
+        console.error(`Error generating article for site ${siteId}:`, siteErr)
+        errors.push({ siteId, error: siteErr.message || 'Generation error' })
+      }
+    }
+
+    res.json({
+      success: true,
+      results,
+      errors,
+      totalRequested: siteIds.length,
+      totalGenerated: results.length
+    })
+  } catch (err) {
+    console.error('Batch generate error:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+
+app.post('/api/hub-content/batch-generate', handleBatchGenerateArticles)
+app.post('/api/articles/batch-generate', handleBatchGenerateArticles)
+
 // POST /api/articles/generate
 app.post('/api/articles/generate', async (req, res) => {
   try {
@@ -3316,8 +3446,8 @@ app.post('/api/articles/generate', async (req, res) => {
   }
 })
 
-// GET /api/articles/drafts
-app.get('/api/articles/drafts', (req, res) => {
+// GET /api/articles/drafts & GET /api/hub-content/drafts
+const handleGetDrafts = (req, res) => {
   try {
     const { siteId } = req.query
     let rows
@@ -3330,10 +3460,12 @@ app.get('/api/articles/drafts', (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
-})
+}
+app.get('/api/articles/drafts', handleGetDrafts)
+app.get('/api/hub-content/drafts', handleGetDrafts)
 
-// GET /api/articles/drafts/:id
-app.get('/api/articles/drafts/:id', (req, res) => {
+// GET /api/articles/drafts/:id & GET /api/hub-content/drafts/:id
+const handleGetDraftById = (req, res) => {
   try {
     const { id } = req.params
     const draft = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(id)
@@ -3342,10 +3474,12 @@ app.get('/api/articles/drafts/:id', (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
-})
+}
+app.get('/api/articles/drafts/:id', handleGetDraftById)
+app.get('/api/hub-content/drafts/:id', handleGetDraftById)
 
-// POST /api/articles/drafts
-app.post('/api/articles/drafts', (req, res) => {
+// POST /api/articles/drafts & POST /api/hub-content/drafts
+const handleSaveDraft = (req, res) => {
   try {
     const draft = req.body || {}
     if (!draft.id || !draft.siteId || !draft.title) {
@@ -3391,30 +3525,32 @@ app.post('/api/articles/drafts', (req, res) => {
       targetPhrase: draft.targetPhrase || '',
       topic: draft.topic || '',
       title: draft.title,
-      metaTitle: draft.metaTitle || draft.title,
-      metaDescription: draft.metaDescription || '',
+      metaTitle: draft.metaTitle || draft.meta_title || '',
+      metaDescription: draft.metaDescription || draft.meta_description || '',
       slug: draft.slug || '',
-      bodyHtml: draft.bodyHtml || '',
-      categoryId: draft.categoryId || null,
-      categoryName: draft.categoryName || null,
-      primaryLinkUrl: draft.primaryLinkUrl || '',
-      primaryLinkAnchor: draft.primaryLinkAnchor || '',
-      secondaryLinksJson: draft.secondaryLinksJson ? (typeof draft.secondaryLinksJson === 'string' ? draft.secondaryLinksJson : JSON.stringify(draft.secondaryLinksJson)) : null,
-      status: draft.status || 'Saved',
-      wpPostId: draft.wpPostId || null,
-      wpEditUrl: draft.wpEditUrl || null,
-      errorMessage: draft.errorMessage || null,
-      createdAt: draft.createdAt || now,
+      bodyHtml: draft.bodyHtml || draft.body_html || '',
+      categoryId: draft.categoryId || draft.category_id || null,
+      categoryName: draft.categoryName || draft.category_name || null,
+      primaryLinkUrl: draft.primaryLinkUrl || draft.primary_link_url || '',
+      primaryLinkAnchor: draft.primaryLinkAnchor || draft.primary_link_anchor || '',
+      secondaryLinksJson: draft.secondaryLinksJson || draft.secondary_links_json || null,
+      status: draft.status || 'Draft',
+      wpPostId: draft.wpPostId || draft.wp_post_id || null,
+      wpEditUrl: draft.wpEditUrl || draft.wp_edit_url || null,
+      errorMessage: draft.errorMessage || draft.error_message || null,
+      createdAt: draft.createdAt || draft.created_at || now,
       updatedAt: now
     })
 
     const saved = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(draft.id)
     res.json({ success: true, draft: saved })
   } catch (err) {
-    console.error('Error saving article draft:', err)
+    console.error('Error saving draft:', err)
     res.status(500).json({ success: false, error: err.message })
   }
-})
+}
+app.post('/api/articles/drafts', handleSaveDraft)
+app.post('/api/hub-content/drafts', handleSaveDraft)
 
 // POST /api/articles/drafts/:id/send-to-wordpress
 app.post('/api/articles/drafts/:id/send-to-wordpress', async (req, res) => {

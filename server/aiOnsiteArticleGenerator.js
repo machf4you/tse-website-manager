@@ -8,7 +8,7 @@
  * - Natural UK English spelling & grammar.
  * - Strict anti-SEO jargon prohibition.
  * - Structured 4-5 section H2 flow.
- * - Seamless contextual link to the target Hub/Landing page.
+ * - Seamless contextual link to the target Hub/Landing page or site root.
  * - Structured metadata (Meta Title, Meta Description, Slug, Article Title, Body HTML).
  */
 
@@ -186,6 +186,93 @@ export function parseArticleOutput(rawText) {
     metaDescription: metaDescription || '',
     slug: slug || 'article-guide',
     bodyHtml
+  }
+}
+
+/**
+ * Automatically determines an article opportunity for a website without requiring Hub/Landing selection.
+ * Analyzes stored page configurations, target phrases, rankings, and existing post inventory.
+ */
+export function suggestArticleOpportunityForSite({ site, existingPosts = [], pageConfigs = [], pageRankings = [] }) {
+  const cleanSiteUrl = (site?.url || '').trim().replace(/\/+$/, '')
+  const siteDomain = cleanSiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+  const siteName = (site?.name || '').trim() || siteDomain
+
+  let primaryPhrase = ''
+  let targetUrl = cleanSiteUrl || '/'
+  let targetPageTitle = siteName
+
+  // 1. Find from pageRankings
+  if (Array.isArray(pageRankings) && pageRankings.length > 0) {
+    const topRanking = pageRankings.find(r => r.target_phrase && r.target_phrase.trim())
+    if (topRanking) {
+      primaryPhrase = topRanking.target_phrase.trim()
+      if (topRanking.ranking_url) targetUrl = topRanking.ranking_url
+    }
+  }
+
+  // 2. If not found, find from pageConfigs
+  if (!primaryPhrase && Array.isArray(pageConfigs) && pageConfigs.length > 0) {
+    const topConfig = pageConfigs.find(p => (p.target_phrase && p.target_phrase.trim()) || p.seo_page_type === 'Hub' || p.seo_page_type === 'Landing')
+    if (topConfig) {
+      primaryPhrase = (topConfig.target_phrase || topConfig.title || '').trim()
+      if (topConfig.url) targetUrl = topConfig.url
+      if (topConfig.title) targetPageTitle = topConfig.title
+    }
+  }
+
+  // 3. Fallback to site name / domain
+  if (!primaryPhrase) {
+    const cleanDomain = siteDomain.replace(/\.(co\.uk|com|org|net)$/i, '').replace(/[-_]+/g, ' ')
+    primaryPhrase = cleanDomain.charAt(0).toUpperCase() + cleanDomain.slice(1)
+  }
+
+  const existingTitles = existingPosts.map(p => (p.title?.rendered || p.title || p.post_title || '').toLowerCase().trim()).filter(Boolean)
+
+  const candidateTemplates = [
+    {
+      titleTemplate: `Essential Factors to Consider When Choosing ${primaryPhrase}`,
+      topic: `Buyer & Decision Guide for ${primaryPhrase}`,
+      anchorTemplate: `${primaryPhrase}`
+    },
+    {
+      titleTemplate: `How ${primaryPhrase} Enhances Home Comfort, Value and Efficiency`,
+      topic: `Benefits & Value of ${primaryPhrase}`,
+      anchorTemplate: `professional ${primaryPhrase}`
+    },
+    {
+      titleTemplate: `Key Maintenance and Care Tips for Long-Lasting ${primaryPhrase}`,
+      topic: `Maintenance & Longevity Guide for ${primaryPhrase}`,
+      anchorTemplate: `${primaryPhrase} solutions`
+    },
+    {
+      titleTemplate: `A Homeowner's Guide to Understanding ${primaryPhrase} Standards and Options`,
+      topic: `Quality Standards & Options for ${primaryPhrase}`,
+      anchorTemplate: `specialist ${primaryPhrase}`
+    },
+    {
+      titleTemplate: `Frequently Asked Questions About ${primaryPhrase} Answered by Experts`,
+      topic: `FAQ & Expert Insights for ${primaryPhrase}`,
+      anchorTemplate: `${primaryPhrase}`
+    }
+  ]
+
+  let selected = candidateTemplates[0]
+  for (const cand of candidateTemplates) {
+    const isDuplicate = existingTitles.some(et => et.includes(cand.titleTemplate.toLowerCase()) || (et.length > 10 && cand.titleTemplate.toLowerCase().includes(et)))
+    if (!isDuplicate) {
+      selected = cand
+      break
+    }
+  }
+
+  return {
+    proposedTitle: selected.titleTemplate,
+    primaryTopic: selected.topic,
+    targetHubUrl: targetUrl,
+    targetHubTitle: targetPageTitle,
+    targetPhrase: primaryPhrase,
+    suggestedAnchor: selected.anchorTemplate
   }
 }
 

@@ -66,7 +66,7 @@ const SlidersIcon = () => (
 )
 
 import AppsDashboard from './pages/AppsDashboard'
-import ArticlesPage from './pages/ArticlesPage'
+import HubContentPage from './pages/HubContentPage'
 import GlobalDeploymentIndicator from './components/GlobalDeploymentIndicator'
 import ErrorBoundary from './components/ErrorBoundary'
 import { getAuthMe, logoutUser } from './services/authApi'
@@ -148,12 +148,12 @@ export function parseRoute(pathname) {
     }
   }
 
-  if (path === '/articles' || path === '/article-automation' || path === '/w6-articles') {
+  if (path === '/hub-content' || path === '/articles' || path === '/article-automation' || path === '/w6-articles' || path === '/w6-hub-content') {
     return {
       currentView: 'website-manager',
-      activeNavTab: 'articles',
+      activeNavTab: 'hub-content',
       wPage: null,
-      canonicalPath: '/articles'
+      canonicalPath: '/hub-content'
     }
   }
 
@@ -341,13 +341,13 @@ function App() {
           </button>
           <button
             type="button"
-            className={`nav-tab ${activeNavTab === 'articles' ? 'active' : ''}`}
-            aria-current={activeNavTab === 'articles' ? 'page' : undefined}
-            id="nav-tab-articles"
-            onClick={() => navigate('/articles')}
+            className={`nav-tab ${activeNavTab === 'hub-content' || activeNavTab === 'articles' ? 'active' : ''}`}
+            aria-current={activeNavTab === 'hub-content' || activeNavTab === 'articles' ? 'page' : undefined}
+            id="nav-tab-hub-content"
+            onClick={() => navigate('/hub-content')}
           >
             <ArticleIcon />
-            Articles
+            Hub Content
           </button>
           <button
             type="button"
@@ -426,8 +426,8 @@ function App() {
           {activeNavTab === 'websites' && (
             <WebsitesDashboard currentPath={currentPath} navigate={navigate} />
           )}
-          {activeNavTab === 'articles' && (
-            <ArticlesPage currentUser={currentUser} navigate={navigate} />
+          {(activeNavTab === 'hub-content' || activeNavTab === 'articles') && (
+            <HubContentPage currentUser={currentUser} navigate={navigate} />
           )}
           {activeNavTab === 'global-settings' && (
             <GlobalSettings currentUser={currentUser} currentPath={currentPath} navigate={navigate} />
