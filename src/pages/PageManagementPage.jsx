@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
+import { generateProposedTargetPhrase, isUtilityPage } from '../utils/targetPhraseGenerator'
 import ConfigurePageDialog from '../components/ConfigurePageDialog'
 import BulkConfigureTargetPhrasesDialog from '../components/BulkConfigureTargetPhrasesDialog'
 import {
@@ -9,7 +10,8 @@ import {
   savePageAuditApi,
   getPageRankingsApi,
   checkPageRankApi,
-  checkSearchVolumeApi
+  checkSearchVolumeApi,
+  batchCheckSearchVolumeApi
 } from '../services/websiteManagerApi'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
@@ -232,6 +234,9 @@ export default function PageManagementPage({
     }
   }
 
+  const [isRunningInitialData, setIsRunningInitialData] = useState(false)
+  const [initialDataProgress, setInitialDataProgress] = useState({ current: 0, total: 0, stage: '' })
+
   const handleSavePageConfig = (config) => {
     const pageKey = config.pageId || config.url
     const oldConfig = configurations[pageKey] || (config.url ? configurations[config.url] : null) || {}
@@ -257,8 +262,22 @@ export default function PageManagementPage({
     setEditingPage(null)
 
     // Save Workflow Trigger:
-    // 1. If Target Phrase changed: trigger immediate single live rank + volume check
+    // 1. If Target Phrase changed: immediately invalidate old metrics and trigger live volume + rank check
     if (newTarget && newTarget !== oldTarget) {
+      setPageRankings(prev => ({
+        ...prev,
+        [pageKey]: {
+          siteId: site?.id,
+          pageKey,
+          targetPhrase: config.targetPhrase || config.target,
+          googleRank: null,
+          searchVolume: null,
+          isTop100: false,
+          rankingUrl: null,
+          isUrlMatch: false
+        }
+      }))
+
       const targetPage = {
         ...config,
         id: config.pageId || pageKey,
@@ -266,8 +285,8 @@ export default function PageManagementPage({
         target: config.targetPhrase || config.target,
         targetPhrase: config.targetPhrase || config.target
       }
-      handleCheckRank(targetPage)
       handleCheckVolume(targetPage)
+      handleCheckRank(targetPage)
     } else if (newUrl !== oldUrl && (config.targetPhrase || config.target)) {
       // 2. If only Configured URL changed: recalculate isUrlMatch locally against existing rankingUrl
       const rankInfo = pageRankings[pageKey] || (config.url ? pageRankings[config.url] : null)
@@ -319,6 +338,20 @@ export default function PageManagementPage({
       const oldTarget = (oldConfig.targetPhrase || oldConfig.target || '').trim().toLowerCase()
       const newTarget = (conf.targetPhrase || conf.target || '').trim().toLowerCase()
       if (newTarget && newTarget !== oldTarget) {
+        setPageRankings(prev => ({
+          ...prev,
+          [key]: {
+            siteId: site?.id,
+            pageKey: key,
+            targetPhrase: conf.targetPhrase || conf.target,
+            googleRank: null,
+            searchVolume: null,
+            isTop100: false,
+            rankingUrl: null,
+            isUrlMatch: false
+          }
+        }))
+
         const targetPage = {
           ...conf,
           id: conf.pageId || key,
@@ -326,9 +359,163 @@ export default function PageManagementPage({
           target: conf.targetPhrase || conf.target,
           targetPhrase: conf.targetPhrase || conf.target
         }
-        handleCheckRank(targetPage)
         handleCheckVolume(targetPage)
+        handleCheckRank(targetPage)
       }
+    }
+  }
+
+  const handleRunInitialData = async () => {
+    if (!site?.id || isRunningInitialData) return
+
+    const siteName = site?.name || ''
+    const actionable = pagesList.filter(p => {
+      const tp = (p.targetPhrase || p.target || '').trim()
+      const isEx = p.type === 'Excluded' || p.seoPageType === 'Excluded' || p.isExcluded
+      const pageTitle = extractSafeString(p.title || p.originalTitle)
+      return !tp && !isEx && !isUtilityPage(p.url, pageTitle)
+    })
+
+    if (actionable.length === 0) return
+
+    setIsRunningInitialData(true)
+    setInitialDataProgress({ current: 0, total: actionable.length, stage: 'Step 1: Determining Target Phrases...' })
+
+    try {
+      // ══════════════════════════════════════════════════════════════
+      // STEP 1 — DETERMINISTIC TARGET PHRASE SELECTION & PERSISTENCE
+      // ══════════════════════════════════════════════════════════════
+      const newConfigsMap = {}
+      const targetItems = []
+
+      actionable.forEach(p => {
+        const pageKey = p.id || p.url
+        const generated = generateProposedTargetPhrase(p, siteName)
+        const finalPhrase = (generated && generated.trim().length > 0)
+          ? generated.trim()
+          : (siteName ? `${siteName} Service` : 'Primary Service')
+
+        newConfigsMap[pageKey] = {
+          ...(configurations[pageKey] || {}),
+          pageId: pageKey,
+          url: p.url,
+          targetPhrase: finalPhrase,
+          target: finalPhrase,
+          type: p.type || p.seoPageType || 'Topical',
+          seoPageType: p.type || p.seoPageType || 'Topical',
+          isConfigured: true,
+          isManualOverride: Boolean(p.isManualOverride),
+          priority: p.priority || 0,
+          updatedAt: new Date().toISOString()
+        }
+
+        targetItems.push({
+          pageKey,
+          targetPhrase: finalPhrase,
+          url: p.url
+        })
+      })
+
+      const mergedConfigs = {
+        ...configurations,
+        ...newConfigsMap
+      }
+      setConfigurations(mergedConfigs)
+
+      if (site.id) {
+        try {
+          await savePageConfigsApi(site.id, mergedConfigs)
+        } catch (err) {
+          console.warn('Failed to save configs to API during initial data:', err)
+        }
+      }
+      try {
+        const siteIdKey = getSiteConfigsStorageKey(site)
+        localStorage.setItem(siteIdKey, JSON.stringify(mergedConfigs))
+      } catch (e) {}
+
+      // Invalidate old metrics in state for these actionable pages
+      setPageRankings(prev => {
+        const next = { ...prev }
+        targetItems.forEach(item => {
+          next[item.pageKey] = {
+            siteId: site.id,
+            pageKey: item.pageKey,
+            targetPhrase: item.targetPhrase,
+            googleRank: null,
+            searchVolume: null,
+            isTop100: false,
+            rankingUrl: null,
+            isUrlMatch: false
+          }
+        })
+        return next
+      })
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 2 — RETRIEVE UK SEARCH VOLUME (DATAFORSEO)
+      // ══════════════════════════════════════════════════════════════
+      setInitialDataProgress({ current: 0, total: targetItems.length, stage: 'Step 2: Retrieving UK Search Volumes...' })
+
+      try {
+        await batchCheckSearchVolumeApi({ siteId: site.id, items: targetItems })
+        const freshRankings = await getPageRankingsApi(site.id)
+        if (freshRankings && typeof freshRankings === 'object') {
+          setPageRankings(prev => ({ ...prev, ...freshRankings }))
+        }
+      } catch (volErr) {
+        console.warn('Batch search volume check warning:', volErr.message)
+      }
+
+      // ══════════════════════════════════════════════════════════════
+      // STEP 3 — CHECK UK RANK (DATAFORSEO)
+      // ══════════════════════════════════════════════════════════════
+      for (let i = 0; i < targetItems.length; i++) {
+        const item = targetItems[i]
+        setInitialDataProgress({
+          current: i + 1,
+          total: targetItems.length,
+          stage: `Step 3: Checking UK Rank (${i + 1}/${targetItems.length}) "${item.targetPhrase}"...`
+        })
+
+        try {
+          const res = await checkPageRankApi({
+            siteId: site.id,
+            pageKey: item.pageKey,
+            targetPhrase: item.targetPhrase,
+            url: item.url,
+            configuredUrl: item.url
+          })
+
+          if (res && res.success) {
+            setPageRankings(prev => ({
+              ...prev,
+              [item.pageKey]: {
+                ...(prev[item.pageKey] || {}),
+                siteId: site.id,
+                pageKey: item.pageKey,
+                targetPhrase: item.targetPhrase,
+                googleRank: res.googleRank,
+                isTop100: res.isTop100,
+                rankingUrl: res.rankingUrl,
+                isUrlMatch: res.isUrlMatch,
+                searchEngine: res.searchEngine || 'google.co.uk',
+                locationCode: res.locationCode || 2826,
+                device: res.device || 'mobile',
+                lastCheckedAt: res.lastCheckedAt
+              }
+            }))
+          }
+        } catch (rankErr) {
+          console.warn(`Rank check failed for ${item.pageKey}:`, rankErr.message)
+        }
+      }
+
+    } catch (err) {
+      console.error('Error running initial data:', err)
+    } finally {
+      setIsRunningInitialData(false)
+      setInitialDataProgress({ current: 0, total: 0, stage: '' })
     }
   }
 
@@ -1293,10 +1480,11 @@ export default function PageManagementPage({
           <button
             type="button"
             className="w3-btn-configure-targets"
-            onClick={() => setIsBulkTargetDialogOpen(true)}
-            id="btn-w3-bulk-configure-targets"
+            onClick={handleRunInitialData}
+            disabled={isRunningInitialData}
+            id="btn-w3-run-initial-data"
             style={{
-              backgroundColor: '#2563eb',
+              backgroundColor: isRunningInitialData ? 'rgba(37,99,235,0.7)' : '#2563eb',
               borderColor: '#1d4ed8',
               color: '#ffffff',
               padding: '6px 14px',
@@ -1304,7 +1492,7 @@ export default function PageManagementPage({
               fontWeight: '700',
               borderRadius: '6px',
               border: '1px solid',
-              cursor: 'pointer',
+              cursor: isRunningInitialData ? 'not-allowed' : 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
@@ -1312,10 +1500,48 @@ export default function PageManagementPage({
               transition: 'all 0.15s ease'
             }}
           >
-            <span>🎯 Configure Target Phrases ({actionRequiredCount})</span>
+            {isRunningInitialData ? (
+              <>
+                <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
+                <span>Running Initial Data ({initialDataProgress.current}/{initialDataProgress.total})</span>
+              </>
+            ) : (
+              <span>⚡ Run Initial Data ({actionRequiredCount})</span>
+            )}
           </button>
         )}
       </div>
+
+      {/* ── Initial Data Progress Indicator ── */}
+      {isRunningInitialData && (
+        <div style={{
+          backgroundColor: 'rgba(37,99,235,0.08)',
+          border: '1px solid rgba(37,99,235,0.3)',
+          borderRadius: '8px',
+          padding: '12px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          marginBottom: '0.5rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+            <span style={{ fontWeight: 700, color: '#60a5fa' }}>
+              ⚡ {initialDataProgress.stage}
+            </span>
+            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+              {initialDataProgress.current} / {initialDataProgress.total} Pages
+            </span>
+          </div>
+          <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{
+              width: `${initialDataProgress.total > 0 ? Math.round((initialDataProgress.current / initialDataProgress.total) * 100) : 0}%`,
+              height: '100%',
+              backgroundColor: '#3b82f6',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        </div>
+      )}
 
       {/* ── Exported Pages Table ── */}
       <div className="w3-table-wrapper">

@@ -487,3 +487,17 @@ export async function checkSearchVolumeApi({ siteId: rawSiteId, pageKey, targetP
   }
 }
 
+export async function batchCheckSearchVolumeApi({ siteId: rawSiteId, items }) {
+  const siteId = normalizeSiteId(rawSiteId)
+  try {
+    return await fetchJson(`${API_BASE_URL}/websites/${siteId}/batch-volume-check`, {
+      method: 'POST',
+      body: JSON.stringify({ items })
+    }, 60000)
+  } catch (e) {
+    console.error('[WM_API] Failed to batch check search volume:', e)
+    throw e
+  }
+}
+
+
