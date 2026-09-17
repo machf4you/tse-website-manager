@@ -790,3 +790,28 @@
     align-items: flex-end;
   }
 }
+
+/* Chrome Password Manager & LastPass suppression with visual masking */
+.aw-dialog [data-1p-ignore] + div,
+.aw-dialog [data-lastpass-icon-root],
+.aw-dialog [data-lastpass-root],
+.aw-backdrop [data-lastpass-icon-root],
+.aw-backdrop [data-lastpass-root] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.aw-masked-password-input {
+  -webkit-text-security: disc !important;
+  text-security: disc !important;
+  font-family: inherit !important;
+  letter-spacing: 0.1em;
+}
+
+.aw-revealed-password-input {
+  -webkit-text-security: none !important;
+  text-security: none !important;
+  font-family: monospace, inherit !important;
+  letter-spacing: normal;
+}

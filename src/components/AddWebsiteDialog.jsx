@@ -24,7 +24,7 @@ function normalizeDomain(val) {
 /* ── Field helpers ── */
 function Field({ label, id, type = 'text', placeholder = '', value, onChange, disabled, readOnly = false, helperText = null }) {
   return (
-    <div className="aw-field">
+    <div className="aw-field" data-lpignore="true">
       <div className="aw-label-row">
         <label className="aw-label" htmlFor={id}>{label}</label>
         {readOnly && <span className="aw-readonly-pill">Site Registry Master</span>}
@@ -32,13 +32,23 @@ function Field({ label, id, type = 'text', placeholder = '', value, onChange, di
       <input
         className={`aw-input ${readOnly ? 'aw-input-readonly' : ''}`}
         id={id}
+        name={id}
         type={type}
         placeholder={placeholder}
         value={value}
         onChange={e => onChange && onChange(e.target.value)}
         disabled={disabled}
         readOnly={readOnly}
-        autoComplete="off"
+        autoComplete="one-time-code"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        aria-autocomplete="none"
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-bwignore="true"
+        data-form-type="other"
+        data-private="true"
       />
       {helperText && <span className="aw-helper-text">{helperText}</span>}
     </div>
@@ -49,18 +59,28 @@ function PasswordField({ label, id, placeholder = '', value, onChange, disabled 
   const [showPassword, setShowPassword] = useState(false)
 
   return (
-    <div className="aw-field">
+    <div className="aw-field" data-lpignore="true">
       <label className="aw-label" htmlFor={id}>{label}</label>
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }} data-lpignore="true">
         <input
-          className="aw-input"
+          className={`aw-input ${showPassword ? 'aw-revealed-password-input' : 'aw-masked-password-input'}`}
           id={id}
-          type={showPassword ? 'text' : 'password'}
+          name={id}
+          type="text"
           placeholder={placeholder}
           value={value}
           onChange={e => onChange(e.target.value)}
           disabled={disabled}
-          autoComplete="off"
+          autoComplete="one-time-code"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          aria-autocomplete="none"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+          data-private="true"
           style={{ flex: 1 }}
         />
         <button
@@ -69,6 +89,7 @@ function PasswordField({ label, id, placeholder = '', value, onChange, disabled 
           onClick={() => setShowPassword(prev => !prev)}
           disabled={disabled}
           className="aw-toggle-pwd-btn"
+          data-lpignore="true"
         >
           {showPassword ? 'Hide' : 'Show'}
         </button>
@@ -632,7 +653,7 @@ export default function AddWebsiteDialog({
       aria-label={editingSite ? 'Edit website connection' : 'Connect new website'}
       onClick={handleBackdrop}
     >
-      <div className="aw-dialog">
+      <div className="aw-dialog" data-lpignore="true" data-1p-ignore="true" data-bwignore="true">
 
         {/* Header */}
         <div className="aw-header">
@@ -655,7 +676,7 @@ export default function AddWebsiteDialog({
         </div>
 
         {/* Form body */}
-        <form id="aw-connect-form" className="aw-form" onSubmit={handleConnect}>
+        <form id="aw-connect-form" className="aw-form" onSubmit={handleConnect} data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" autoComplete="off">
           {errorMsg && (
             <div className="aw-error-banner" role="alert">
               {errorMsg}
@@ -686,6 +707,7 @@ export default function AddWebsiteDialog({
                         <input
                           type="text"
                           id="registry-domain-search"
+                          name="registry_domain_search"
                           className="aw-input aw-search-input"
                           placeholder="Search or select active website from Site Registry..."
                           value={searchQuery}
@@ -694,7 +716,15 @@ export default function AddWebsiteDialog({
                             setIsDropdownOpen(true)
                           }}
                           onFocus={() => setIsDropdownOpen(true)}
-                          autoComplete="off"
+                          autoComplete="one-time-code"
+                          autoCorrect="off"
+                          autoCapitalize="off"
+                          spellCheck={false}
+                          aria-autocomplete="none"
+                          data-lpignore="true"
+                          data-1p-ignore="true"
+                          data-bwignore="true"
+                          data-form-type="other"
                         />
                         {searchQuery && (
                           <button type="button" className="aw-clear-search-btn" onClick={() => setSearchQuery('')}>✕</button>
