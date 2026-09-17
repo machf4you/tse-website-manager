@@ -3265,7 +3265,7 @@ const handleBatchGenerateArticles = async (req, res) => {
         // 2. Get page configs and rankings
         let pageConfigs = []
         try {
-          pageConfigs = db.prepare('SELECT * FROM page_configurations WHERE website_id = ?').all(siteId) || []
+          pageConfigs = db.prepare('SELECT * FROM page_configurations WHERE site_id = ? AND is_excluded = 0 ORDER BY priority DESC').all(siteId) || []
         } catch (_e) {}
 
         let pageRankings = []
@@ -3273,15 +3273,17 @@ const handleBatchGenerateArticles = async (req, res) => {
           pageRankings = db.prepare('SELECT * FROM page_rankings WHERE site_id = ?').all(siteId) || []
         } catch (_e) {}
 
-        // 3. Formulate opportunity automatically
+        // 3. Formulate opportunity automatically with priority pages & clean business name
         const opp = suggestArticleOpportunityForSite({ site, existingPosts, pageConfigs, pageRankings })
 
         // 4. Generate AI article
         const genResult = await generateOnsiteArticle({
           promptData: {
-            siteDomain,
+            businessName: opp.businessName,
+            siteDomain: opp.siteDomain,
             proposedTitle: opp.proposedTitle,
             primaryTopic: opp.primaryTopic,
+            priorityPages: opp.priorityPages,
             targetPageUrl: opp.targetHubUrl,
             targetAnchor: opp.suggestedAnchor || opp.targetPhrase || 'our services',
             targetPhrase: opp.targetPhrase,
@@ -3293,16 +3295,17 @@ const handleBatchGenerateArticles = async (req, res) => {
 
         const draftId = `draft-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
         const now = new Date().toISOString()
+        const internalLinksJson = JSON.stringify(genResult.internalLinksAdded || [])
 
         db.prepare(`
           INSERT INTO article_drafts (
             id, site_id, target_page_url, target_page_title, target_phrase, topic,
             title, meta_title, meta_description, slug, body_html,
-            primary_link_url, primary_link_anchor, status, created_at, updated_at
+            primary_link_url, primary_link_anchor, secondary_links_json, status, created_at, updated_at
           ) VALUES (
             ?, ?, ?, ?, ?, ?,
             ?, ?, ?, ?, ?,
-            ?, ?, 'Generated', ?, ?
+            ?, ?, ?, 'Draft', ?, ?
           )
         `).run(
           draftId,
@@ -3318,14 +3321,16 @@ const handleBatchGenerateArticles = async (req, res) => {
           genResult.bodyHtml,
           opp.targetHubUrl,
           opp.suggestedAnchor || opp.targetPhrase || '',
+          internalLinksJson,
           now,
           now
         )
 
         results.push({
           siteId,
-          siteName: site.name || siteDomain,
-          domain: siteDomain,
+          siteName: opp.businessName,
+          businessName: opp.businessName,
+          domain: opp.siteDomain,
           siteUrl: cleanSiteUrl,
           draftId,
           targetPageUrl: opp.targetHubUrl,
@@ -3335,7 +3340,9 @@ const handleBatchGenerateArticles = async (req, res) => {
           metaDescription: genResult.metaDescription,
           slug: genResult.slug,
           bodyHtml: genResult.bodyHtml,
-          status: 'Generated',
+          internalLinksAdded: genResult.internalLinksAdded || [],
+          secondaryLinksJson: internalLinksJson,
+          status: 'Draft',
           createdAt: now
         })
       } catch (siteErr) {

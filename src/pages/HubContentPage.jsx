@@ -8,7 +8,7 @@ import {
 import './HubContentPage.css'
 
 export default function HubContentPage({ currentUser, navigate }) {
-  const [activeTab, setActiveTab] = useState('generate') // 'generate' | 'drafts'
+  const [activeTab, setActiveTab] = useState('generate') // 'generate' | 'drafts' | 'history'
   const [selectedPortfolio, setSelectedPortfolio] = useState('TSE') // 'TSE' | 'CHILI'
 
   // Websites & Registry
@@ -69,6 +69,35 @@ export default function HubContentPage({ currentUser, navigate }) {
     })
     return () => { isMounted = false }
   }, [])
+
+  // Load drafts on mount & periodically
+  const loadDrafts = () => {
+    setLoadingDrafts(true)
+    getArticleDraftsApi().then(res => {
+      if (res && res.drafts) {
+        setDraftsList(res.drafts)
+      }
+      setLoadingDrafts(false)
+    }).catch(err => {
+      console.error('Error loading drafts:', err)
+      setLoadingDrafts(false)
+    })
+  }
+
+  useEffect(() => {
+    loadDrafts()
+  }, [])
+
+  // Derived active drafts vs history
+  const activeDrafts = useMemo(() => {
+    return draftsList.filter(d => d.status !== 'Sent to WordPress' && d.status !== 'Archived')
+  }, [draftsList])
+
+  const historyArticles = useMemo(() => {
+    return draftsList.filter(d => d.status === 'Sent to WordPress' || d.status === 'Archived')
+  }, [draftsList])
+
+  const activeDraftsCount = activeDrafts.length
 
   // Helper: Get normalized portfolio for a site
   const getSitePortfolio = (s) => {
@@ -147,6 +176,7 @@ export default function HubContentPage({ currentUser, navigate }) {
       if (res && Array.isArray(res.results) && res.results.length > 0) {
         setGenerationResults(res.results)
         setGenerationErrors(res.errors || [])
+        loadDrafts()
         if (res.errors && res.errors.length > 0) {
           setStatusMessage({
             type: 'warning',
@@ -182,7 +212,7 @@ export default function HubContentPage({ currentUser, navigate }) {
   // Download Formatter
   const formatArticleDownloadText = (article) => {
     const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website')
-    const dateStr = article.createdAt ? new Date(article.createdAt).toLocaleString('en-GB') : new Date().toLocaleString('en-GB')
+    const dateStr = article.createdAt || article.created_at ? new Date(article.createdAt || article.created_at).toLocaleString('en-GB') : new Date().toLocaleString('en-GB')
     
     return [
       '==================================================',
@@ -227,26 +257,6 @@ export default function HubContentPage({ currentUser, navigate }) {
     })
   }
 
-  // Load Drafts
-  const loadDrafts = () => {
-    setLoadingDrafts(true)
-    getArticleDraftsApi().then(res => {
-      if (res && res.drafts) {
-        setDraftsList(res.drafts)
-      }
-      setLoadingDrafts(false)
-    }).catch(err => {
-      console.error('Error loading drafts:', err)
-      setLoadingDrafts(false)
-    })
-  }
-
-  useEffect(() => {
-    if (activeTab === 'drafts') {
-      loadDrafts()
-    }
-  }, [activeTab])
-
   // Save changes to result/draft
   const handleSaveArticle = async (article, index = null) => {
     const draftId = article.draftId || article.id
@@ -263,10 +273,11 @@ export default function HubContentPage({ currentUser, navigate }) {
         bodyHtml: article.bodyHtml || article.body_html,
         targetPageUrl: article.targetPageUrl || article.target_page_url,
         targetPhrase: article.targetPhrase || article.target_phrase,
-        status: 'Draft'
+        status: article.status || 'Draft'
       }
 
       await saveArticleDraftApi(payload)
+      loadDrafts()
       
       setStatusMessage({
         type: 'success',
@@ -298,7 +309,7 @@ export default function HubContentPage({ currentUser, navigate }) {
           <div>
             <h1 className="hub-page-title">Hub Content</h1>
             <p className="hub-page-subtitle">
-              Generate high-quality, on-site supporting articles for connected websites.
+              Generate authoritative, on-site supporting articles for connected TSE and Chili websites.
             </p>
           </div>
           <div className="hub-tab-nav">
@@ -312,15 +323,34 @@ export default function HubContentPage({ currentUser, navigate }) {
             <button
               type="button"
               className={`hub-nav-tab ${activeTab === 'drafts' ? 'active' : ''}`}
-              onClick={() => setActiveTab('drafts')}
+              onClick={() => {
+                setActiveTab('drafts')
+                loadDrafts()
+              }}
             >
-              Drafts & History
+              Drafts
+              {activeDraftsCount > 0 && (
+                <span className="hub-tab-badge">{activeDraftsCount}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`hub-nav-tab ${activeTab === 'history' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('history')
+                loadDrafts()
+              }}
+            >
+              History
+              {historyArticles.length > 0 && (
+                <span className="hub-tab-badge history-badge">{historyArticles.length}</span>
+              )}
             </button>
           </div>
         </div>
 
         {statusMessage && (
-          <div className={`hub-alert-banner ${statusMessage.type === 'error' ? 'alert-error' : 'alert-success'}`}>
+          <div className={`hub-alert-banner ${statusMessage.type === 'error' ? 'alert-error' : (statusMessage.type === 'warning' ? 'alert-warning' : 'alert-success')}`}>
             <span>{statusMessage.text}</span>
             <button type="button" className="alert-close-btn" onClick={() => setStatusMessage(null)}>×</button>
           </div>
@@ -430,7 +460,7 @@ export default function HubContentPage({ currentUser, navigate }) {
             {/* Action Bar */}
             <div className="hub-action-footer">
               <div className="hub-action-info">
-                <span>⚡ Phase 1: 1 article will be generated per selected domain automatically.</span>
+                <span>⚡ 1 article per selected domain with proper business name and 2–3 Priority Page internal links.</span>
               </div>
               <button
                 type="button"
@@ -483,7 +513,7 @@ export default function HubContentPage({ currentUser, navigate }) {
 
               {generationErrors.length > 0 && (
                 <div className="hub-alert-banner alert-warning">
-                  <strong>Notice:</strong> {generationErrors.length} site(s) failed during generation. Check logs or verify API credentials.
+                  <strong>Notice:</strong> {generationErrors.length} site(s) failed during generation: {generationErrors[0]?.error}
                 </div>
               )}
 
@@ -505,24 +535,27 @@ export default function HubContentPage({ currentUser, navigate }) {
         </div>
       )}
 
-      {/* Main Tab 2: Drafts & History */}
+      {/* Main Tab 2: Drafts */}
       {activeTab === 'drafts' && (
         <div className="hub-drafts-view">
           <div className="hub-panel">
             <div className="hub-panel-header">
-              <h2 className="hub-panel-title">Saved Hub Content Drafts</h2>
+              <div className="hub-panel-header-left">
+                <h2 className="hub-panel-title">Active Drafts ({activeDrafts.length})</h2>
+                <span className="hub-selection-count">Articles requiring review or action</span>
+              </div>
               <button type="button" className="hub-btn-secondary" onClick={loadDrafts} disabled={loadingDrafts}>
-                {loadingDrafts ? 'Refreshing...' : 'Refresh List'}
+                {loadingDrafts ? 'Refreshing...' : 'Refresh Drafts'}
               </button>
             </div>
 
             {loadingDrafts ? (
-              <div className="hub-loading-state">Loading saved drafts...</div>
-            ) : draftsList.length === 0 ? (
-              <div className="hub-empty-state">No saved drafts yet. Generate your first Hub Content above!</div>
+              <div className="hub-loading-state">Loading drafts...</div>
+            ) : activeDrafts.length === 0 ? (
+              <div className="hub-empty-state">No active drafts waiting for action. Generate new articles above!</div>
             ) : (
               <div className="hub-articles-list">
-                {draftsList.map((draft) => (
+                {activeDrafts.map((draft) => (
                   <ArticleCard
                     key={draft.id}
                     article={draft}
@@ -536,10 +569,48 @@ export default function HubContentPage({ currentUser, navigate }) {
           </div>
         </div>
       )}
+
+      {/* Main Tab 3: History */}
+      {activeTab === 'history' && (
+        <div className="hub-history-view">
+          <div className="hub-panel">
+            <div className="hub-panel-header">
+              <div className="hub-panel-header-left">
+                <h2 className="hub-panel-title">Completed & Archive History ({historyArticles.length})</h2>
+                <span className="hub-selection-count">Articles published or archived</span>
+              </div>
+              <button type="button" className="hub-btn-secondary" onClick={loadDrafts} disabled={loadingDrafts}>
+                {loadingDrafts ? 'Refreshing...' : 'Refresh History'}
+              </button>
+            </div>
+
+            {loadingDrafts ? (
+              <div className="hub-loading-state">Loading history...</div>
+            ) : historyArticles.length === 0 ? (
+              <div className="hub-empty-state">No archived or published articles yet.</div>
+            ) : (
+              <div className="hub-articles-list">
+                {historyArticles.map((article) => (
+                  <ArticleCard
+                    key={article.id}
+                    article={article}
+                    onSave={(updated) => handleSaveArticle(updated)}
+                    onDownload={() => handleDownloadSingle(article)}
+                    isSaving={savingDraftId === article.id}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
+/**
+ * Individual Article Card Component for Review, Editing, and Internal Links Display
+ */
 function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
   const [title, setTitle] = useState(article.title || '')
   const [metaTitle, setMetaTitle] = useState(article.metaTitle || article.meta_title || '')
@@ -551,6 +622,39 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
   const [copied, setCopied] = useState(false)
 
   const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website')
+  const businessName = article.businessName || article.siteName || domain
+
+  // Extract internal links live from bodyHtml or from secondary_links_json
+  const internalLinks = useMemo(() => {
+    if (article.internalLinksAdded && Array.isArray(article.internalLinksAdded) && article.internalLinksAdded.length > 0) {
+      return article.internalLinksAdded
+    }
+
+    if (article.secondary_links_json) {
+      try {
+        const parsed = JSON.parse(article.secondary_links_json)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      } catch (_e) {}
+    }
+
+    // Fallback: extract directly from bodyHtml
+    const extracted = []
+    const linkRegex = /<a\s+(?:[^>]*?\s+)?href=[\"\']([^\"\']+)["\'][^>]*>(.*?)<\/a>/gi
+    const seenUrls = new Set()
+    let match
+    while ((match = linkRegex.exec(bodyHtml)) !== null) {
+      const destinationUrl = match[1].trim()
+      const anchorText = match[2].replace(/<[^>]*>/g, '').trim()
+      if (destinationUrl && !seenUrls.has(destinationUrl)) {
+        seenUrls.add(destinationUrl)
+        extracted.push({
+          anchorText: anchorText || destinationUrl,
+          destinationUrl
+        })
+      }
+    }
+    return extracted
+  }, [bodyHtml, article])
 
   const handleCopy = () => {
     navigator.clipboard.writeText(bodyHtml)
@@ -573,7 +677,7 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
     <div className="hub-article-card">
       <div className="hub-article-header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="hub-article-header-left">
-          <span className="hub-domain-pill">{domain}</span>
+          <span className="hub-domain-pill">{businessName}</span>
           <h3 className="hub-article-card-title">{title || 'Untitled Article'}</h3>
         </div>
         <div className="hub-article-header-right" onClick={(e) => e.stopPropagation()}>
@@ -640,7 +744,7 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
             </div>
           </div>
 
-          {/* Article Content Section */}
+          {/* Article Content Section (Natural Expansion without Scrollbar) */}
           <div className="hub-content-editor-section">
             <div className="hub-content-editor-header">
               <label className="hub-field-label">Article Content</label>
@@ -677,10 +781,41 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
             ) : (
               <textarea
                 className="hub-textarea hub-html-editor"
-                rows={12}
+                rows={16}
                 value={bodyHtml}
                 onChange={(e) => setBodyHtml(e.target.value)}
               />
+            )}
+          </div>
+
+          {/* INTERNAL LINKS ADDED DISPLAY SECTION */}
+          <div className="hub-internal-links-container">
+            <div className="hub-internal-links-header">
+              <span className="hub-internal-links-title">
+                INTERNAL LINKS ADDED: {internalLinks.length}
+              </span>
+            </div>
+            {internalLinks.length > 0 ? (
+              <div className="hub-internal-links-list">
+                {internalLinks.map((link, lIdx) => (
+                  <div key={lIdx} className="hub-internal-link-row">
+                    <span className="hub-link-anchor-badge">"{link.anchorText}"</span>
+                    <span className="hub-link-arrow">→</span>
+                    <a
+                      href={link.destinationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hub-link-url"
+                    >
+                      {link.destinationUrl}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="hub-internal-links-empty">
+                No contextual internal links detected in body HTML.
+              </div>
             )}
           </div>
 
@@ -689,7 +824,7 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
             <div className="hub-card-footer-left">
               {article.targetPageUrl && (
                 <span className="hub-target-link-badge">
-                  🔗 Internal Target: <code>{article.targetPageUrl}</code>
+                  🎯 Primary Section: <code>{article.targetPageUrl}</code>
                 </span>
               )}
             </div>

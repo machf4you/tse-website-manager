@@ -5,10 +5,11 @@
  * for connected TSE and client websites.
  * 
  * Enforces:
+ * - Exact stored business name usage (e.g. "The Search Equation", "Ascent Builders", "Diamond Window Shutters").
  * - Natural UK English spelling & grammar.
  * - Strict anti-SEO jargon prohibition.
  * - Structured 4-5 section H2 flow.
- * - Seamless contextual link to the target Hub/Landing page or site root.
+ * - Inclusion of 2–3 relevant Priority Page contextual internal links with real URLs and varied anchor text.
  * - Structured metadata (Meta Title, Meta Description, Slug, Article Title, Body HTML).
  */
 
@@ -38,6 +39,8 @@ export function resolveAiApiKey(provider = 'anthropic') {
     '/opt/tse-apps/site-registry/.env',
     '/opt/tse-apps/shared/.env',
     '/opt/tse-apps/website-manager/.env',
+    '/opt/tse-apps/keyword-research/server/.env',
+    '/opt/tse-apps/site-registry/server/.env',
     path.join(os.homedir(), '.tse_env')
   ]
 
@@ -65,13 +68,59 @@ export function resolveAiApiKey(provider = 'anthropic') {
   return null
 }
 
+/**
+ * Derives clean, human-formatted business name from stored record or domain
+ */
+export function getCleanBusinessName(site) {
+  if (site && site.name && typeof site.name === 'string' && site.name.trim().length > 0) {
+    const cleanName = site.name.trim()
+    // If it's already a proper human name and not a raw domain name
+    if (!cleanName.includes('.co.uk') && !cleanName.includes('.com') && !cleanName.includes('.org') && !cleanName.includes('.es') && !cleanName.includes('.net')) {
+      return cleanName
+    }
+  }
+
+  const cleanSiteUrl = (site?.url || '').trim().replace(/\/+$/, '')
+  const rawDomain = cleanSiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].toLowerCase()
+
+  if (rawDomain.includes('thesearchequation')) return 'The Search Equation'
+  if (rawDomain.includes('ascentbuilders')) return 'Ascent Builders'
+  if (rawDomain.includes('diamondwindowshutters')) return 'Diamond Window Shutters'
+  if (rawDomain.includes('bathroomupgrades')) return 'Bathroom Upgrades'
+  if (rawDomain.includes('hf4you')) return 'HF4You'
+  if (rawDomain.includes('smokingchilimedia')) return 'Smoking Chili Media'
+  if (rawDomain.includes('autotecherith')) return 'Auto Tech Erith'
+  if (rawDomain.includes('libraconstruction')) return 'Libra Construction'
+  if (rawDomain.includes('transformingconservatories')) return 'Transforming Conservatories'
+  if (rawDomain.includes('woodfarmcamping')) return 'Wood Farm Camping'
+  if (rawDomain.includes('thanetdrainage')) return 'Thanet Drainage'
+  if (rawDomain.includes('javea.properties') || rawDomain.includes('javeaproperties')) return 'Javea Properties'
+  if (rawDomain.includes('valuvillas')) return 'Valuvillas'
+  if (rawDomain.includes('civion')) return 'Civion'
+
+  const base = rawDomain.replace(/\.(co\.uk|com|org|net|es|properties|info)$/i, '')
+  const words = base.split(/[-_.]+/).map(w => w.charAt(0).toUpperCase() + w.slice(1))
+  return words.join(' ')
+}
+
 export const DEFAULT_ONSITE_EDITORIAL_PROMPT = `
-You are a senior UK journalist, subject-matter expert, and professional feature writer creating a publication-ready informational article for the official website {{SITE_DOMAIN}}.
+You are a senior UK journalist, subject-matter expert, and professional feature writer creating a publication-ready informational article for {{BUSINESS_NAME}} (website: {{SITE_DOMAIN}}).
+
+==================================================
+BUSINESS IDENTITY & PERSPECTIVE
+==================================================
+- Company / Business Name: {{BUSINESS_NAME}}
+- Official Domain: {{SITE_DOMAIN}}
+
+CRITICAL BUSINESS NAME MANDATE:
+You must ALWAYS refer to the company and website as "{{BUSINESS_NAME}}".
+NEVER concatenate domain words into unspaced names like "Thesearchequation".
+Always write "{{BUSINESS_NAME}}" with proper word spacing and capitalisation across all headings, titles, descriptions, and body text.
 
 ==================================================
 EDITORIAL MANDATE & CORE RULES
 ==================================================
-1. Audience & Perspective: Written directly from the authoritative perspective of {{SITE_DOMAIN}} for visitors seeking expert guidance, practical insights, and professional knowledge.
+1. Audience & Perspective: Written directly from the authoritative perspective of {{BUSINESS_NAME}} for visitors seeking expert guidance, practical insights, and professional knowledge.
 2. Language & Style: Natural, polished UK English (e.g. colour, prioritise, centre, bespoke, optimise, specialise).
 3. Tone: Informative, balanced, engaging, and genuinely helpful. Avoid exaggerated marketing fluff or aggressive sales pitches.
 4. Word Count: Approximately 750–950 words of substantive article body copy.
@@ -98,18 +147,19 @@ ARTICLE STRUCTURE & HEADINGS
 - Use clean semantic HTML: <h2> for headers and <p> for paragraphs.
 
 ==================================================
-MANDATORY CONTEXTUAL INTERNAL LINK INSERTION
+MANDATORY CONTEXTUAL INTERNAL LINKS (RELEVANT PRIORITY PAGES)
 ==================================================
-You must embed a natural contextual internal link to the website's primary section/page in the body copy using standard HTML anchor tag (<a href="URL">ANCHOR</a>):
+You must embed natural contextual internal links to the following relevant Priority Pages of {{BUSINESS_NAME}} in the article body using standard HTML anchor tags (<a href="URL">ANCHOR TEXT</a>):
 
-- Destination Page URL: {{TARGET_PAGE_URL}}
-- Anchor Concept: "{{TARGET_ANCHOR}}"
+{{PRIORITY_LINKS_BLOCK}}
 
-LINK PLACEMENT RULES:
-- Embed the link seamlessly into a complete, informative sentence surrounded by relevant editorial context.
-- The anchor text must read completely naturally within the sentence.
-- Never alter or substitute the destination URL.
-- Place the primary link naturally within the first half of the article.
+INTERNAL LINKING RULES:
+1. Embed 2–3 of the above Priority Page links naturally across the article body copy.
+2. Seamless Context: Embed each link into a complete, informative sentence surrounded by natural editorial context.
+3. Natural Varied Anchors: Use natural, varied phrasing that reads smoothly in the sentence. Do not repeatedly force robotic exact-match phrases.
+4. Exact URLs: Use the EXACT destination URL specified above. Never invent, truncate, or alter any URL.
+5. Single Link per Destination: Never link to the same destination URL more than once in the article.
+6. No Self-Linking: Do not link to the article being generated itself.
 
 {{ADDITIONAL_INSTRUCTIONS}}
 `.trim()
@@ -119,17 +169,31 @@ LINK PLACEMENT RULES:
  */
 export function buildOnsiteArticlePrompt(data) {
   const notesText = data.notes ? `\nADDITIONAL EDITORIAL GUIDANCE:\n${data.notes}\n` : ''
+  const businessName = data.businessName || data.siteDomain || 'the company'
+
+  // Build Priority Links Block
+  let priorityLinksBlock = ''
+  if (Array.isArray(data.priorityPages) && data.priorityPages.length > 0) {
+    priorityLinksBlock = data.priorityPages.map((p, i) => {
+      const pTitle = p.title || p.targetPhrase || 'our service'
+      const pUrl = p.url || '/'
+      const pPhrase = p.targetPhrase || p.title || 'relevant solutions'
+      return `Priority Page ${i + 1}:\n- Destination URL: ${pUrl}\n- Page Title / Topic: ${pTitle}\n- Suggested Concept / Anchor: "${pPhrase}"`
+    }).join('\n\n')
+  } else {
+    priorityLinksBlock = `Destination URL: ${data.targetPageUrl || '/'}\nSuggested Anchor: "${data.targetAnchor || data.targetPhrase || 'our services'}"`
+  }
 
   return DEFAULT_ONSITE_EDITORIAL_PROMPT
+    .replace(/{{BUSINESS_NAME}}/g, businessName)
     .replace(/{{SITE_DOMAIN}}/g, data.siteDomain || 'the website')
     .replace(/{{PROPOSED_TITLE}}/g, data.proposedTitle || 'An In-Depth Guide for Homeowners')
-    .replace(/{{TARGET_PAGE_URL}}/g, data.targetPageUrl || '/')
-    .replace(/{{TARGET_ANCHOR}}/g, data.targetAnchor || data.targetPhrase || 'explore our services')
+    .replace(/{{PRIORITY_LINKS_BLOCK}}/g, priorityLinksBlock)
     .replace(/{{ADDITIONAL_INSTRUCTIONS}}/g, notesText)
 }
 
 /**
- * Parses structured AI output into title, metaTitle, metaDescription, slug, and clean bodyHtml
+ * Parses structured AI output into title, metaTitle, metaDescription, slug, clean bodyHtml, and extracted internal links
  */
 export function parseArticleOutput(rawText) {
   if (!rawText || typeof rawText !== 'string') {
@@ -138,7 +202,8 @@ export function parseArticleOutput(rawText) {
       metaTitle: '',
       metaDescription: '',
       slug: '',
-      bodyHtml: ''
+      bodyHtml: '',
+      internalLinksAdded: []
     }
   }
 
@@ -180,30 +245,80 @@ export function parseArticleOutput(rawText) {
     slug = title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/^-|-$/g, '')
   }
 
+  // Extract all <a href="..."> links from bodyHtml
+  const internalLinksAdded = []
+  const linkRegex = /<a\s+(?:[^>]*?\s+)?href=[\"\']([^\"\']+)["\'][^>]*>(.*?)<\/a>/gi
+  const seenUrls = new Set()
+  let match
+
+  while ((match = linkRegex.exec(bodyHtml)) !== null) {
+    const destinationUrl = match[1].trim()
+    const anchorText = match[2].replace(/<[^>]*>/g, '').trim()
+    if (destinationUrl && !seenUrls.has(destinationUrl)) {
+      seenUrls.add(destinationUrl)
+      internalLinksAdded.push({
+        anchorText: anchorText || destinationUrl,
+        destinationUrl
+      })
+    }
+  }
+
   return {
     title: title || 'Informational Guide',
     metaTitle: metaTitle || title,
     metaDescription: metaDescription || '',
     slug: slug || 'article-guide',
-    bodyHtml
+    bodyHtml,
+    internalLinksAdded
   }
 }
 
 /**
  * Automatically determines an article opportunity for a website without requiring Hub/Landing selection.
- * Analyzes stored page configurations, target phrases, rankings, and existing post inventory.
+ * Analyzes stored page configurations, priority pages, target phrases, rankings, and existing post inventory.
  */
 export function suggestArticleOpportunityForSite({ site, existingPosts = [], pageConfigs = [], pageRankings = [] }) {
   const cleanSiteUrl = (site?.url || '').trim().replace(/\/+$/, '')
   const siteDomain = cleanSiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
-  const siteName = (site?.name || '').trim() || siteDomain
+  const businessName = getCleanBusinessName(site)
 
   let primaryPhrase = ''
   let targetUrl = cleanSiteUrl || '/'
-  let targetPageTitle = siteName
+  let targetPageTitle = businessName
 
-  // 1. Find from pageRankings
-  if (Array.isArray(pageRankings) && pageRankings.length > 0) {
+  // 1. Find all eligible Priority Pages from pageConfigs
+  const eligiblePriorityPages = []
+  const seenUrls = new Set()
+
+  if (Array.isArray(pageConfigs) && pageConfigs.length > 0) {
+    for (const pc of pageConfigs) {
+      if (pc.is_excluded) continue
+      const pageUrl = (pc.url || '').trim()
+      if (!pageUrl || pageUrl === '/' || seenUrls.has(pageUrl)) continue
+
+      const isPriority = (pc.priority > 0) || (pc.seo_page_type === 'Hub' || pc.seo_page_type === 'Landing' || pc.seo_page_type === 'Topical') || (pc.target_phrase && pc.target_phrase.trim().length > 0)
+
+      if (isPriority) {
+        seenUrls.add(pageUrl)
+        eligiblePriorityPages.push({
+          title: (pc.title || '').trim() || businessName,
+          url: pageUrl,
+          targetPhrase: (pc.target_phrase || pc.title || '').trim(),
+          priority: pc.priority || 0,
+          seoPageType: pc.seo_page_type || 'Landing'
+        })
+      }
+    }
+  }
+
+  // 2. Determine primary target from priority pages or rankings
+  if (eligiblePriorityPages.length > 0) {
+    eligiblePriorityPages.sort((a, b) => (b.priority - a.priority))
+    const top = eligiblePriorityPages[0]
+    primaryPhrase = top.targetPhrase || top.title
+    targetUrl = top.url
+    targetPageTitle = top.title
+  } else if (Array.isArray(pageRankings) && pageRankings.length > 0) {
     const topRanking = pageRankings.find(r => r.target_phrase && r.target_phrase.trim())
     if (topRanking) {
       primaryPhrase = topRanking.target_phrase.trim()
@@ -211,20 +326,15 @@ export function suggestArticleOpportunityForSite({ site, existingPosts = [], pag
     }
   }
 
-  // 2. If not found, find from pageConfigs
-  if (!primaryPhrase && Array.isArray(pageConfigs) && pageConfigs.length > 0) {
-    const topConfig = pageConfigs.find(p => (p.target_phrase && p.target_phrase.trim()) || p.seo_page_type === 'Hub' || p.seo_page_type === 'Landing')
-    if (topConfig) {
-      primaryPhrase = (topConfig.target_phrase || topConfig.title || '').trim()
-      if (topConfig.url) targetUrl = topConfig.url
-      if (topConfig.title) targetPageTitle = topConfig.title
-    }
+  // 3. Fallback to business name
+  if (!primaryPhrase) {
+    primaryPhrase = businessName
   }
 
-  // 3. Fallback to site name / domain
-  if (!primaryPhrase) {
-    const cleanDomain = siteDomain.replace(/\.(co\.uk|com|org|net)$/i, '').replace(/[-_]+/g, ' ')
-    primaryPhrase = cleanDomain.charAt(0).toUpperCase() + cleanDomain.slice(1)
+  // Select 2–3 relevant priority pages to pass to AI generator
+  let priorityPages = []
+  if (eligiblePriorityPages.length > 0) {
+    priorityPages = eligiblePriorityPages.slice(0, 3)
   }
 
   const existingTitles = existingPosts.map(p => (p.title?.rendered || p.title || p.post_title || '').toLowerCase().trim()).filter(Boolean)
@@ -236,22 +346,22 @@ export function suggestArticleOpportunityForSite({ site, existingPosts = [], pag
       anchorTemplate: `${primaryPhrase}`
     },
     {
-      titleTemplate: `How ${primaryPhrase} Enhances Home Comfort, Value and Efficiency`,
+      titleTemplate: `How ${primaryPhrase} Enhances Long-Term Value and Performance`,
       topic: `Benefits & Value of ${primaryPhrase}`,
       anchorTemplate: `professional ${primaryPhrase}`
     },
     {
-      titleTemplate: `Key Maintenance and Care Tips for Long-Lasting ${primaryPhrase}`,
-      topic: `Maintenance & Longevity Guide for ${primaryPhrase}`,
+      titleTemplate: `Key Advice and Practical Insights for ${primaryPhrase}`,
+      topic: `Expert Guidance for ${primaryPhrase}`,
       anchorTemplate: `${primaryPhrase} solutions`
     },
     {
-      titleTemplate: `A Homeowner's Guide to Understanding ${primaryPhrase} Standards and Options`,
+      titleTemplate: `A Professional Guide to Understanding ${primaryPhrase} Options`,
       topic: `Quality Standards & Options for ${primaryPhrase}`,
       anchorTemplate: `specialist ${primaryPhrase}`
     },
     {
-      titleTemplate: `Frequently Asked Questions About ${primaryPhrase} Answered by Experts`,
+      titleTemplate: `Frequently Asked Questions About ${primaryPhrase} Answered`,
       topic: `FAQ & Expert Insights for ${primaryPhrase}`,
       anchorTemplate: `${primaryPhrase}`
     }
@@ -269,21 +379,25 @@ export function suggestArticleOpportunityForSite({ site, existingPosts = [], pag
   return {
     proposedTitle: selected.titleTemplate,
     primaryTopic: selected.topic,
+    businessName,
+    siteDomain,
     targetHubUrl: targetUrl,
     targetHubTitle: targetPageTitle,
     targetPhrase: primaryPhrase,
-    suggestedAnchor: selected.anchorTemplate
+    suggestedAnchor: selected.anchorTemplate,
+    priorityPages
   }
 }
 
 /**
  * Suggests an article opportunity for a given Hub/Landing page
- * Ensures no overlap with existing post titles
  */
 export function suggestArticleOpportunity({ targetPage, site, existingPosts = [] }) {
   const targetPhrase = (targetPage?.targetPhrase || targetPage?.target_phrase || targetPage?.title || '').trim()
   const pageTitle = (targetPage?.title || targetPage?.originalTitle || targetPage?.url || '').trim()
   const targetUrl = targetPage?.url || targetPage?.link || '/'
+  const businessName = getCleanBusinessName(site)
+  const siteDomain = (site?.url || '').trim().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
 
   const existingTitles = existingPosts.map(p => (p.title?.rendered || p.title || p.post_title || '').toLowerCase().trim()).filter(Boolean)
 
@@ -294,17 +408,17 @@ export function suggestArticleOpportunity({ targetPage, site, existingPosts = []
       anchorTemplate: `${targetPhrase || pageTitle}`
     },
     {
-      titleTemplate: `How ${targetPhrase || pageTitle} Enhances Home Comfort and Energy Efficiency`,
+      titleTemplate: `How ${targetPhrase || pageTitle} Delivers Measurable Results`,
       topic: `Benefits & Practical Value of ${targetPhrase || pageTitle}`,
       anchorTemplate: `professional ${targetPhrase || pageTitle}`
     },
     {
-      titleTemplate: `Key Maintenance and Care Tips for Long-Lasting ${targetPhrase || pageTitle}`,
+      titleTemplate: `Expert Insights and Best Practices for ${targetPhrase || pageTitle}`,
       topic: `Maintenance & Care Guide for ${targetPhrase || pageTitle}`,
       anchorTemplate: `${targetPhrase || pageTitle} options`
     },
     {
-      titleTemplate: `A Homeowner's Guide to Understanding ${targetPhrase || pageTitle} Standards and Quality`,
+      titleTemplate: `A Comprehensive Guide to Understanding ${targetPhrase || pageTitle}`,
       topic: `Quality Standards & Specifications for ${targetPhrase || pageTitle}`,
       anchorTemplate: `specialist ${targetPhrase || pageTitle}`
     },
@@ -327,6 +441,8 @@ export function suggestArticleOpportunity({ targetPage, site, existingPosts = []
   return {
     proposedTitle: selected.titleTemplate,
     primaryTopic: selected.topic,
+    businessName,
+    siteDomain,
     targetHubUrl: targetUrl,
     targetHubTitle: pageTitle,
     targetPhrase,
@@ -335,7 +451,7 @@ export function suggestArticleOpportunity({ targetPage, site, existingPosts = []
 }
 
 /**
- * Dispatcher to generate article via Anthropic Claude or OpenAI
+ * Dispatcher to generate article via Anthropic Claude or OpenAI with automatic fallback
  */
 export async function generateOnsiteArticle({ promptData, provider = 'claude', model = null }) {
   const structuredPrompt = buildOnsiteArticlePrompt(promptData)
@@ -382,7 +498,6 @@ export async function generateOnsiteArticle({ promptData, provider = 'claude', m
     } catch (err) {
       claudeError = err
       console.warn(`[AI Generator] Anthropic Claude failed (${err.message}). Attempting fallback to OpenAI...`)
-      // If we don't have OpenAI key, rethrow the error
       if (!openAiKey) {
         throw err
       }
