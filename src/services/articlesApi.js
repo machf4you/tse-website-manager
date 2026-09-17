@@ -97,6 +97,15 @@ export async function saveArticleDraftApi(draft) {
 }
 
 /**
+ * Delete a draft article
+ */
+export async function deleteArticleDraftApi(draftId) {
+  return await fetchJson(`${API_BASE_URL}/articles/drafts/${encodeURIComponent(draftId)}`, {
+    method: 'DELETE'
+  })
+}
+
+/**
  * Send draft article to WordPress as DRAFT
  */
 export async function sendDraftToWordPressApi(draftId) {
@@ -104,3 +113,5 @@ export async function sendDraftToWordPressApi(draftId) {
     method: 'POST'
   })
 }
+
+

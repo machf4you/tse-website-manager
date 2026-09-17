@@ -3265,8 +3265,25 @@ const handleBatchGenerateArticles = async (req, res) => {
         // 2. Get page configs and rankings
         let pageConfigs = []
         try {
-          pageConfigs = db.prepare('SELECT * FROM page_configurations WHERE site_id = ? AND is_excluded = 0 ORDER BY priority DESC').all(siteId) || []
+          pageConfigs = db.prepare('SELECT * FROM page_configurations WHERE site_id = ? AND is_excluded = 0').all(siteId) || []
         } catch (_e) {}
+
+        if (pageConfigs.length === 0) {
+          try {
+            const pkgRow = db.prepare('SELECT package_data FROM wp_packages WHERE site_id = ?').get(siteId)
+            if (pkgRow && pkgRow.package_data) {
+              const parsed = JSON.parse(pkgRow.package_data)
+              const rawPages = Array.isArray(parsed.pages) ? parsed.pages : (Array.isArray(parsed.packageData?.pages) ? parsed.packageData.pages : [])
+              pageConfigs = rawPages.map(p => ({
+                url: p.url || p.link,
+                title: p.title || p.name,
+                target_phrase: p.targetPhrase || p.target,
+                is_starred: Boolean(p.isStarred || p.starred),
+                is_excluded: Boolean(p.isExcluded)
+              }))
+            }
+          } catch (_e) {}
+        }
 
         let pageRankings = []
         try {
@@ -3558,6 +3575,26 @@ const handleSaveDraft = (req, res) => {
 }
 app.post('/api/articles/drafts', handleSaveDraft)
 app.post('/api/hub-content/drafts', handleSaveDraft)
+
+// DELETE /api/articles/drafts/:id & DELETE /api/hub-content/drafts/:id
+const handleDeleteDraft = (req, res) => {
+  try {
+    const { id } = req.params
+    if (!id) return res.status(400).json({ success: false, error: 'Draft ID is required.' })
+
+    const result = db.prepare('DELETE FROM article_drafts WHERE id = ?').run(id)
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: `Draft ${id} not found.` })
+    }
+
+    res.json({ success: true, deletedId: id, message: 'Draft deleted successfully.' })
+  } catch (err) {
+    console.error('Error deleting draft:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+app.delete('/api/articles/drafts/:id', handleDeleteDraft)
+app.delete('/api/hub-content/drafts/:id', handleDeleteDraft)
 
 // POST /api/articles/drafts/:id/send-to-wordpress
 app.post('/api/articles/drafts/:id/send-to-wordpress', async (req, res) => {

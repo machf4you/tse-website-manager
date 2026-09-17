@@ -9,7 +9,8 @@
  * - Natural UK English spelling & grammar.
  * - Strict anti-SEO jargon prohibition.
  * - Structured 4-5 section H2 flow.
- * - Inclusion of 2–3 relevant Priority Page contextual internal links with real URLs and varied anchor text.
+ * - Inclusion of 2–3 relevant W3 Gold Star Priority Page contextual internal links when available.
+ * - If 0 Gold Star Priority Pages exist: zero links added, no hallucinated internal links.
  * - Structured metadata (Meta Title, Meta Description, Slug, Article Title, Body HTML).
  */
 
@@ -72,10 +73,10 @@ export function resolveAiApiKey(provider = 'anthropic') {
  * Derives clean, human-formatted business name from stored record or domain
  */
 export function getCleanBusinessName(site) {
-  if (site && site.name && typeof site.name === 'string' && site.name.trim().length > 0) {
+  if (site && site.name && typeof site.name === 'string') {
     const cleanName = site.name.trim()
-    // If it's already a proper human name and not a raw domain name
-    if (!cleanName.includes('.co.uk') && !cleanName.includes('.com') && !cleanName.includes('.org') && !cleanName.includes('.es') && !cleanName.includes('.net')) {
+    // If it's a real name (not an unspaced domain or raw URL)
+    if (cleanName.length > 0 && !cleanName.includes('.co.uk') && !cleanName.includes('.com') && !cleanName.includes('.org') && !cleanName.includes('.es') && !cleanName.includes('.net') && !cleanName.startsWith('http')) {
       return cleanName
     }
   }
@@ -114,7 +115,7 @@ BUSINESS IDENTITY & PERSPECTIVE
 
 CRITICAL BUSINESS NAME MANDATE:
 You must ALWAYS refer to the company and website as "{{BUSINESS_NAME}}".
-NEVER concatenate domain words into unspaced names like "Thesearchequation".
+NEVER concatenate or merge words into unspaced names like "Thesearchequation", "Ascentbuilders", or "Diamondwindowshutters".
 Always write "{{BUSINESS_NAME}}" with proper word spacing and capitalisation across all headings, titles, descriptions, and body text.
 
 ==================================================
@@ -146,20 +147,7 @@ ARTICLE STRUCTURE & HEADINGS
 - The concluding section must naturally summarise guidance without a heading titled "Conclusion".
 - Use clean semantic HTML: <h2> for headers and <p> for paragraphs.
 
-==================================================
-MANDATORY CONTEXTUAL INTERNAL LINKS (RELEVANT PRIORITY PAGES)
-==================================================
-You must embed natural contextual internal links to the following relevant Priority Pages of {{BUSINESS_NAME}} in the article body using standard HTML anchor tags (<a href="URL">ANCHOR TEXT</a>):
-
-{{PRIORITY_LINKS_BLOCK}}
-
-INTERNAL LINKING RULES:
-1. Embed 2–3 of the above Priority Page links naturally across the article body copy.
-2. Seamless Context: Embed each link into a complete, informative sentence surrounded by natural editorial context.
-3. Natural Varied Anchors: Use natural, varied phrasing that reads smoothly in the sentence. Do not repeatedly force robotic exact-match phrases.
-4. Exact URLs: Use the EXACT destination URL specified above. Never invent, truncate, or alter any URL.
-5. Single Link per Destination: Never link to the same destination URL more than once in the article.
-6. No Self-Linking: Do not link to the article being generated itself.
+{{INTERNAL_LINKS_SECTION}}
 
 {{ADDITIONAL_INSTRUCTIONS}}
 `.trim()
@@ -171,24 +159,47 @@ export function buildOnsiteArticlePrompt(data) {
   const notesText = data.notes ? `\nADDITIONAL EDITORIAL GUIDANCE:\n${data.notes}\n` : ''
   const businessName = data.businessName || data.siteDomain || 'the company'
 
-  // Build Priority Links Block
-  let priorityLinksBlock = ''
+  // Build Internal Links Section
+  let internalLinksSection = ''
   if (Array.isArray(data.priorityPages) && data.priorityPages.length > 0) {
-    priorityLinksBlock = data.priorityPages.map((p, i) => {
+    const priorityLinksBlock = data.priorityPages.map((p, i) => {
       const pTitle = p.title || p.targetPhrase || 'our service'
       const pUrl = p.url || '/'
       const pPhrase = p.targetPhrase || p.title || 'relevant solutions'
       return `Priority Page ${i + 1}:\n- Destination URL: ${pUrl}\n- Page Title / Topic: ${pTitle}\n- Suggested Concept / Anchor: "${pPhrase}"`
     }).join('\n\n')
+
+    internalLinksSection = `
+==================================================
+MANDATORY CONTEXTUAL INTERNAL LINKS (RELEVANT PRIORITY PAGES)
+==================================================
+You must embed natural contextual internal links to the following relevant Priority Pages of ${businessName} in the article body using standard HTML anchor tags (<a href="URL">ANCHOR TEXT</a>):
+
+${priorityLinksBlock}
+
+INTERNAL LINKING RULES:
+1. Embed 2–3 of the above Priority Page links naturally across the article body copy.
+2. Seamless Context: Embed each link into a complete, informative sentence surrounded by natural editorial context.
+3. Natural Varied Anchors: Use natural, varied phrasing that reads smoothly in the sentence. Do not repeatedly force robotic exact-match phrases.
+4. Exact URLs: Use the EXACT destination URL specified above. Never invent, truncate, or alter any URL.
+5. Single Link per Destination: Never link to the same destination URL more than once in the article.
+6. No Self-Linking: Do not link to the article being generated itself.
+`.trim()
   } else {
-    priorityLinksBlock = `Destination URL: ${data.targetPageUrl || '/'}\nSuggested Anchor: "${data.targetAnchor || data.targetPhrase || 'our services'}"`
+    internalLinksSection = `
+==================================================
+INTERNAL LINKING MANDATE
+==================================================
+NO PRIORITY PAGES AVAILABLE FOR THIS WEBSITE.
+DO NOT ADD ANY INTERNAL LINKS OR HTML <a> TAGS IN THE ARTICLE BODY.
+`.trim()
   }
 
   return DEFAULT_ONSITE_EDITORIAL_PROMPT
     .replace(/{{BUSINESS_NAME}}/g, businessName)
     .replace(/{{SITE_DOMAIN}}/g, data.siteDomain || 'the website')
     .replace(/{{PROPOSED_TITLE}}/g, data.proposedTitle || 'An In-Depth Guide for Homeowners')
-    .replace(/{{PRIORITY_LINKS_BLOCK}}/g, priorityLinksBlock)
+    .replace(/{{INTERNAL_LINKS_SECTION}}/g, internalLinksSection)
     .replace(/{{ADDITIONAL_INSTRUCTIONS}}/g, notesText)
 }
 
@@ -275,7 +286,7 @@ export function parseArticleOutput(rawText) {
 
 /**
  * Automatically determines an article opportunity for a website without requiring Hub/Landing selection.
- * Analyzes stored page configurations, priority pages, target phrases, rankings, and existing post inventory.
+ * Analyzes stored page configurations strictly using W3 Gold Star state, rankings, and existing post inventory.
  */
 export function suggestArticleOpportunityForSite({ site, existingPosts = [], pageConfigs = [], pageRankings = [] }) {
   const cleanSiteUrl = (site?.url || '').trim().replace(/\/+$/, '')
@@ -286,35 +297,56 @@ export function suggestArticleOpportunityForSite({ site, existingPosts = [], pag
   let targetUrl = cleanSiteUrl || '/'
   let targetPageTitle = businessName
 
-  // 1. Find all eligible Priority Pages from pageConfigs
+  // 1. Find all eligible W3 Gold Star Priority Pages from pageConfigs (STRICT: only isStarred / starred)
   const eligiblePriorityPages = []
   const seenUrls = new Set()
 
   if (Array.isArray(pageConfigs) && pageConfigs.length > 0) {
     for (const pc of pageConfigs) {
-      if (pc.is_excluded) continue
-      const pageUrl = (pc.url || '').trim()
-      if (!pageUrl || pageUrl === '/' || seenUrls.has(pageUrl)) continue
+      if (pc.is_excluded || pc.isExcluded) continue
 
-      const isPriority = (pc.priority > 0) || (pc.seo_page_type === 'Hub' || pc.seo_page_type === 'Landing' || pc.seo_page_type === 'Topical') || (pc.target_phrase && pc.target_phrase.trim().length > 0)
-
-      if (isPriority) {
-        seenUrls.add(pageUrl)
-        eligiblePriorityPages.push({
-          title: (pc.title || '').trim() || businessName,
-          url: pageUrl,
-          targetPhrase: (pc.target_phrase || pc.title || '').trim(),
-          priority: pc.priority || 0,
-          seoPageType: pc.seo_page_type || 'Landing'
-        })
+      let isStarred = false
+      if (pc.is_starred !== undefined) isStarred = Boolean(pc.is_starred)
+      else if (pc.isStarred !== undefined) isStarred = Boolean(pc.isStarred)
+      else if (pc.starred !== undefined) isStarred = Boolean(pc.starred)
+      else if (pc.config_json) {
+        try {
+          const parsed = JSON.parse(pc.config_json)
+          isStarred = Boolean(parsed.isStarred || parsed.starred)
+        } catch (_e) {}
       }
+
+      if (!isStarred) continue
+
+      const rawUrl = (pc.url || pc.page_key || '').trim()
+      if (!rawUrl) continue
+      const normUrl = rawUrl.replace(/\/+$/, '').toLowerCase()
+      if (seenUrls.has(normUrl)) continue
+      seenUrls.add(normUrl)
+
+      let title = (pc.title || '').trim()
+      let phrase = (pc.target_phrase || pc.targetPhrase || '').trim()
+      if (pc.config_json) {
+        try {
+          const parsed = JSON.parse(pc.config_json)
+          if (!title) title = (parsed.title || parsed.proposedTitle || '').trim()
+          if (!phrase) phrase = (parsed.target || parsed.targetPhrase || '').trim()
+        } catch (_e) {}
+      }
+
+      eligiblePriorityPages.push({
+        title: title || businessName,
+        url: rawUrl,
+        targetPhrase: phrase || title || 'our services'
+      })
     }
   }
 
-  // 2. Determine primary target from priority pages or rankings
+  // 2. Determine primary target and priority pages (strictly 2-3 Gold Star pages if they exist)
+  let priorityPages = []
   if (eligiblePriorityPages.length > 0) {
-    eligiblePriorityPages.sort((a, b) => (b.priority - a.priority))
-    const top = eligiblePriorityPages[0]
+    priorityPages = eligiblePriorityPages.slice(0, 3)
+    const top = priorityPages[0]
     primaryPhrase = top.targetPhrase || top.title
     targetUrl = top.url
     targetPageTitle = top.title
@@ -326,15 +358,9 @@ export function suggestArticleOpportunityForSite({ site, existingPosts = [], pag
     }
   }
 
-  // 3. Fallback to business name
+  // 3. Fallback to business name if no phrase found
   if (!primaryPhrase) {
     primaryPhrase = businessName
-  }
-
-  // Select 2–3 relevant priority pages to pass to AI generator
-  let priorityPages = []
-  if (eligiblePriorityPages.length > 0) {
-    priorityPages = eligiblePriorityPages.slice(0, 3)
   }
 
   const existingTitles = existingPosts.map(p => (p.title?.rendered || p.title || p.post_title || '').toLowerCase().trim()).filter(Boolean)

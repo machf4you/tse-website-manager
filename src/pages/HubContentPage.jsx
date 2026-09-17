@@ -3,7 +3,8 @@ import { getWebsitesApi, getActiveRegistryDomainsApi } from '../services/website
 import {
   batchGenerateHubContentApi,
   getArticleDraftsApi,
-  saveArticleDraftApi
+  saveArticleDraftApi,
+  deleteArticleDraftApi
 } from '../services/hubContentApi'
 import './HubContentPage.css'
 
@@ -30,6 +31,10 @@ export default function HubContentPage({ currentUser, navigate }) {
   const [loadingDrafts, setLoadingDrafts] = useState(false)
   const [savingDraftId, setSavingDraftId] = useState(null)
   const [statusMessage, setStatusMessage] = useState(null)
+
+  // Draft Delete Confirmation Modal
+  const [draftToDelete, setDraftToDelete] = useState(null)
+  const [isDeletingDraft, setIsDeletingDraft] = useState(false)
 
   // Load Registry domains for authoritative portfolio assignments
   useEffect(() => {
@@ -301,15 +306,42 @@ export default function HubContentPage({ currentUser, navigate }) {
     }
   }
 
+  // Delete Draft Handler (Executed upon modal confirmation)
+  const handleConfirmDelete = async () => {
+    if (!draftToDelete) return
+    const draftId = draftToDelete.draftId || draftToDelete.id
+    if (!draftId) return
+
+    setIsDeletingDraft(true)
+    try {
+      await deleteArticleDraftApi(draftId)
+      setDraftsList(prev => prev.filter(d => (d.id || d.draftId) !== draftId))
+      setGenerationResults(prev => prev.filter(d => (d.draftId || d.id) !== draftId))
+      setStatusMessage({
+        type: 'success',
+        text: `Draft "${draftToDelete.title || 'Untitled'}" was deleted successfully.`
+      })
+      setDraftToDelete(null)
+    } catch (err) {
+      console.error('Failed to delete draft:', err)
+      setStatusMessage({
+        type: 'error',
+        text: `Failed to delete draft: ${err.message}`
+      })
+    } finally {
+      setIsDeletingDraft(false)
+    }
+  }
+
   return (
     <div className="hub-content-container">
-      {/* Top Header */}
-      <header className="hub-content-header">
+      {/* Header */}
+      <div className="hub-content-header">
         <div className="hub-header-title-row">
           <div>
             <h1 className="hub-page-title">Hub Content</h1>
             <p className="hub-page-subtitle">
-              Generate authoritative, on-site supporting articles for connected TSE and Chili websites.
+              Automate supporting on-site article creation across TSE and Chili portfolios
             </p>
           </div>
           <div className="hub-tab-nav">
@@ -323,72 +355,53 @@ export default function HubContentPage({ currentUser, navigate }) {
             <button
               type="button"
               className={`hub-nav-tab ${activeTab === 'drafts' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('drafts')
-                loadDrafts()
-              }}
+              onClick={() => setActiveTab('drafts')}
             >
-              Drafts
-              {activeDraftsCount > 0 && (
-                <span className="hub-tab-badge">{activeDraftsCount}</span>
-              )}
+              Active Drafts
+              {activeDraftsCount > 0 && <span className="hub-tab-badge">{activeDraftsCount}</span>}
             </button>
             <button
               type="button"
               className={`hub-nav-tab ${activeTab === 'history' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('history')
-                loadDrafts()
-              }}
+              onClick={() => setActiveTab('history')}
             >
               History
-              {historyArticles.length > 0 && (
-                <span className="hub-tab-badge history-badge">{historyArticles.length}</span>
-              )}
+              {historyArticles.length > 0 && <span className="hub-tab-badge history-badge">{historyArticles.length}</span>}
             </button>
           </div>
         </div>
 
         {statusMessage && (
-          <div className={`hub-alert-banner ${statusMessage.type === 'error' ? 'alert-error' : (statusMessage.type === 'warning' ? 'alert-warning' : 'alert-success')}`}>
+          <div className={`hub-alert-banner alert-${statusMessage.type}`}>
             <span>{statusMessage.text}</span>
             <button type="button" className="alert-close-btn" onClick={() => setStatusMessage(null)}>×</button>
           </div>
         )}
-      </header>
+      </div>
 
-      {/* Main Tab 1: Generate Content */}
+      {/* Main Tab 1: Generate */}
       {activeTab === 'generate' && (
         <div className="hub-generate-view">
-          
-          {/* Portfolio Selector Bar */}
+          {/* Portfolio Selector */}
           <div className="hub-portfolio-bar">
-            <div className="hub-portfolio-label">PORTFOLIO:</div>
-            <div className="hub-portfolio-buttons">
-              <button
-                type="button"
-                className={`hub-portfolio-btn ${selectedPortfolio === 'TSE' ? 'active-tse' : ''}`}
-                onClick={() => handlePortfolioChange('TSE')}
-              >
-                TSE
-                <span className="portfolio-count-badge">
-                  {sites.filter(s => getSitePortfolio(s) === 'TSE').length}
-                </span>
-              </button>
-              <button
-                type="button"
-                className={`hub-portfolio-btn ${selectedPortfolio === 'CHILI' ? 'active-chili' : ''}`}
-                onClick={() => handlePortfolioChange('CHILI')}
-              >
-                CHILI
-                <span className="portfolio-count-badge">
-                  {sites.filter(s => getSitePortfolio(s) === 'CHILI').length}
-                </span>
-              </button>
-            </div>
+            <span className="hub-portfolio-label">PORTFOLIO:</span>
+            <button
+              type="button"
+              className={`hub-portfolio-btn ${selectedPortfolio === 'TSE' ? 'active' : ''}`}
+              onClick={() => handlePortfolioChange('TSE')}
+            >
+              TSE ({sites.filter(s => getSitePortfolio(s) === 'TSE').length})
+            </button>
+            <button
+              type="button"
+              className={`hub-portfolio-btn ${selectedPortfolio === 'CHILI' ? 'active' : ''}`}
+              onClick={() => handlePortfolioChange('CHILI')}
+            >
+              CHILI ({sites.filter(s => getSitePortfolio(s) === 'CHILI').length})
+            </button>
           </div>
 
-          {/* Website Selection Panel */}
+          {/* Website Selection Table */}
           <div className="hub-panel">
             <div className="hub-panel-header">
               <div className="hub-panel-header-left">
@@ -397,12 +410,12 @@ export default function HubContentPage({ currentUser, navigate }) {
                   {selectedSiteIds.size} of {portfolioSites.length} selected
                 </span>
               </div>
-              <div className="hub-panel-header-actions">
+              <div className="hub-panel-header-right">
                 <button
                   type="button"
                   className="hub-btn-secondary"
                   onClick={handleSelectAll}
-                  disabled={generating || portfolioSites.length === 0}
+                  disabled={portfolioSites.length === 0}
                 >
                   Select All
                 </button>
@@ -410,7 +423,7 @@ export default function HubContentPage({ currentUser, navigate }) {
                   type="button"
                   className="hub-btn-secondary"
                   onClick={handleDeselectAll}
-                  disabled={generating || selectedSiteIds.size === 0}
+                  disabled={selectedSiteIds.size === 0}
                 >
                   Deselect All
                 </button>
@@ -420,81 +433,98 @@ export default function HubContentPage({ currentUser, navigate }) {
             {loadingSites ? (
               <div className="hub-loading-state">Loading websites...</div>
             ) : portfolioSites.length === 0 ? (
-              <div className="hub-empty-state">
-                No websites configured in the {selectedPortfolio} portfolio.
-              </div>
+              <div className="hub-empty-state">No websites found in {selectedPortfolio} portfolio.</div>
             ) : (
-              <div className="hub-sites-grid">
-                {portfolioSites.map(site => {
-                  const isChecked = selectedSiteIds.has(site.id)
-                  const cleanUrl = (site.url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '')
-                  
-                  return (
-                    <label
-                      key={site.id}
-                      className={`hub-site-card ${isChecked ? 'selected' : ''}`}
-                      onClick={(e) => {
-                        if (e.target.tagName !== 'INPUT') {
-                          handleToggleSite(site.id)
-                        }
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        className="hub-site-checkbox"
-                        checked={isChecked}
-                        onChange={() => handleToggleSite(site.id)}
-                        disabled={generating}
-                      />
-                      <div className="hub-site-info">
-                        <div className="hub-site-name">{site.name || cleanUrl}</div>
-                        <div className="hub-site-url">{cleanUrl}</div>
-                      </div>
-                      <span className="hub-site-badge">{site.platform || 'WordPress'}</span>
-                    </label>
-                  )
-                })}
+              <div className="hub-table-wrapper">
+                <table className="hub-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '48px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedSiteIds.size === portfolioSites.length && portfolioSites.length > 0}
+                          onChange={(e) => e.target.checked ? handleSelectAll() : handleDeselectAll()}
+                        />
+                      </th>
+                      <th>Website / Business Name</th>
+                      <th>Domain</th>
+                      <th>Platform</th>
+                      <th>Portfolio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {portfolioSites.map(site => {
+                      const isSelected = selectedSiteIds.has(site.id)
+                      const domain = (site.url || '').replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+                      return (
+                        <tr
+                          key={site.id}
+                          className={isSelected ? 'selected-row' : ''}
+                          onClick={() => handleToggleSite(site.id)}
+                        >
+                          <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSite(site.id)}
+                            />
+                          </td>
+                          <td className="site-name-cell">
+                            <strong>{site.name || domain}</strong>
+                          </td>
+                          <td className="site-domain-cell">
+                            <a href={site.url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                              {domain}
+                            </a>
+                          </td>
+                          <td>
+                            <span className="hub-badge platform-badge">{site.platform || 'WordPress'}</span>
+                          </td>
+                          <td>
+                            <span className={`hub-badge portfolio-badge ${selectedPortfolio.toLowerCase()}`}>
+                              {selectedPortfolio}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
 
             {/* Action Bar */}
-            <div className="hub-action-footer">
-              <div className="hub-action-info">
-                <span>⚡ 1 article per selected domain with proper business name and 2–3 Priority Page internal links.</span>
+            <div className="hub-action-bar">
+              <div className="hub-action-summary">
+                {selectedSiteIds.size > 0 ? (
+                  <span>Ready to generate <strong>{selectedSiteIds.size}</strong> article{selectedSiteIds.size === 1 ? '' : 's'}.</span>
+                ) : (
+                  <span>Select one or more websites above to proceed.</span>
+                )}
               </div>
               <button
                 type="button"
-                className="hub-btn-primary hub-btn-generate"
+                className="hub-btn-primary hub-btn-large"
                 onClick={handleBatchGenerate}
                 disabled={generating || selectedSiteIds.size === 0}
               >
-                {generating ? (
-                  <>
-                    <span className="spinner-icon" /> Generating Hub Content...
-                  </>
-                ) : (
-                  <>
-                    ✨ Generate Hub Content ({selectedSiteIds.size} Selected)
-                  </>
-                )}
+                {generating ? 'Generating Articles...' : `Generate Hub Content (${selectedSiteIds.size})`}
               </button>
             </div>
           </div>
 
-          {/* Generating Progress State */}
+          {/* Progress Banner */}
           {generating && generationProgress && (
             <div className="hub-progress-card">
-              <div className="hub-progress-header">
-                <span className="hub-progress-status">{generationProgress.status}</span>
-                <span className="hub-progress-pct">In Progress</span>
-              </div>
-              <div className="hub-progress-bar-bg">
-                <div className="hub-progress-bar-fill animated-bar" />
+              <div className="hub-spinner"></div>
+              <div className="hub-progress-info">
+                <div className="hub-progress-status">{generationProgress.status}</div>
+                <div className="hub-progress-sub">Creating authoritative UK editorial articles with W3 Gold Star priority links...</div>
               </div>
             </div>
           )}
 
-          {/* Results Section */}
+          {/* Generation Results Review Area */}
           {generationResults.length > 0 && (
             <div className="hub-results-section">
               <div className="hub-results-header">
@@ -525,6 +555,7 @@ export default function HubContentPage({ currentUser, navigate }) {
                     index={idx}
                     onSave={(updated) => handleSaveArticle(updated, idx)}
                     onDownload={() => handleDownloadSingle(article)}
+                    onDelete={() => setDraftToDelete(article)}
                     isSaving={savingDraftId === (article.draftId || article.id)}
                   />
                 ))}
@@ -561,6 +592,7 @@ export default function HubContentPage({ currentUser, navigate }) {
                     article={draft}
                     onSave={(updated) => handleSaveArticle(updated)}
                     onDownload={() => handleDownloadSingle(draft)}
+                    onDelete={() => setDraftToDelete(draft)}
                     isSaving={savingDraftId === draft.id}
                   />
                 ))}
@@ -596,11 +628,59 @@ export default function HubContentPage({ currentUser, navigate }) {
                     article={article}
                     onSave={(updated) => handleSaveArticle(updated)}
                     onDownload={() => handleDownloadSingle(article)}
+                    onDelete={() => setDraftToDelete(article)}
                     isSaving={savingDraftId === article.id}
                   />
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Delete Draft */}
+      {draftToDelete && (
+        <div className="hub-modal-overlay" onClick={() => !isDeletingDraft && setDraftToDelete(null)}>
+          <div className="hub-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="hub-modal-header">
+              <h3 className="hub-modal-title">Delete Article Draft</h3>
+              <button
+                type="button"
+                className="hub-modal-close"
+                onClick={() => !isDeletingDraft && setDraftToDelete(null)}
+                disabled={isDeletingDraft}
+              >
+                ×
+              </button>
+            </div>
+            <div className="hub-modal-body">
+              <p>Are you sure you want to delete this article draft?</p>
+              <div className="hub-modal-draft-info">
+                <strong>Title:</strong> {draftToDelete.title || 'Untitled'}<br />
+                <strong>Website:</strong> {draftToDelete.businessName || draftToDelete.domain || 'Website'}
+              </div>
+              <p className="hub-modal-warning-text">
+                This will permanently delete only this draft record. This action cannot be undone.
+              </p>
+            </div>
+            <div className="hub-modal-footer">
+              <button
+                type="button"
+                className="hub-btn-secondary"
+                onClick={() => setDraftToDelete(null)}
+                disabled={isDeletingDraft}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="hub-btn-danger"
+                onClick={handleConfirmDelete}
+                disabled={isDeletingDraft}
+              >
+                {isDeletingDraft ? 'Deleting...' : 'Delete Draft'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -611,7 +691,7 @@ export default function HubContentPage({ currentUser, navigate }) {
 /**
  * Individual Article Card Component for Review, Editing, and Internal Links Display
  */
-function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
+function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving }) {
   const [title, setTitle] = useState(article.title || '')
   const [metaTitle, setMetaTitle] = useState(article.metaTitle || article.meta_title || '')
   const [metaDescription, setMetaDescription] = useState(article.metaDescription || article.meta_description || '')
@@ -681,6 +761,14 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
           <h3 className="hub-article-card-title">{title || 'Untitled Article'}</h3>
         </div>
         <div className="hub-article-header-right" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="hub-btn-delete"
+            onClick={onDelete}
+            title="Delete this draft"
+          >
+            🗑️ Delete
+          </button>
           <button
             type="button"
             className="hub-btn-download"
@@ -814,7 +902,7 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
               </div>
             ) : (
               <div className="hub-internal-links-empty">
-                No contextual internal links detected in body HTML.
+                NO PRIORITY PAGES AVAILABLE
               </div>
             )}
           </div>
@@ -829,6 +917,14 @@ function ArticleCard({ article, index, onSave, onDownload, isSaving }) {
               )}
             </div>
             <div className="hub-card-footer-right">
+              <button
+                type="button"
+                className="hub-btn-delete"
+                onClick={onDelete}
+                title="Delete this draft"
+              >
+                🗑️ Delete Draft
+              </button>
               <button
                 type="button"
                 className="hub-btn-secondary"
