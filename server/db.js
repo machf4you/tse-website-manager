@@ -143,6 +143,7 @@ db.exec(`
     wp_post_id INTEGER DEFAULT NULL,
     wp_edit_url TEXT DEFAULT NULL,
     error_message TEXT DEFAULT NULL,
+    completed_at TEXT DEFAULT NULL,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
@@ -183,6 +184,16 @@ try {
   }
 } catch (e) {
   console.error('Error ensuring search_volume columns exist on page_rankings table:', e)
+}
+
+// Safe idempotent migration: ensure completed_at column exists on article_drafts
+try {
+  const draftCols = db.pragma('table_info(article_drafts)')
+  if (!draftCols.some(col => col.name === 'completed_at')) {
+    db.exec(`ALTER TABLE article_drafts ADD COLUMN completed_at TEXT DEFAULT NULL;`)
+  }
+} catch (e) {
+  console.error('Error ensuring completed_at column exists on article_drafts table:', e)
 }
 
 export const getAllWebsitesStmt = db.prepare('SELECT * FROM websites')

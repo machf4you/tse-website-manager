@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
+import { generateArticleDocxBuffer } from './docxGenerator.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -3517,13 +3518,13 @@ const handleSaveDraft = (req, res) => {
         title, meta_title, meta_description, slug, body_html,
         category_id, category_name, primary_link_url, primary_link_anchor,
         secondary_links_json, status, wp_post_id, wp_edit_url, error_message,
-        created_at, updated_at
+        completed_at, created_at, updated_at
       ) VALUES (
         @id, @siteId, @targetPageUrl, @targetPageTitle, @targetPhrase, @topic,
         @title, @metaTitle, @metaDescription, @slug, @bodyHtml,
         @categoryId, @categoryName, @primaryLinkUrl, @primaryLinkAnchor,
         @secondaryLinksJson, @status, @wpPostId, @wpEditUrl, @errorMessage,
-        @createdAt, @updatedAt
+        @completedAt, @createdAt, @updatedAt
       )
       ON CONFLICT(id) DO UPDATE SET
         title = excluded.title,
@@ -3540,6 +3541,7 @@ const handleSaveDraft = (req, res) => {
         wp_post_id = excluded.wp_post_id,
         wp_edit_url = excluded.wp_edit_url,
         error_message = excluded.error_message,
+        completed_at = COALESCE(excluded.completed_at, article_drafts.completed_at),
         updated_at = excluded.updated_at
     `).run({
       id: draft.id,
@@ -3562,6 +3564,7 @@ const handleSaveDraft = (req, res) => {
       wpPostId: draft.wpPostId || draft.wp_post_id || null,
       wpEditUrl: draft.wpEditUrl || draft.wp_edit_url || null,
       errorMessage: draft.errorMessage || draft.error_message || null,
+      completedAt: draft.completedAt || draft.completed_at || null,
       createdAt: draft.createdAt || draft.created_at || now,
       updatedAt: now
     })
@@ -3575,6 +3578,69 @@ const handleSaveDraft = (req, res) => {
 }
 app.post('/api/articles/drafts', handleSaveDraft)
 app.post('/api/hub-content/drafts', handleSaveDraft)
+
+// POST /api/articles/drafts/:id/complete & POST /api/hub-content/drafts/:id/complete
+const handleCompleteDraft = (req, res) => {
+  try {
+    const { id } = req.params
+    if (!id) return res.status(400).json({ success: false, error: 'Draft ID is required.' })
+
+    const draft = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(id)
+    if (!draft) return res.status(404).json({ success: false, error: `Draft ${id} not found.` })
+
+    const now = new Date().toISOString()
+    db.prepare(`
+      UPDATE article_drafts
+      SET status = 'Completed',
+          completed_at = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).run(now, now, id)
+
+    const updated = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(id)
+    res.json({ success: true, draft: updated, message: 'Article marked as Completed.' })
+  } catch (err) {
+    console.error('Error completing draft:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+app.post('/api/articles/drafts/:id/complete', handleCompleteDraft)
+app.post('/api/hub-content/drafts/:id/complete', handleCompleteDraft)
+
+// GET /api/articles/drafts/:id/docx & GET /api/hub-content/drafts/:id/docx
+const handleDownloadDocx = async (req, res) => {
+  try {
+    const { id } = req.params
+    const draft = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(id)
+    if (!draft) return res.status(404).json({ success: false, error: `Draft ${id} not found.` })
+
+    const site = getWebsiteByIdFromDb(draft.site_id)
+    const domain = site?.url ? site.url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website'
+    const businessName = site?.name || domain
+    const buffer = await generateArticleDocxBuffer({
+      ...draft,
+      domain,
+      businessName,
+      bodyHtml: draft.body_html,
+      metaTitle: draft.meta_title,
+      metaDescription: draft.meta_description
+    })
+
+    const slug = draft.slug || 'article'
+    const filename = `${domain}-${slug}.docx`
+
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'Content-Disposition': `attachment; filename="${filename}"`
+    })
+    res.send(buffer)
+  } catch (err) {
+    console.error('Error generating docx download:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+}
+app.get('/api/articles/drafts/:id/docx', handleDownloadDocx)
+app.get('/api/hub-content/drafts/:id/docx', handleDownloadDocx)
 
 // DELETE /api/articles/drafts/:id & DELETE /api/hub-content/drafts/:id
 const handleDeleteDraft = (req, res) => {

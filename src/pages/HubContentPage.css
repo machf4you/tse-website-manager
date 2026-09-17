@@ -939,3 +939,185 @@
   border-top: 1px solid #e2e8f0;
 }
 
+
+
+/* Word & HTML Download Buttons */
+.hub-results-download-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hub-btn-word {
+  background: #2563eb;
+  color: #ffffff;
+  border: 1px solid #1d4ed8;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+}
+
+.hub-btn-word:hover {
+  background: #1d4ed8;
+  border-color: #1e40af;
+}
+
+.hub-btn-word-sm {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hub-btn-word-sm:hover {
+  background: #dbeafe;
+  color: #1e40af;
+  border-color: #93c5fd;
+}
+
+.hub-btn-html {
+  background: #0f766e;
+  color: #ffffff;
+  border: 1px solid #0d9488;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(15, 118, 110, 0.2);
+}
+
+.hub-btn-html:hover {
+  background: #115e59;
+  border-color: #0f766e;
+}
+
+.hub-btn-html-sm {
+  background: #f0fdfa;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hub-btn-html-sm:hover {
+  background: #ccfbf1;
+  color: #115e59;
+  border-color: #5eead4;
+}
+
+/* Complete Button */
+.hub-btn-complete {
+  background: #16a34a;
+  color: #ffffff;
+  border: 1px solid #15803d;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+}
+
+.hub-btn-complete:hover:not(:disabled) {
+  background: #15803d;
+  border-color: #166534;
+}
+
+.hub-btn-complete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Delete small button in card header */
+.hub-btn-delete-sm {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.775rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hub-btn-delete-sm:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* Status & Date Badges */
+.hub-status-pill {
+  font-size: 0.725rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.hub-status-pill.completed {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.hub-date-badge {
+  font-size: 0.775rem;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.hub-date-badge.completed-badge {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+  font-weight: 600;
+}
+
+.hub-modal-info-text {
+  color: #475569;
+  font-size: 0.85rem;
+  margin: 0.75rem 0 0 0;
+  line-height: 1.45;
+}
+
+.hub-article-card.is-completed {
+  border-color: #cbd5e1;
+  background: #fafbfc;
+}

@@ -4,8 +4,10 @@ import {
   batchGenerateHubContentApi,
   getArticleDraftsApi,
   saveArticleDraftApi,
-  deleteArticleDraftApi
+  deleteArticleDraftApi,
+  completeArticleDraftApi
 } from '../services/hubContentApi'
+import { generateArticleDocxBlob } from '../utils/docxGenerator'
 import './HubContentPage.css'
 
 export default function HubContentPage({ currentUser, navigate }) {
@@ -35,6 +37,10 @@ export default function HubContentPage({ currentUser, navigate }) {
   // Draft Delete Confirmation Modal
   const [draftToDelete, setDraftToDelete] = useState(null)
   const [isDeletingDraft, setIsDeletingDraft] = useState(false)
+
+  // Article Complete Confirmation Modal
+  const [articleToComplete, setArticleToComplete] = useState(null)
+  const [isCompletingArticle, setIsCompletingArticle] = useState(false)
 
   // Load Registry domains for authoritative portfolio assignments
   useEffect(() => {
@@ -95,11 +101,11 @@ export default function HubContentPage({ currentUser, navigate }) {
 
   // Derived active drafts vs history
   const activeDrafts = useMemo(() => {
-    return draftsList.filter(d => d.status !== 'Sent to WordPress' && d.status !== 'Archived')
+    return draftsList.filter(d => d.status !== 'Completed' && d.status !== 'Sent to WordPress' && d.status !== 'Archived')
   }, [draftsList])
 
   const historyArticles = useMemo(() => {
-    return draftsList.filter(d => d.status === 'Sent to WordPress' || d.status === 'Archived')
+    return draftsList.filter(d => d.status === 'Completed' || d.status === 'Sent to WordPress' || d.status === 'Archived')
   }, [draftsList])
 
   const activeDraftsCount = activeDrafts.length
@@ -214,50 +220,163 @@ export default function HubContentPage({ currentUser, navigate }) {
     }
   }
 
-  // Download Formatter
-  const formatArticleDownloadText = (article) => {
-    const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website')
-    const dateStr = article.createdAt || article.created_at ? new Date(article.createdAt || article.created_at).toLocaleString('en-GB') : new Date().toLocaleString('en-GB')
-    
-    return [
-      '==================================================',
-      `ARTICLE TITLE: ${article.title || ''}`,
-      `META TITLE: ${article.metaTitle || article.meta_title || ''}`,
-      `META DESCRIPTION: ${article.metaDescription || article.meta_description || ''}`,
-      `SLUG: ${article.slug || ''}`,
-      `WEBSITE: ${domain}`,
-      `GENERATED: ${dateStr}`,
-      '==================================================',
-      '',
-      article.bodyHtml || article.body_html || ''
-    ].join('\n')
+  // Single Article Word (.docx) Download
+  const handleDownloadWord = async (article) => {
+    try {
+      const blob = await generateArticleDocxBlob(article)
+      const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website')
+      const slug = article.slug || 'hub-article'
+      const filename = `${domain}-${slug}.docx`
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error generating Word document:', err)
+      setStatusMessage({
+        type: 'error',
+        text: `Word document generation error: ${err.message}`
+      })
+    }
   }
 
-  // Single Article Download
-  const handleDownloadSingle = (article) => {
-    const text = formatArticleDownloadText(article)
-    const slug = article.slug || 'hub-article'
-    const domain = article.domain || 'website'
-    const filename = `${domain}-${slug}.txt`
+  // Single Article HTML Download
+  const handleDownloadHtml = (article) => {
+    try {
+      const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website')
+      const businessName = article.businessName || article.siteName || domain
+      const slug = article.slug || 'hub-article'
+      const title = article.title || 'Untitled Article'
+      const metaTitle = article.metaTitle || article.meta_title || ''
+      const metaDescription = article.metaDescription || article.meta_description || ''
+      const bodyHtml = article.bodyHtml || article.body_html || ''
+      const dateStr = article.createdAt || article.created_at ? new Date(article.createdAt || article.created_at).toLocaleString('en-GB') : new Date().toLocaleString('en-GB')
 
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+      const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  <meta name="title" content="${metaTitle.replace(/"/g, '&quot;')}">
+  <meta name="description" content="${metaDescription.replace(/"/g, '&quot;')}">
+  <meta name="slug" content="${slug}">
+  <meta name="website" content="${domain}">
+  <meta name="business-name" content="${businessName.replace(/"/g, '&quot;')}">
+  <meta name="generated-date" content="${dateStr}">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 820px;
+      margin: 2.5rem auto;
+      padding: 0 1.5rem;
+      color: #1e293b;
+    }
+    .hub-meta-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    .hub-meta-box p {
+      margin: 0.35rem 0;
+    }
+    .hub-meta-label {
+      font-weight: 700;
+      color: #475569;
+      display: inline-block;
+      min-width: 140px;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 1.25rem;
+      line-height: 1.25;
+    }
+    h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 1.75rem;
+      margin-bottom: 0.75rem;
+    }
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #334155;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      margin: 0.85rem 0;
+      font-size: 1rem;
+    }
+    a {
+      color: #2563eb;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="hub-meta-box">
+    <p><span class="hub-meta-label">Website:</span> ${businessName} (${domain})</p>
+    <p><span class="hub-meta-label">Meta Title:</span> ${metaTitle}</p>
+    <p><span class="hub-meta-label">Meta Description:</span> ${metaDescription}</p>
+    <p><span class="hub-meta-label">Slug:</span> ${slug}</p>
+    <p><span class="hub-meta-label">Generated:</span> ${dateStr}</p>
+  </div>
+  <h1>${title}</h1>
+  <div class="hub-article-body-content">
+    ${bodyHtml}
+  </div>
+</body>
+</html>`
+
+      const filename = `${domain}-${slug}.html`
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Error generating HTML download:', err)
+      setStatusMessage({
+        type: 'error',
+        text: `HTML download error: ${err.message}`
+      })
+    }
   }
 
-  // Download All
-  const handleDownloadAll = () => {
+  // Batch Word Download All
+  const handleDownloadAllWord = () => {
     if (generationResults.length === 0) return
-
     generationResults.forEach((article, idx) => {
       setTimeout(() => {
-        handleDownloadSingle(article)
+        handleDownloadWord(article)
+      }, idx * 180)
+    })
+  }
+
+  // Batch HTML Download All
+  const handleDownloadAllHtml = () => {
+    if (generationResults.length === 0) return
+    generationResults.forEach((article, idx) => {
+      setTimeout(() => {
+        handleDownloadHtml(article)
       }, idx * 150)
     })
   }
@@ -303,6 +422,47 @@ export default function HubContentPage({ currentUser, navigate }) {
       })
     } finally {
       setSavingDraftId(null)
+    }
+  }
+
+  // Mark Article Complete Handler (Executed upon modal confirmation)
+  const handleConfirmComplete = async () => {
+    if (!articleToComplete) return
+    const draftId = articleToComplete.draftId || articleToComplete.id
+    if (!draftId) return
+
+    setIsCompletingArticle(true)
+    try {
+      await completeArticleDraftApi(draftId)
+      
+      // Update local states live
+      const nowIso = new Date().toISOString()
+      setDraftsList(prev => prev.map(d => {
+        if ((d.id || d.draftId) === draftId) {
+          return { ...d, status: 'Completed', completed_at: nowIso, completedAt: nowIso }
+        }
+        return d
+      }))
+      setGenerationResults(prev => prev.map(d => {
+        if ((d.draftId || d.id) === draftId) {
+          return { ...d, status: 'Completed', completed_at: nowIso, completedAt: nowIso }
+        }
+        return d
+      }))
+
+      setStatusMessage({
+        type: 'success',
+        text: `Article "${articleToComplete.title || 'Untitled'}" was marked as Completed and moved to History.`
+      })
+      setArticleToComplete(null)
+    } catch (err) {
+      console.error('Failed to complete article:', err)
+      setStatusMessage({
+        type: 'error',
+        text: `Failed to mark completed: ${err.message}`
+      })
+    } finally {
+      setIsCompletingArticle(false)
     }
   }
 
@@ -528,15 +688,26 @@ export default function HubContentPage({ currentUser, navigate }) {
               <div className="hub-results-header">
                 <div>
                   <h2 className="hub-results-title">Generated Articles ({generationResults.length})</h2>
-                  <p className="hub-results-desc">Review, refine and download the generated content.</p>
+                  <p className="hub-results-desc">Review, refine, and download the generated content.</p>
                 </div>
-                <button
-                  type="button"
-                  className="hub-btn-primary hub-btn-download-all"
-                  onClick={handleDownloadAll}
-                >
-                  📥 Download All ({generationResults.length})
-                </button>
+                <div className="hub-results-download-group">
+                  <button
+                    type="button"
+                    className="hub-btn-word hub-btn-download-all"
+                    onClick={handleDownloadAllWord}
+                    title="Download all generated articles as Word documents"
+                  >
+                    📄 DOWNLOAD WORD ALL ({generationResults.length})
+                  </button>
+                  <button
+                    type="button"
+                    className="hub-btn-html hub-btn-download-all"
+                    onClick={handleDownloadAllHtml}
+                    title="Download all generated articles as HTML files"
+                  >
+                    🌐 DOWNLOAD HTML ALL ({generationResults.length})
+                  </button>
+                </div>
               </div>
 
               {generationErrors.length > 0 && (
@@ -552,15 +723,16 @@ export default function HubContentPage({ currentUser, navigate }) {
                     article={article}
                     index={idx}
                     onSave={(updated) => handleSaveArticle(updated, idx)}
-                    onDownload={() => handleDownloadSingle(article)}
+                    onDownloadWord={() => handleDownloadWord(article)}
+                    onDownloadHtml={() => handleDownloadHtml(article)}
                     onDelete={() => setDraftToDelete(article)}
+                    onComplete={() => setArticleToComplete(article)}
                     isSaving={savingDraftId === (article.draftId || article.id)}
                   />
                 ))}
               </div>
             </div>
           )}
-
         </div>
       )}
 
@@ -571,7 +743,7 @@ export default function HubContentPage({ currentUser, navigate }) {
             <div className="hub-panel-header">
               <div className="hub-panel-header-left">
                 <h2 className="hub-panel-title">Active Drafts ({activeDrafts.length})</h2>
-                <span className="hub-selection-count">Articles requiring review or action</span>
+                <span className="hub-selection-count">Articles in progress — review, edit, or mark completed</span>
               </div>
               <button type="button" className="hub-btn-secondary" onClick={loadDrafts} disabled={loadingDrafts}>
                 {loadingDrafts ? 'Refreshing...' : 'Refresh Drafts'}
@@ -589,8 +761,10 @@ export default function HubContentPage({ currentUser, navigate }) {
                     key={draft.id}
                     article={draft}
                     onSave={(updated) => handleSaveArticle(updated)}
-                    onDownload={() => handleDownloadSingle(draft)}
+                    onDownloadWord={() => handleDownloadWord(draft)}
+                    onDownloadHtml={() => handleDownloadHtml(draft)}
                     onDelete={() => setDraftToDelete(draft)}
+                    onComplete={() => setArticleToComplete(draft)}
                     isSaving={savingDraftId === draft.id}
                   />
                 ))}
@@ -606,8 +780,8 @@ export default function HubContentPage({ currentUser, navigate }) {
           <div className="hub-panel">
             <div className="hub-panel-header">
               <div className="hub-panel-header-left">
-                <h2 className="hub-panel-title">Completed & Archive History ({historyArticles.length})</h2>
-                <span className="hub-selection-count">Articles published or archived</span>
+                <h2 className="hub-panel-title">Completed Articles History ({historyArticles.length})</h2>
+                <span className="hub-selection-count">Completed and published articles available for download</span>
               </div>
               <button type="button" className="hub-btn-secondary" onClick={loadDrafts} disabled={loadingDrafts}>
                 {loadingDrafts ? 'Refreshing...' : 'Refresh History'}
@@ -617,21 +791,71 @@ export default function HubContentPage({ currentUser, navigate }) {
             {loadingDrafts ? (
               <div className="hub-loading-state">Loading history...</div>
             ) : historyArticles.length === 0 ? (
-              <div className="hub-empty-state">No archived or published articles yet.</div>
+              <div className="hub-empty-state">No completed articles in history yet.</div>
             ) : (
               <div className="hub-articles-list">
                 {historyArticles.map((article) => (
                   <ArticleCard
                     key={article.id}
                     article={article}
+                    isHistory={true}
                     onSave={(updated) => handleSaveArticle(updated)}
-                    onDownload={() => handleDownloadSingle(article)}
+                    onDownloadWord={() => handleDownloadWord(article)}
+                    onDownloadHtml={() => handleDownloadHtml(article)}
                     onDelete={() => setDraftToDelete(article)}
+                    onComplete={() => setArticleToComplete(article)}
                     isSaving={savingDraftId === article.id}
                   />
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Mark Article Complete */}
+      {articleToComplete && (
+        <div className="hub-modal-overlay" onClick={() => !isCompletingArticle && setArticleToComplete(null)}>
+          <div className="hub-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="hub-modal-header">
+              <h3 className="hub-modal-title">Mark Article as Completed</h3>
+              <button
+                type="button"
+                className="hub-modal-close"
+                onClick={() => !isCompletingArticle && setArticleToComplete(null)}
+                disabled={isCompletingArticle}
+              >
+                ×
+              </button>
+            </div>
+            <div className="hub-modal-body">
+              <p>Are you sure you want to mark this article as completed?</p>
+              <div className="hub-modal-draft-info">
+                <strong>Title:</strong> {articleToComplete.title || 'Untitled'}<br />
+                <strong>Website:</strong> {articleToComplete.businessName || articleToComplete.domain || 'Website'}
+              </div>
+              <p className="hub-modal-info-text">
+                This article will be moved to History and removed from Active Drafts. You can continue to view, copy, and download both Word and HTML versions from the History tab at any time.
+              </p>
+            </div>
+            <div className="hub-modal-footer">
+              <button
+                type="button"
+                className="hub-btn-secondary"
+                onClick={() => setArticleToComplete(null)}
+                disabled={isCompletingArticle}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="hub-btn-complete hub-btn-modal-action"
+                onClick={handleConfirmComplete}
+                disabled={isCompletingArticle}
+              >
+                {isCompletingArticle ? 'Completing...' : '✓ Confirm Completed'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -689,7 +913,17 @@ export default function HubContentPage({ currentUser, navigate }) {
 /**
  * Individual Article Card Component for Review, Editing, and Internal Links Display
  */
-function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving }) {
+function ArticleCard({
+  article,
+  index,
+  onSave,
+  onDownloadWord,
+  onDownloadHtml,
+  onDelete,
+  onComplete,
+  isSaving,
+  isHistory = false
+}) {
   const [title, setTitle] = useState(article.title || '')
   const [metaTitle, setMetaTitle] = useState(article.metaTitle || article.meta_title || '')
   const [metaDescription, setMetaDescription] = useState(article.metaDescription || article.meta_description || '')
@@ -698,6 +932,21 @@ function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving })
   const [viewMode, setViewMode] = useState('preview') // 'preview' | 'html'
   const [isExpanded, setIsExpanded] = useState(true)
   const [copied, setCopied] = useState(false)
+
+  // Keep state synced if article changes externally
+  useEffect(() => {
+    if (article.title !== undefined) setTitle(article.title || '')
+    if (article.metaTitle !== undefined || article.meta_title !== undefined) {
+      setMetaTitle(article.metaTitle || article.meta_title || '')
+    }
+    if (article.metaDescription !== undefined || article.meta_description !== undefined) {
+      setMetaDescription(article.metaDescription || article.meta_description || '')
+    }
+    if (article.slug !== undefined) setSlug(article.slug || '')
+    if (article.bodyHtml !== undefined || article.body_html !== undefined) {
+      setBodyHtml(article.bodyHtml || article.body_html || '')
+    }
+  }, [article])
 
   const domain = article.domain || (article.siteUrl ? article.siteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : 'website')
   const businessName = article.businessName || article.siteName || domain
@@ -717,7 +966,7 @@ function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving })
 
     // Fallback: extract directly from bodyHtml
     const extracted = []
-    const linkRegex = /<a\s+(?:[^>]*?\s+)?href=[\"\']([^\"\']+)["\'][^>]*>(.*?)<\/a>/gi
+    const linkRegex = /<a\s+(?:[^>]*?\s+)?href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi
     const seenUrls = new Set()
     let match
     while ((match = linkRegex.exec(bodyHtml)) !== null) {
@@ -751,29 +1000,42 @@ function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving })
     })
   }
 
+  const isCompleted = isHistory || article.status === 'Completed' || article.status === 'Sent to WordPress'
+  const createdDateStr = article.createdAt || article.created_at ? new Date(article.createdAt || article.created_at).toLocaleDateString('en-GB') : null
+  const completedDateStr = article.completedAt || article.completed_at ? new Date(article.completedAt || article.completed_at).toLocaleDateString('en-GB') : null
+
   return (
-    <div className="hub-article-card">
+    <div className={`hub-article-card ${isCompleted ? 'is-completed' : ''}`}>
       <div className="hub-article-header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="hub-article-header-left">
           <span className="hub-domain-pill">{businessName}</span>
+          {isCompleted && <span className="hub-status-pill completed">Completed</span>}
           <h3 className="hub-article-card-title">{title || 'Untitled Article'}</h3>
         </div>
         <div className="hub-article-header-right" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
-            className="hub-btn-delete"
+            className="hub-btn-delete-sm"
             onClick={onDelete}
-            title="Delete this draft"
+            title="Delete this article"
           >
-            🗑️ Delete
+            🗑️
           </button>
           <button
             type="button"
-            className="hub-btn-download"
-            onClick={onDownload}
-            title="Download formatted text file"
+            className="hub-btn-word-sm"
+            onClick={onDownloadWord}
+            title="DOWNLOAD WORD (.docx)"
           >
-            📥 Download
+            📄 Word
+          </button>
+          <button
+            type="button"
+            className="hub-btn-html-sm"
+            onClick={onDownloadHtml}
+            title="DOWNLOAD HTML (.html)"
+          >
+            🌐 HTML
           </button>
           <button
             type="button"
@@ -908,6 +1170,16 @@ function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving })
           {/* Card Footer Actions */}
           <div className="hub-card-footer">
             <div className="hub-card-footer-left">
+              {createdDateStr && (
+                <span className="hub-date-badge">
+                  📅 Generated: {createdDateStr}
+                </span>
+              )}
+              {completedDateStr && (
+                <span className="hub-date-badge completed-badge">
+                  ✓ Completed: {completedDateStr}
+                </span>
+              )}
               {article.targetPageUrl && (
                 <span className="hub-target-link-badge">
                   🎯 Primary Section: <code>{article.targetPageUrl}</code>
@@ -921,8 +1193,9 @@ function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving })
                 onClick={onDelete}
                 title="Delete this draft"
               >
-                🗑️ Delete Draft
+                🗑️ Delete
               </button>
+              
               <button
                 type="button"
                 className="hub-btn-secondary"
@@ -931,12 +1204,34 @@ function ArticleCard({ article, index, onSave, onDownload, onDelete, isSaving })
               >
                 {isSaving ? 'Saving...' : 'Save Draft'}
               </button>
+
+              {!isCompleted && (
+                <button
+                  type="button"
+                  className="hub-btn-complete"
+                  onClick={onComplete}
+                  title="Mark this article as completed and move to History"
+                >
+                  ✓ Mark Completed
+                </button>
+              )}
+
               <button
                 type="button"
-                className="hub-btn-primary"
-                onClick={onDownload}
+                className="hub-btn-word"
+                onClick={onDownloadWord}
+                title="Download as Word document (.docx)"
               >
-                📥 Download Article
+                📄 DOWNLOAD WORD
+              </button>
+
+              <button
+                type="button"
+                className="hub-btn-html"
+                onClick={onDownloadHtml}
+                title="Download as HTML file (.html)"
+              >
+                🌐 DOWNLOAD HTML
               </button>
             </div>
           </div>
