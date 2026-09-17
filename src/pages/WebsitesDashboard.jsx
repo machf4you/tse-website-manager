@@ -7,7 +7,8 @@ import {
   saveWebsiteApi,
   saveWebsitesBatchApi,
   deleteWebsiteApi,
-  triggerLocalStorageMigrationApi
+  triggerLocalStorageMigrationApi,
+  getActiveRegistryDomainsApi
 } from '../services/websiteManagerApi'
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './WebsitesDashboard.css'
@@ -220,15 +221,58 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     }
   }
 
-  const [serverTypeFilter, setServerTypeFilter] = useState('All')
+  // Fetch Site Registry domains on mount so we have authoritative portfolio assignments
+  const [registryMap, setRegistryMap] = useState({})
 
-  const filterOptions = ['All', 'Caddy', 'LiteSpeed', 'Nginx', 'Apache', 'Unknown']
+  useEffect(() => {
+    let isMounted = true
+    getActiveRegistryDomainsApi().then(domains => {
+      if (isMounted && Array.isArray(domains)) {
+        const map = {}
+        domains.forEach(d => {
+          if (d.id) map[d.id] = d.portfolio || 'Other'
+          const norm = String(d.canonical_domain || '')
+            .toLowerCase()
+            .trim()
+            .replace(/^https?:\/\//, '')
+            .replace(/^www\./, '')
+            .replace(/\/.*$/, '')
+          if (norm) map[norm] = d.portfolio || 'Other'
+        })
+        setRegistryMap(map)
+      }
+    }).catch(() => {})
+    return () => { isMounted = false }
+  }, [])
+
+  const getSitePortfolio = (s) => {
+    if (s.domain_id && registryMap[s.domain_id]) {
+      return registryMap[s.domain_id]
+    }
+    const norm = String(s.url || s.name || '')
+      .toLowerCase()
+      .trim()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/.*$/, '')
+    if (norm && registryMap[norm]) {
+      return registryMap[norm]
+    }
+    return s.portfolio || 'Other'
+  }
+
+  const [portfolioFilter, setPortfolioFilter] = useState('All')
+
+  const filterOptions = ['All', 'TSE', 'Chili', 'Other']
 
   const filteredSites = sites
     .filter(s => {
-      if (serverTypeFilter === 'All') return true
-      const st = s.serverType || s.server_type || s.configData?.serverType || 'Unknown'
-      return st === serverTypeFilter
+      if (portfolioFilter === 'All') return true
+      const sitePort = getSitePortfolio(s)
+      if (portfolioFilter === 'Other') {
+        return sitePort !== 'TSE' && sitePort !== 'Chili'
+      }
+      return sitePort === portfolioFilter
     })
     .sort((a, b) => {
       const nameA = String(a.name || a.title || a.siteName || '').trim()
@@ -269,25 +313,22 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
       {/* ── ROW 1: Connected Websites Heading ── */}
       <div className="w1-row-1">
         <h1 className="w1-title">Connected Websites</h1>
-        <div style={{ color: '#FACC15', fontSize: '36px', fontWeight: 'bold', padding: '16px', background: '#000', border: '3px solid #FACC15', margin: '16px 0', textAlign: 'center', letterSpacing: '4px' }}>
-          TEST
-        </div>
       </div>
 
-      {/* ── ROW 2: W1 Badge + Server Type Filters (Left) | Add Website Button (Right) ── */}
+      {/* ── ROW 2: W1 Badge + Portfolio Filters (Left) | Add Website Button (Right) ── */}
       <div className="w1-row-2">
         <div className="w1-row-2-left">
           <span className="w1-pill-badge">W1 | CONNECTED WEBSITES</span>
           <div className="w1-filter-bar">
-            <span className="w1-filter-label">Server Type:</span>
+            <span className="w1-filter-label">Portfolio:</span>
             {filterOptions.map(opt => (
               <button
                 key={opt}
                 type="button"
-                className={`w1-filter-btn ${serverTypeFilter === opt ? 'w1-filter-btn-active' : ''}`}
-                onClick={() => setServerTypeFilter(opt)}
+                className={`w1-filter-btn ${portfolioFilter === opt ? 'w1-filter-btn-active' : ''}`}
+                onClick={() => setPortfolioFilter(opt)}
               >
-                {opt === 'All' ? 'All Servers' : opt}
+                {opt === 'All' ? 'All Portfolios' : opt}
               </button>
             ))}
           </div>

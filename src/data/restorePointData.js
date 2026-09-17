@@ -5,6 +5,18 @@
  */
 export const restorePointIndexData = [
   {
+    "id": "v1.54-full-disaster-recovery-lead-generator",
+    "app": "Lead Generator",
+    "version": "v1.54-full-disaster-recovery-lead-generator",
+    "gitTag": "",
+    "commit": "[AUTO]",
+    "date": "16-09-2026 17:03",
+    "title": "TSE Lead Generator \u2014 Full Disaster-Recovery Restore Point",
+    "description": "This document provides the authoritative **Full Disaster-Recovery Specification and Restore Point** for the TSE Lead Generator application (V1.54), incorporating:",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-v1.54-full-disaster-recovery-lead-generator.md"
+  },
+  {
     "id": "v2.52-full-disaster-recovery-apps-hub-migration",
     "app": "Website Manager",
     "version": "v2.52-full-disaster-recovery-apps-hub-migration",
@@ -13,7 +25,7 @@ export const restorePointIndexData = [
     "date": "16-09-2026 17:02",
     "title": "TSE Website Manager \u2014 Full Disaster-Recovery Restore Point",
     "description": "This document provides the authoritative **Full Disaster-Recovery Specification and Restore Point** for the TSE Website Manager application following the structural migration of the central Apps Platform Hub to `https://auth.thesearchequation.co.uk/`.",
-    "status": "Current",
+    "status": "Superseded",
     "docFile": "RESTORE-POINT-v2.52-full-disaster-recovery-apps-hub-migration.md"
   },
   {

@@ -62,25 +62,34 @@
 }
 
 /* Add Website button */
+.w1-btn-add-website,
 .btn-add-website {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 9px 16px;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
   border: none;
-  background-color: rgb(16, 185, 129);
-  color: rgb(255, 255, 255);
+  border-radius: 8px;
+  padding: 9px 18px;
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  transition: opacity 0.2s, transform 0.15s, background-color 0.15s;
 }
 
+.w1-btn-add-website:hover,
 .btn-add-website:hover {
-  background-color: rgb(5, 150, 105);
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.w1-btn-add-website:active,
+.btn-add-website:active {
+  transform: translateY(0);
 }
 
 .website-tiles-grid {

@@ -268,13 +268,13 @@ export default function AddWebsiteDialog({
   const availableRegistryDomains = useMemo(() => {
     const allConnected = activeConnectedSites.length > 0 ? activeConnectedSites : connectedSites
     const connectedDomainIds = new Set(allConnected.map(s => s.domain_id || s.domainId).filter(Boolean))
-    const connectedCanonicalDomains = new Set(
+    const unlinkedConnectedCanonicals = new Set(
       allConnected
+        .filter(s => !s.domain_id && !s.domainId)
         .map(s => normalizeDomain(s.url) || normalizeDomain(s.name))
         .filter(Boolean)
     )
 
-    const seenCanonicals = new Set()
     const available = []
 
     for (const d of registryDomains) {
@@ -284,13 +284,9 @@ export default function AddWebsiteDialog({
       // 1. Primary identifier check: domain_id
       if (connectedDomainIds.has(d.id)) continue
 
-      // 2. Secondary duplicate safeguard: canonical domain
+      // 2. Secondary safeguard: if a connected site tile does not have domain_id set, match by canonical domain
       const dCanonical = normalizeDomain(d.canonical_domain)
-      if (dCanonical && connectedCanonicalDomains.has(dCanonical)) continue
-
-      // Deduplicate canonical domain within registry active list
-      if (dCanonical && seenCanonicals.has(dCanonical)) continue
-      if (dCanonical) seenCanonicals.add(dCanonical)
+      if (dCanonical && unlinkedConnectedCanonicals.has(dCanonical)) continue
 
       available.push(d)
     }
