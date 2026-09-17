@@ -3,8 +3,8 @@
  * Normalizes title, url, SEO Page Type classification, and applies automatic exclusion rules upon import.
  */
 
-import { decodeHtmlEntities } from './safeString'
-import { matchesUrlExclusion } from './urlExclusions'
+import { decodeHtmlEntities } from './safeString.js'
+import { matchesUrlExclusion, normalizeUrlForExclusionCheck } from './urlExclusions.js'
 
 export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext = null) {
   // 1. Homepage -> Hub (Priority 1) - Absolute rule taking precedence sitewide over all heuristics
@@ -89,7 +89,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
   return 'Unclassified'
 }
 
-export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) {
+export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null, customExclusionRules = null) {
   if (!p || typeof p !== 'object') return p
 
   // 1. Meta Title / Page Title resolution
@@ -140,6 +140,8 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
 
   // 3. Automatic Exclusion Rules (Evaluated dynamically against URL path, slug, parameters and title)
   const cleanSiteUrl = siteUrl ? siteUrl.trim().replace(/\/+$/, '') : ''
+  const { pathname, cleanSlug } = normalizeUrlForExclusionCheck(url)
+  const lowerTitle = (title || '').toLowerCase().trim()
   const exclusionResult = matchesUrlExclusion(url, title, customExclusionRules)
   const matchesExclusion = exclusionResult.matched
 
