@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react'
 import RestorePointsPage from './RestorePointsPage'
-import WordPressImportRulesPage from './WordPressImportRulesPage'
-import PageTypeClassificationsPage from './PageTypeClassificationsPage'
-import PageAuditorRulesPage from './PageAuditorRulesPage'
-import InternalLinkingRulesPage from './InternalLinkingRulesPage'
 import DeploymentRecoveryPage from './DeploymentRecoveryPage'
 import UsersAccessPage from './UsersAccessPage'
+import UrlExclusionsPage from './UrlExclusionsPage'
+import WordPressImportRulesPage from './WordPressImportRulesPage'
+import PageTypeClassificationsPage from './PageTypeClassificationsPage'
+import InternalLinkingRulesPage from './InternalLinkingRulesPage'
+import PageAuditorRulesPage from './PageAuditorRulesPage'
 import './GlobalSettings.css'
 
 const SETTINGS_MENU = [
   { id: 'restore-points',            label: 'Restore Points',            icon: 'history' },
   { id: 'deployment-recovery',       label: 'Deployment & Recovery',     icon: 'shield' },
   { id: 'users-access',              label: 'Users & Access',            icon: 'users',    adminOnly: true },
+  { id: 'url-exclusions',            label: 'URL Exclusions',            icon: 'slash' },
   { id: 'import-rules',              label: 'WordPress Import Rules',    icon: 'download' },
   { id: 'page-type-classifications', label: 'Page Type Classifications', icon: 'tag' },
   { id: 'internal-linking-rules',    label: 'Internal Linking Rules',    icon: 'link' },
@@ -82,6 +84,7 @@ export default function GlobalSettings({ currentUser }) {
         {activeTab === 'restore-points'            && <RestorePointsPage />}
         {activeTab === 'deployment-recovery'       && <DeploymentRecoveryPage />}
         {activeTab === 'users-access'              && isAdmin && <UsersAccessPage currentUser={currentUser} />}
+        {activeTab === 'url-exclusions'            && <UrlExclusionsPage />}
         {activeTab === 'import-rules'              && <WordPressImportRulesPage />}
         {activeTab === 'page-type-classifications' && <PageTypeClassificationsPage />}
         {activeTab === 'internal-linking-rules'    && <InternalLinkingRulesPage />}

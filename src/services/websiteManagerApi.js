@@ -5,6 +5,7 @@
 
 import { normalizeSiteId } from '../utils/siteKeyHelper.js'
 import { broadcastWebsiteManagerEvent, REALTIME_EVENTS } from './supabaseRealtime.js'
+import { setCachedUrlExclusions } from '../utils/urlExclusions.js'
 
 export const API_BASE_URL = '/api'
 
@@ -499,5 +500,68 @@ export async function batchCheckSearchVolumeApi({ siteId: rawSiteId, items }) {
     throw e
   }
 }
+
+// ── GLOBAL URL EXCLUSIONS API ──
+export async function getGlobalUrlExclusionsApi() {
+  try {
+    const res = await fetchJson(`${API_BASE_URL}/global-settings/url-exclusions`)
+    if (res && Array.isArray(res.rules)) {
+      setCachedUrlExclusions(res.rules)
+      try {
+        localStorage.setItem('tse_global_url_exclusions_v1', JSON.stringify(res.rules))
+      } catch (e) {}
+      return res.rules
+    }
+  } catch (e) {
+    console.warn('[WM_API] Failed to fetch global url exclusions from server, checking local cache:', e)
+  }
+  try {
+    const cached = localStorage.getItem('tse_global_url_exclusions_v1')
+    if (cached) {
+      const parsed = JSON.parse(cached)
+      setCachedUrlExclusions(parsed)
+      return parsed
+    }
+  } catch (e) {}
+  return null
+}
+
+export async function addGlobalUrlExclusionApi(rule) {
+  try {
+    const res = await fetchJson(`${API_BASE_URL}/global-settings/url-exclusions`, {
+      method: 'POST',
+      body: JSON.stringify(rule)
+    })
+    if (res && Array.isArray(res.rules)) {
+      setCachedUrlExclusions(res.rules)
+      try {
+        localStorage.setItem('tse_global_url_exclusions_v1', JSON.stringify(res.rules))
+      } catch (e) {}
+    }
+    return res
+  } catch (e) {
+    console.error('[WM_API] Failed to add global url exclusion:', e)
+    throw e
+  }
+}
+
+export async function removeGlobalUrlExclusionApi(ruleId) {
+  try {
+    const res = await fetchJson(`${API_BASE_URL}/global-settings/url-exclusions/${encodeURIComponent(ruleId)}`, {
+      method: 'DELETE'
+    })
+    if (res && Array.isArray(res.rules)) {
+      setCachedUrlExclusions(res.rules)
+      try {
+        localStorage.setItem('tse_global_url_exclusions_v1', JSON.stringify(res.rules))
+      } catch (e) {}
+    }
+    return res
+  } catch (e) {
+    console.error('[WM_API] Failed to remove global url exclusion:', e)
+    throw e
+  }
+}
+
 
 

@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
+import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -2958,6 +2959,188 @@ app.post('/api/websites/:id/pages/:pageKey/check-volume', handleSinglePhraseVolu
 app.post('/api/websites/:id/batch-volume-check', handleBatchVolumeCheck)
 app.post('/api/websites/:id/tasks/submit-rank-batch', handleSubmitRankBatch)
 app.post('/api/websites/:id/tasks/collect-rank-batch', handleCollectRankBatch)
+
+// ==========================================
+// GLOBAL SETTINGS: URL EXCLUSIONS
+// ==========================================
+
+function getStoredUrlExclusions() {
+  try {
+    const row = db.prepare(`SELECT value_json FROM global_settings WHERE key = 'url_exclusions'`).get()
+    if (row && row.value_json) {
+      const parsed = JSON.parse(row.value_json)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+      }
+    }
+  } catch (e) {
+    console.error('Error fetching stored url exclusions:', e)
+  }
+  // If not present in DB, initialize with default rules and persist
+  try {
+    const now = new Date().toISOString()
+    db.prepare(`
+      INSERT INTO global_settings (key, value_json, updated_at)
+      VALUES ('url_exclusions', ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at
+    `).run(JSON.stringify(DEFAULT_EXCLUSION_RULES), now)
+  } catch (e) {
+    console.error('Error seeding default url exclusions:', e)
+  }
+  return DEFAULT_EXCLUSION_RULES
+}
+
+// GET /api/global-settings/url-exclusions
+app.get('/api/global-settings/url-exclusions', (req, res) => {
+  try {
+    const rules = getStoredUrlExclusions()
+    res.json({ success: true, rules })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+// POST /api/global-settings/url-exclusions
+app.post('/api/global-settings/url-exclusions', (req, res) => {
+  try {
+    const { pattern, matchType, category, description } = req.body || {}
+    if (!pattern || !String(pattern).trim()) {
+      return res.status(400).json({ success: false, error: 'Pattern is required.' })
+    }
+
+    const cleanPattern = String(pattern).trim()
+    const newRule = {
+      id: `ex-custom-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      pattern: cleanPattern,
+      matchType: matchType || 'path-segment',
+      category: category || 'Custom',
+      description: description ? String(description).trim() : `Custom rule for ${cleanPattern}`
+    }
+
+    const currentRules = getStoredUrlExclusions()
+    const updatedRules = [newRule, ...currentRules]
+    const now = new Date().toISOString()
+
+    // 1. Save updated rules to global_settings table
+    db.prepare(`
+      INSERT INTO global_settings (key, value_json, updated_at)
+      VALUES ('url_exclusions', ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at
+    `).run(JSON.stringify(updatedRules), now)
+
+    // 2. Immediate Retroactive Re-classification across all websites in database
+    let retroactivelyExcludedCount = 0
+
+    // Scan page_configurations table
+    try {
+      const pageRows = db.prepare(`SELECT site_id, page_key, url, title, is_excluded, seo_page_type FROM page_configurations`).all()
+      const updatePageStmt = db.prepare(`
+        UPDATE page_configurations
+        SET is_excluded = 1,
+            seo_page_type = 'Excluded',
+            priority = 0,
+            updated_at = ?
+        WHERE site_id = ? AND page_key = ?
+      `)
+
+      for (const row of pageRows) {
+        if (row.is_excluded === 1 && row.seo_page_type === 'Excluded') continue
+        const urlInfo = normalizeUrlForExclusionCheck(row.url || '')
+        const lowerTitle = String(row.title || '').toLowerCase().trim()
+        if (testExclusionRule(newRule, urlInfo, lowerTitle)) {
+          updatePageStmt.run(now, row.site_id, row.page_key)
+          retroactivelyExcludedCount++
+        }
+      }
+    } catch (e) {
+      console.error('Error scanning page_configurations for retroactive exclusion:', e)
+    }
+
+    // Also scan websites config_data where pageConfigurations or pageOverrides might exist
+    try {
+      const websites = db.prepare(`SELECT id, config_data FROM websites`).all()
+      const updateWebsitesStmt = db.prepare(`UPDATE websites SET config_data = ?, updated_at = ? WHERE id = ?`)
+
+      for (const site of websites) {
+        if (!site.config_data) continue
+        try {
+          const config = JSON.parse(site.config_data)
+          let modified = false
+          if (config.pageConfigurations && typeof config.pageConfigurations === 'object') {
+            for (const [key, pConf] of Object.entries(config.pageConfigurations)) {
+              if (pConf.isExcluded && pConf.seoPageType === 'Excluded') continue
+              const urlInfo = normalizeUrlForExclusionCheck(pConf.url || pConf.link || key)
+              const lowerTitle = String(pConf.title || '').toLowerCase().trim()
+              if (testExclusionRule(newRule, urlInfo, lowerTitle)) {
+                config.pageConfigurations[key] = {
+                  ...pConf,
+                  isExcluded: true,
+                  seoPageType: 'Excluded',
+                  type: 'Excluded',
+                  priority: 0
+                }
+                modified = true
+                retroactivelyExcludedCount++
+              }
+            }
+          }
+          if (config.pageOverrides && typeof config.pageOverrides === 'object') {
+            for (const [key, pConf] of Object.entries(config.pageOverrides)) {
+              if (pConf.isExcluded && pConf.seoPageType === 'Excluded') continue
+              const urlInfo = normalizeUrlForExclusionCheck(pConf.url || pConf.link || key)
+              const lowerTitle = String(pConf.title || '').toLowerCase().trim()
+              if (testExclusionRule(newRule, urlInfo, lowerTitle)) {
+                config.pageOverrides[key] = {
+                  ...pConf,
+                  isExcluded: true,
+                  seoPageType: 'Excluded',
+                  type: 'Excluded',
+                  priority: 0
+                }
+                modified = true
+              }
+            }
+          }
+          if (modified) {
+            updateWebsitesStmt.run(JSON.stringify(config), now, site.id)
+          }
+        } catch (_siteErr) {}
+      }
+    } catch (e) {
+      console.error('Error scanning websites config_data for retroactive exclusion:', e)
+    }
+
+    res.json({
+      success: true,
+      rule: newRule,
+      rules: updatedRules,
+      retroactivelyExcludedCount
+    })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+// DELETE /api/global-settings/url-exclusions/:id
+app.delete('/api/global-settings/url-exclusions/:id', (req, res) => {
+  try {
+    const { id } = req.params
+    const currentRules = getStoredUrlExclusions()
+    const updatedRules = currentRules.filter(r => r.id !== id)
+    const now = new Date().toISOString()
+
+    db.prepare(`
+      INSERT INTO global_settings (key, value_json, updated_at)
+      VALUES ('url_exclusions', ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at
+    `).run(JSON.stringify(updatedRules), now)
+
+    // Note: Per requirement 8, removing a global exclusion does NOT turn previously excluded pages back into target pages
+    res.json({ success: true, rules: updatedRules })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
 
 // Serve frontend static files and handle SPA clean route fallback if dist exists
 const distPath = path.join(__dirname, '..', 'dist')

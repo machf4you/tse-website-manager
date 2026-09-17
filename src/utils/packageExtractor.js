@@ -4,6 +4,7 @@
  */
 
 import { decodeHtmlEntities } from './safeString'
+import { matchesUrlExclusion } from './urlExclusions'
 
 export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext = null) {
   // 1. Homepage -> Hub (Priority 1) - Absolute rule taking precedence sitewide over all heuristics
@@ -137,94 +138,10 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null) 
   }
   const url = rawUrl
 
-  // 3. Automatic Exclusion Rules (Evaluated against URL Path/Slug & Specific Title Phrases — Domain Hostname is excluded)
-  let cleanUrlPath = (url || '').replace(/^https?:\/\/[^/]+/i, '')
-  if (!cleanUrlPath.startsWith('/')) cleanUrlPath = '/' + cleanUrlPath
+  // 3. Automatic Exclusion Rules (Evaluated dynamically against URL path, slug, parameters and title)
   const cleanSiteUrl = siteUrl ? siteUrl.trim().replace(/\/+$/, '') : ''
-
-  const [pathnameRaw, searchRaw] = cleanUrlPath.split('?')
-  const pathname = (pathnameRaw || '/').toLowerCase()
-  const searchParams = (searchRaw ? '?' + searchRaw : '').toLowerCase()
-  const cleanSlug = pathname.replace(/\/+$/, '').replace(/^\/+/, '')
-  const slugSegments = cleanSlug.split('/').filter(Boolean)
-  const lowerTitle = (title || '').toLowerCase().trim()
-
-  // A. Search Results (Explicit /search/ path, ?s= search parameter, or explicit search results title)
-  const isSearchResultPage =
-    pathname === '/search' ||
-    pathname.startsWith('/search/') ||
-    cleanSlug === 'search' ||
-    searchParams.includes('?s=') ||
-    searchParams.includes('&s=') ||
-    lowerTitle === 'search results' ||
-    lowerTitle === 'search' ||
-    lowerTitle.startsWith('search results') ||
-    lowerTitle.startsWith('search for')
-
-  // B. Legal & Policy Pages
-  const legalSlugs = [
-    'privacy-policy', 'privacy', 'cookie-policy', 'cookies',
-    'terms-and-conditions', 'terms-conditions', 'terms-of-service', 'terms', 'terms-of-use',
-    'disclaimer', 'accessibility-statement', 'accessibility'
-  ]
-  const isLegalPage =
-    legalSlugs.some(s => cleanSlug === s || slugSegments.includes(s)) ||
-    lowerTitle.includes('privacy policy') || lowerTitle.includes('cookie policy') ||
-    lowerTitle.includes('terms & conditions') || lowerTitle.includes('terms and conditions') ||
-    lowerTitle.includes('terms of service') || lowerTitle.includes('terms of use') ||
-    lowerTitle.includes('accessibility statement') || lowerTitle === 'disclaimer'
-
-  // C. Website Utility Pages (About, Contact, Thank You, Sitemap, 404)
-  const utilitySlugs = [
-    'about-us', 'about', 'contact-us', 'contact',
-    'thank-you', 'thankyou', 'confirmation',
-    '404', '404-page', 'not-found',
-    'sitemap', 'xml-sitemap'
-  ]
-  const isUtilityPage =
-    utilitySlugs.some(s => cleanSlug === s || slugSegments.includes(s)) ||
-    lowerTitle === 'about us' || lowerTitle === 'about' || lowerTitle.startsWith('about us') ||
-    lowerTitle === 'contact us' || lowerTitle === 'contact' || lowerTitle.startsWith('contact us') ||
-    lowerTitle === 'thank you' || lowerTitle === 'confirmation' ||
-    lowerTitle === 'sitemap' || lowerTitle === 'xml sitemap' ||
-    lowerTitle === '404' || lowerTitle === 'page not found' || lowerTitle === 'not found'
-
-  // D. WordPress / System Pages (Author, Date, Tag, Attachment, Feed)
-  const isSystemArchivePage =
-    pathname.startsWith('/tag/') || cleanSlug === 'tag' ||
-    pathname.startsWith('/author/') || cleanSlug === 'author' ||
-    pathname.startsWith('/date/') || /^\/\d{4}\/\d{2}(\/\d{2})?(\/|$)/.test(pathname) ||
-    pathname.startsWith('/attachment/') || cleanSlug === 'attachment' ||
-    pathname === '/feed' || pathname.endsWith('/feed') || pathname.endsWith('/feed/') || pathname.endsWith('.xml') || pathname.endsWith('.rss') || cleanSlug === 'feed' || cleanSlug === 'rss' ||
-    lowerTitle.startsWith('author archive') || lowerTitle.startsWith('date archive') || lowerTitle.startsWith('tag archive') ||
-    lowerTitle === 'author' || lowerTitle === 'tag' || lowerTitle === 'date' || lowerTitle === 'attachment' || lowerTitle.includes('media attachment')
-
-  // E. Ecommerce / Transactional / Store Information Pages
-  const ecomSlugs = [
-    'cart', 'checkout', 'basket', 'wishlist', 'compare',
-    'login', 'wp-login', 'register', 'signup', 'sign-up',
-    'lost-password', 'reset-password', 'my-account', 'account',
-    'returns-policy', 'orders-and-returns', 'orders-returns',
-    'delivery-information', 'delivery-details', 'payment-information', 'payment-options',
-    'store-finder', 'store-locator', 'our-stores', 'price-match',
-    'pay-later', 'klarna', 'customer-service', 'enable-cookies', 'cookie-restriction-mode'
-  ]
-  const isEcomPage =
-    ecomSlugs.some(s => cleanSlug === s || slugSegments.includes(s)) ||
-    lowerTitle === 'cart' || lowerTitle === 'checkout' || lowerTitle === 'basket' || lowerTitle === 'wishlist' ||
-    lowerTitle === 'my account' || lowerTitle === 'login' || lowerTitle === 'register' || lowerTitle === 'sign up' ||
-    lowerTitle === 'lost password' || lowerTitle === 'reset password' ||
-    lowerTitle.includes('returns policy') || lowerTitle.includes('orders & returns') ||
-    lowerTitle.includes('delivery information') || lowerTitle.includes('payment information') ||
-    lowerTitle === 'store finder' || lowerTitle === 'store locator' || lowerTitle === 'price match' ||
-    lowerTitle.includes('enable cookies') || lowerTitle.includes('cookie restriction')
-
-  const matchesExclusion =
-    isSearchResultPage ||
-    isLegalPage ||
-    isUtilityPage ||
-    isSystemArchivePage ||
-    isEcomPage
+  const exclusionResult = matchesUrlExclusion(url, title, customExclusionRules)
+  const matchesExclusion = exclusionResult.matched
 
   const isMagentoCategory = p.post_type === 'category' || p.magentoCategoryId !== undefined
   const isMagentoContainerOrInactive = isMagentoCategory && ((p.level !== undefined && p.level <= 1) || p.is_active === false)
@@ -460,7 +377,7 @@ function extractRawPagesFromPackage(rawPkg) {
   return []
 }
 
-export function extractPagesFromPackage(pkg, siteUrl = '') {
+export function extractPagesFromPackage(pkg, siteUrl = '', customExclusionRules = null) {
   const rawPages = extractRawPagesFromPackage(pkg)
   const rawPosts = extractPostsFromPackage(pkg)
   const combined = [...rawPosts, ...rawPages]
@@ -489,7 +406,7 @@ export function extractPagesFromPackage(pkg, siteUrl = '') {
   }
   const hierarchyContext = { parentIdsWithChildren, allItems: uniqueItems }
 
-  return uniqueItems.map(page => normalizeImportedPage(page, siteUrl, hierarchyContext))
+  return uniqueItems.map(page => normalizeImportedPage(page, siteUrl, hierarchyContext, customExclusionRules))
 }
 
 export function extractPostsFromPackage(rawPkg) {
