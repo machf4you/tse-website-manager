@@ -66,9 +66,30 @@ const SlidersIcon = () => (
 )
 
 import AppsDashboard from './pages/AppsDashboard'
+import ArticlesPage from './pages/ArticlesPage'
 import GlobalDeploymentIndicator from './components/GlobalDeploymentIndicator'
 import ErrorBoundary from './components/ErrorBoundary'
 import { getAuthMe, logoutUser } from './services/authApi'
+
+const ArticleIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
+    <path d="M6 6h10" />
+    <path d="M6 10h10" />
+    <path d="M6 14h6" />
+  </svg>
+)
 
 const LogOutIcon = () => (
   <svg
@@ -124,6 +145,15 @@ export function parseRoute(pathname) {
       activeNavTab: 'global-settings',
       wPage: null,
       canonicalPath: '/global-settings'
+    }
+  }
+
+  if (path === '/articles' || path === '/article-automation' || path === '/w6-articles') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'articles',
+      wPage: null,
+      canonicalPath: '/articles'
     }
   }
 
@@ -311,6 +341,16 @@ function App() {
           </button>
           <button
             type="button"
+            className={`nav-tab ${activeNavTab === 'articles' ? 'active' : ''}`}
+            aria-current={activeNavTab === 'articles' ? 'page' : undefined}
+            id="nav-tab-articles"
+            onClick={() => navigate('/articles')}
+          >
+            <ArticleIcon />
+            Articles
+          </button>
+          <button
+            type="button"
             className={`nav-tab ${activeNavTab === 'global-settings' ? 'active' : ''}`}
             aria-current={activeNavTab === 'global-settings' ? 'page' : undefined}
             id="nav-tab-global-settings"
@@ -385,6 +425,9 @@ function App() {
         <ErrorBoundary>
           {activeNavTab === 'websites' && (
             <WebsitesDashboard currentPath={currentPath} navigate={navigate} />
+          )}
+          {activeNavTab === 'articles' && (
+            <ArticlesPage currentUser={currentUser} navigate={navigate} />
           )}
           {activeNavTab === 'global-settings' && (
             <GlobalSettings currentUser={currentUser} currentPath={currentPath} navigate={navigate} />

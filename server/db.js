@@ -121,6 +121,32 @@ db.exec(`
     cost REAL DEFAULT 0,
     PRIMARY KEY(task_id, page_key)
   );
+
+  CREATE TABLE IF NOT EXISTS article_drafts (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    target_page_url TEXT NOT NULL,
+    target_page_title TEXT,
+    target_phrase TEXT,
+    topic TEXT,
+    title TEXT NOT NULL,
+    meta_title TEXT,
+    meta_description TEXT,
+    slug TEXT,
+    body_html TEXT NOT NULL,
+    category_id INTEGER DEFAULT NULL,
+    category_name TEXT DEFAULT NULL,
+    primary_link_url TEXT,
+    primary_link_anchor TEXT,
+    secondary_links_json TEXT,
+    status TEXT DEFAULT 'Generated',
+    wp_post_id INTEGER DEFAULT NULL,
+    wp_edit_url TEXT DEFAULT NULL,
+    error_message TEXT DEFAULT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
+  );
 `)
 
 // Safe idempotent migration: ensure domain_id column and index exist on websites table

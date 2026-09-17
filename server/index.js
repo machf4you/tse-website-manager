@@ -5,6 +5,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
+import { suggestArticleOpportunity, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -3139,6 +3140,389 @@ app.delete('/api/global-settings/url-exclusions/:id', (req, res) => {
     res.json({ success: true, rules: updatedRules })
   } catch (e) {
     res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+// ==========================================
+// ON-SITE ARTICLE AUTOMATION ENDPOINTS
+// ==========================================
+
+function getWebsiteWpCredentials(siteId) {
+  const site = getWebsiteByIdFromDb(siteId)
+  if (!site) return { site: null, username: '', password: '', siteUrl: '' }
+  let configData = {}
+  try {
+    if (site.config_data) configData = JSON.parse(site.config_data)
+  } catch (_e) {}
+
+  const username = configData.wpUser || site.wp_user || configData.connectedUser || ''
+  const password = configData.wpPass || site.wp_pass || ''
+  const siteUrl = (site.url || '').trim().replace(/\/+$/, '')
+
+  return { site, username, password, siteUrl }
+}
+
+// GET /api/websites/:id/categories
+app.get('/api/websites/:id/categories', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { site, username, password, siteUrl } = getWebsiteWpCredentials(id)
+    if (!site) return res.status(404).json({ success: false, error: `Website ${id} not found.` })
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'WordPress credentials not configured for this website.' })
+    }
+
+    const authHeader = 'Basic ' + Buffer.from(`${username}:${password.replace(/\s/g, '')}`).toString('base64')
+    const catUrl = `${siteUrl}/wp-json/wp/v2/categories?per_page=100&context=view`
+
+    const wpRes = await fetch(catUrl, {
+      headers: {
+        Authorization: authHeader,
+        Accept: 'application/json'
+      }
+    })
+
+    if (!wpRes.ok) {
+      return res.status(wpRes.status).json({ success: false, error: `WordPress categories API returned status ${wpRes.status}` })
+    }
+
+    const categories = await wpRes.json()
+    const cleanList = Array.isArray(categories) ? categories.map(c => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      count: c.count,
+      parent: c.parent
+    })) : []
+
+    res.json({ success: true, siteId: id, categories: cleanList })
+  } catch (err) {
+    console.error('Error fetching WP categories:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// POST /api/articles/suggest-opportunity
+app.post('/api/articles/suggest-opportunity', (req, res) => {
+  try {
+    const { siteId, targetPage } = req.body || {}
+    if (!siteId || !targetPage) {
+      return res.status(400).json({ success: false, error: 'siteId and targetPage are required.' })
+    }
+
+    const site = getWebsiteByIdFromDb(siteId)
+    if (!site) return res.status(404).json({ success: false, error: `Website ${siteId} not found.` })
+
+    let existingPosts = []
+    try {
+      const pkgRow = db.prepare('SELECT package_data FROM wp_packages WHERE site_id = ?').get(siteId)
+      if (pkgRow && pkgRow.package_data) {
+        const parsed = JSON.parse(pkgRow.package_data)
+        existingPosts = Array.isArray(parsed.posts) ? parsed.posts : (Array.isArray(parsed.packageData?.posts) ? parsed.packageData.posts : [])
+      }
+    } catch (_e) {}
+
+    const opp = suggestArticleOpportunity({ targetPage, site, existingPosts })
+    res.json({ success: true, opportunity: opp })
+  } catch (err) {
+    console.error('Error suggesting article opportunity:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// POST /api/articles/generate
+app.post('/api/articles/generate', async (req, res) => {
+  try {
+    const {
+      siteId,
+      targetPageUrl,
+      targetPageTitle,
+      targetPhrase,
+      proposedTitle,
+      primaryTopic,
+      targetAnchor,
+      notes,
+      provider,
+      model
+    } = req.body || {}
+
+    if (!siteId || !targetPageUrl || !proposedTitle) {
+      return res.status(400).json({ success: false, error: 'siteId, targetPageUrl, and proposedTitle are required.' })
+    }
+
+    const site = getWebsiteByIdFromDb(siteId)
+    if (!site) return res.status(404).json({ success: false, error: `Website ${siteId} not found.` })
+
+    const cleanSiteUrl = (site.url || '').trim().replace(/\/+$/, '')
+    const siteDomain = cleanSiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
+
+    const genResult = await generateOnsiteArticle({
+      promptData: {
+        siteDomain,
+        proposedTitle,
+        primaryTopic,
+        targetPageUrl,
+        targetAnchor: targetAnchor || targetPhrase || 'our services',
+        targetPhrase,
+        notes
+      },
+      provider: provider || 'claude',
+      model
+    })
+
+    const draftId = `draft-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+    const now = new Date().toISOString()
+
+    db.prepare(`
+      INSERT INTO article_drafts (
+        id, site_id, target_page_url, target_page_title, target_phrase, topic,
+        title, meta_title, meta_description, slug, body_html,
+        primary_link_url, primary_link_anchor, status, created_at, updated_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, 'Generated', ?, ?
+      )
+    `).run(
+      draftId,
+      siteId,
+      targetPageUrl,
+      targetPageTitle || '',
+      targetPhrase || '',
+      primaryTopic || '',
+      genResult.title,
+      genResult.metaTitle,
+      genResult.metaDescription,
+      genResult.slug,
+      genResult.bodyHtml,
+      targetPageUrl,
+      targetAnchor || targetPhrase || '',
+      now,
+      now
+    )
+
+    res.json({
+      success: true,
+      draftId,
+      ...genResult,
+      primaryLinkUrl: targetPageUrl,
+      primaryLinkAnchor: targetAnchor || targetPhrase || '',
+      status: 'Generated',
+      createdAt: now
+    })
+  } catch (err) {
+    console.error('Error generating article:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/articles/drafts
+app.get('/api/articles/drafts', (req, res) => {
+  try {
+    const { siteId } = req.query
+    let rows
+    if (siteId) {
+      rows = db.prepare('SELECT * FROM article_drafts WHERE site_id = ? ORDER BY created_at DESC').all(siteId)
+    } else {
+      rows = db.prepare('SELECT * FROM article_drafts ORDER BY created_at DESC').all()
+    }
+    res.json({ success: true, drafts: rows })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// GET /api/articles/drafts/:id
+app.get('/api/articles/drafts/:id', (req, res) => {
+  try {
+    const { id } = req.params
+    const draft = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(id)
+    if (!draft) return res.status(404).json({ success: false, error: 'Draft not found.' })
+    res.json({ success: true, draft })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// POST /api/articles/drafts
+app.post('/api/articles/drafts', (req, res) => {
+  try {
+    const draft = req.body || {}
+    if (!draft.id || !draft.siteId || !draft.title) {
+      return res.status(400).json({ success: false, error: 'id, siteId, and title are required.' })
+    }
+
+    const now = new Date().toISOString()
+    db.prepare(`
+      INSERT INTO article_drafts (
+        id, site_id, target_page_url, target_page_title, target_phrase, topic,
+        title, meta_title, meta_description, slug, body_html,
+        category_id, category_name, primary_link_url, primary_link_anchor,
+        secondary_links_json, status, wp_post_id, wp_edit_url, error_message,
+        created_at, updated_at
+      ) VALUES (
+        @id, @siteId, @targetPageUrl, @targetPageTitle, @targetPhrase, @topic,
+        @title, @metaTitle, @metaDescription, @slug, @bodyHtml,
+        @categoryId, @categoryName, @primaryLinkUrl, @primaryLinkAnchor,
+        @secondaryLinksJson, @status, @wpPostId, @wpEditUrl, @errorMessage,
+        @createdAt, @updatedAt
+      )
+      ON CONFLICT(id) DO UPDATE SET
+        title = excluded.title,
+        meta_title = excluded.meta_title,
+        meta_description = excluded.meta_description,
+        slug = excluded.slug,
+        body_html = excluded.body_html,
+        category_id = excluded.category_id,
+        category_name = excluded.category_name,
+        primary_link_url = excluded.primary_link_url,
+        primary_link_anchor = excluded.primary_link_anchor,
+        secondary_links_json = excluded.secondary_links_json,
+        status = excluded.status,
+        wp_post_id = excluded.wp_post_id,
+        wp_edit_url = excluded.wp_edit_url,
+        error_message = excluded.error_message,
+        updated_at = excluded.updated_at
+    `).run({
+      id: draft.id,
+      siteId: draft.siteId,
+      targetPageUrl: draft.targetPageUrl || '',
+      targetPageTitle: draft.targetPageTitle || '',
+      targetPhrase: draft.targetPhrase || '',
+      topic: draft.topic || '',
+      title: draft.title,
+      metaTitle: draft.metaTitle || draft.title,
+      metaDescription: draft.metaDescription || '',
+      slug: draft.slug || '',
+      bodyHtml: draft.bodyHtml || '',
+      categoryId: draft.categoryId || null,
+      categoryName: draft.categoryName || null,
+      primaryLinkUrl: draft.primaryLinkUrl || '',
+      primaryLinkAnchor: draft.primaryLinkAnchor || '',
+      secondaryLinksJson: draft.secondaryLinksJson ? (typeof draft.secondaryLinksJson === 'string' ? draft.secondaryLinksJson : JSON.stringify(draft.secondaryLinksJson)) : null,
+      status: draft.status || 'Saved',
+      wpPostId: draft.wpPostId || null,
+      wpEditUrl: draft.wpEditUrl || null,
+      errorMessage: draft.errorMessage || null,
+      createdAt: draft.createdAt || now,
+      updatedAt: now
+    })
+
+    const saved = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(draft.id)
+    res.json({ success: true, draft: saved })
+  } catch (err) {
+    console.error('Error saving article draft:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// POST /api/articles/drafts/:id/send-to-wordpress
+app.post('/api/articles/drafts/:id/send-to-wordpress', async (req, res) => {
+  try {
+    const { id } = req.params
+    const draft = db.prepare('SELECT * FROM article_drafts WHERE id = ?').get(id)
+    if (!draft) return res.status(404).json({ success: false, error: `Draft ${id} not found.` })
+
+    if (draft.status === 'Sent to WordPress' && draft.wp_post_id) {
+      return res.json({
+        success: true,
+        alreadySent: true,
+        wpPostId: draft.wp_post_id,
+        wpEditUrl: draft.wp_edit_url,
+        message: `Article was already sent to WordPress as Draft #${draft.wp_post_id}.`
+      })
+    }
+
+    const { site, username, password, siteUrl } = getWebsiteWpCredentials(draft.site_id)
+    if (!site) return res.status(404).json({ success: false, error: `Website ${draft.site_id} not found.` })
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'WordPress credentials not configured for this website.' })
+    }
+
+    const authHeader = 'Basic ' + Buffer.from(`${username}:${password.replace(/\s/g, '')}`).toString('base64')
+    const postsUrl = `${siteUrl}/wp-json/wp/v2/posts`
+
+    const wpPayload = {
+      title: draft.title,
+      content: draft.body_html,
+      slug: draft.slug || undefined,
+      status: 'draft', // STRICT SAFETY MANDATE: ALWAYS DRAFT
+      excerpt: draft.meta_description || undefined,
+      categories: draft.category_id ? [parseInt(draft.category_id, 10)] : undefined,
+      meta: {
+        _yoast_wpseo_title: draft.meta_title || draft.title,
+        _yoast_wpseo_metadesc: draft.meta_description || '',
+        yoast_wpseo_title: draft.meta_title || draft.title,
+        yoast_wpseo_metadesc: draft.meta_description || '',
+        rank_math_title: draft.meta_title || draft.title,
+        rank_math_description: draft.meta_description || ''
+      }
+    }
+
+    console.log('[WP_POST_CREATE] Creating Draft Post on:', postsUrl)
+    const createRes = await fetch(postsUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: authHeader,
+        Accept: 'application/json'
+      },
+      body: JSON.stringify(wpPayload)
+    })
+
+    if (!createRes.ok) {
+      let errText = `HTTP ${createRes.status}`
+      try {
+        const errJson = await createRes.json()
+        errText = errJson.message || errJson.code || errText
+      } catch (_e) {
+        const text = await createRes.text()
+        if (text) errText = text.slice(0, 150)
+      }
+      return res.status(createRes.status).json({ success: false, error: `WordPress post creation failed: ${errText}` })
+    }
+
+    const postData = await createRes.json()
+    const wpPostId = postData.id
+    const wpEditUrl = `${siteUrl}/wp-admin/post.php?post=${wpPostId}&action=edit`
+
+    try {
+      if (draft.meta_title) {
+        await fetch(`${siteUrl}/wp-json/tse-site-exporter/v1/update-page`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+          body: JSON.stringify({ post_id: wpPostId, field: 'seo_title', value: draft.meta_title })
+        })
+      }
+      if (draft.meta_description) {
+        await fetch(`${siteUrl}/wp-json/tse-site-exporter/v1/update-page`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+          body: JSON.stringify({ post_id: wpPostId, field: 'meta_description', value: draft.meta_description })
+        })
+      }
+    } catch (_tseErr) {}
+
+    const now = new Date().toISOString()
+    db.prepare(`
+      UPDATE article_drafts
+      SET status = 'Sent to WordPress',
+          wp_post_id = ?,
+          wp_edit_url = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).run(wpPostId, wpEditUrl, now, id)
+
+    res.json({
+      success: true,
+      wpPostId,
+      wpEditUrl,
+      status: 'Sent to WordPress',
+      message: 'Draft post created successfully in WordPress.'
+    })
+  } catch (err) {
+    console.error('Error sending draft to WordPress:', err)
+    res.status(500).json({ success: false, error: err.message })
   }
 })
 
