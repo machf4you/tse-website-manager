@@ -91,6 +91,47 @@ function scanVpsBackupManifests() {
   return discovered
 }
 
+const MONTH_MAP = {
+  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
+  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12
+}
+
+function parseDateToTimestamp(dateStr) {
+  if (!dateStr) return 0
+  const clean = String(dateStr).replace(/[*`]/g, '').trim()
+
+  // DD-MM-YYYY HH:MM or DD-MM-YYYY
+  let m = clean.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?/)
+  if (m) {
+    const day = parseInt(m[1], 10)
+    const month = parseInt(m[2], 10) - 1
+    const year = parseInt(m[3], 10)
+    const hour = m[4] ? parseInt(m[4], 10) : 0
+    const min = m[5] ? parseInt(m[5], 10) : 0
+    return new Date(year, month, day, hour, min).getTime()
+  }
+
+  // YYYY-MM-DD
+  m = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+  if (m) {
+    const year = parseInt(m[1], 10)
+    const month = parseInt(m[2], 10) - 1
+    const day = parseInt(m[3], 10)
+    return new Date(year, month, day).getTime()
+  }
+
+  // DD Month YYYY (e.g. 18 Sep 2026)
+  m = clean.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/)
+  if (m) {
+    const day = parseInt(m[1], 10)
+    const month = (MONTH_MAP[m[2].toLowerCase().slice(0, 3)] || 9) - 1
+    const year = parseInt(m[3], 10)
+    return new Date(year, month, day).getTime()
+  }
+
+  return 0
+}
+
 /**
  * Load all restore points merging file registry, scanned VPS manifests, and baseline
  */
@@ -105,24 +146,31 @@ export function getAllRestorePoints() {
   }
 
   const vpsManifests = scanVpsBackupManifests()
-  const combined = [...vpsManifests, ...fileRegistry, ...baselineRestorePoints]
+  const combined = [...fileRegistry, ...vpsManifests, ...baselineRestorePoints]
 
   // Deduplicate
   const seen = new Set()
   const unique = []
 
   for (const item of combined) {
-    const key = (item.gitTag && item.gitTag.length > 3)
-      ? `${item.app}::${item.gitTag}`
-      : `${item.app}::${item.version}::${item.commit || item.id}`
+    const cleanItem = {
+      ...item,
+      version: String(item.version || '').replace(/[*`]/g, '').trim(),
+      date: String(item.date || '').replace(/[*`]/g, '').trim(),
+      title: String(item.title || '').replace(/[*`]/g, '').trim()
+    }
+
+    const key = (cleanItem.gitTag && cleanItem.gitTag.length > 3)
+      ? `${cleanItem.app}::${cleanItem.gitTag}`
+      : `${cleanItem.app}::${cleanItem.version}::${cleanItem.commit || cleanItem.id}`
 
     if (!seen.has(key)) {
       seen.add(key)
-      unique.push(item)
+      unique.push(cleanItem)
     }
   }
 
-  // Group by application and assign Current to the newest item, Superseded to others
+  // Group by application and sort chronologically descending
   const appGroups = {}
   for (const item of unique) {
     if (!appGroups[item.app]) appGroups[item.app] = []
@@ -132,6 +180,7 @@ export function getAllRestorePoints() {
   const result = []
   for (const app of Object.keys(appGroups)) {
     const group = appGroups[app]
+    group.sort((a, b) => parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date))
     group.forEach((item, idx) => {
       item.status = idx === 0 ? 'Current' : 'Superseded'
       result.push(item)
