@@ -5,6 +5,23 @@ import { restorePointIndexData } from '../data/restorePointData'
 
 const STORAGE_KEY = 'tse_restore_point_index_v1'
 
+export async function fetchRestorePointIndexApi() {
+  try {
+    const res = await fetch('/api/restore-points', {
+      headers: { 'Cache-Control': 'no-cache' }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.restorePoints) && data.restorePoints.length > 0) {
+        return data.restorePoints
+      }
+    }
+  } catch (e) {
+    console.warn('[RESTORE_POINTS_API_FETCH_FALLBACK]', e)
+  }
+  return getRestorePointIndex()
+}
+
 export function getRestorePointIndex() {
   let userCreated = []
   try {
@@ -27,10 +44,24 @@ export function getRestorePointIndex() {
   }
 
   const merged = [...restorePointIndexData, ...userCreated]
-  merged.forEach((item, idx) => {
-    item.status = idx === 0 ? 'Current' : 'Superseded'
-  })
-  return merged
+  
+  // Group by application and assign Current to the newest item, Superseded to others
+  const appGroups = {}
+  for (const item of merged) {
+    if (!appGroups[item.app]) appGroups[item.app] = []
+    appGroups[item.app].push(item)
+  }
+
+  const result = []
+  for (const app of Object.keys(appGroups)) {
+    const group = appGroups[app]
+    group.forEach((item, idx) => {
+      item.status = idx === 0 ? 'Current' : 'Superseded'
+      result.push(item)
+    })
+  }
+
+  return result
 }
 
 export function saveRestorePointIndex(items) {

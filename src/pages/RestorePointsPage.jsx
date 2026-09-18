@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getRestorePointIndex } from '../services/restorePointService'
+import { useState, useEffect } from 'react'
+import { getRestorePointIndex, fetchRestorePointIndexApi } from '../services/restorePointService'
 import CreateRestorePointDialog from '../components/CreateRestorePointDialog'
 import './RestorePointsPage.css'
 
@@ -49,6 +49,16 @@ export default function RestorePointsPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [restorePoints, setRestorePoints] = useState(() => getRestorePointIndex())
 
+  useEffect(() => {
+    let isMounted = true
+    fetchRestorePointIndexApi().then(fresh => {
+      if (isMounted && Array.isArray(fresh) && fresh.length > 0) {
+        setRestorePoints(fresh)
+      }
+    }).catch(() => {})
+    return () => { isMounted = false }
+  }, [])
+
   return (
     <div className="restore-points-container">
 
@@ -76,7 +86,7 @@ export default function RestorePointsPage() {
 
       {/* Application Sections */}
       {(() => {
-        const sections = [
+        const standardSections = [
           { key: 'Website Manager', title: 'Website Manager', badgeClass: 'badge-wm' },
           { key: 'Website Builder', title: 'Website Builder', badgeClass: 'badge-wb' },
           { key: 'Lead Generator', title: 'Lead Generator', badgeClass: 'badge-lg' },
@@ -84,6 +94,21 @@ export default function RestorePointsPage() {
           { key: 'Keyword Research', title: 'Keyword Research', badgeClass: 'badge-kr' },
           { key: 'Auth / Apps Hub', title: 'Auth / Apps Hub', badgeClass: 'badge-auth' }
         ]
+
+        // Dynamically discover all unique apps present in restorePoints
+        const allApps = Array.from(new Set(restorePoints.map(item => item.app).filter(Boolean)))
+        const sections = [...standardSections]
+
+        // Add any future TSE application dynamically
+        allApps.forEach(app => {
+          if (!sections.some(sec => sec.key === app)) {
+            sections.push({
+              key: app,
+              title: app,
+              badgeClass: 'badge-dynamic'
+            })
+          }
+        })
 
         // Also check if any uncategorised items exist
         const uncategorisedItems = restorePoints.filter(

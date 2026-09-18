@@ -7,6 +7,7 @@ import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
+import { getAllRestorePoints, registerNewRestorePoint } from './restorePointManager.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -79,6 +80,31 @@ app.post('/api/deployment/status', (req, res) => {
     res.json({ status: 'ok', deploymentStatus: inMemoryDeploymentStatus })
   } catch (e) {
     res.status(500).json({ error: e.message })
+  }
+})
+
+// ── Restore Points API (Dynamic & Authoritative) ──
+app.get('/api/restore-points', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  })
+  try {
+    const points = getAllRestorePoints()
+    res.json({ success: true, restorePoints: points })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+app.post('/api/restore-points/register', (req, res) => {
+  try {
+    const entry = req.body || {}
+    const result = registerNewRestorePoint(entry)
+    res.json({ success: true, item: result })
+  } catch (e) {
+    res.status(400).json({ success: false, error: e.message })
   }
 })
 

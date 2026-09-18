@@ -127,6 +127,12 @@
   border: 1px solid rgba(236, 72, 153, 0.3);
 }
 
+.badge-dynamic {
+  background-color: rgba(99, 102, 241, 0.15);
+  color: rgb(129, 140, 248);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
 .badge-uncategorised {
   background-color: rgba(148, 163, 184, 0.15);
   color: rgb(203, 213, 225);
