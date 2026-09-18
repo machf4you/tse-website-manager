@@ -4,7 +4,7 @@
  * based on target phrase, page topic, site name, and target length requirements.
  */
 
-import { matchTargetPhraseIntent, extractSafeString } from './phraseMatcher'
+import { matchTargetPhraseIntent, extractSafeString } from './phraseMatcher.js'
 
 function cleanTopicText(str = '', siteName = '') {
   let s = extractSafeString(str).trim()

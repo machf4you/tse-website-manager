@@ -14,7 +14,7 @@ const STOPS = new Set([
   'the', 'a', 'an', 'of', 'in', 'on', 'for', 'to', 'and', 'or', 'with', 'across', 'at', 'by', 'from', 'our', 'your'
 ])
 
-import { extractSafeString } from './safeString'
+import { extractSafeString } from './safeString.js'
 export { extractSafeString }
 
 export function stemWord(w = '') {

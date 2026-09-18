@@ -38,7 +38,7 @@ const UTILITY_TITLES = [
   /404/i,
 ]
 
-import { extractSafeString } from './safeString'
+import { extractSafeString } from './safeString.js'
 
 export function isUtilityPage(url = '', title = '') {
   const safeUrl = extractSafeString(url)
