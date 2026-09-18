@@ -61,6 +61,20 @@
   white-space: nowrap;
 }
 
+.w1-registry-active-badge {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 6px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 /* Add Website button */
 .w1-btn-add-website,
 .btn-add-website {

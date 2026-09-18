@@ -223,11 +223,13 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
 
   // Fetch Site Registry domains on mount so we have authoritative portfolio assignments
   const [registryMap, setRegistryMap] = useState({})
+  const [activeRegistryCount, setActiveRegistryCount] = useState(null)
 
   useEffect(() => {
     let isMounted = true
     getActiveRegistryDomainsApi().then(domains => {
       if (isMounted && Array.isArray(domains)) {
+        setActiveRegistryCount(domains.length)
         const map = {}
         domains.forEach(d => {
           if (d.id) map[d.id] = d.portfolio || 'Other'
@@ -264,6 +266,15 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
   const [portfolioFilter, setPortfolioFilter] = useState('All')
 
   const filterOptions = ['All', 'TSE', 'Chili', 'Other']
+
+  // Dynamically calculate portfolio counts from current connected websites
+  const allCount = sites.length
+  const tseCount = sites.filter(s => getSitePortfolio(s) === 'TSE').length
+  const chiliCount = sites.filter(s => getSitePortfolio(s) === 'Chili').length
+  const otherCount = sites.filter(s => {
+    const p = getSitePortfolio(s)
+    return p !== 'TSE' && p !== 'Chili'
+  }).length
 
   const filteredSites = sites
     .filter(s => {
@@ -315,22 +326,35 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         <h1 className="w1-title">Connected Websites</h1>
       </div>
 
-      {/* ── ROW 2: W1 Badge + Portfolio Filters (Left) | Add Website Button (Right) ── */}
+      {/* ── ROW 2: W1 Badge + Site Registry Active + Portfolio Filters (Left) | Add Website Button (Right) ── */}
       <div className="w1-row-2">
         <div className="w1-row-2-left">
           <span className="w1-pill-badge">W1 | CONNECTED WEBSITES</span>
+          <span className="w1-registry-active-badge">
+            SITE REGISTRY ACTIVE [{activeRegistryCount !== null ? activeRegistryCount : '…'}]
+          </span>
           <div className="w1-filter-bar">
             <span className="w1-filter-label">Portfolio:</span>
-            {filterOptions.map(opt => (
-              <button
-                key={opt}
-                type="button"
-                className={`w1-filter-btn ${portfolioFilter === opt ? 'w1-filter-btn-active' : ''}`}
-                onClick={() => setPortfolioFilter(opt)}
-              >
-                {opt === 'All' ? 'All Portfolios' : opt}
-              </button>
-            ))}
+            {filterOptions.map(opt => {
+              let count = 0
+              if (opt === 'All') count = allCount
+              else if (opt === 'TSE') count = tseCount
+              else if (opt === 'Chili') count = chiliCount
+              else if (opt === 'Other') count = otherCount
+
+              const label = opt === 'All' ? `All Portfolios [${count}]` : `${opt} [${count}]`
+
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`w1-filter-btn ${portfolioFilter === opt ? 'w1-filter-btn-active' : ''}`}
+                  onClick={() => setPortfolioFilter(opt)}
+                >
+                  {label}
+                </button>
+              )
+            })}
           </div>
         </div>
 

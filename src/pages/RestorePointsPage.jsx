@@ -78,9 +78,11 @@ export default function RestorePointsPage() {
       {(() => {
         const sections = [
           { key: 'Website Manager', title: 'Website Manager', badgeClass: 'badge-wm' },
+          { key: 'Website Builder', title: 'Website Builder', badgeClass: 'badge-wb' },
           { key: 'Lead Generator', title: 'Lead Generator', badgeClass: 'badge-lg' },
           { key: 'Site Registry', title: 'Site Registry', badgeClass: 'badge-sr' },
-          { key: 'Keyword Research', title: 'Keyword Research', badgeClass: 'badge-kr' }
+          { key: 'Keyword Research', title: 'Keyword Research', badgeClass: 'badge-kr' },
+          { key: 'Auth / Apps Hub', title: 'Auth / Apps Hub', badgeClass: 'badge-auth' }
         ]
 
         // Also check if any uncategorised items exist

@@ -5,6 +5,30 @@
  */
 export const restorePointIndexData = [
   {
+    "id": "wb-v1.00-full-disaster-recovery",
+    "app": "Website Builder",
+    "version": "V1.00",
+    "gitTag": "wb-v1.00-full-disaster-recovery",
+    "commit": "9d48a94",
+    "date": "18-09-2026 08:05",
+    "title": "TSE Website Builder — Full Disaster-Recovery Restore Point",
+    "description": "Full disaster-recovery restore point containing verified production code, Nginx HTTPS configuration, SQLite database with Costa Blanca Digital Services project, PM2 process configuration (website-builder-api on port 3008), and Apps Hub portal integration.",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-wb-v1.00-full-disaster-recovery.md"
+  },
+  {
+    "id": "auth-v1.10-full-disaster-recovery",
+    "app": "Auth / Apps Hub",
+    "version": "V1.10",
+    "gitTag": "auth-v1.10-full-disaster-recovery",
+    "commit": "1d40134",
+    "date": "16-09-2026 17:05",
+    "title": "TSE Central Auth & Apps Hub — Full Disaster-Recovery Restore Point",
+    "description": "Authoritative Full Disaster-Recovery Specification and Restore Point for TSE Central Auth & Apps Hub (https://auth.thesearchequation.co.uk), covering central authentication, cookie sessions, user management, and unified application dashboard with Website Builder tile.",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-auth-v1.10-full-disaster-recovery.md"
+  },
+  {
     "id": "v1.54-full-disaster-recovery-lead-generator",
     "app": "Lead Generator",
     "version": "v1.54-full-disaster-recovery-lead-generator",

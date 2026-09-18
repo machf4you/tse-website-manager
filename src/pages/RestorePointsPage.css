@@ -97,6 +97,12 @@
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+.badge-wb {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: rgb(52, 211, 153);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 .badge-lg {
   background-color: rgba(245, 158, 11, 0.15);
   color: rgb(251, 191, 36);
@@ -113,6 +119,12 @@
   background-color: rgba(14, 165, 233, 0.15);
   color: rgb(56, 189, 248);
   border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.badge-auth {
+  background-color: rgba(236, 72, 153, 0.15);
+  color: rgb(244, 114, 182);
+  border: 1px solid rgba(236, 72, 153, 0.3);
 }
 
 .badge-uncategorised {
