@@ -10,8 +10,11 @@ import { extractSafeString } from '../src/utils/safeString.js'
 
 const KNOWN_MAGAZINE_DOMAINS = new Set([
   'bedesworld.co.uk',
+  'searchcollision.co.uk',
   'searchcollision.com',
+  'javeanews.co.uk',
   'javeanews.com',
+  'theecologist.uk',
   'the-ecologist.org',
   'immaterial.co.uk',
   'impetuous.co.uk',
