@@ -884,6 +884,16 @@ export default function AddWebsiteDialog({
                           })}
                         </div>
                       )}
+
+                      <button
+                        type="button"
+                        className="aw-btn-connect-inline"
+                        id="btn-connect-website-inline"
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                      >
+                        {isConnecting ? (editingSite ? 'UPDATING…' : 'CONNECTING…') : (editingSite ? 'UPDATE CONNECTION' : 'CONNECT WEBSITE')}
+                      </button>
                     </>
                   )}
 
@@ -893,6 +903,15 @@ export default function AddWebsiteDialog({
                       <Field label="API Username" id="mg-api-user" placeholder="api_user" value={mgUser} onChange={setMgUser} disabled={isConnecting} />
                       <PasswordField label="API Password / Token" id="mg-api-pass" placeholder="••••••••••••••••" value={mgPass} onChange={setMgPass} disabled={isConnecting} />
                       <StoreViewSelect id="mg-store" value={mgStore} onChange={setMgStore} disabled={isConnecting} />
+                      <button
+                        type="button"
+                        className="aw-btn-connect-inline"
+                        id="btn-connect-website-inline-mg"
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                      >
+                        {isConnecting ? (editingSite ? 'UPDATING…' : 'CONNECTING…') : (editingSite ? 'UPDATE CONNECTION' : 'CONNECT WEBSITE')}
+                      </button>
                     </>
                   )}
 
@@ -956,9 +975,10 @@ export default function AddWebsiteDialog({
               form="aw-connect-form"
               className="aw-btn-connect"
               id="btn-connect-website"
-              disabled={isConnecting || !canConnect}
+              onClick={handleConnect}
+              disabled={isConnecting}
             >
-              {isConnecting ? (editingSite ? 'Updating…' : 'Connecting…') : (editingSite ? 'Update Connection' : 'Connect Website')}
+              {isConnecting ? (editingSite ? 'UPDATING…' : 'CONNECTING…') : (editingSite ? 'UPDATE CONNECTION' : 'CONNECT WEBSITE')}
             </button>
           </div>
         </div>
