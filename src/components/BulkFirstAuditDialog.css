@@ -116,6 +116,109 @@
 .card-excluded .batch-card-num { color: #fbbf24; }
 .card-failed .batch-card-num { color: #f87171; }
 
+/* Pre-Start DataForSEO Estimate Panel */
+.batch-estimate-panel {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border-bottom: 1px solid #334155;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.estimate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.estimate-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.estimate-cost-total {
+  font-size: 0.92rem;
+  color: #f1f5f9;
+}
+
+.estimate-cost-total strong {
+  color: #34d399;
+  font-size: 1.05rem;
+}
+
+.estimate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem 1.25rem;
+  font-size: 0.78rem;
+}
+
+.estimate-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(15, 23, 42, 0.6);
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.est-label {
+  color: #94a3b8;
+}
+
+.est-val {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+/* Stage status pills */
+.stage-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.stage-complete {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.stage-running {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.stage-skipped {
+  background-color: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.stage-failed {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.stage-waiting {
+  background-color: transparent;
+  color: #64748b;
+  border: 1px dashed rgba(100, 116, 139, 0.4);
+}
+
 /* Controls Bar */
 .batch-controls-bar {
   display: flex;

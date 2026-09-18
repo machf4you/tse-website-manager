@@ -54,6 +54,7 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
   const isCompleted = batchData?.status === 'completed'
   const isStopped = batchData?.status === 'stopped'
   const sites = batchData?.siteStates || []
+  const costEst = batchData?.costEstimate || {}
 
   const totalSites = batchData?.totalSites || sites.length
   const eligibleSites = batchData?.eligibleSites || sites.filter(s => s.eligible || s.status === 'QUEUED' || s.status === 'IN_PROGRESS').length
@@ -64,7 +65,8 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
 
   const handleStartBatch = async () => {
     if (isRunning || actionLoading) return
-    if (!window.confirm(`Are you ready to run the automated First Audit batch for ${eligibleSites} eligible websites?\n\nThis will process websites sequentially (250ms throttling) with $0 external API costs.`)) {
+    const costText = costEst.estimatedTotalCostUsd !== undefined ? `$${costEst.estimatedTotalCostUsd.toFixed(2)} USD` : 'estimated API cost'
+    if (!window.confirm(`Are you ready to run the automated First Audit batch for ${eligibleSites} eligible websites?\n\nEstimated DataForSEO Cost: ${costText}\n- Search Volume: ${costEst.searchVolumeBatchCount || 0} batch requests\n- Rank SERP: ${costEst.rankSerpRequests || 0} organic checks\n- Sequential processing with 250ms throttling.`)) {
       return
     }
     setActionLoading(true)
@@ -148,6 +150,14 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
     )
   })
 
+  const getStageBadge = (stageStatus) => {
+    if (stageStatus === 'COMPLETE') return <span className="stage-pill stage-complete">✓ Complete</span>
+    if (stageStatus === 'RUNNING') return <span className="stage-pill stage-running">⏳ Running</span>
+    if (stageStatus === 'SKIPPED') return <span className="stage-pill stage-skipped">— Skipped</span>
+    if (stageStatus === 'FAILED') return <span className="stage-pill stage-failed">✗ Failed</span>
+    return <span className="stage-pill stage-waiting">Waiting</span>
+  }
+
   const getStatusBadge = (site) => {
     if (site.status === 'SKIPPED_ALREADY_AUDITED') {
       return <span className="batch-status-badge badge-skipped">SKIPPED — FIRST AUDIT ALREADY COMPLETE</span>
@@ -189,7 +199,7 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
             <span className="batch-pill-badge">W1 | AUTOMATED BATCH RUNNER</span>
             <h2 className="batch-title">Automated First Audit Batch Runner</h2>
             <p className="batch-subtitle">
-              Dynamic eligibility detection for all connected websites. Audits eligible sites sequentially with zero paid API costs ($0.00).
+              Executes the complete 4-stage First Audit sequence (Target Phrases → Search Volume → UK Rank → Page Audit) with dynamic eligibility detection.
             </p>
           </div>
           <button type="button" className="batch-btn-close" onClick={onClose} aria-label="Close">×</button>
@@ -221,6 +231,36 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
           )}
         </div>
 
+        {/* ── Pre-Start DataForSEO Usage & Cost Estimate Panel ── */}
+        {costEst && costEst.totalEligiblePages > 0 && (
+          <div className="batch-estimate-panel">
+            <div className="estimate-header">
+              <span className="estimate-badge">📊 PRE-START DATAFORSEO ESTIMATE</span>
+              <span className="estimate-cost-total">
+                Est. Total Cost: <strong>${(costEst.estimatedTotalCostUsd || 0).toFixed(2)} USD</strong>
+              </span>
+            </div>
+            <div className="estimate-grid">
+              <div className="estimate-item">
+                <span className="est-label">Commercial Pages Requiring Metrics:</span>
+                <span className="est-val">{costEst.totalCommercialPages || 0} pages ({costEst.commercialSitesCount || 0} sites)</span>
+              </div>
+              <div className="estimate-item">
+                <span className="est-label">Magazine / Content Pages:</span>
+                <span className="est-val">{costEst.totalMagazinePages || 0} pages ({costEst.magazineSitesCount || 0} sites)</span>
+              </div>
+              <div className="estimate-item">
+                <span className="est-label">Search Volume Batch Requests:</span>
+                <span className="est-val">{costEst.searchVolumeBatchCount || 0} batches (~${(costEst.estimatedSearchVolumeCostUsd || 0).toFixed(2)})</span>
+              </div>
+              <div className="estimate-item">
+                <span className="est-label">UK Organic SERP Rank Checks:</span>
+                <span className="est-val">{costEst.rankSerpRequests || 0} checks (~${(costEst.estimatedRankSerpCostUsd || 0).toFixed(3)})</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Controls Bar ── */}
         <div className="batch-controls-bar">
           <div className="batch-controls-left">
@@ -232,7 +272,7 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
                 disabled={actionLoading || eligibleSites === 0}
               >
                 <span className="batch-btn-icon">⚡</span>
-                <span>Start First Audit Batch ({eligibleSites})</span>
+                <span>Start First Audit Batch ({eligibleSites} Sites)</span>
               </button>
             ) : (
               <button
@@ -306,7 +346,7 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
             <div className="batch-progress-row">
               <div className="batch-progress-meta">
                 <span className="batch-progress-title">
-                  <strong>Overall Batch Progress:</strong> Site {batchData?.processedSites + 1} of {batchData?.totalSites}
+                  <strong>Overall Batch Progress:</strong> Site {(batchData?.processedSites || 0) + 1} of {batchData?.totalSites}
                   {batchData?.currentSiteName && ` (${batchData.currentSiteName})`}
                 </span>
                 <span className="batch-progress-percent">{overallPercent}%</span>
@@ -400,8 +440,11 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
                   <th>Portfolio</th>
                   <th>Type</th>
                   <th>Pages</th>
-                  <th>First Audit Status</th>
-                  <th>Reason / Details</th>
+                  <th>1. Target Phrases</th>
+                  <th>2. Search Volume</th>
+                  <th>3. UK Rank</th>
+                  <th>4. Page Audit</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -426,19 +469,26 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
                         <span className="pages-count count-unaudited">{site.totalPages || 0} pages</span>
                       )}
                     </td>
+                    <td className="col-stage">
+                      {getStageBadge(site.stages?.target_phrase || (site.status === 'SKIPPED_ALREADY_AUDITED' ? 'SKIPPED' : 'WAITING'))}
+                    </td>
+                    <td className="col-stage">
+                      {getStageBadge(site.stages?.search_volume || (site.status === 'SKIPPED_ALREADY_AUDITED' ? 'SKIPPED' : 'WAITING'))}
+                    </td>
+                    <td className="col-stage">
+                      {getStageBadge(site.stages?.uk_rank || (site.status === 'SKIPPED_ALREADY_AUDITED' ? 'SKIPPED' : 'WAITING'))}
+                    </td>
+                    <td className="col-stage">
+                      {getStageBadge(site.stages?.page_audit || (site.status === 'SKIPPED_ALREADY_AUDITED' ? 'SKIPPED' : 'WAITING'))}
+                    </td>
                     <td className="col-status">
                       {getStatusBadge(site)}
-                    </td>
-                    <td className="col-reason">
-                      <span className="reason-text" title={site.error || site.reason}>
-                        {site.error ? `Error: ${site.error}` : (site.reason || '—')}
-                      </span>
                     </td>
                   </tr>
                 ))}
                 {filteredSites.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="batch-empty-cell">
+                    <td colSpan="9" className="batch-empty-cell">
                       No websites match the current filter.
                     </td>
                   </tr>
@@ -471,7 +521,7 @@ export default function BulkFirstAuditDialog({ isOpen, onClose, onRefreshWebsite
         {/* ── Modal Footer ── */}
         <div className="batch-modal-footer">
           <div className="batch-footer-note">
-            <span>💡 <strong>Pipeline Guarantee:</strong> First Audit reuses the existing Page Auditor engine with $0 external paid API calls.</span>
+            <span>💡 <strong>Pipeline Sequence:</strong> Target Phrases → Search Volume (Batch) → UK Rank (Live Mobile SERP) → Page Audit.</span>
           </div>
           <button type="button" className="batch-btn-close-bottom" onClick={onClose}>
             Close
