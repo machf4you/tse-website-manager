@@ -745,12 +745,18 @@ class FirstAuditBatchRunner {
     const now = new Date().toISOString()
     const saveConfigStmt = db.prepare(`
       INSERT INTO page_configurations (
-        site_id, page_key, url, title, target_phrase, seoPageType, priority, is_excluded, config_json, updated_at
+        site_id, page_key, url, title, target_phrase, seo_page_type, priority, is_excluded, config_json, updated_at
       ) VALUES (
-        @site_id, @page_key, @url, @title, @target_phrase, @seoPageType, @priority, @is_excluded, @config_json, @updated_at
+        @site_id, @page_key, @url, @title, @target_phrase, @seo_page_type, @priority, @is_excluded, @config_json, @updated_at
       )
       ON CONFLICT(site_id, page_key) DO UPDATE SET
+        url = excluded.url,
+        title = excluded.title,
         target_phrase = excluded.target_phrase,
+        seo_page_type = excluded.seo_page_type,
+        priority = excluded.priority,
+        is_excluded = excluded.is_excluded,
+        config_json = excluded.config_json,
         updated_at = excluded.updated_at
     `)
 
@@ -773,9 +779,9 @@ class FirstAuditBatchRunner {
             url: pageUrl,
             title: pageTitle,
             target_phrase: targetPhrase,
-            seoPageType: p.type || p.seoPageType || 'Topical',
-            priority: p.priority || 0,
-            is_excluded: 0,
+            seo_page_type: p.type || p.seoPageType || 'Topical',
+            priority: Number(p.priority) || 0,
+            is_excluded: p.isExcluded || p.type === 'Excluded' ? 1 : 0,
             config_json: JSON.stringify({
               pageId: pageKey,
               url: pageUrl,
@@ -788,7 +794,9 @@ class FirstAuditBatchRunner {
             updated_at: now
           })
           existingConfigsMap.set(pageKey, targetPhrase)
-        } catch {}
+        } catch (saveErr) {
+          this.addLog(state, `[${site.name}] Config save warning for ${pageKey}: ${saveErr.message}`)
+        }
       }
 
       if (targetPhrase) {
