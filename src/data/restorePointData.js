@@ -61,7 +61,7 @@ export const restorePointIndexData = [
     "app": "Auth / Apps Hub",
     "version": "V1.10",
     "gitTag": "auth-v1.10-full-disaster-recovery",
-    "commit": "1d40134",
+    "commit": "9da9361",
     "date": "16-09-2026 17:05",
     "title": "TSE Central Auth & Apps Hub — Full Disaster-Recovery Restore Point",
     "description": "Authoritative Full Disaster-Recovery Specification and Restore Point for TSE Central Auth & Apps Hub (https://auth.thesearchequation.co.uk), covering central authentication, cookie sessions, user management, and unified application dashboard with Website Builder tile.",

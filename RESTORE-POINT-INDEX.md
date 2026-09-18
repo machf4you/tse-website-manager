@@ -10,7 +10,7 @@ Master index of active restore points for the TSE ecosystem, grouped by applicat
 | Lead Generator | V1.54.1 | `lg-v1.54.1-full-disaster-recovery` | `5ea0b40` | 18-09-2026 04:45 | Lead Generator V1.54.1 Full Disaster-Recovery Milestone | **Current** |
 | Site Registry | V2.20.1 | `sr-v2.20.1-full-disaster-recovery` | `972756a` | 18-09-2026 04:49 | Site Registry V2.20.1 Full Disaster-Recovery Milestone | **Current** |
 | Website Builder | V1.00 | `wb-v1.00-full-disaster-recovery` | `9d48a94` | 18-09-2026 08:05 | TSE Website Builder — Full Disaster-Recovery Restore Point | **Current** |
-| Auth / Apps Hub | V1.10 | `auth-v1.10-full-disaster-recovery` | `1d40134` | 16-09-2026 17:05 | TSE Central Auth & Apps Hub — Full Disaster-Recovery Restore Point | **Current** |
+| Auth / Apps Hub | V1.10 | `auth-v1.10-full-disaster-recovery` | `9da9361` | 16-09-2026 17:05 | TSE Central Auth & Apps Hub — Full Disaster-Recovery Restore Point | **Current** |
 | Keyword Research | V1.4.5 | `kr-v1.45-full-disaster-recovery` | `f710547` | 16-09-2026 10:52 | Keyword Research V1.4.5 Full Disaster-Recovery Milestone | **Current** |
 | Lead Generator | v1.54-full-disaster-recovery-lead-generator | - | `[AUTO]` | 16-09-2026 17:03 | TSE Lead Generator — Full Disaster-Recovery Restore Point | Superseded |
 | Website Manager | v2.52-full-disaster-recovery-apps-hub-migration | - | `[AUTO]` | 16-09-2026 17:02 | TSE Website Manager — Full Disaster-Recovery Restore Point | Superseded |
