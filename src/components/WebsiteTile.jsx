@@ -159,12 +159,12 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   else if (portfolioValue === 'Chili') portfolioVariant = 'amber'
   else if (portfolioValue === 'Other') portfolioVariant = 'grey'
 
-  const connectionValue = isRegistryShell ? 'Setup Required' : isConnected ? 'Connected' : 'Disconnected'
-  const connectionVariant = isRegistryShell ? 'amber' : isConnected ? 'green' : 'red'
+  const rawPlatform = String(site.platform || site.platform_type || '').toLowerCase()
+  const isMg = rawPlatform === 'magento' || Boolean(site.configData?.mgBackendUrl) || Boolean(site.mgBackendUrl)
+  const apiLabel = isMg ? 'Magento API' : 'WordPress API'
 
   const liveStatusRows = [
-    { label: 'Connection',       value: connectionValue, variant: connectionVariant },
-    { label: 'WordPress API',    value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
+    { label: apiLabel,           value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
     { label: 'Portfolio',        value: portfolioValue, variant: portfolioVariant },
     { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
     { label: 'Configured',       value: configuredText, variant: configuredVariant },

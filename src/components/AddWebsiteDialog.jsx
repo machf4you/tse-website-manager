@@ -471,6 +471,62 @@ export default function AddWebsiteDialog({
         return
       }
 
+      if (editingSite && onUpdateWebsite) {
+        let cfg = editingSite.configData
+        if (!cfg && editingSite.config_data && typeof editingSite.config_data === 'string') {
+          try { cfg = JSON.parse(editingSite.config_data) } catch (e) {}
+        }
+        cfg = cfg || {}
+
+        const existingUser = editingSite.wpUser || editingSite.connectedUser || cfg.wpUser || cfg.connectedUser || ''
+        const existingPass = editingSite.wpPass || cfg.wpPass || ''
+        const existingBackend = cfg.mgBackendUrl || editingSite.mgBackendUrl || ''
+        const existingApi = cfg.apiBaseUrl || editingSite.apiBaseUrl || ''
+
+        const credentialsChanged = (
+          mgUser.trim() !== existingUser.trim() ||
+          mgPass.trim() !== existingPass.trim() ||
+          mgBackend.trim() !== existingBackend.trim() ||
+          mgApi.trim() !== existingApi.trim()
+        )
+
+        if (!credentialsChanged) {
+          // Fast-path: Only metadata (such as Website Name, serverType, store) changed.
+          // Save immediately without re-authenticating.
+          const updatedTile = {
+            ...editingSite,
+            domain_id: domainId,
+            domainId: domainId,
+            name: mgName.trim(),
+            url: editingSite.url || mgUrl.trim(),
+            platform: 'magento',
+            portfolio: mgPortfolio || editingSite.portfolio || 'tse',
+            serverType: mgServerType || editingSite.serverType || 'Unknown',
+            wpUser: mgUser.trim(),
+            wpPass: existingPass,
+            connectedUser: mgUser.trim(),
+            configData: {
+              ...cfg,
+              domain_id: domainId,
+              domainId: domainId,
+              wpUser: mgUser.trim(),
+              wpPass: existingPass,
+              connectedUser: mgUser.trim(),
+              serverType: mgServerType || 'Unknown',
+              mgBackendUrl: mgBackend.trim(),
+              apiBaseUrl: mgApi.trim(),
+              mgStore: mgStore || 'default'
+            }
+          }
+          await saveWebsiteApi(updatedTile)
+          onUpdateWebsite(updatedTile)
+          setIsConnecting(false)
+          resetForm()
+          onClose()
+          return
+        }
+      }
+
       setIsConnecting(true)
 
       const targetId = editingSite?.id || String(Date.now())
@@ -552,6 +608,59 @@ export default function AddWebsiteDialog({
     if (!wpPass.trim()) {
       setErrorMsg('Please enter a WordPress Application Password.')
       return
+    }
+
+    if (editingSite && onUpdateWebsite) {
+      let cfg = editingSite.configData
+      if (!cfg && editingSite.config_data && typeof editingSite.config_data === 'string') {
+        try { cfg = JSON.parse(editingSite.config_data) } catch (e) {}
+      }
+      cfg = cfg || {}
+
+      const existingUser = editingSite.wpUser || editingSite.connectedUser || cfg.wpUser || cfg.connectedUser || ''
+      const existingPass = editingSite.wpPass || cfg.wpPass || ''
+      const existingUrl = editingSite.url || ''
+
+      const credentialsChanged = (
+        wpUser.trim() !== existingUser.trim() ||
+        wpPass.trim() !== existingPass.trim() ||
+        wpUrl.trim() !== existingUrl.trim()
+      )
+
+      if (!credentialsChanged) {
+        // Fast-path: Only metadata (such as Website Name, serverType, elementorEnabled) changed.
+        // Save immediately without re-authenticating or risking disconnecting the WP API.
+        const updatedTile = {
+          ...editingSite,
+          domain_id: domainId,
+          domainId: domainId,
+          name: wpName.trim(),
+          url: editingSite.url,
+          platform: editingSite?.platform || 'wordpress',
+          portfolio: editingSite?.portfolio || portfolio,
+          serverType: serverType || editingSite?.serverType || 'Unknown',
+          elementorEnabled,
+          wpUser: wpUser.trim(),
+          wpPass: wpPass.trim(),
+          connectedUser: editingSite.connectedUser || wpUser.trim(),
+          configData: {
+            ...cfg,
+            domain_id: domainId,
+            domainId: domainId,
+            platform: editingSite?.platform || 'wordpress',
+            wpUser: wpUser.trim(),
+            wpPass: wpPass.trim(),
+            connectedUser: editingSite.connectedUser || wpUser.trim(),
+            serverType: serverType || 'Unknown',
+          }
+        }
+        await saveWebsiteApi(updatedTile)
+        onUpdateWebsite(updatedTile)
+        setIsConnecting(false)
+        resetForm()
+        onClose()
+        return
+      }
     }
 
     setIsConnecting(true)
@@ -791,7 +900,7 @@ export default function AddWebsiteDialog({
                         id="wp-name"
                         placeholder="e.g. Ascent Builders"
                         value={wpName}
-                        readOnly={true}
+                        onChange={setWpName}
                         disabled={isConnecting}
                       />
                       <Field
@@ -819,7 +928,14 @@ export default function AddWebsiteDialog({
 
                   {platform === 'magento' && (
                     <>
-                      <Field label="Website Name" id="mg-name" value={mgName} readOnly={true} disabled={isConnecting} />
+                      <Field
+                        label="Website Name"
+                        id="mg-name"
+                        placeholder="e.g. HF4You"
+                        value={mgName}
+                        onChange={setMgName}
+                        disabled={isConnecting}
+                      />
                       <Field label="Website URL (Frontend)" id="mg-url" value={mgUrl} readOnly={true} disabled={isConnecting} />
                       <Field label="Magento Backend URL" id="mg-backend" placeholder="https://www.example.co.uk/admin" value={mgBackend} onChange={setMgBackend} disabled={isConnecting} />
                       <PortfolioSelect id="mg-portfolio" value={mgPortfolio} readOnly={true} disabled={isConnecting} />
