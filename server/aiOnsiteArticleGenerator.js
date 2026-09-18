@@ -37,14 +37,8 @@ export function resolveAiApiKey(provider = 'anthropic') {
     path.join(process.cwd(), '.env'),
     path.join(__dirname, '..', '.env'),
     path.join(__dirname, '.env'),
-    'C:/Antigravity/tse-site-registry/.env',
-    'C:/Antigravity/web-asset-keeper/.env',
-    '/opt/tse-apps/site-registry/.env',
-    '/opt/tse-apps/shared/.env',
     '/opt/tse-apps/website-manager/.env',
-    '/opt/tse-apps/keyword-research/server/.env',
-    '/opt/tse-apps/site-registry/server/.env',
-    path.join(os.homedir(), '.tse_env')
+    '/opt/tse-apps/website-manager/server/.env'
   ]
 
   for (const envPath of candidatePaths) {

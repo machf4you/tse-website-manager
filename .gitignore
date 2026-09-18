@@ -28,3 +28,7 @@ scratch/
 *.tar.gz
 scratch_*.mjs
 datetime
+.env
+.env*
+*.env
+server/.env
