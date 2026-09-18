@@ -148,6 +148,25 @@ db.exec(`
     updated_at TEXT NOT NULL,
     FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS first_audit_batch_state (
+    id TEXT PRIMARY KEY,
+    status TEXT NOT NULL,
+    started_at TEXT,
+    completed_at TEXT,
+    total_sites INTEGER DEFAULT 0,
+    processed_sites INTEGER DEFAULT 0,
+    successful_sites INTEGER DEFAULT 0,
+    failed_sites INTEGER DEFAULT 0,
+    current_site_id TEXT,
+    current_site_name TEXT,
+    current_page_index INTEGER DEFAULT 0,
+    current_page_total INTEGER DEFAULT 0,
+    current_page_url TEXT,
+    site_states_json TEXT,
+    logs_json TEXT,
+    updated_at TEXT NOT NULL
+  );
 `)
 
 // Safe idempotent migration: ensure domain_id column and index exist on websites table

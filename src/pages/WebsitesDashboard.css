@@ -106,6 +106,34 @@
   transform: translateY(0);
 }
 
+/* Automated First Audit Runner button */
+.w1-btn-batch-audit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: 1px solid #1e40af;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  transition: opacity 0.2s, transform 0.15s, background-color 0.15s;
+}
+
+.w1-btn-batch-audit:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.w1-btn-batch-audit:active {
+  transform: translateY(0);
+}
+
 .website-tiles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));

@@ -8,6 +8,7 @@ import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRu
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
 import { getAllRestorePoints, registerNewRestorePoint } from './restorePointManager.js'
+import { batchRunner, getFullEstateEligibility } from './firstAuditBatchRunner.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -3811,6 +3812,60 @@ app.post('/api/articles/drafts/:id/send-to-wordpress', async (req, res) => {
     })
   } catch (err) {
     console.error('Error sending draft to WordPress:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// ==========================================
+// 12. AUTOMATED FIRST AUDIT BATCH RUNNER
+// ==========================================
+
+// Get batch status & estate eligibility
+app.get('/api/first-audit-batch/status', (req, res) => {
+  try {
+    const status = batchRunner.getStatus(db)
+    res.json({ success: true, ...status })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// Start automated batch execution
+app.post('/api/first-audit-batch/start', async (req, res) => {
+  try {
+    const status = await batchRunner.start(db)
+    res.json({ success: true, ...status })
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message })
+  }
+})
+
+// Stop automated batch execution
+app.post('/api/first-audit-batch/stop', async (req, res) => {
+  try {
+    const status = await batchRunner.stop(db)
+    res.json({ success: true, ...status })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// Retry only failed sites
+app.post('/api/first-audit-batch/retry-failed', async (req, res) => {
+  try {
+    const status = await batchRunner.retryFailed(db)
+    res.json({ success: true, ...status })
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message })
+  }
+})
+
+// Reset batch state back to dynamic calculation
+app.post('/api/first-audit-batch/reset', async (req, res) => {
+  try {
+    const status = await batchRunner.reset(db)
+    res.json({ success: true, ...status })
+  } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
 })

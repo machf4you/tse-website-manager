@@ -563,5 +563,52 @@ export async function removeGlobalUrlExclusionApi(ruleId) {
   }
 }
 
+// 8. AUTOMATED FIRST AUDIT BATCH RUNNER
+export async function getFirstAuditBatchStatusApi() {
+  try {
+    return await fetchJson(`${API_BASE_URL}/first-audit-batch/status`)
+  } catch (err) {
+    console.error('[WM_API] Failed to get first audit batch status:', err)
+    throw err
+  }
+}
+
+export async function startFirstAuditBatchApi() {
+  try {
+    return await fetchJson(`${API_BASE_URL}/first-audit-batch/start`, { method: 'POST' })
+  } catch (err) {
+    console.error('[WM_API] Failed to start first audit batch:', err)
+    throw err
+  }
+}
+
+export async function stopFirstAuditBatchApi() {
+  try {
+    return await fetchJson(`${API_BASE_URL}/first-audit-batch/stop`, { method: 'POST' })
+  } catch (err) {
+    console.error('[WM_API] Failed to stop first audit batch:', err)
+    throw err
+  }
+}
+
+export async function retryFailedFirstAuditBatchApi() {
+  try {
+    return await fetchJson(`${API_BASE_URL}/first-audit-batch/retry-failed`, { method: 'POST' })
+  } catch (err) {
+    console.error('[WM_API] Failed to retry failed first audit batch:', err)
+    throw err
+  }
+}
+
+export async function resetFirstAuditBatchApi() {
+  try {
+    return await fetchJson(`${API_BASE_URL}/first-audit-batch/reset`, { method: 'POST' })
+  } catch (err) {
+    console.error('[WM_API] Failed to reset first audit batch:', err)
+    throw err
+  }
+}
+
+
 
 
