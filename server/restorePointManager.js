@@ -36,18 +36,14 @@ function scanVpsBackupManifests() {
         if (fs.existsSync(manifestFile)) {
           try {
             const text = fs.readFileSync(manifestFile, 'utf-8')
-            const dateMatch = text.match(/Backup Date:\s*([^
-]+)/i) || text.match(/Date:\s*([^
-]+)/i)
-            const verMatch = text.match(/Version:\s*([^
-]+)/i)
+            const dateMatch = text.match(/Backup Date:\s*([^\r\n]+)/i) || text.match(/Date:\s*([^\r\n]+)/i)
+            const verMatch = text.match(/Version:\s*([^\r\n]+)/i)
             const commitMatch = text.match(/Production Commit:\s*`?([a-f0-9]+)`?/i) || text.match(/Git Commit:\s*`?([a-f0-9]+)`?/i)
             const tagMatch = text.match(/Git Tag:\s*`?([a-zA-Z0-9._-]+)`?/i) || text.match(/DR Tag:\s*`?([a-zA-Z0-9._-]+)`?/i)
-            const titleMatch = text.match(/^#\s*([^
-]+)/m)
+            const titleMatch = text.match(/^#\s*([^\r\n]+)/m)
 
             // Format app name nicely
-            let appName = appDir.replace(/-/g, ' ').replace(/\w/g, c => c.toUpperCase())
+            let appName = appDir.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
             if (appDir === 'website-manager') appName = 'Website Manager'
             else if (appDir === 'lead-gen') appName = 'Lead Generator'
             else if (appDir === 'site-registry') appName = 'Site Registry'
