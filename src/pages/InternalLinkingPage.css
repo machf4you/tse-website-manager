@@ -380,7 +380,7 @@
 
 .il-stat-val {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 400;
   color: #f8fafc;
 }
 
@@ -507,7 +507,7 @@
 .il-gen-replacement {
   color: #f8fafc;
   font-size: 0.82rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.4;
 }
 

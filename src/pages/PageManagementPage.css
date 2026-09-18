@@ -319,7 +319,7 @@
 }
 
 .w3-page-title {
-  font-weight: 700;
+  font-weight: 400;
   color: #ffffff;
   font-size: 0.88rem;
   margin-bottom: 2px;
@@ -333,7 +333,7 @@
 
 .col-target {
   width: 20%;
-  font-weight: 600;
+  font-weight: 400;
   color: rgb(241, 245, 249);
   font-size: 0.88rem;
 }
@@ -383,7 +383,7 @@
   padding: 1px 6px;
   border-radius: 4px;
   font-size: 0.76rem;
-  font-weight: 700;
+  font-weight: 400;
   line-height: 1.4;
 }
 
@@ -411,7 +411,7 @@
   border: none;
   color: rgb(203, 213, 225);
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 400;
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;

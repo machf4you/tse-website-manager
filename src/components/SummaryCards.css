@@ -59,7 +59,7 @@
 
 .card-value {
   font-size: 1.35rem;
-  font-weight: 800;
+  font-weight: 400;
   color: var(--text-primary);
   line-height: 1.2;
   font-family: var(--font-display);

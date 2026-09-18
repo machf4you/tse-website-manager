@@ -157,7 +157,7 @@
 
 .wc-stat-value {
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text-primary);
   white-space: nowrap;
 }

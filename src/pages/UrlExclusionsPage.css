@@ -199,7 +199,7 @@
 .ue-pattern-code {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 400;
   color: #38bdf8;
   background: rgba(56, 189, 248, 0.1);
   padding: 0.15rem 0.45rem;
@@ -256,7 +256,7 @@
 
 .ue-category-pill {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #cbd5e1;
 }
 

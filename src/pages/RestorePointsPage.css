@@ -223,7 +223,7 @@
 .rp-cell-date-badge {
   font-family: 'Outfit', sans-serif;
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.03em;
   color: rgb(241, 245, 249);
   white-space: nowrap;
@@ -245,7 +245,7 @@
 }
 
 .rp-version-badge {
-  font-weight: 700;
+  font-weight: 400;
   color: rgb(248, 250, 252);
   font-size: 0.875rem;
 }
@@ -292,7 +292,7 @@
 }
 
 .rp-cell-title-text {
-  font-weight: 600;
+  font-weight: 400;
   color: rgb(248, 250, 252);
   line-height: 1.4;
   word-break: break-word;
