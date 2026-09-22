@@ -215,6 +215,23 @@ try {
   console.error('Error ensuring completed_at column exists on article_drafts table:', e)
 }
 
+// Safe idempotent migration: normalize any float-formatted page_keys (e.g. '1001.0' -> '1001') in page_rankings and page_configurations
+try {
+  db.exec(`
+    UPDATE page_rankings
+    SET page_key = substr(page_key, 1, length(page_key) - 2)
+    WHERE page_key LIKE '%.0'
+      AND (site_id, substr(page_key, 1, length(page_key) - 2)) NOT IN (SELECT site_id, page_key FROM page_rankings);
+
+    UPDATE page_configurations
+    SET page_key = substr(page_key, 1, length(page_key) - 2)
+    WHERE page_key LIKE '%.0'
+      AND (site_id, substr(page_key, 1, length(page_key) - 2)) NOT IN (SELECT site_id, page_key FROM page_configurations);
+  `)
+} catch (e) {
+  console.error('Error normalizing page_key format in page_rankings / page_configurations:', e)
+}
+
 export const getAllWebsitesStmt = db.prepare('SELECT * FROM websites')
 export const getWebsiteByIdStmt = db.prepare('SELECT * FROM websites WHERE id = ?')
 export const getWebsiteByDomainIdStmt = db.prepare('SELECT * FROM websites WHERE domain_id = ?')

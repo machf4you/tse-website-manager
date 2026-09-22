@@ -225,6 +225,23 @@ export default function PageManagementPage({
     }
   }
 
+  const getRankInfoForPage = (page) => {
+    if (!page || !pageRankings || typeof pageRankings !== 'object') return null
+    const idStr = page.id !== undefined && page.id !== null ? String(page.id).trim() : ''
+    const normId = idStr.endsWith('.0') ? idStr.slice(0, -2) : idStr
+    const floatId = normId ? `${normId}.0` : ''
+    const urlStr = page.url ? String(page.url).trim().toLowerCase() : ''
+    const pageKey = page.pageKey ? String(page.pageKey).trim() : ''
+
+    return (normId && pageRankings[normId]) ||
+           (idStr && pageRankings[idStr]) ||
+           (floatId && pageRankings[floatId]) ||
+           (page.url && pageRankings[page.url]) ||
+           (urlStr && pageRankings[urlStr]) ||
+           (pageKey && pageRankings[pageKey]) ||
+           null
+  }
+
   const handleSort = (col) => {
     if (sortColumn === col) {
       setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))
@@ -991,8 +1008,7 @@ export default function PageManagementPage({
     // 5. RANK COLUMN (1-100 asc, >100, unchecked at end)
     if (sortColumn === 'rank') {
       const getRankVal = (p) => {
-        const pk = p.id || p.url
-        const r = pageRankings[pk] || (p.url ? pageRankings[p.url] : null) || (p.id ? pageRankings[String(p.id)] : null)
+        const r = getRankInfoForPage(p)
         if (r?.isTop100 && r?.googleRank) return Number(r.googleRank)
         if (r?.lastCheckedAt && !r?.isTop100) return 1000
         return 9999
@@ -1008,8 +1024,7 @@ export default function PageManagementPage({
     // 6. VOLUME COLUMN (Highest to lowest search volume, unchecked at end)
     if (sortColumn === 'volume') {
       const getVolumeVal = (p) => {
-        const pk = p.id || p.url
-        const r = pageRankings[pk] || (p.url ? pageRankings[p.url] : null) || (p.id ? pageRankings[String(p.id)] : null)
+        const r = getRankInfoForPage(p)
         if (r?.searchVolume !== null && r?.searchVolume !== undefined) return Number(r.searchVolume)
         return -1
       }
@@ -1778,7 +1793,7 @@ export default function PageManagementPage({
 
                 const page = row.page
                 const pageKey = page.id || page.url
-                const rankInfo = pageRankings[pageKey] || (page.url ? pageRankings[page.url] : null) || (page.id ? pageRankings[String(page.id)] : null)
+                const rankInfo = getRankInfoForPage(page)
                 const isCheckingThisRank = checkingRankKey === pageKey || (page.url && checkingRankKey === page.url) || (page.id && checkingRankKey === page.id)
                 const isCheckingThisVolume = checkingVolumeKey === pageKey || (page.url && checkingVolumeKey === page.url) || (page.id && checkingVolumeKey === page.id)
 

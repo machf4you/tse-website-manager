@@ -2199,6 +2199,15 @@ function normalizeUrlForMatching(url, baseSiteUrl) {
   return u
 }
 
+function normalizeDbPageKey(key) {
+  if (key === undefined || key === null) return ''
+  const str = String(key).trim()
+  if (/^\d+\.0$/.test(str)) {
+    return str.slice(0, -2)
+  }
+  return str
+}
+
 // GET all stored rankings for a website
 app.get('/api/websites/:id/rankings', (req, res) => {
   try {
@@ -2206,9 +2215,10 @@ app.get('/api/websites/:id/rankings', (req, res) => {
     const rows = db.prepare(`SELECT * FROM page_rankings WHERE site_id = ?`).all(id)
     const result = {}
     rows.forEach(r => {
-      result[r.page_key] = {
+      const cleanKey = normalizeDbPageKey(r.page_key)
+      const record = {
         siteId: r.site_id,
-        pageKey: r.page_key,
+        pageKey: cleanKey || r.page_key,
         targetPhrase: r.target_phrase,
         googleRank: r.google_rank,
         isTop100: Boolean(r.is_top_100),
@@ -2222,6 +2232,13 @@ app.get('/api/websites/:id/rankings', (req, res) => {
         lastCheckedAt: r.last_checked_at,
         updatedAt: r.updated_at
       }
+      result[r.page_key] = record
+      if (cleanKey && cleanKey !== r.page_key) {
+        result[cleanKey] = record
+      }
+      if (r.ranking_url) {
+        result[r.ranking_url] = record
+      }
     })
     res.json(result)
   } catch (e) {
@@ -2233,7 +2250,8 @@ app.get('/api/websites/:id/rankings', (req, res) => {
 async function handleSinglePhraseRankCheck(req, res) {
   try {
     const { id, pageKey: paramPageKey } = req.params
-    const pageKey = paramPageKey ? decodeURIComponent(paramPageKey) : (req.body?.pageKey || req.query?.pageKey)
+    const rawPageKey = paramPageKey ? decodeURIComponent(paramPageKey) : (req.body?.pageKey || req.query?.pageKey)
+    const pageKey = normalizeDbPageKey(rawPageKey)
 
     if (!id || !pageKey) {
       return res.status(400).json({ success: false, error: 'siteId and pageKey are required' })
@@ -2409,7 +2427,8 @@ async function handleSinglePhraseRankCheck(req, res) {
 async function handleSinglePhraseVolumeCheck(req, res) {
   try {
     const { id, pageKey: paramPageKey } = req.params
-    const pageKey = paramPageKey ? decodeURIComponent(paramPageKey) : (req.body?.pageKey || req.query?.pageKey)
+    const rawPageKey = paramPageKey ? decodeURIComponent(paramPageKey) : (req.body?.pageKey || req.query?.pageKey)
+    const pageKey = normalizeDbPageKey(rawPageKey)
 
     if (!id || !pageKey) {
       return res.status(400).json({ success: false, error: 'siteId and pageKey are required' })
@@ -2639,9 +2658,10 @@ async function handleBatchVolumeCheck(req, res) {
       for (const p of pageItems) {
         const kwLower = p.targetPhrase.toLowerCase()
         const vol = volumeByKeyword.has(kwLower) ? volumeByKeyword.get(kwLower) : null
+        const cleanKey = normalizeDbPageKey(p.pageKey)
         stmt.run({
           site_id: id,
-          page_key: p.pageKey,
+          page_key: cleanKey || p.pageKey,
           target_phrase: p.targetPhrase,
           search_volume: vol,
           volume_checked_at: now,
