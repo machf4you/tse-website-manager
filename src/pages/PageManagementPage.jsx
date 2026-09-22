@@ -262,33 +262,36 @@ export default function PageManagementPage({
     setEditingPage(null)
 
     // Save Workflow Trigger:
-    // 1. If Target Phrase changed: immediately invalidate old metrics and trigger live volume + rank check
-    if (newTarget && newTarget !== oldTarget) {
-      setPageRankings(prev => ({
-        ...prev,
-        [pageKey]: {
-          siteId: site?.id,
-          pageKey,
-          targetPhrase: config.targetPhrase || config.target,
-          googleRank: null,
-          searchVolume: null,
-          isTop100: false,
-          rankingUrl: null,
-          isUrlMatch: false
-        }
-      }))
+    // When Save Configuration is clicked, automatically update UK Rank and UK Volume for that page
+    const targetPhraseStr = (config.targetPhrase || config.target || '').trim()
+    if (targetPhraseStr) {
+      if (newTarget !== oldTarget) {
+        setPageRankings(prev => ({
+          ...prev,
+          [pageKey]: {
+            siteId: site?.id,
+            pageKey,
+            targetPhrase: targetPhraseStr,
+            googleRank: null,
+            searchVolume: null,
+            isTop100: false,
+            rankingUrl: null,
+            isUrlMatch: false
+          }
+        }))
+      }
 
       const targetPage = {
         ...config,
         id: config.pageId || pageKey,
         url: config.url || pageKey,
-        target: config.targetPhrase || config.target,
-        targetPhrase: config.targetPhrase || config.target
+        target: targetPhraseStr,
+        targetPhrase: targetPhraseStr
       }
       handleCheckVolume(targetPage)
       handleCheckRank(targetPage)
     } else if (newUrl !== oldUrl && (config.targetPhrase || config.target)) {
-      // 2. If only Configured URL changed: recalculate isUrlMatch locally against existing rankingUrl
+      // If only Configured URL changed: recalculate isUrlMatch locally against existing rankingUrl
       const rankInfo = pageRankings[pageKey] || (config.url ? pageRankings[config.url] : null)
       if (rankInfo?.rankingUrl) {
         const siteUrl = site?.url || ''
@@ -303,6 +306,103 @@ export default function PageManagementPage({
           }
         }))
       }
+    }
+  }
+
+  const [isUpdatingRankAndVolume, setIsUpdatingRankAndVolume] = useState(false)
+  const [rankVolumeProgress, setRankVolumeProgress] = useState({ current: 0, total: 0, stage: '' })
+
+  const handleUpdateAllRankAndVolume = async () => {
+    if (!site?.id || isUpdatingRankAndVolume || isRunningInitialData) return
+
+    // Identify all active (non-excluded) pages with a configured Target Phrase
+    const targetItems = []
+    for (const page of pagesList) {
+      const pageKey = page.id || page.url
+      const config = configurations[pageKey] || (page.url ? configurations[page.url] : null) || page
+      const isExcluded = config.isExcluded || page.isExcluded || config.type === 'Excluded' || page.type === 'Excluded' || false
+      const targetPhrase = (config.targetPhrase || config.target || page.targetPhrase || page.target || '').trim()
+
+      if (!isExcluded && targetPhrase) {
+        targetItems.push({
+          pageKey,
+          targetPhrase,
+          url: config.url || page.url || pageKey,
+          configuredUrl: config.url || page.url || pageKey
+        })
+      }
+    }
+
+    if (targetItems.length === 0) return
+
+    setIsUpdatingRankAndVolume(true)
+    setRankVolumeProgress({ current: 0, total: targetItems.length, stage: 'Step 1: Retrieving UK Search Volumes...' })
+
+    try {
+      // 1. Batch Search Volume Check (DataForSEO)
+      await batchCheckSearchVolumeApi({ siteId: site.id, items: targetItems })
+      const freshRankings = await getPageRankingsApi(site.id)
+      if (freshRankings && typeof freshRankings === 'object') {
+        setPageRankings(prev => ({ ...prev, ...freshRankings }))
+      }
+
+      // 2. Sequential UK Google Rank Checks (DataForSEO Live Mobile SERP)
+      for (let i = 0; i < targetItems.length; i++) {
+        const item = targetItems[i]
+        setRankVolumeProgress({
+          current: i + 1,
+          total: targetItems.length,
+          stage: `Step 2: Checking UK Rank (${i + 1}/${targetItems.length}) "${item.targetPhrase}"...`
+        })
+
+        try {
+          const res = await checkPageRankApi({
+            siteId: site.id,
+            pageKey: item.pageKey,
+            targetPhrase: item.targetPhrase,
+            url: item.url,
+            configuredUrl: item.configuredUrl
+          })
+
+          if (res && res.success) {
+            setPageRankings(prev => ({
+              ...prev,
+              [item.pageKey]: {
+                ...(prev[item.pageKey] || {}),
+                siteId: site.id,
+                pageKey: item.pageKey,
+                targetPhrase: item.targetPhrase,
+                googleRank: res.googleRank,
+                isTop100: res.isTop100,
+                rankingUrl: res.rankingUrl,
+                isUrlMatch: res.isUrlMatch,
+                searchVolume: res.searchVolume !== undefined ? res.searchVolume : prev[item.pageKey]?.searchVolume,
+                volumeCheckedAt: res.volumeCheckedAt || prev[item.pageKey]?.volumeCheckedAt,
+                searchEngine: res.searchEngine || 'google.co.uk',
+                locationCode: res.locationCode || 2826,
+                device: res.device || 'mobile',
+                lastCheckedAt: res.lastCheckedAt || new Date().toISOString()
+              }
+            }))
+          }
+        } catch (rankErr) {
+          console.warn(`Rank check failed for ${item.pageKey}:`, rankErr.message)
+        }
+
+        // 200ms throttling between calls
+        await new Promise(r => setTimeout(r, 200))
+      }
+    } catch (err) {
+      console.error('Error updating rank & volume:', err)
+    } finally {
+      setIsUpdatingRankAndVolume(false)
+      setRankVolumeProgress({ current: 0, total: 0, stage: '' })
+      try {
+        const finalRankings = await getPageRankingsApi(site.id)
+        if (finalRankings && typeof finalRankings === 'object') {
+          setPageRankings(prev => ({ ...prev, ...finalRankings }))
+        }
+      } catch (_e) {}
     }
   }
 
@@ -1194,6 +1294,7 @@ export default function PageManagementPage({
   const allCount = pagesList.length
   const starredCount = pagesList.filter(p => p.isStarred === true && !p.isExcluded && p.type !== 'Excluded').length
   const configuredCount = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
+  const configuredWithPhraseCount = pagesList.filter(p => !p.isExcluded && p.type !== 'Excluded' && Boolean((p.targetPhrase || p.target || '').trim())).length
   const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded && p.type !== 'Excluded').length
   const excludedCount = pagesList.filter(p => p.isExcluded === true || p.type === 'Excluded').length
 
@@ -1476,41 +1577,109 @@ export default function PageManagementPage({
           </button>
         </div>
 
-        {actionRequiredCount > 0 && (
-          <button
-            type="button"
-            className="w3-btn-configure-targets"
-            onClick={handleRunInitialData}
-            disabled={isRunningInitialData}
-            id="btn-w3-run-initial-data"
-            style={{
-              backgroundColor: isRunningInitialData ? 'rgba(37,99,235,0.7)' : '#2563eb',
-              borderColor: '#1d4ed8',
-              color: '#ffffff',
-              padding: '6px 14px',
-              fontSize: '0.8rem',
-              fontWeight: '700',
-              borderRadius: '6px',
-              border: '1px solid',
-              cursor: isRunningInitialData ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 0 10px rgba(37,99,235,0.25)',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            {isRunningInitialData ? (
-              <>
-                <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
-                <span>Running Initial Data ({initialDataProgress.current}/{initialDataProgress.total})</span>
-              </>
-            ) : (
-              <span>⚡ Run Initial Data ({actionRequiredCount})</span>
-            )}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {configuredWithPhraseCount > 0 && (
+            <button
+              type="button"
+              className="w3-btn-update-rank-volume"
+              onClick={handleUpdateAllRankAndVolume}
+              disabled={isUpdatingRankAndVolume || isRunningInitialData}
+              id="btn-w3-update-rank-volume"
+              style={{
+                backgroundColor: isUpdatingRankAndVolume ? 'rgba(16, 185, 129, 0.7)' : '#059669',
+                borderColor: '#047857',
+                color: '#ffffff',
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid',
+                cursor: (isUpdatingRankAndVolume || isRunningInitialData) ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 0 10px rgba(16, 185, 129, 0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {isUpdatingRankAndVolume ? (
+                <>
+                  <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
+                  <span>Updating Rank &amp; Volume ({rankVolumeProgress.current}/{rankVolumeProgress.total})</span>
+                </>
+              ) : (
+                <span>🔄 Update Rank &amp; Volume ({configuredWithPhraseCount})</span>
+              )}
+            </button>
+          )}
+
+          {actionRequiredCount > 0 && (
+            <button
+              type="button"
+              className="w3-btn-configure-targets"
+              onClick={handleRunInitialData}
+              disabled={isRunningInitialData}
+              id="btn-w3-run-initial-data"
+              style={{
+                backgroundColor: isRunningInitialData ? 'rgba(37,99,235,0.7)' : '#2563eb',
+                borderColor: '#1d4ed8',
+                color: '#ffffff',
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                borderRadius: '6px',
+                border: '1px solid',
+                cursor: isRunningInitialData ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 0 10px rgba(37,99,235,0.25)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {isRunningInitialData ? (
+                <>
+                  <span style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }}>⏳</span>
+                  <span>Running Initial Data ({initialDataProgress.current}/{initialDataProgress.total})</span>
+                </>
+              ) : (
+                <span>⚡ Run Initial Data ({actionRequiredCount})</span>
+              )}
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* ── Rank & Volume Progress Indicator ── */}
+      {isUpdatingRankAndVolume && (
+        <div style={{
+          backgroundColor: 'rgba(16, 185, 129, 0.08)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: '8px',
+          padding: '12px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+          marginBottom: '0.5rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
+            <span style={{ fontWeight: 700, color: '#34d399' }}>
+              🔄 {rankVolumeProgress.stage}
+            </span>
+            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>
+              {rankVolumeProgress.current} / {rankVolumeProgress.total} Pages
+            </span>
+          </div>
+          <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+            <div style={{
+              width: `${rankVolumeProgress.total > 0 ? Math.round((rankVolumeProgress.current / rankVolumeProgress.total) * 100) : 0}%`,
+              height: '100%',
+              backgroundColor: '#10b981',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        </div>
+      )}
 
       {/* ── Initial Data Progress Indicator ── */}
       {isRunningInitialData && (
