@@ -1676,6 +1676,89 @@ app.get('/api/websites/:id/page-configs', (req, res) => {
   }
 })
 
+// Save a single page configuration for a website
+app.post('/api/websites/:id/page-configs/single', (req, res) => {
+  try {
+    const { id } = req.params
+    const conf = req.body
+    if (!conf || typeof conf !== 'object') {
+      return res.status(400).json({ error: 'Configuration object is required' })
+    }
+
+    const rawPageKey = conf.pageId || conf.url || conf.pageKey
+    const pageKey = normalizeDbPageKey(rawPageKey)
+    if (!pageKey) {
+      return res.status(400).json({ error: 'pageId or url is required' })
+    }
+
+    const now = new Date().toISOString()
+    const targetPhrase = (conf.target || conf.targetPhrase || '').trim()
+    const cleanConfig = {
+      pageId: conf.pageId || pageKey,
+      url: conf.url || pageKey,
+      proposedTitle: conf.proposedTitle || conf.title || '',
+      title: conf.title || conf.proposedTitle || '',
+      targetPhrase: targetPhrase,
+      target: targetPhrase,
+      type: conf.type || conf.seoPageType || 'Topical',
+      seoPageType: conf.seoPageType || conf.type || 'Topical',
+      autoType: conf.autoType || conf.type || 'Topical',
+      priority: Number(conf.priority) || 0,
+      isConfigured: Boolean(targetPhrase),
+      isStarred: Boolean(conf.isStarred),
+      isExcluded: Boolean(conf.isExcluded || conf.type === 'Excluded'),
+      isManualOverride: Boolean(conf.isManualOverride),
+      status: targetPhrase ? 'configured' : 'unconfigured',
+      updatedAt: now
+    }
+
+    const stmt = db.prepare(`
+      INSERT INTO page_configurations (
+        site_id, page_key, url, title, target_phrase, seo_page_type, priority, is_excluded, config_json, updated_at
+      ) VALUES (
+        @site_id, @page_key, @url, @title, @target_phrase, @seo_page_type, @priority, @is_excluded, @config_json, @updated_at
+      )
+      ON CONFLICT(site_id, page_key) DO UPDATE SET
+        url = excluded.url,
+        title = excluded.title,
+        target_phrase = excluded.target_phrase,
+        seo_page_type = excluded.seo_page_type,
+        priority = excluded.priority,
+        is_excluded = excluded.is_excluded,
+        config_json = excluded.config_json,
+        updated_at = excluded.updated_at
+    `)
+
+    stmt.run({
+      site_id: id,
+      page_key: pageKey,
+      url: cleanConfig.url,
+      title: cleanConfig.title,
+      target_phrase: targetPhrase,
+      seo_page_type: cleanConfig.seoPageType,
+      priority: cleanConfig.priority,
+      is_excluded: cleanConfig.isExcluded ? 1 : 0,
+      config_json: JSON.stringify(cleanConfig),
+      updated_at: now
+    })
+
+    // If page already has a stored ranking URL, re-evaluate is_url_match
+    const rankRow = db.prepare(`SELECT ranking_url FROM page_rankings WHERE site_id = ? AND page_key = ?`).get(id, pageKey)
+    if (rankRow && rankRow.ranking_url) {
+      const siteRow = getWebsiteByIdFromDb(id)
+      const siteUrl = siteRow?.url || ''
+      const normRanking = normalizeUrlForMatching(rankRow.ranking_url, siteUrl)
+      const normConfigured = normalizeUrlForMatching(cleanConfig.url || pageKey, siteUrl)
+      const isMatch = (normRanking && normConfigured && normRanking === normConfigured) ? 1 : 0
+      db.prepare(`UPDATE page_rankings SET is_url_match = ?, updated_at = ? WHERE site_id = ? AND page_key = ?`).run(isMatch, now, id, pageKey)
+    }
+
+    res.json({ success: true, siteId: id, pageKey, config: cleanConfig })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // Save all page configurations for a website (bulk object map)
 app.post('/api/websites/:id/page-configs', (req, res) => {
   try {

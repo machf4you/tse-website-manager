@@ -300,6 +300,38 @@ export async function savePageConfigsApi(rawSiteId, configsMap) {
   } catch (err) {}
 }
 
+export async function saveSinglePageConfigApi(rawSiteId, config) {
+  const siteId = normalizeSiteId(rawSiteId)
+  try {
+    const res = await fetchJson(`${API_BASE_URL}/websites/${siteId}/page-configs/single`, {
+      method: 'POST',
+      body: JSON.stringify(config)
+    })
+
+    // Realtime multi-user synchronization broadcast
+    const pageKey = config.pageId || config.url || config.pageKey
+    broadcastWebsiteManagerEvent(REALTIME_EVENTS.PAGE_CONFIG_CHANGED, {
+      siteId: String(siteId),
+      pageKey,
+      config
+    })
+
+    try {
+      const raw = localStorage.getItem(`tse_page_configs_${siteId}`)
+      const configs = raw ? JSON.parse(raw) : {}
+      if (pageKey) {
+        configs[pageKey] = { ...(configs[pageKey] || {}), ...config }
+        localStorage.setItem(`tse_page_configs_${siteId}`, JSON.stringify(configs))
+      }
+    } catch (err) {}
+
+    return res
+  } catch (e) {
+    console.error('[WM_API] Failed to save single page config:', e)
+    throw e
+  }
+}
+
 // 4. PAGE AUDITS
 export async function getPageAuditsApi(rawSiteId) {
   const siteId = normalizeSiteId(rawSiteId)

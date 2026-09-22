@@ -6,6 +6,7 @@ import BulkConfigureTargetPhrasesDialog from '../components/BulkConfigureTargetP
 import {
   getPageConfigsApi,
   savePageConfigsApi,
+  saveSinglePageConfigApi,
   getPageAuditsApi,
   savePageAuditApi,
   getPageRankingsApi,
@@ -114,16 +115,15 @@ export default function PageManagementPage({
     let isMounted = true
     if (site?.id) {
       getPageConfigsApi(site.id).then(apiConfigs => {
-        if (isMounted && apiConfigs && Object.keys(apiConfigs).length > 0) {
-          setConfigurations(prev => {
-            const merged = { ...prev }
-            Object.keys(apiConfigs).forEach(k => {
-              if (!merged[k] || !merged[k].targetPhrase) {
-                merged[k] = apiConfigs[k]
-              }
-            })
-            return merged
-          })
+        if (isMounted && apiConfigs && typeof apiConfigs === 'object') {
+          setConfigurations(prev => ({
+            ...prev,
+            ...apiConfigs
+          }))
+          try {
+            const siteIdKey = getSiteConfigsStorageKey(site)
+            localStorage.setItem(siteIdKey, JSON.stringify(apiConfigs))
+          } catch (e) {}
         }
       }).catch(() => {})
 
@@ -268,7 +268,9 @@ export default function PageManagementPage({
     }
     setConfigurations(updatedMap)
     if (site?.id) {
-      savePageConfigsApi(site.id, updatedMap)
+      saveSinglePageConfigApi(site.id, config).catch(err => {
+        console.error('Failed to save single page config:', err)
+      })
     }
     try {
       const siteIdKey = getSiteConfigsStorageKey(site)
@@ -1899,12 +1901,12 @@ export default function PageManagementPage({
                           <span className="w3-volume-badge volume-checking" title="Checking UK Monthly Search Volume...">
                             ⏳
                           </span>
-                        ) : rankInfo?.searchVolume !== null && rankInfo?.searchVolume !== undefined ? (
+                        ) : (rankInfo?.volumeCheckedAt || (rankInfo?.searchVolume !== null && rankInfo?.searchVolume !== undefined)) ? (
                           <span
                             className="w3-volume-badge volume-value"
-                            title={`UK Monthly Search Volume: ${Number(rankInfo.searchVolume).toLocaleString()}${rankInfo.volumeCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.volumeCheckedAt) || rankInfo.volumeCheckedAt})` : ''}`}
+                            title={`UK Monthly Search Volume: ${Number(rankInfo?.searchVolume || 0).toLocaleString()}${rankInfo?.volumeCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.volumeCheckedAt) || rankInfo.volumeCheckedAt})` : ''}`}
                           >
-                            {Number(rankInfo.searchVolume).toLocaleString()}
+                            {Number(rankInfo?.searchVolume || 0).toLocaleString()}
                           </span>
                         ) : (
                           <span className="w3-volume-badge volume-unchecked" title="Search volume not checked yet">

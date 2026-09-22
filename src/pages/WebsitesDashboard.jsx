@@ -79,26 +79,23 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
 
           // 2. Authoritative Server State Hydration: Update active managedSite from fresh server record
           setManagedSiteState(prevManaged => {
-            if (!prevManaged || !prevManaged.id) {
-              // If on a W-page route directly, hydrate first site if nothing was selected
-              const savedObj = localStorage.getItem('tse_managed_site_object_v1')
-              if (savedObj) {
+            const savedId = localStorage.getItem('tse_managed_site_id_v1')
+            const savedObj = localStorage.getItem('tse_managed_site_object_v1')
+            let targetId = prevManaged?.id || savedId
+            if (!targetId && savedObj) {
+              try { targetId = JSON.parse(savedObj)?.id } catch (e) {}
+            }
+            if (targetId) {
+              const matched = apiSites.find(s => String(s.id) === String(targetId))
+              if (matched) {
                 try {
-                  const parsed = JSON.parse(savedObj)
-                  const matched = apiSites.find(s => String(s.id) === String(parsed.id))
-                  if (matched) return matched
+                  localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(matched))
+                  localStorage.setItem('tse_managed_site_id_v1', String(matched.id))
                 } catch (e) {}
+                return matched
               }
-              return apiSites[0] || null
             }
-            const freshSite = apiSites.find(s => String(s.id) === String(prevManaged.id))
-            if (freshSite) {
-              try {
-                localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(freshSite))
-              } catch (e) {}
-              return freshSite
-            }
-            return prevManaged
+            return prevManaged || apiSites[0] || null
           })
         }
       } catch (err) {
@@ -117,12 +114,21 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
 
   const [managedSite, setManagedSiteState] = useState(() => {
     try {
+      const savedId = localStorage.getItem('tse_managed_site_id_v1')
       const savedObj = localStorage.getItem('tse_managed_site_object_v1')
       if (savedObj) {
         const parsed = JSON.parse(savedObj)
         if (parsed && typeof parsed === 'object' && parsed.id !== undefined) {
-          return parsed
+          if (!savedId || String(parsed.id) === String(savedId)) {
+            return parsed
+          }
         }
+      }
+      const sitesRaw = localStorage.getItem('tse_website_dashboard_sites')
+      if (savedId && sitesRaw) {
+        const list = JSON.parse(sitesRaw)
+        const matched = list.find(s => String(s.id) === String(savedId))
+        if (matched) return matched
       }
     } catch (e) {}
     return null
@@ -131,16 +137,18 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
   // Ensure managedSite is hydrated if user lands directly on a W2/W3/W4/W5 route
   useEffect(() => {
     if (!managedSite && sites.length > 0 && ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)) {
+      const savedId = localStorage.getItem('tse_managed_site_id_v1')
       const savedObj = localStorage.getItem('tse_managed_site_object_v1')
-      if (savedObj) {
-        try {
-          const parsed = JSON.parse(savedObj)
-          const matched = sites.find(s => String(s.id) === String(parsed.id))
-          if (matched) {
-            setManagedSiteState(matched)
-            return
-          }
-        } catch (e) {}
+      let targetId = savedId
+      if (!targetId && savedObj) {
+        try { targetId = JSON.parse(savedObj)?.id } catch (e) {}
+      }
+      if (targetId) {
+        const matched = sites.find(s => String(s.id) === String(targetId))
+        if (matched) {
+          setManagedSiteState(matched)
+          return
+        }
       }
       setManagedSiteState(sites[0])
     }

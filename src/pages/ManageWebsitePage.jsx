@@ -103,6 +103,15 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
   const isWordPress = platformKey === 'wordpress' || (!isMagento && platformKey !== 'other')
   const platformName = isMagento ? 'Magento' : (isWordPress ? 'WordPress' : 'Other')
 
+  useEffect(() => {
+    if (site?.id) {
+      try {
+        localStorage.setItem('tse_managed_site_id_v1', String(site.id))
+        localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(site))
+      } catch (e) {}
+    }
+  }, [site])
+
   const syncStages = [
     'Preparing synchronisation...',
     `Connecting to ${platformName}...`,
