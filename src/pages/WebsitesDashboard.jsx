@@ -79,23 +79,33 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
 
           // 2. Authoritative Server State Hydration: Update active managedSite from fresh server record
           setManagedSiteState(prevManaged => {
-            const savedId = localStorage.getItem('tse_managed_site_id_v1')
-            const savedObj = localStorage.getItem('tse_managed_site_object_v1')
-            let targetId = prevManaged?.id || savedId
-            if (!targetId && savedObj) {
-              try { targetId = JSON.parse(savedObj)?.id } catch (e) {}
+            const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
+                            localStorage.getItem('tse_managed_site_id') ||
+                            localStorage.getItem('tse_selected_site_id') ||
+                            prevManaged?.id
+            let targetId = savedId
+            if (!targetId) {
+              const savedObj = localStorage.getItem('tse_managed_site_object_v1') || localStorage.getItem('tse_managed_site')
+              if (savedObj) {
+                try { targetId = JSON.parse(savedObj)?.id } catch (e) {}
+              }
             }
             if (targetId) {
               const matched = apiSites.find(s => String(s.id) === String(targetId))
               if (matched) {
                 try {
+                  const siteIdStr = String(matched.id)
                   localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(matched))
-                  localStorage.setItem('tse_managed_site_id_v1', String(matched.id))
+                  localStorage.setItem('tse_managed_site', JSON.stringify(matched))
+                  localStorage.setItem('tse_managed_site_id_v1', siteIdStr)
+                  localStorage.setItem('tse_managed_site_id', siteIdStr)
+                  localStorage.setItem('tse_selected_site_id', siteIdStr)
                 } catch (e) {}
                 return matched
               }
             }
-            return prevManaged || apiSites[0] || null
+            // NEVER fall back to another site
+            return prevManaged || null
           })
         }
       } catch (err) {
@@ -114,21 +124,35 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
 
   const [managedSite, setManagedSiteState] = useState(() => {
     try {
-      const savedId = localStorage.getItem('tse_managed_site_id_v1')
-      const savedObj = localStorage.getItem('tse_managed_site_object_v1')
-      if (savedObj) {
-        const parsed = JSON.parse(savedObj)
-        if (parsed && typeof parsed === 'object' && parsed.id !== undefined) {
-          if (!savedId || String(parsed.id) === String(savedId)) {
+      const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
+                      localStorage.getItem('tse_managed_site_id') ||
+                      localStorage.getItem('tse_selected_site_id')
+      const savedObj = localStorage.getItem('tse_managed_site_object_v1') ||
+                       localStorage.getItem('tse_managed_site')
+      if (savedId) {
+        if (savedObj) {
+          try {
+            const parsed = JSON.parse(savedObj)
+            if (parsed && typeof parsed === 'object' && String(parsed.id) === String(savedId)) {
+              return parsed
+            }
+          } catch (e) {}
+        }
+        const sitesRaw = localStorage.getItem('tse_website_dashboard_sites')
+        if (sitesRaw) {
+          try {
+            const list = JSON.parse(sitesRaw)
+            const matched = list.find(s => String(s.id) === String(savedId))
+            if (matched) return matched
+          } catch (e) {}
+        }
+      } else if (savedObj) {
+        try {
+          const parsed = JSON.parse(savedObj)
+          if (parsed && typeof parsed === 'object' && parsed.id !== undefined) {
             return parsed
           }
-        }
-      }
-      const sitesRaw = localStorage.getItem('tse_website_dashboard_sites')
-      if (savedId && sitesRaw) {
-        const list = JSON.parse(sitesRaw)
-        const matched = list.find(s => String(s.id) === String(savedId))
-        if (matched) return matched
+        } catch (e) {}
       }
     } catch (e) {}
     return null
@@ -137,8 +161,11 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
   // Ensure managedSite is hydrated if user lands directly on a W2/W3/W4/W5 route
   useEffect(() => {
     if (!managedSite && sites.length > 0 && ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)) {
-      const savedId = localStorage.getItem('tse_managed_site_id_v1')
-      const savedObj = localStorage.getItem('tse_managed_site_object_v1')
+      const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
+                      localStorage.getItem('tse_managed_site_id') ||
+                      localStorage.getItem('tse_selected_site_id')
+      const savedObj = localStorage.getItem('tse_managed_site_object_v1') ||
+                       localStorage.getItem('tse_managed_site')
       let targetId = savedId
       if (!targetId && savedObj) {
         try { targetId = JSON.parse(savedObj)?.id } catch (e) {}
@@ -146,25 +173,31 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
       if (targetId) {
         const matched = sites.find(s => String(s.id) === String(targetId))
         if (matched) {
-          setManagedSiteState(matched)
+          setManagedSite(matched)
           return
         }
       }
-      setManagedSiteState(sites[0])
+      // If no valid saved site ID is found, redirect to W1 instead of picking another website
+      if (navigate) navigate('/w1-connected-sites')
     }
-  }, [currentPath, sites, managedSite])
+  }, [currentPath, sites, managedSite, navigate])
 
   const setManagedSite = (site) => {
     setManagedSiteState(site)
     try {
-      if (site) {
+      if (site && site.id !== undefined) {
+        const siteIdStr = String(site.id)
         localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(site))
-        if (site.id !== undefined) {
-          localStorage.setItem('tse_managed_site_id_v1', String(site.id))
-        }
+        localStorage.setItem('tse_managed_site', JSON.stringify(site))
+        localStorage.setItem('tse_managed_site_id_v1', siteIdStr)
+        localStorage.setItem('tse_managed_site_id', siteIdStr)
+        localStorage.setItem('tse_selected_site_id', siteIdStr)
       } else {
         localStorage.removeItem('tse_managed_site_object_v1')
+        localStorage.removeItem('tse_managed_site')
         localStorage.removeItem('tse_managed_site_id_v1')
+        localStorage.removeItem('tse_managed_site_id')
+        localStorage.removeItem('tse_selected_site_id')
         localStorage.removeItem('tse_active_tab_v1')
       }
     } catch (e) {}
@@ -301,7 +334,8 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
       return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
     })
 
-  const isW1 = currentPath === '/w1-connected-sites' || (!managedSite && !['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath))
+  const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)
+  const isW1 = currentPath === '/w1-connected-sites' || (!managedSite && !isSubPage)
 
   if (managedSite && !isW1) {
     return (
@@ -318,6 +352,19 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
           handleUpdateWebsite(updated)
         }}
       />
+    )
+  }
+
+  // If user refreshed directly on W2/W3/W4/W5 and managedSite is still resolving, show clean loading state
+  if (isSubPage && !managedSite) {
+    return (
+      <div className="tile-preview-page" style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ padding: '32px', background: 'rgba(30,41,59,0.7)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', maxWidth: '420px', margin: '60px auto' }}>
+          <div className="deploy-spinner" style={{ margin: '0 auto 16px auto', width: '28px', height: '28px', borderWidth: '3px' }} />
+          <h3 style={{ color: '#f8fafc', fontSize: '1.1rem', marginBottom: '8px' }}>Restoring Active Website...</h3>
+          <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: 0 }}>Connecting to website workspace.</p>
+        </div>
+      </div>
     )
   }
 

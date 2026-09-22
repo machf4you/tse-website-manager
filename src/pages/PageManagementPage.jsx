@@ -114,6 +114,15 @@ export default function PageManagementPage({
   useEffect(() => {
     let isMounted = true
     if (site?.id) {
+      try {
+        const siteIdStr = String(site.id)
+        localStorage.setItem('tse_managed_site_id_v1', siteIdStr)
+        localStorage.setItem('tse_managed_site_id', siteIdStr)
+        localStorage.setItem('tse_selected_site_id', siteIdStr)
+        localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(site))
+        localStorage.setItem('tse_managed_site', JSON.stringify(site))
+      } catch (e) {}
+
       getPageConfigsApi(site.id).then(apiConfigs => {
         if (isMounted && apiConfigs && typeof apiConfigs === 'object') {
           setConfigurations(prev => ({

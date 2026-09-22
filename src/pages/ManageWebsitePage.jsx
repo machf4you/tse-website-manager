@@ -106,8 +106,12 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
   useEffect(() => {
     if (site?.id) {
       try {
-        localStorage.setItem('tse_managed_site_id_v1', String(site.id))
+        const siteIdStr = String(site.id)
+        localStorage.setItem('tse_managed_site_id_v1', siteIdStr)
+        localStorage.setItem('tse_managed_site_id', siteIdStr)
+        localStorage.setItem('tse_selected_site_id', siteIdStr)
         localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(site))
+        localStorage.setItem('tse_managed_site', JSON.stringify(site))
       } catch (e) {}
     }
   }, [site])
