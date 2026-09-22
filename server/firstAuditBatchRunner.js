@@ -9,9 +9,13 @@
 
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../src/utils/packageExtractor.js'
 import { generateProposedTargetPhrase, isUtilityPage } from '../src/utils/targetPhraseGenerator.js'
 import { extractSafeString } from '../src/utils/safeString.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const KNOWN_MAGAZINE_DOMAINS = new Set([
   'bedesworld.co.uk',
