@@ -72,21 +72,14 @@ export function getDataForSeoCredentials() {
     return { login: login.trim(), password: password.trim() }
   }
 
+  // 2. Scan Website Manager environment files on VPS & local project
   const envPaths = [
     path.join(process.cwd(), '.env'),
     path.join(process.cwd(), 'server', '.env'),
-    '/opt/tse-apps/keyword-research/server/.env',
-    '/opt/tse-apps/website-manager/server/.env',
+    path.join(__dirname, '.env'),
+    path.join(__dirname, '..', '.env'),
     '/opt/tse-apps/website-manager/.env',
-    path.join('c:', 'Antigravity', 'tse-keyword-research', 'server', '.env'),
-    path.join('c:', 'Antigravity', 'tse-lead-finder', 'server', '.env'),
-    '/var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/current/.env',
-    '/var/www/www-root/data/www/api-website-manager.thesearchequation.co.uk/.env',
-    '/var/www/www-root/data/www/api-page-auditor.thesearchequation.co.uk/.env',
-    '/var/www/www-root/data/www/api-keyword-research.thesearchequation.co.uk/.env',
-    '/var/www/www-root/data/www/api-backlinks.thesearchequation.co.uk/.env',
-    '/var/www/www-root/data/www/shared/.env',
-    '/root/.env'
+    '/opt/tse-apps/website-manager/server/.env'
   ]
 
   for (const envPath of envPaths) {
