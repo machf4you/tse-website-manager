@@ -174,13 +174,10 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         const matched = sites.find(s => String(s.id) === String(targetId))
         if (matched) {
           setManagedSite(matched)
-          return
         }
       }
-      // If no valid saved site ID is found, redirect to W1 instead of picking another website
-      if (navigate) navigate('/w1-connected-sites')
     }
-  }, [currentPath, sites, managedSite, navigate])
+  }, [currentPath, sites, managedSite])
 
   const setManagedSite = (site) => {
     setManagedSiteState(site)
