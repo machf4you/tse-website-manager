@@ -219,6 +219,19 @@ export async function deleteWebsiteApi(siteId) {
   } catch (err) {}
 }
 
+export async function updateWebsiteSettingsApi(siteId, settings) {
+  try {
+    const res = await fetchJson(`${API_BASE_URL}/websites/${siteId}/settings`, {
+      method: 'POST',
+      body: JSON.stringify(settings)
+    })
+    return res
+  } catch (e) {
+    console.error('[WM_API] Failed to update website settings:', e)
+    throw e
+  }
+}
+
 
 // 2. WORDPRESS SYNC PACKAGES
 export async function getWpPackageApi(siteId) {

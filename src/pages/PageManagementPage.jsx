@@ -12,7 +12,8 @@ import {
   getPageRankingsApi,
   checkPageRankApi,
   checkSearchVolumeApi,
-  batchCheckSearchVolumeApi
+  batchCheckSearchVolumeApi,
+  updateWebsiteSettingsApi
 } from '../services/websiteManagerApi'
 import { executePageAudit } from '../services/pageAuditorApi'
 import { getSiteConfigsStorageKey, getSiteAuditsStorageKey } from '../utils/siteKeyHelper'
@@ -44,6 +45,46 @@ export default function PageManagementPage({
   const [pageRankings, setPageRankings] = useState({})
   const [checkingRankKey, setCheckingRankKey] = useState(null)
   const [checkingVolumeKey, setCheckingVolumeKey] = useState(null)
+
+  const [articlesMode, setArticlesMode] = useState(() => {
+    try {
+      if (site?.id) {
+        const saved = localStorage.getItem(`tse_articles_mode_${site.id}`)
+        if (saved === 'include' || saved === 'exclude') return saved
+      }
+    } catch (e) {}
+    if (site?.configData?.articlesMode) return site.configData.articlesMode
+    if (site?.configData?.excludeArticles !== undefined) return site.configData.excludeArticles ? 'exclude' : 'include'
+    return 'include'
+  })
+
+  useEffect(() => {
+    if (site?.configData?.articlesMode) {
+      setArticlesMode(site.configData.articlesMode)
+    } else if (site?.configData?.excludeArticles !== undefined) {
+      setArticlesMode(site.configData.excludeArticles ? 'exclude' : 'include')
+    }
+  }, [site?.id, site?.configData])
+
+  const handleToggleArticlesMode = async (mode) => {
+    setArticlesMode(mode)
+    try {
+      if (site?.id) {
+        localStorage.setItem(`tse_articles_mode_${site.id}`, mode)
+        await updateWebsiteSettingsApi(site.id, { articlesMode: mode, excludeArticles: mode === 'exclude' })
+      }
+    } catch (e) {
+      console.error('Failed to update articles mode:', e)
+    }
+  }
+
+  const isArticlePage = (p) => {
+    if (!p) return false
+    const effectiveType = safeLower(p.type || p.seoPageType || '')
+    const autoType = safeLower(p.autoType || '')
+    const postType = safeLower(p.post_type || p.postType || '')
+    return effectiveType === 'article' || (!effectiveType && autoType === 'article') || postType === 'post' || p.isPost === true
+  }
 
   const [configurations, setConfigurations] = useState(() => {
     try {
@@ -345,7 +386,8 @@ export default function PageManagementPage({
 
     // Identify all active (non-excluded) pages with a configured Target Phrase
     const targetItems = []
-    for (const page of pagesList) {
+    const sourcePages = articlesMode === 'exclude' ? pagesList.filter(p => !isArticlePage(p)) : pagesList
+    for (const page of sourcePages) {
       const pageKey = page.id || page.url
       const config = configurations[pageKey] || (page.url ? configurations[page.url] : null) || page
       const isExcluded = config.isExcluded || page.isExcluded || config.type === 'Excluded' || page.type === 'Excluded' || false
@@ -497,7 +539,8 @@ export default function PageManagementPage({
     if (!site?.id || isRunningInitialData) return
 
     const siteName = site?.name || ''
-    const actionable = pagesList.filter(p => {
+    const sourcePages = articlesMode === 'exclude' ? pagesList.filter(p => !isArticlePage(p)) : pagesList
+    const actionable = sourcePages.filter(p => {
       const tp = (p.targetPhrase || p.target || '').trim()
       const isEx = p.type === 'Excluded' || p.seoPageType === 'Excluded' || p.isExcluded
       const pageTitle = extractSafeString(p.title || p.originalTitle)
@@ -903,8 +946,12 @@ export default function PageManagementPage({
     }
   })
 
+  const activePagesList = articlesMode === 'exclude'
+    ? pagesList.filter(p => !isArticlePage(p))
+    : pagesList
+
   // Filter pages based on filter tab selection
-  const filteredPages = pagesList.filter(p => {
+  const filteredPages = activePagesList.filter(p => {
     if (filter === 'starred') return p.isStarred === true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'configured') return p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded'
     if (filter === 'action_required') return p.isConfigured !== true && !p.isExcluded && p.type !== 'Excluded'
@@ -1317,12 +1364,12 @@ export default function PageManagementPage({
   }
 
   // Calculate filter tab counts strictly for SEO-managed pages
-  const allCount = pagesList.length
-  const starredCount = pagesList.filter(p => p.isStarred === true && !p.isExcluded && p.type !== 'Excluded').length
-  const configuredCount = pagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
-  const configuredWithPhraseCount = pagesList.filter(p => !p.isExcluded && p.type !== 'Excluded' && Boolean((p.targetPhrase || p.target || '').trim())).length
-  const actionRequiredCount = pagesList.filter(p => !p.isConfigured && !p.isExcluded && p.type !== 'Excluded').length
-  const excludedCount = pagesList.filter(p => p.isExcluded === true || p.type === 'Excluded').length
+  const allCount = activePagesList.length
+  const starredCount = activePagesList.filter(p => p.isStarred === true && !p.isExcluded && p.type !== 'Excluded').length
+  const configuredCount = activePagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
+  const configuredWithPhraseCount = activePagesList.filter(p => !p.isExcluded && p.type !== 'Excluded' && Boolean((p.targetPhrase || p.target || '').trim())).length
+  const actionRequiredCount = activePagesList.filter(p => !p.isConfigured && !p.isExcluded && p.type !== 'Excluded').length
+  const excludedCount = activePagesList.filter(p => p.isExcluded === true || p.type === 'Excluded').length
 
   const renderSortIndicator = (col) => {
     if (sortColumn !== col) return <span className="sort-icon inactive">↕</span>
@@ -1338,7 +1385,7 @@ export default function PageManagementPage({
     }
 
     // 1. Identify all active configured SEO pages in W3 ordered by Priority: Hub -> Landing -> Topical -> Article
-    const activeSeoPages = pagesList
+    const activeSeoPages = activePagesList
       .filter(p => {
         const typeStr = (p.type || p.seoPageType || '').trim()
         const isSeoType = ['Hub', 'Landing', 'Topical', 'Article'].includes(typeStr)
@@ -1429,7 +1476,7 @@ export default function PageManagementPage({
     setBulkAuditSummary({
       audited: successfulCount,
       failed: failedCount,
-      skipped: pagesList.length - activeSeoPages.length
+      skipped: activePagesList.length - activeSeoPages.length
     })
   }
 
@@ -1601,6 +1648,64 @@ export default function PageManagementPage({
           >
             Excluded ({excludedCount})
           </button>
+
+          {/* ── Articles: Include / Exclude Control ── */}
+          <div
+            className="w3-articles-control"
+            id="w3-articles-control"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              borderRadius: '6px',
+              padding: '2px 3px',
+              marginLeft: '12px',
+              gap: '2px'
+            }}
+          >
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#94a3b8', padding: '0 6px' }}>
+              Articles:
+            </span>
+            <button
+              type="button"
+              className={`w3-articles-btn ${articlesMode === 'include' ? 'active' : ''}`}
+              onClick={() => handleToggleArticlesMode('include')}
+              id="btn-articles-include"
+              style={{
+                backgroundColor: articlesMode === 'include' ? '#2563eb' : 'transparent',
+                color: articlesMode === 'include' ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '3px 8px',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Include
+            </button>
+            <button
+              type="button"
+              className={`w3-articles-btn ${articlesMode === 'exclude' ? 'active' : ''}`}
+              onClick={() => handleToggleArticlesMode('exclude')}
+              id="btn-articles-exclude"
+              style={{
+                backgroundColor: articlesMode === 'exclude' ? '#dc2626' : 'transparent',
+                color: articlesMode === 'exclude' ? '#ffffff' : '#94a3b8',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '3px 8px',
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              Exclude
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

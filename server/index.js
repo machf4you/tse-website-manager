@@ -652,6 +652,25 @@ app.post('/api/websites/batch', (req, res) => {
   }
 })
 
+// Update website settings in config_data (site-specific options like articlesMode)
+app.post('/api/websites/:id/settings', (req, res) => {
+  try {
+    const { id } = req.params
+    const newSettings = req.body || {}
+    const existing = db.prepare('SELECT config_data FROM websites WHERE id = ?').get(id)
+    if (!existing) {
+      return res.status(404).json({ error: 'Website not found' })
+    }
+    const currentConfig = existing.config_data ? JSON.parse(existing.config_data) : {}
+    const updatedConfig = { ...currentConfig, ...newSettings }
+    const now = new Date().toISOString()
+    db.prepare('UPDATE websites SET config_data = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(updatedConfig), now, id)
+    res.json({ success: true, siteId: id, configData: updatedConfig })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // Active Domains from Site Registry
 app.get('/api/registry/domains', async (req, res) => {
   try {
