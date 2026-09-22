@@ -1,5 +1,18 @@
 [
   {
+    "id": "sr-v2.21-full-disaster-recovery",
+    "app": "Site Registry",
+    "version": "V2.21",
+    "gitTag": "sr-v2.21-full-disaster-recovery",
+    "commit": "c122a0e",
+    "date": "22-09-2026 08:08",
+    "title": "Site Registry V2.21 Full Disaster-Recovery Milestone",
+    "description": "Full disaster-recovery restore point containing verified PostgreSQL database dump (46 tables, 1,229 backlink sources / 305 active domains, 1,110 Fatima records / 186 active), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
+    "location": "site-registry/2026-09-22-v2.21-full/",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-sr-v2.21-full-disaster-recovery.md"
+  },
+  {
     "id": "wm-v2.52.1-full-disaster-recovery",
     "app": "Website Manager",
     "version": "V2.52.1",
