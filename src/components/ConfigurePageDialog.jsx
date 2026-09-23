@@ -5,6 +5,8 @@ import './ConfigurePageDialog.css'
 export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSave }) {
   const [proposedTitle, setProposedTitle] = useState(() => page ? extractSafeString(page.proposedTitle || page.title) : '')
   const [targetPhrase, setTargetPhrase] = useState(() => page ? extractSafeString(page.targetPhrase || page.target) : '')
+  const [secondaryTargetPhrase, setSecondaryTargetPhrase] = useState(() => page ? extractSafeString(page.secondaryTargetPhrase || '') : '')
+  const [showSecondary, setShowSecondary] = useState(() => Boolean(page && (page.secondaryTargetPhrase || '').trim()))
   const [pageType, setPageType] = useState(() => page ? (page.type || page.seoPageType || 'Landing') : 'Landing')
 
   const getPriorityFromType = (typeVal) => {
@@ -25,6 +27,9 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
     if (page) {
       setProposedTitle(extractSafeString(page.proposedTitle || page.title))
       setTargetPhrase(extractSafeString(page.targetPhrase || page.target))
+      const secPhrase = extractSafeString(page.secondaryTargetPhrase || '')
+      setSecondaryTargetPhrase(secPhrase)
+      if (secPhrase.trim()) setShowSecondary(true)
       setPageType(page.type || page.seoPageType || 'Landing')
     }
   }, [page])
@@ -64,6 +69,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
     const initialType = page.type || page.seoPageType || ''
     const isTypeChanged = Boolean(initialType && normalizedType !== initialType)
     const targetPhraseStr = targetPhrase.trim()
+    const secTargetPhraseStr = secondaryTargetPhrase.trim()
     const isConfigured = Boolean(targetPhraseStr.length > 0)
 
     const updatedConfig = {
@@ -71,6 +77,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
       url: page.url,
       proposedTitle: proposedTitle.trim(),
       targetPhrase: targetPhraseStr,
+      secondaryTargetPhrase: secTargetPhraseStr,
       type: normalizedType,
       seoPageType: normalizedType,
       autoType: initialAutoType,
@@ -151,6 +158,63 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
             />
           </div>
 
+          {/* 4b. Optional Expandable Secondary Target Phrase */}
+          {!showSecondary && !secondaryTargetPhrase.trim() ? (
+            <div style={{ marginTop: '-4px', marginBottom: '16px' }}>
+              <button
+                type="button"
+                className="cpd-btn-add-secondary"
+                onClick={() => setShowSecondary(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#34d399',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                + Add Secondary Target Phrase (Optional)
+              </button>
+            </div>
+          ) : (
+            <div className="cpd-field-group" style={{ marginTop: '-4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className="cpd-label" htmlFor="cpd-input-secondary-target-phrase">
+                  SECONDARY TARGET PHRASE (OPTIONAL)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSecondaryTargetPhrase('')
+                    setShowSecondary(false)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '0.72rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+              <input
+                type="text"
+                id="cpd-input-secondary-target-phrase"
+                className="cpd-input"
+                value={secondaryTargetPhrase}
+                onChange={(e) => setSecondaryTargetPhrase(e.target.value)}
+                placeholder="e.g. wet rooms installation"
+              />
+            </div>
+          )}
+
           {/* 5. Page Type Dropdown */}
           <div className="cpd-field-group">
             <label className="cpd-label" htmlFor="cpd-select-page-type">
@@ -167,7 +231,6 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
               <option value="Topical">Topical Page</option>
               <option value="Article">Article</option>
               <option value="Excluded">Excluded Page</option>
-              <option value="Unclassified">Unclassified</option>
             </select>
           </div>
 

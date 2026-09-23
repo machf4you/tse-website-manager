@@ -3,63 +3,60 @@ import { updateWordPressMediaAltText } from '../services/wordpressApi'
 import { extractPageImagesApi } from '../services/websiteManagerApi'
 import './OptimizeAltTextDialog.css'
 
-const SPECIFIC_GALLERY_PROPOSALS = {
-  'ascent1.jpg': 'Rear House Extension Project with Bi-fold Doors in Surrey',
-  'ascent2.jpg': 'Completed Dormer Loft Conversion Interior with Skylights in Surrey',
-  'ascent3.jpg': 'Open-Plan Kitchen and Living Space Extension in Surrey',
-  'ascent5.jpg': 'Velux Rooflight Loft Conversion Master Bedroom in Surrey',
-  'ascent6.jpg': 'Luxury Ensuite Bathroom in Converted Loft Space in Surrey',
-  'ascent7.jpg': 'Custom Hardwood Staircase Installation for Loft Conversion',
-  'ascent8.jpg': 'Contemporary Master Bedroom Loft Conversion in Surrey',
-  'ascent9.jpg': 'Exterior Elevation of High-Specification Dormer Loft Conversion in Surrey',
-}
-
-function generateSmartProposedAlt(src = '', currentAlt = '', targetPhrase = '') {
+export function generateSmartProposedAlt(src = '', currentAlt = '', targetPhrase = '', siteName = '') {
   const cleanAlt = (currentAlt || '').trim()
-  const lowerSrc = src.toLowerCase()
+  const brand = (siteName || '').trim()
 
-  // Match known portfolio gallery photos
-  for (const [filename, proposal] of Object.entries(SPECIFIC_GALLERY_PROPOSALS)) {
-    if (lowerSrc.includes(filename.toLowerCase())) {
-      return proposal
-    }
+  // 1. Clean and extract meaningful keywords from the image filename
+  let cleanWords = ''
+  try {
+    const rawFilename = src.split('/').pop() || ''
+    const baseName = rawFilename
+      .replace(/\.[^/.]+$/, '')
+      .split('-scaled')[0]
+      .split(/-\d+x\d+$/)[0]
+    cleanWords = baseName
+      .replace(/[-_+.]+/g, ' ')
+      .replace(/\b(img|image|dsc|photo|picture|upload|wp|content|uploads|cropped|scaled|banner|header|thumb|thumbnail|attachment|asset)\b/gi, '')
+      .replace(/\b\d+\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+  } catch (e) {}
+
+  let titleCase = ''
+  if (cleanWords && cleanWords.length >= 3) {
+    titleCase = cleanWords
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
   }
 
-  // Specific content imagery & service cards
-  if (lowerSrc.includes('garden-office')) return 'Bespoke Insulated Garden Office Installation in Surrey'
-  if (lowerSrc.includes('renovations')) return 'Full Home Renovation and Refurbishment in Surrey'
-  if (lowerSrc.includes('conservatory')) return 'Contemporary Home Extension and Modern Conservatory Guide in Surrey'
-  if (lowerSrc.includes('loft-conversions')) return 'Planning Permission Guide for Loft Conversions in Surrey'
-  if (lowerSrc.includes('loft') || lowerSrc.includes('20180211')) return 'High-Specification Dormer Loft Conversion in Surrey'
-  if (lowerSrc.includes('extension') || lowerSrc.includes('20180111')) return 'Double-Storey Brick House Extension in Surrey'
+  // 2. Derive concise and descriptive proposed alt text
+  if (titleCase) {
+    if (brand && !titleCase.toLowerCase().includes(brand.toLowerCase())) {
+      return `${titleCase} - ${brand}`
+    }
+    return titleCase
+  }
 
-  // Enhance existing short alt text naturally
-  if (cleanAlt) {
-    if (cleanAlt.toLowerCase() === 'loft conversion') return 'High-Specification Dormer Loft Conversion in Surrey'
-    if (cleanAlt.toLowerCase() === 'house extensions') return 'Double-Storey Brick House Extension in Surrey'
-    if (cleanAlt.toLowerCase() === 'garden office') return 'Bespoke Insulated Garden Office Installation in Surrey'
-    if (cleanAlt.toLowerCase() === 'home renovations') return 'Full Home Renovation and Refurbishment in Surrey'
-    if (cleanAlt.toLowerCase().includes('loft') && !cleanAlt.toLowerCase().includes('surrey')) return `${cleanAlt} in Surrey`
-    if (cleanAlt.toLowerCase().includes('extension') && !cleanAlt.toLowerCase().includes('surrey')) return `${cleanAlt} in Surrey`
+  if (cleanAlt && cleanAlt.length >= 3) {
+    if (brand && !cleanAlt.toLowerCase().includes(brand.toLowerCase())) {
+      return `${cleanAlt} - ${brand}`
+    }
     return cleanAlt
   }
 
-  // Fallback derivation from filename
-  try {
-    const filename = src.split('/').pop().replace(/\.[^/.]+$/, '').split('-scaled')[0].split(/-\d+x\d+$/)[0]
-    const cleanWords = filename
-      .replace(/[-_]+/g, ' ')
-      .replace(/\b(img|image|dsc|photo|picture|upload|wp|content|uploads)\b/gi, '')
-      .replace(/\d+/g, '')
-      .trim()
-
-    if (cleanWords && cleanWords.length > 3) {
-      const titleCase = cleanWords.replace(/\b\w/g, l => l.toUpperCase())
-      return `${titleCase} by Ascent Builders in Surrey`
+  if (targetPhrase && targetPhrase.trim().length >= 3) {
+    const phrase = targetPhrase.trim()
+    if (brand && !phrase.toLowerCase().includes(brand.toLowerCase())) {
+      return `${phrase} - ${brand}`
     }
-  } catch (e) {}
+    return phrase
+  }
 
-  return targetPhrase ? `${targetPhrase} Project in Surrey` : 'Ascent Builders Project in Surrey'
+  return brand ? `${brand} Image` : 'Page Image'
 }
 
 export function isExcludedContentImage(src = '', alt = '') {
@@ -194,7 +191,8 @@ export default function OptimizeAltTextDialog({
 
         const liveAlt = (typeof img === 'string' ? '' : (img?.alt || '')).trim()
         const currentAlt = liveAlt || (pushedRecord ? pushedRecord.pushedAlt : '')
-        const proposedAlt = generateSmartProposedAlt(src, currentAlt, targetPhrase)
+        const brandName = (site?.name || '').trim()
+        const proposedAlt = generateSmartProposedAlt(src, currentAlt, targetPhrase, brandName)
 
         return {
           id: imgId,
@@ -215,7 +213,7 @@ export default function OptimizeAltTextDialog({
     }
 
     loadImages()
-  }, [isOpen, page?.url, site?.url, images, targetPhrase])
+  }, [isOpen, page?.url, site?.url, site?.name, images, targetPhrase])
 
   if (!isOpen) return null
 

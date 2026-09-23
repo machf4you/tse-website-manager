@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import WebsiteTile from '../components/WebsiteTile'
 import AddWebsiteDialog from '../components/AddWebsiteDialog'
-import BulkFirstAuditDialog from '../components/BulkFirstAuditDialog'
 import ManageWebsitePage from './ManageWebsitePage'
 import {
   getWebsitesApi,
@@ -17,7 +16,6 @@ import './WebsitesDashboard.css'
 export default function WebsitesDashboard({ currentPath, navigate }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingSite, setEditingSite] = useState(null)
-  const [isBatchDialogOpen, setIsBatchDialogOpen] = useState(false)
   const [sites, setSites] = useState(() => {
     try {
       const saved = localStorage.getItem('tse_website_dashboard_sites')
@@ -415,16 +413,6 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             type="button"
-            className="w1-btn-batch-audit"
-            id="btn-first-audit-batch"
-            onClick={() => setIsBatchDialogOpen(true)}
-          >
-            <span style={{ fontSize: '1.05rem' }}>⚡</span>
-            <span>Run First Audits</span>
-          </button>
-
-          <button
-            type="button"
             className="w1-btn-add-website"
             id="btn-add-website-top"
             onClick={() => {
@@ -466,18 +454,6 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         onDeleteWebsite={handleDeleteWebsite}
         editingSite={editingSite}
         connectedSites={sites}
-      />
-
-      {/* Automated First Audit Batch Runner Dialog */}
-      <BulkFirstAuditDialog
-        isOpen={isBatchDialogOpen}
-        onClose={() => setIsBatchDialogOpen(false)}
-        onRefreshWebsites={async () => {
-          try {
-            const fresh = await getWebsitesApi()
-            if (Array.isArray(fresh) && fresh.length > 0) setSites(fresh)
-          } catch (e) {}
-        }}
       />
 
     </div>

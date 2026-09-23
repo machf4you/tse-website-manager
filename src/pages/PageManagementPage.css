@@ -1155,3 +1155,13 @@
   font-weight: 600;
 }
 
+.w3-btn-edit-target-pencil:hover {
+  opacity: 1 !important;
+  color: #38bdf8 !important;
+}
+
+.w3-btn-add-secondary-link:hover {
+  opacity: 1 !important;
+  text-decoration: underline;
+}
+

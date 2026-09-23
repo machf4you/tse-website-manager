@@ -7,8 +7,9 @@
  * Status values: 'loading' | 'done' | 'error'
  */
 
-import { getWebsitesApi, API_BASE_URL, pushMediaAltTextApi } from './websiteManagerApi.js'
+import { getWebsitesApi, API_BASE_URL, pushMediaAltTextApi, pushPageSeoFieldsApi } from './websiteManagerApi.js'
 import { formatReadableDateTime } from '../utils/dateFormatter.js'
+import { decodeHtmlEntities } from '../utils/safeString.js'
 
 export const WP_STEPS = [
   { id: 'api',   label: 'Checking WordPress REST API'  },
@@ -215,269 +216,32 @@ export async function resolveWpEndpoint(base, page, authHeader, numericId) {
   return 'pages'
 }
 
-export async function updateWordPressSEOFields({ site, page, metaTitle, metaDescription, h1 }) {
-  if (!site || !page) return { success: false, message: 'Site or Page object missing' }
-  let base = (site?.url || page?.url || '').trim().replace(/\/+$/, '')
-  if (!/^https?:\/\//i.test(base)) {
-    base = 'https://' + base
-  }
-
-  const { username, password } = await resolveSiteCredentials(site, page)
-  if (!username || !password) {
-    return { success: false, message: 'WordPress credentials missing for this site. Please configure user and application password in site settings.' }
-  }
-
-  const authHeader = 'Basic ' + btoa(`${username}:${password.replace(/\s/g, '')}`)
-
-  let numericId = parseInt(page.id || page.ID || page.pageId || page.numericId, 10)
-  const endpoint = await resolveWpEndpoint(base, page, authHeader, numericId)
-
-  // If numeric ID is missing from page object, attempt to resolve via slug
-  if (isNaN(numericId) && page.url) {
-    try {
-      const pathParts = page.url.replace(/\/+$/, '').split('/')
-      const slug = pathParts[pathParts.length - 1]
-      if (slug) {
-        const lookupRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}?slug=${encodeURIComponent(slug)}`, {
-          headers: { Authorization: authHeader, Accept: 'application/json' }
-        })
-        if (lookupRes.ok) {
-          const list = await lookupRes.json()
-          if (Array.isArray(list) && list.length > 0 && list[0].id) {
-            numericId = list[0].id
-          }
-        }
-      }
-    } catch (_err) {}
-  }
-
-  if (isNaN(numericId)) {
-    return { success: false, message: `Could not resolve numeric WordPress page ID for page '${page.url}'.` }
-  }
-
-  // ── 1. Prepare Content & H1 HTML Replacement ──
-  let updatedContent = undefined
-  let existingContent = page.content?.rendered || page.content || page.contentHtml || ''
-  let existingElementorData = page.elementorData || page._elementor_data || null
-
-  // Fetch live page object if existing content or Elementor data missing
-  try {
-    const pageFetchRes = await fetch(`${base}/wp-json/wp/v2/${endpoint}/${numericId}?context=edit`, {
-      headers: { Authorization: authHeader, Accept: 'application/json' }
-    })
-    if (pageFetchRes.ok) {
-      const existingPageData = await pageFetchRes.json()
-      existingContent = existingPageData.content?.rendered || existingPageData.content?.raw || existingContent
-      existingElementorData = existingPageData.meta?._elementor_data || existingPageData._elementor_data || existingElementorData
-    }
-  } catch (_pErr) {}
-
-  if (h1 && typeof h1 === 'string' && h1.trim()) {
-    const cleanH1 = h1.trim()
-    // Strip prepended H1 tags that were previously inserted at the beginning of post_content
-    let contentToProcess = existingContent.replace(/^(\s*<h1[^>]*>[\s\S]*?<\/h1>\s*)+/i, '')
-
-    if (/<h1[^>]*>[\s\S]*?<\/h1>/i.test(contentToProcess)) {
-      // Replace existing inline H1 tag
-      updatedContent = contentToProcess.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/i, `<h1$1>${cleanH1}</h1>`)
-    } else if (existingContent !== contentToProcess) {
-      // If a prepended duplicate H1 was stripped and no inline H1 remains, update with cleaned content
-      updatedContent = contentToProcess
-    }
-    // Note: Do NOT prepend a new <h1> when content has no inline <h1>; updating payload.title handles the theme H1.
-  }
-
-  // ── 2. Elementor JSON Document Tree Updating ──
-  let updatedElementorJson = null
-  if (existingElementorData && h1) {
-    try {
-      const tree = typeof existingElementorData === 'string' ? JSON.parse(existingElementorData) : existingElementorData
-      if (Array.isArray(tree)) {
-        let targetH1Node = null
-
-        function findAndTargetElementorH1Widget(nodes) {
-          if (!Array.isArray(nodes) || targetH1Node) return
-          for (const node of nodes) {
-            const wType = String(node.widgetType || '').toLowerCase()
-            const settings = node.settings || {}
-            const hSize = String(settings.header_size || settings.tag || settings.html_tag || '').toLowerCase()
-
-            const isHeadingWidget = wType === 'heading' || wType === 'elementskit-heading' || wType === 'ekit-heading' || wType === 'theme-page-title' || Boolean(node.settings)
-            if (isHeadingWidget && node.settings && hSize === 'h1') {
-              targetH1Node = node
-              return
-            }
-            if (Array.isArray(node.elements)) findAndTargetElementorH1Widget(node.elements)
-          }
-        }
-
-        findAndTargetElementorH1Widget(tree)
-
-        if (targetH1Node && targetH1Node.settings) {
-          if (targetH1Node.settings.title !== undefined) targetH1Node.settings.title = h1
-          if (targetH1Node.settings.ekit_heading_title !== undefined) targetH1Node.settings.ekit_heading_title = h1
-          if (targetH1Node.settings.header_title !== undefined) targetH1Node.settings.header_title = h1
-          if (targetH1Node.settings.ekit_heading_title_title !== undefined) targetH1Node.settings.ekit_heading_title_title = h1
-          if (targetH1Node.settings.heading_title !== undefined) targetH1Node.settings.heading_title = h1
-
-          if (targetH1Node.settings.title === undefined && targetH1Node.settings.heading_title === undefined) {
-            targetH1Node.settings.title = h1
-          }
-
-          updatedElementorJson = JSON.stringify(tree)
-        } else {
-          console.warn('[WORDPRESS_API] Elementor page present but no safe H1 widget (header_size: h1) was found. Leaving Elementor headings untouched.')
-        }
-      }
-    } catch (_eErr) {
-      console.error('[WORDPRESS_API] Error parsing Elementor JSON tree:', _eErr)
-    }
-  }
-
-  // ── 3. Build Payload for WP REST, Yoast & Elementor ──
-  const payload = {
-    title: (h1 && typeof h1 === 'string' && h1.trim()) ? h1.trim() : (page.title?.rendered || page.title || metaTitle),
-    ...(updatedContent !== undefined ? { content: updatedContent } : {}),
-    yoast_wpseo_title: metaTitle,
-    yoast_wpseo_metadesc: metaDescription,
-    ...(updatedElementorJson ? { _elementor_data: updatedElementorJson, elementor_data: updatedElementorJson } : {}),
-    meta_input: {
-      ...(updatedElementorJson ? { _elementor_data: updatedElementorJson, elementor_data: updatedElementorJson } : {}),
-      _yoast_wpseo_title: metaTitle,
-      _yoast_wpseo_metadesc: metaDescription
-    },
-    meta: {
-      _yoast_wpseo_title: metaTitle,
-      _yoast_wpseo_metadesc: metaDescription,
-      yoast_wpseo_title: metaTitle,
-      yoast_wpseo_metadesc: metaDescription,
-      ...(updatedElementorJson ? { _elementor_data: updatedElementorJson, elementor_data: updatedElementorJson } : {})
-    }
-  }
-
-  const targetUrl = `${base}/wp-json/wp/v2/${endpoint}/${numericId}`
-  console.log('[WP_WRITE_TRACE] Target Endpoint:', targetUrl)
-  console.log('[WP_WRITE_TRACE] Request Payload:', JSON.stringify(payload))
+export async function updateWordPressSEOFields({ site, page, metaTitle, metaDescription, h1, targetPhrase }) {
+  if (!site && !page) return { success: false, message: 'Site or Page object missing.' }
 
   try {
-    const res = await fetch(targetUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: authHeader,
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(payload)
+    const siteId = site?.id || page?.siteId
+    const siteUrl = site?.url || page?.siteUrl
+    const pageId = page?.id || page?.ID || page?.pageId || page?.numericId
+    const pageUrl = page?.url || ''
+
+    const response = await pushPageSeoFieldsApi({
+      siteId,
+      siteUrl,
+      pageId,
+      pageUrl,
+      metaTitle,
+      metaDescription,
+      h1,
+      targetPhrase: targetPhrase || page?.targetPhrase || page?.target || ''
     })
 
-    console.log('[WP_WRITE_TRACE] HTTP Response Status:', res.status)
-
-    if (!res.ok) {
-      let errDetail = `HTTP ${res.status}`
-      try {
-        const errJson = await res.json()
-        errDetail = errJson.message || errJson.code || errDetail
-      } catch (_e) {
-        const text = await res.text()
-        if (text) errDetail = text.slice(0, 150)
-      }
-      console.error('[WP_WRITE_TRACE] Write Failed:', errDetail)
-      return {
-        success: false,
-        status: res.status,
-        message: `WordPress update failed (${res.status}): ${errDetail}`
-      }
-    }
-
-    const postData = await res.json()
-
-    // ── 4. Call TSE Site Exporter Dedicated Endpoint for Meta Title & Description ──
-    try {
-      console.log('[WP_WRITE_TRACE] Writing Meta Title & Description via TSE Site Exporter endpoint...')
-      if (metaTitle) {
-        await fetch(`${base}/wp-json/tse-site-exporter/v1/update-page`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: authHeader, Accept: 'application/json' },
-          body: JSON.stringify({ post_id: numericId, field: 'seo_title', value: metaTitle })
-        })
-      }
-      if (metaDescription) {
-        await fetch(`${base}/wp-json/tse-site-exporter/v1/update-page`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: authHeader, Accept: 'application/json' },
-          body: JSON.stringify({ post_id: numericId, field: 'meta_description', value: metaDescription })
-        })
-      }
-    } catch (_tseErr) {
-      console.warn('[WP_WRITE_TRACE] TSE Site Exporter update-page call warning:', _tseErr)
-    }
-
-    // ── 4b. Secondary Call to Yoast Bulk Editor REST Endpoint if available ──
-    try {
-      await fetch(`${base}/wp-json/yoast/v1/bulk_editor/update_search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: authHeader,
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          items: [
-            {
-              id: numericId,
-              seo_title: metaTitle,
-              meta_description: metaDescription
-            }
-          ]
-        })
-      })
-    } catch (_yErr) {}
-
-    // ── 5. Cache Invalidation (Elementor & WordPress Object Cache) ──
-    try {
-      console.log('[WP_WRITE_TRACE] Invalidation: Purging Elementor & WordPress Cache...')
-      await fetch(`${base}/wp-json/elementor/v1/cache`, {
-        method: 'DELETE',
-        headers: { Authorization: authHeader }
-      })
-    } catch (_cacheErr) {
-      console.warn('[WP_WRITE_TRACE] Cache purge call warning:', _cacheErr)
-    }
-
-    // ── 6. Public Frontend Verification ──
-    let publicVerified = false
-    if (h1) {
-      try {
-        const pageUrl = postData.link || `${base}/?p=${numericId}`
-        const verifyUrl = `${pageUrl}${pageUrl.includes('?') ? '&' : '?'}tse_verify=${Date.now()}`
-        console.log('[WP_WRITE_TRACE] Public Verification Fetching:', verifyUrl)
-        const pubRes = await fetch(verifyUrl, {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache'
-          }
-        })
-        if (pubRes.ok) {
-          const pubHtml = await pubRes.text()
-          const cleanH1Str = h1.trim()
-          if (pubHtml.includes(cleanH1Str)) {
-            console.log('[WP_WRITE_TRACE] Public H1 Verification SUCCESS! HTML contains new H1.')
-            publicVerified = true
-          } else {
-            console.warn('[WP_WRITE_TRACE] Public H1 Verification Warning: H1 text not found in public response yet.')
-          }
-        }
-      } catch (_vErr) {
-        console.warn('[WP_WRITE_TRACE] Public verification fetch error:', _vErr)
-      }
-    }
-
-    return { success: true, data: postData, publicVerified }
-  } catch (e) {
-    console.error('[WP_WRITE_TRACE] Network/CORS Exception:', e)
+    return response
+  } catch (err) {
+    console.error('[WP_SEO_PUSH_ERROR]', err)
     return {
       success: false,
-      message: `Failed to connect to WordPress REST API: ${e.message}`
+      message: err.message || 'Failed to connect to Website Manager backend.'
     }
   }
 }
@@ -775,20 +539,20 @@ export async function syncSingleWordPressPage({ site, page }) {
       // Extract <title>...</title>
       const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
       if (titleMatch && titleMatch[1]) {
-        liveTitle = titleMatch[1].trim()
+        liveTitle = decodeHtmlEntities(titleMatch[1].trim())
       }
 
       // Extract <meta name="description" content="...">
       const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
                         html.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i)
       if (descMatch && descMatch[1]) {
-        liveDesc = descMatch[1].trim()
+        liveDesc = decodeHtmlEntities(descMatch[1].trim())
       }
 
       // Extract first <h1>...</h1>
       const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
       if (h1Match && h1Match[1]) {
-        liveH1 = h1Match[1].replace(/<[^>]+>/g, '').trim()
+        liveH1 = decodeHtmlEntities(h1Match[1].replace(/<[^>]+>/g, '').trim())
       }
     }
   } catch (_fetchErr) {
@@ -797,13 +561,13 @@ export async function syncSingleWordPressPage({ site, page }) {
 
   // Fallbacks from REST data if live HTML did not resolve
   if (!liveTitle && restData) {
-    liveTitle = restData.meta?._yoast_wpseo_title || restData.yoast_head_json?.title || restData.title?.raw || restData.title?.rendered || ''
+    liveTitle = decodeHtmlEntities(restData.meta?.rank_math_title || restData.meta?._yoast_wpseo_title || restData.yoast_head_json?.title || restData.title?.raw || restData.title?.rendered || '')
   }
   if (!liveDesc && restData) {
-    liveDesc = restData.meta?._yoast_wpseo_metadesc || restData.yoast_head_json?.description || ''
+    liveDesc = decodeHtmlEntities(restData.meta?.rank_math_description || restData.meta?._yoast_wpseo_metadesc || restData.yoast_head_json?.description || '')
   }
 
-  const formattedTimestamp = formatReadableDateTime(new Date())
+  const isoTimestamp = new Date().toISOString()
 
   return {
     success: true,
@@ -811,7 +575,7 @@ export async function syncSingleWordPressPage({ site, page }) {
     actualMetaTitle: liveTitle,
     actualMetaDescription: liveDesc,
     actualH1: liveH1,
-    lastSyncTimestamp: formattedTimestamp,
+    lastSyncTimestamp: isoTimestamp,
     restData
   }
 }

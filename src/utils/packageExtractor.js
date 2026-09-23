@@ -33,12 +33,26 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
   // 5. WordPress Posts -> Article (Priority 4)
   if (p && (p.post_type === 'post' || p.type === 'post')) return 'Article'
 
-  const lowerTitle = (title || '').toLowerCase()
+  const postTypeStr = String(p?.post_type || p?.type || '').toLowerCase()
   let cleanUrlPath = (url || '').replace(/^https?:\/\/[^/]+/i, '')
   if (!cleanUrlPath.startsWith('/')) cleanUrlPath = '/' + cleanUrlPath
   const [pathnameRaw] = cleanUrlPath.split('?')
   const pathname = (pathnameRaw || '/').toLowerCase()
   const cleanSlug = pathname.replace(/\/+$/, '').replace(/^\/+/, '')
+
+  // 5b. Portfolio / Showcase Pages -> Excluded (Priority 0)
+  const isPortfolio = postTypeStr === 'portfolio' || postTypeStr === 'portfolios' || pathname.includes('/portfolio/') || pathname.includes('/portfolios/') || cleanSlug === 'portfolio' || cleanSlug === 'portfolios'
+  if (isPortfolio) {
+    return 'Excluded'
+  }
+
+  // 5c. Case Studies -> Excluded (Priority 0)
+  const isCaseStudy = postTypeStr === 'case-studies' || postTypeStr === 'case_study' || postTypeStr === 'case-study' || postTypeStr === 'casestudies' || pathname.includes('/case-study/') || pathname.includes('/case-studies/') || cleanSlug === 'case-study' || cleanSlug === 'case-studies'
+  if (isCaseStudy) {
+    return 'Excluded'
+  }
+
+  const lowerTitle = (title || '').toLowerCase()
 
   // 6. Explicit Structural Landing Page Slugs (Priority 2)
   // /services/, /locations/, /areas/, /areas-we-cover/ explicitly classify as Landing
@@ -56,7 +70,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
   // 7. Informational / Topical Indexes & Content (Priority 3)
   const genericTopicalSlugs = [
     'blog', 'news', 'insights', 'articles', 'resources', 'knowledge-base',
-    'guides', 'case-studies', 'faqs', 'faq'
+    'guides', 'faqs', 'faq'
   ]
   if (genericTopicalSlugs.includes(cleanSlug)) {
     return 'Topical'
@@ -68,7 +82,7 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
   const informationalStarters = [
     'how much', 'how to', 'do i need', 'what is', 'what are', 'can builders', 'can i', 'why ',
     'should i', 'when to', 'where to', 'is it worth', 'which one', 'best types', 'types of',
-    'popular types', 'guide', 'tips', 'ideas', 'advice', 'checklist', 'faqs', 'faq',
+    'popular types', 'guide', 'tips', 'ideas', 'advice', 'faqs', 'faq',
     'everything you need to know', 'pros and cons', 'cost vs value', 'without planning permission',
     'reasons to', 'ways to', 'things to', 'what adds more value', 'ideas for'
   ]
@@ -78,15 +92,15 @@ export function classifyPageType(p, title, url, isExcluded, isHomePage, hierarch
     return 'Topical'
   }
 
-  // 7. Standard Commercial WordPress Pages & Section Landing Pages (Priority 2)
-  // Handles /services/, /locations/, /areas/, /areas-we-cover/ and all child service/location pages
+  // 8. Standard Commercial WordPress Pages & Section Landing Pages (Priority 2)
+  // Handles /services/, /locations/, /areas/, /areas-we-cover/, projects, and all child service/location pages
   const isWpPage = !p || p.post_type === 'page' || p.type === 'page' || !p.post_type || p.post_type === 'services' || p.post_type === 'service' || p.post_type === 'projects' || p.post_type === 'project'
   if (isWpPage) {
     return 'Landing'
   }
 
-  // 8. Anything uncertain remains Unclassified
-  return 'Unclassified'
+  // 9. Safe fallback for any other content -> Topical
+  return 'Topical'
 }
 
 export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null, customExclusionRules = null) {
@@ -148,6 +162,10 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null, 
   const isMagentoCategory = p.post_type === 'category' || p.magentoCategoryId !== undefined
   const isMagentoContainerOrInactive = isMagentoCategory && ((p.level !== undefined && p.level <= 1) || p.is_active === false)
 
+  const postTypeStr = String(p.post_type || p.type || '').toLowerCase()
+  const isPortfolio = postTypeStr === 'portfolio' || postTypeStr === 'portfolios' || pathname.includes('/portfolio/') || pathname.includes('/portfolios/') || cleanSlug === 'portfolio' || cleanSlug === 'portfolios'
+  const isCaseStudy = postTypeStr === 'case-studies' || postTypeStr === 'case_study' || postTypeStr === 'case-study' || postTypeStr === 'casestudies' || pathname.includes('/case-study/') || pathname.includes('/case-studies/') || cleanSlug === 'case-study' || cleanSlug === 'case-studies'
+
   // 4. SEO Page Classification Rules
   const isHomePage =
     p.isHome === true ||
@@ -159,7 +177,7 @@ export function normalizeImportedPage(p, siteUrl = '', hierarchyContext = null, 
     lowerTitle === 'home' ||
     lowerTitle === 'homepage'
 
-  const isExcluded = isHomePage ? false : (matchesExclusion || isMagentoContainerOrInactive)
+  const isExcluded = isHomePage ? false : (matchesExclusion || isMagentoContainerOrInactive || isPortfolio || isCaseStudy)
 
   const seoPageType = classifyPageType(p, title, url, isExcluded, isHomePage, hierarchyContext)
   const type = seoPageType

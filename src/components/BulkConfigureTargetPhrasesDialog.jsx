@@ -96,6 +96,7 @@ export default function BulkConfigureTargetPhrasesDialog({
         url: it.url,
         targetPhrase: it.proposedPhrase.trim(),
         target: it.proposedPhrase.trim(),
+        secondaryTargetPhrase: (it.rawPage?.secondaryTargetPhrase || '').trim(),
         type: it.type || 'Topical',
         seoPageType: it.type || 'Topical',
         isConfigured: true,

@@ -3,7 +3,7 @@ import { executePageAudit } from '../services/pageAuditorApi'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
 import { savePageAuditApi, getPageAuditsApi, savePageConfigsApi, getPageConfigsApi } from '../services/websiteManagerApi'
 import { syncSingleWordPressPage } from '../services/wordpressApi'
-import { getSiteAuditsStorageKey, getSiteConfigsStorageKey } from '../utils/siteKeyHelper'
+import { getSiteAuditsStorageKey, getSiteConfigsStorageKey, getCandidatePageKeys, findAuditRecordInMap } from '../utils/siteKeyHelper'
 import { normalizeUrlForMatching } from '../utils/urlUtils'
 import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
 import { formatReadableDateTime } from '../utils/dateFormatter'
@@ -51,6 +51,7 @@ export default function PageAuditResultsPage({
   isSyncing = false,
 }) {
   const selectedUrlStorageKey = site?.id ? `tse_audit_selected_url_${site.id}` : 'tse_audit_selected_url_default'
+  const auditStorageKey = getSiteAuditsStorageKey(site)
 
   // Allow selecting any page from the dropdown, with localStorage persistence
   const [selectedUrl, setSelectedUrl] = useState(() => {
@@ -84,6 +85,8 @@ export default function PageAuditResultsPage({
   const [apiAuditRecord, setApiAuditRecord] = useState(null)
   const [isLoadingAudit, setIsLoadingAudit] = useState(false)
   const [auditError, setAuditError] = useState(null)
+  const [isCurrentPageStale, setIsCurrentPageStale] = useState(false)
+  const [staleReasonText, setStaleReasonText] = useState(null)
   const [activeFixIssue, setActiveFixIssue] = useState(null)
   const [isAltTextModalOpen, setIsAltTextModalOpen] = useState(false)
   const [altUpdateTick, setAltUpdateTick] = useState(0)
@@ -96,13 +99,13 @@ export default function PageAuditResultsPage({
   useWebsiteManagerRealtime({
     onPageAuditChanged: ({ siteId, pageKey: changedKey, auditRecord, auditsMap }) => {
       if (site?.id && String(site.id) === String(siteId)) {
-        const currentUrlKey = selectedUrl || page?.url || page?.id
+        const candidateKeys = getCandidatePageKeys(page, null, selectedUrl)
         if (changedKey && auditRecord) {
-          if (changedKey === currentUrlKey || changedKey === page?.url || changedKey === String(page?.id)) {
+          if (candidateKeys.includes(String(changedKey))) {
             setApiAuditRecord(auditRecord)
           }
-        } else if (auditsMap && currentUrlKey) {
-          const matched = auditsMap[currentUrlKey] || (page?.url ? auditsMap[page.url] : null) || (page?.id ? auditsMap[String(page.id)] : null)
+        } else if (auditsMap) {
+          const matched = findAuditRecordInMap(auditsMap, candidateKeys)
           if (matched) setApiAuditRecord(matched)
         }
       }
@@ -116,11 +119,11 @@ export default function PageAuditResultsPage({
       }
     },
     onReconnect: () => {
-      if (site?.id && (page?.url || page?.id)) {
-        const pKey = page.url || page.id
+      if (site?.id) {
+        const candidateKeys = getCandidatePageKeys(page, null, selectedUrl)
         getPageAuditsApi(site.id).then(apiAudits => {
           if (apiAudits && typeof apiAudits === 'object') {
-            const rec = apiAudits[pKey] || (page.url ? apiAudits[page.url] : null) || (page.id ? apiAudits[page.id] : null)
+            const rec = findAuditRecordInMap(apiAudits, candidateKeys)
             if (rec) setApiAuditRecord(rec)
           }
         }).catch(() => {})
@@ -136,21 +139,19 @@ export default function PageAuditResultsPage({
   // Load page audit record from SQLite API for authoritative timestamps
   useEffect(() => {
     let isMounted = true
-    if (site?.id && (page?.url || page?.id)) {
-      const pKey = page.url || page.id
+    if (site?.id) {
+      const candidateKeys = getCandidatePageKeys(page, null, selectedUrl)
       getPageAuditsApi(site.id)
         .then(apiAudits => {
           if (isMounted && apiAudits && typeof apiAudits === 'object') {
-            const rec = apiAudits[pKey] ||
-                        (page.url ? apiAudits[page.url] : null) ||
-                        (page.id ? apiAudits[page.id] : null)
+            const rec = findAuditRecordInMap(apiAudits, candidateKeys)
             if (rec) setApiAuditRecord(rec)
           }
         })
         .catch(() => {})
     }
     return () => { isMounted = false }
-  }, [site?.id, page?.url, page?.id])
+  }, [site?.id, page?.url, page?.id, selectedUrl])
 
 
   // Load stored page configurations from SQLite backend DB on mount
@@ -260,9 +261,9 @@ export default function PageAuditResultsPage({
     siteName: site?.name || '',
   })
 
-  const rawSavedTitle = overrideObj.proposedTitle || rawCurrentPage.proposedTitle
-  const rawSavedDesc = overrideObj.proposedMetaDescription || rawCurrentPage.proposedMetaDescription
-  const rawSavedH1 = overrideObj.proposedH1 || rawCurrentPage.proposedH1
+  const rawSavedTitle = overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.metaTitle
+  const rawSavedDesc = overrideObj.proposedMetaDescription || overrideObj.metaDescription || rawCurrentPage.proposedMetaDescription || rawCurrentPage.metaDescription
+  const rawSavedH1 = overrideObj.proposedH1 || overrideObj.h1 || rawCurrentPage.proposedH1 || rawCurrentPage.h1
 
   const finalProposedTitle = resolveProposedField(rawSavedTitle, actualMetaTitle, recommendations.proposedTitle, site?.name)
   const finalProposedDesc = resolveProposedField(rawSavedDesc, actualMetaDescription, recommendations.proposedMetaDescription, site?.name)
@@ -286,13 +287,12 @@ export default function PageAuditResultsPage({
   }
 
   // ── Timestamps & Audit Freshness Resolution ──
+  const candidateKeysForAudit = getCandidatePageKeys(rawCurrentPage, currentPage, selectedUrl)
+
   const storedAuditRecord = (() => {
     try {
       const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-      const pKey = rawCurrentPage.url || rawCurrentPage.id
-      return storedAudits[pKey] ||
-             (rawCurrentPage.url ? storedAudits[rawCurrentPage.url] : null) ||
-             (rawCurrentPage.id ? storedAudits[rawCurrentPage.id] : null)
+      return findAuditRecordInMap(storedAudits, candidateKeysForAudit)
     } catch (e) {
       return null
     }
@@ -366,10 +366,20 @@ export default function PageAuditResultsPage({
 
   const lastAuditMs = parseTimestampToMs(rawLastAuditTs || lastAuditTimestampStr)
   const lastSyncMs = parseTimestampToMs(rawLastSyncTs || lastSyncTimestampStr)
-  const isSyncNewerThanAudit = Boolean(lastSyncMs > 0 && lastAuditMs > 0 && lastSyncMs > lastAuditMs)
+
+  // Stored timestamps can be ISO strings or formatted strings.
+  // The UI displays dates formatted to the minute (e.g. "22 September 2026 13:27").
+  // If the displayed strings match, or if both events occurred within the same minute,
+  // we must never display the contradictory "Live data has changed" warning.
+  const isSyncNewerThanAudit = Boolean(
+    lastSyncMs > 0 &&
+    lastAuditMs > 0 &&
+    Math.floor(lastSyncMs / 60000) > Math.floor(lastAuditMs / 60000) &&
+    lastSyncTimestampStr !== lastAuditTimestampStr
+  )
 
   const handleSyncPageClick = async () => {
-    if (isSyncingPage || !currentPage) return
+    if (isSyncingPage || !currentPage) return { success: false, message: 'No page selected' }
     setIsSyncingPage(true)
     setPageSyncError(null)
 
@@ -378,7 +388,7 @@ export default function PageAuditResultsPage({
       if (!res.success) {
         setPageSyncError(res.message || 'Failed to sync page from WordPress')
         setIsSyncingPage(false)
-        return
+        return res
       }
 
       setLocalSyncTimestamp(res.lastSyncTimestamp)
@@ -418,10 +428,102 @@ export default function PageAuditResultsPage({
       }
 
       setIsSyncingPage(false)
+      return res
     } catch (err) {
       console.error('Sync page error:', err)
       setPageSyncError(err.message || 'Failed to sync page')
       setIsSyncingPage(false)
+      return { success: false, message: err.message || 'Failed to sync page' }
+    }
+  }
+
+  const handleRerunAudit = async () => {
+    if (!currentPage || !currentPage.url) return { success: false, message: 'No page selected' }
+    setIsLoadingAudit(true)
+    setAuditError(null)
+
+    const effectiveTarget = (currentPage.target || currentPage.targetPhrase || targetPhrase || '').trim()
+    if (!effectiveTarget || effectiveTarget.toLowerCase() === 'not set') {
+      setIsLoadingAudit(false)
+      const err = 'Target Phrase Not Configured — Please configure a target phrase for this page in W3 Page Management to run audit.'
+      setAuditError(err)
+      return { success: false, message: err }
+    }
+
+    try {
+      const candidateKeys = getCandidatePageKeys(currentPage, rawCurrentPage, selectedUrl)
+      const result = await executePageAudit({
+        siteId: site?.id || 'site-1',
+        pageId: currentPage.id || currentPage.url,
+        url: currentPage.url,
+        siteUrl: site?.url || 'https://www.ascentbuilders.co.uk/',
+        targetPhrase: effectiveTarget,
+        seoPageType: currentPage.type || currentPage.seoPageType || pageType,
+      })
+
+      const isoTimestamp = new Date().toISOString()
+      const currentFingerprint = generatePageSeoFingerprint(currentPage)
+
+      const enrichedResult = {
+        ...result,
+        lastAuditTimestamp: isoTimestamp
+      }
+
+      const auditRecord = {
+        isAudited: true,
+        isStale: false,
+        staleReason: null,
+        lastAuditTimestamp: isoTimestamp,
+        fingerprint: currentFingerprint,
+        auditResult: enrichedResult,
+      }
+
+      setLiveAuditData(enrichedResult)
+      setApiAuditRecord(auditRecord)
+      setIsCurrentPageStale(false)
+      setStaleReasonText(null)
+      setIsLoadingAudit(false)
+
+      try {
+        const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+        candidateKeys.forEach(k => {
+          storedAudits[k] = auditRecord
+        })
+        localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
+
+        if (site?.id) {
+          await Promise.all(
+            candidateKeys.map(k => savePageAuditApi(site.id, k, auditRecord).catch(() => {}))
+          )
+        }
+
+        try {
+          const rawSites = localStorage.getItem('tse_website_dashboard_sites')
+          if (rawSites) {
+            const sitesList = JSON.parse(rawSites)
+            const updatedSites = sitesList.map(s => {
+              if (String(s.id) === String(site?.id)) {
+                return {
+                  ...s,
+                  isAudited: true,
+                  lastAuditTimestamp: isoTimestamp,
+                }
+              }
+              return s
+            })
+            localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(updatedSites))
+          }
+        } catch (e) {}
+      } catch (e) {
+        console.error('Failed to save page audit result:', e)
+      }
+
+      return { success: true, result: enrichedResult }
+    } catch (e) {
+      console.error('[RERUN_AUDIT_ERROR]', e)
+      setAuditError(e.message || 'Failed to connect to Page Auditor backend.')
+      setIsLoadingAudit(false)
+      return { success: false, message: e.message || 'Failed to connect to Page Auditor backend.' }
     }
   }
 
@@ -465,22 +567,41 @@ export default function PageAuditResultsPage({
     }
 
     if (seoType === 'batch_optimization' && fieldValues) {
-      if (fieldValues.metaTitle !== undefined) {
-        updatedConfig.proposedTitle = fieldValues.metaTitle
-        updatedConfig.metaTitle = fieldValues.metaTitle
+      if (fieldValues.metaTitle !== undefined || fieldValues.proposedTitle !== undefined) {
+        const val = fieldValues.proposedTitle !== undefined ? fieldValues.proposedTitle : fieldValues.metaTitle
+        updatedConfig.proposedTitle = val
+        updatedConfig.metaTitle = val
       }
-      if (fieldValues.metaDescription !== undefined) {
-        updatedConfig.metaDescription = fieldValues.metaDescription
+      if (fieldValues.metaDescription !== undefined || fieldValues.proposedMetaDescription !== undefined) {
+        const val = fieldValues.proposedMetaDescription !== undefined ? fieldValues.proposedMetaDescription : fieldValues.metaDescription
+        updatedConfig.proposedMetaDescription = val
+        updatedConfig.metaDescription = val
       }
-      if (fieldValues.h1 !== undefined) {
-        updatedConfig.h1 = fieldValues.h1
+      if (fieldValues.h1 !== undefined || fieldValues.proposedH1 !== undefined) {
+        const val = fieldValues.proposedH1 !== undefined ? fieldValues.proposedH1 : fieldValues.h1
+        updatedConfig.proposedH1 = val
+        updatedConfig.h1 = val
+      }
+      if (fieldValues.pushedActualMetaTitle !== undefined) {
+        updatedConfig.pushedActualMetaTitle = fieldValues.pushedActualMetaTitle
+        updatedConfig.actualMetaTitle = fieldValues.pushedActualMetaTitle
+      }
+      if (fieldValues.pushedActualMetaDescription !== undefined) {
+        updatedConfig.pushedActualMetaDescription = fieldValues.pushedActualMetaDescription
+        updatedConfig.actualMetaDescription = fieldValues.pushedActualMetaDescription
+      }
+      if (fieldValues.pushedActualH1 !== undefined) {
+        updatedConfig.pushedActualH1 = fieldValues.pushedActualH1
+        updatedConfig.actualH1 = fieldValues.pushedActualH1
       }
     } else if (seoType === 'meta_title') {
       updatedConfig.proposedTitle = fieldValue
       updatedConfig.metaTitle = fieldValue
     } else if (seoType === 'meta_desc') {
+      updatedConfig.proposedMetaDescription = fieldValue
       updatedConfig.metaDescription = fieldValue
     } else if (seoType === 'h1') {
+      updatedConfig.proposedH1 = fieldValue
       updatedConfig.h1 = fieldValue
     }
 
@@ -501,10 +622,11 @@ export default function PageAuditResultsPage({
     } catch (e) {}
 
     try {
-      const auditStorageKey = getSiteAuditsStorageKey(site)
       const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-      delete storedAudits[pageKey]
-      if (targetPage.url) delete storedAudits[targetPage.url]
+      const targetCandidateKeys = getCandidatePageKeys(targetPage, null, null)
+      targetCandidateKeys.forEach(k => {
+        delete storedAudits[k]
+      })
       localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
     } catch (e) {
       console.error('Failed to clear cached audit:', e)
@@ -524,12 +646,6 @@ export default function PageAuditResultsPage({
 
   // Clean path display
   const cleanPath = getCleanPathname(fullUrl, site?.url)
-
-  // Storage key for page audit persistence
-  const auditStorageKey = getSiteAuditsStorageKey(site)
-  const [isRerunRequested, setIsRerunRequested] = useState(false)
-  const [isCurrentPageStale, setIsCurrentPageStale] = useState(false)
-  const [staleReasonText, setStaleReasonText] = useState(null)
   const [enrichedPagesList, setEnrichedPagesList] = useState([])
 
   // Auto-enrich pagesList with live WP content if local content is empty
@@ -586,56 +702,39 @@ export default function PageAuditResultsPage({
     return () => { isMounted = false }
   }, [pagesList, site?.url])
 
-  // Execute or load audit call for selected page
+  // Execute or load initial audit call for selected page
   useEffect(() => {
     let isMounted = true
-    async function runLiveAudit() {
+    async function loadOrRunInitialAudit() {
       if (!currentPage || !currentPage.url) return
 
-      const pageKey = currentPage.url || currentPage.id
-      let cachedAudit = null
-      let isStaleRecord = false
-      let staleReason = null
+      const candidateKeys = getCandidatePageKeys(currentPage, rawCurrentPage, selectedUrl)
+      let cachedRecord = null
 
-      // If re-run is NOT explicitly requested, check for cached audit result
-      if (!isRerunRequested) {
+      if (site?.id) {
         try {
-          let record = null
-          if (site?.id) {
-            try {
-              const apiAudits = await getPageAuditsApi(site.id)
-              record = apiAudits[pageKey] ||
-                       (currentPage.url ? apiAudits[currentPage.url] : null) ||
-                       (currentPage.id ? apiAudits[currentPage.id] : null)
-            } catch (err) {}
-          }
-          if (!record) {
-            const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-            record = storedAudits[pageKey] ||
-                     (currentPage.url ? storedAudits[currentPage.url] : null) ||
-                     (currentPage.id ? storedAudits[currentPage.id] : null)
-          }
+          const apiAudits = await getPageAuditsApi(site.id)
+          cachedRecord = findAuditRecordInMap(apiAudits, candidateKeys)
+        } catch (err) {}
+      }
 
-          if (record) {
-            if (isMounted) setApiAuditRecord(record)
-            if (record.isAudited && record.auditResult) {
-              cachedAudit = record.auditResult
-              isStaleRecord = Boolean(record.isStale)
-              staleReason = record.staleReason || null
-            }
-          }
+      if (!cachedRecord) {
+        try {
+          const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
+          cachedRecord = findAuditRecordInMap(storedAudits, candidateKeys)
         } catch (e) {
           console.error('Failed to read stored audit data:', e)
         }
       }
 
-      if (cachedAudit) {
+      if (cachedRecord && cachedRecord.isAudited && cachedRecord.auditResult) {
         if (isMounted) {
-          setLiveAuditData(cachedAudit)
+          setApiAuditRecord(cachedRecord)
+          setLiveAuditData(cachedRecord.auditResult)
           setIsLoadingAudit(false)
           setAuditError(null)
-          setIsCurrentPageStale(isStaleRecord)
-          setStaleReasonText(staleReason)
+          setIsCurrentPageStale(Boolean(cachedRecord.isStale))
+          setStaleReasonText(cachedRecord.staleReason || null)
         }
         return
       }
@@ -666,19 +765,19 @@ export default function PageAuditResultsPage({
         })
 
         if (isMounted) {
-          const formattedTimestamp = formatReadableDateTime(new Date())
+          const isoTimestamp = new Date().toISOString()
           const currentFingerprint = generatePageSeoFingerprint(currentPage)
 
           const enrichedResult = {
             ...result,
-            lastAuditTimestamp: formattedTimestamp
+            lastAuditTimestamp: isoTimestamp
           }
 
           const auditRecord = {
             isAudited: true,
             isStale: false,
             staleReason: null,
-            lastAuditTimestamp: formattedTimestamp,
+            lastAuditTimestamp: isoTimestamp,
             fingerprint: currentFingerprint,
             auditResult: enrichedResult,
           }
@@ -688,66 +787,52 @@ export default function PageAuditResultsPage({
           setIsCurrentPageStale(false)
           setStaleReasonText(null)
           setIsLoadingAudit(false)
-          setIsRerunRequested(false)
 
-          // Persist audit completion timestamp, fingerprint, and payload under all lookup keys
           try {
             const storedAudits = JSON.parse(localStorage.getItem(auditStorageKey) || '{}')
-            
-            storedAudits[pageKey] = auditRecord
-            if (currentPage.id) storedAudits[String(currentPage.id)] = auditRecord
-            if (currentPage.url) storedAudits[currentPage.url] = auditRecord
-            if (rawCurrentPage.id) storedAudits[String(rawCurrentPage.id)] = auditRecord
-            if (rawCurrentPage.url) storedAudits[rawCurrentPage.url] = auditRecord
-
+            candidateKeys.forEach(k => {
+              storedAudits[k] = auditRecord
+            })
             localStorage.setItem(auditStorageKey, JSON.stringify(storedAudits))
 
             if (site?.id) {
-              savePageAuditApi(site.id, pageKey, auditRecord)
-              if (currentPage.id && String(currentPage.id) !== String(pageKey)) {
-                savePageAuditApi(site.id, String(currentPage.id), auditRecord)
-              }
-              if (currentPage.url && currentPage.url !== pageKey) {
-                savePageAuditApi(site.id, currentPage.url, auditRecord)
-              }
+              await Promise.all(
+                candidateKeys.map(k => savePageAuditApi(site.id, k, auditRecord).catch(() => {}))
+              )
             }
+
+            try {
+              const rawSites = localStorage.getItem('tse_website_dashboard_sites')
+              if (rawSites) {
+                const sitesList = JSON.parse(rawSites)
+                const updatedSites = sitesList.map(s => {
+                  if (String(s.id) === String(site?.id)) {
+                    return {
+                      ...s,
+                      isAudited: true,
+                      lastAuditTimestamp: isoTimestamp,
+                    }
+                  }
+                  return s
+                })
+                localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(updatedSites))
+              }
+            } catch (e) {}
           } catch (e) {
             console.error('Failed to save page audit result:', e)
           }
-
-          // Update site record audit timestamp for W1 Website Tile
-          try {
-            const rawSites = localStorage.getItem('tse_website_dashboard_sites')
-            if (rawSites) {
-              const sitesList = JSON.parse(rawSites)
-              const updatedSites = sitesList.map(s => {
-                if (String(s.id) === String(site?.id)) {
-                  return {
-                    ...s,
-                    isAudited: true,
-                    lastAuditTimestamp: formattedTimestamp,
-                  }
-                }
-                return s
-              })
-              localStorage.setItem('tse_website_dashboard_sites', JSON.stringify(updatedSites))
-            }
-          } catch (e) {
-            console.error('Failed to update site tile audit timestamp:', e)
-          }
         }
       } catch (e) {
-        console.error('[AUDIT_TRACE_EXCEPTION_CAUGHT]', e)
+        console.error('[AUDIT_INITIAL_ERROR]', e)
         if (isMounted) {
           setAuditError(e.message || 'Failed to connect to Page Auditor backend.')
           setIsLoadingAudit(false)
-          setIsRerunRequested(false)
         }
       }
     }
-    runLiveAudit()
+    loadOrRunInitialAudit()
     return () => { isMounted = false }
-  }, [selectedUrl, currentPage.url, currentPage.target, currentPage.type, isRerunRequested])
+  }, [selectedUrl, currentPage.url, currentPage.target, currentPage.type])
 
   // Map ONLY values returned by TSE Page Auditor
   let auditElements = []
@@ -1197,8 +1282,9 @@ export default function PageAuditResultsPage({
             <button
               type="button"
               className="w3-btn-emerald"
-              onClick={() => setIsRerunRequested(true)}
+              onClick={handleRerunAudit}
               disabled={isLoadingAudit}
+              title="Re-checks the page against the latest live and proposed data and updates the audit results."
               style={{ backgroundColor: '#f59e0b', borderColor: '#d97706', padding: '8px 18px', fontSize: '0.85rem', fontWeight: '700', whiteSpace: 'nowrap', boxShadow: '0 0 12px rgba(245,158,11,0.4)', cursor: 'pointer' }}
             >
               {isLoadingAudit ? 'Auditing...' : 'Re-run Audit ▷'}
@@ -1246,7 +1332,7 @@ export default function PageAuditResultsPage({
               id="btn-w4-sync-page"
               onClick={handleSyncPageClick}
               disabled={isSyncingPage || isLoadingAudit}
-              title="Synchronise this page directly from WordPress"
+              title="Pulls the latest live page data from WordPress into Website Manager."
               style={{
                 backgroundColor: '#2563eb',
                 borderColor: '#1d4ed8',
@@ -1278,9 +1364,9 @@ export default function PageAuditResultsPage({
             <button
               type="button"
               id="btn-w4-permanent-rerun-audit"
-              onClick={() => setIsRerunRequested(true)}
+              onClick={handleRerunAudit}
               disabled={isLoadingAudit || isSyncingPage}
-              title="Re-crawl and audit this page live"
+              title="Re-checks the page against the latest live and proposed data and updates the audit results."
               style={{
                 backgroundColor: isSyncNewerThanAudit || isCurrentPageStale ? '#f59e0b' : '#059669',
                 borderColor: isSyncNewerThanAudit || isCurrentPageStale ? '#d97706' : '#047857',
@@ -1465,8 +1551,8 @@ export default function PageAuditResultsPage({
           site={site}
           onClose={() => setActiveFixIssue(null)}
           onSaveFix={handleSaveFix}
-          onSyncWebsiteData={onSyncFromWordPress}
-          onRerunAudit={() => setIsRerunRequested(true)}
+          onSyncWebsiteData={handleSyncPageClick}
+          onRerunAudit={handleRerunAudit}
         />
 
         {/* Dedicated Optimize Image Alt Text Modal */}

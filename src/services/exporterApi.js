@@ -5,6 +5,32 @@ import { API_BASE_URL } from './websiteManagerApi.js'
  * Connects to the TSE WordPress Exporter REST endpoint via backend proxy or direct fallback.
  */
 
+function extractJsonFromText(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null
+  const trimmed = rawText.trim()
+  try {
+    return JSON.parse(trimmed)
+  } catch (_e) {}
+
+  const firstBrace = trimmed.indexOf('{')
+  const lastBrace = trimmed.lastIndexOf('}')
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(trimmed.substring(firstBrace, lastBrace + 1))
+    } catch (_e) {}
+  }
+
+  const firstBracket = trimmed.indexOf('[')
+  const lastBracket = trimmed.lastIndexOf(']')
+  if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+    try {
+      return JSON.parse(trimmed.substring(firstBracket, lastBracket + 1))
+    } catch (_e) {}
+  }
+
+  return null
+}
+
 export async function fetchTseWordPressExportPackage({
   websiteId,
   site,
@@ -34,7 +60,7 @@ export async function fetchTseWordPressExportPackage({
       const contentType = response.headers.get('content-type') || ''
       if (contentType.includes('application/json')) {
         const data = await response.json()
-        if (response.ok && data.success) {
+        if (response.ok && data.success && data.packageData) {
           return {
             success: true,
             packageData: data.packageData
@@ -67,7 +93,7 @@ export async function fetchTseWordPressExportPackage({
   }
 
   if (username && applicationPassword) {
-    const authString = btoa(`${username.trim()}:${applicationPassword.trim()}`)
+    const authString = btoa(`${username.trim()}:${applicationPassword.trim().replace(/\s+/g, '')}`)
     headers['Authorization'] = `Basic ${authString}`
   }
 
@@ -77,65 +103,61 @@ export async function fetchTseWordPressExportPackage({
       headers,
     })
 
-    if (!response.ok) {
-      // Fallback: Fetch public WordPress REST API pages, posts, and projects directly
-      try {
-        const [pagesRes, postsRes, projRes] = await Promise.all([
-          fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`),
-          fetch(`${cleanUrl}/wp-json/wp/v2/posts?per_page=100`),
-          fetch(`${cleanUrl}/wp-json/wp/v2/projects?per_page=100`)
-        ])
+    if (response.ok) {
+      const rawText = await response.text()
+      const packageData = extractJsonFromText(rawText)
 
-        const pages = pagesRes.ok ? await pagesRes.json() : []
-        const posts = postsRes.ok ? await postsRes.json() : []
-        const projects = projRes.ok ? await projRes.json() : []
+      // If valid packageData was extracted
+      if (packageData && (packageData.pages || packageData.data?.pages || packageData['full-export.json'] || packageData['pages.json'])) {
+        return {
+          success: true,
+          packageData,
+        }
+      }
+    }
 
-        const combinedPages = [
-          ...(Array.isArray(pages) ? pages : []),
-          ...(Array.isArray(posts) ? posts : []),
-          ...(Array.isArray(projects) ? projects : [])
-        ]
+    // Fallback: Fetch public WordPress REST API pages, posts, and projects with auth headers
+    try {
+      const [pagesRes, postsRes, projRes] = await Promise.all([
+        fetch(`${cleanUrl}/wp-json/wp/v2/pages?per_page=100`, { headers }).catch(() => null),
+        fetch(`${cleanUrl}/wp-json/wp/v2/posts?per_page=100`, { headers }).catch(() => null),
+        fetch(`${cleanUrl}/wp-json/wp/v2/projects?per_page=100`, { headers }).catch(() => null)
+      ])
 
-        if (combinedPages.length > 0) {
-          return {
-            success: true,
-            packageData: {
-              pages: combinedPages,
-              posts,
-              site_info: { url: cleanUrl }
-            }
+      const pages = pagesRes && pagesRes.ok ? await pagesRes.json() : []
+      const posts = postsRes && postsRes.ok ? await postsRes.json() : []
+      const projects = projRes && projRes.ok ? await projRes.json() : []
+
+      const combinedPages = [
+        ...(Array.isArray(pages) ? pages : []),
+        ...(Array.isArray(posts) ? posts : []),
+        ...(Array.isArray(projects) ? projects : [])
+      ]
+
+      if (combinedPages.length > 0 && Array.isArray(pages) && pages.length > 0) {
+        return {
+          success: true,
+          packageData: {
+            pages: combinedPages,
+            posts: posts || [],
+            projects: projects || [],
+            site_info: { url: cleanUrl }
           }
         }
-      } catch (fbError) {
-        console.error('WP REST fallback failed:', fbError)
       }
-
-      let customMsg = `TSE Exporter endpoint returned status ${response.status} (${response.statusText}).`
-      if (response.status === 401) {
-        customMsg = 'WordPress Authentication Failed: Invalid Username or Application Password (HTTP 401).'
-      }
-      return {
-        success: false,
-        status: response.status,
-        error: `EXPORTER_HTTP_${response.status}`,
-        message: customMsg,
-      }
+    } catch (fbError) {
+      console.error('WP REST fallback failed:', fbError)
     }
 
-    const packageData = await response.json()
-
-    // If WordPress returns a WP_Error payload
-    if (packageData && packageData.code && packageData.message && !packageData.pages && !packageData.data?.pages) {
-      return {
-        success: false,
-        error: packageData.code,
-        message: `WordPress Error (${packageData.code}): ${packageData.message}`,
-      }
+    let customMsg = `TSE Exporter endpoint returned status ${response.status} (${response.statusText}).`
+    if (response.status === 401 || response.status === 403) {
+      customMsg = 'WordPress Authentication Failed: Invalid Username or Application Password (HTTP 401/403).'
     }
-
     return {
-      success: true,
-      packageData,
+      success: false,
+      status: response.status,
+      error: `EXPORTER_HTTP_${response.status}`,
+      message: customMsg,
     }
   } catch (error) {
     return {

@@ -70,7 +70,24 @@ export const DEFAULT_EXCLUSION_RULES = [
   { id: 'ex-delivery-info', pattern: 'delivery-information', matchType: 'path-segment', category: 'Ecommerce & Account', description: 'Delivery information slug' },
   { id: 'ex-payment-info', pattern: 'payment-information', matchType: 'path-segment', category: 'Ecommerce & Account', description: 'Payment information slug' },
   { id: 'ex-store-finder', pattern: 'store-finder', matchType: 'path-segment', category: 'Ecommerce & Account', description: 'Store finder slug' },
-  { id: 'ex-klarna', pattern: 'klarna', matchType: 'path-segment', category: 'Ecommerce & Account', description: 'Klarna / Pay Later slug' }
+  { id: 'ex-klarna', pattern: 'klarna', matchType: 'path-segment', category: 'Ecommerce & Account', description: 'Klarna / Pay Later slug' },
+
+  // ── Portfolio & Showcase Pages (2 rules) ──
+  { id: 'ex-portfolio-slug', pattern: 'portfolio', matchType: 'path-segment', category: 'Portfolio & Showcase', description: 'Portfolio showcase path /portfolio/ or slug' },
+  { id: 'ex-portfolios-slug', pattern: 'portfolios', matchType: 'path-segment', category: 'Portfolio & Showcase', description: 'Portfolios showcase path /portfolios/ or slug' },
+
+  // ── Case Studies Pages (2 rules) ──
+  { id: 'ex-case-study', pattern: 'case-study', matchType: 'path-segment', category: 'Case Studies', description: 'Case study path /case-study/ or slug' },
+  { id: 'ex-case-studies', pattern: 'case-studies', matchType: 'path-segment', category: 'Case Studies', description: 'Case studies path /case-studies/ or slug' },
+
+  // ── Marketing & Utility Exclusions (7 rules) ──
+  { id: 'ex-downloads', pattern: 'downloads', matchType: 'path-segment', category: 'Marketing & Utility', description: 'Downloads path /downloads/ or slug' },
+  { id: 'ex-rate-card', pattern: 'rate-card', matchType: 'slug-contains', category: 'Marketing & Utility', description: 'Rate card path or slug pattern' },
+  { id: 'ex-get-a-quote', pattern: 'get-a-quote', matchType: 'slug-contains', category: 'Marketing & Utility', description: 'Get a quote path or slug pattern' },
+  { id: 'ex-knowledge-hub', pattern: 'knowledge-hub', matchType: 'slug-contains', category: 'Marketing & Utility', description: 'Knowledge hub path or slug pattern' },
+  { id: 'ex-newsletter', pattern: 'newsletter', matchType: 'slug-contains', category: 'Marketing & Utility', description: 'Newsletter path or slug pattern' },
+  { id: 'ex-testimonials', pattern: 'testimonials', matchType: 'slug-contains', category: 'Marketing & Utility', description: 'Testimonials path or slug pattern' },
+  { id: 'ex-checklist', pattern: 'checklist', matchType: 'slug-contains', category: 'Marketing & Utility', description: 'Checklist path or slug pattern' }
 ]
 
 export function normalizeUrlForExclusionCheck(url = '') {
@@ -96,7 +113,17 @@ export function testExclusionRule(rule, urlInfo, lowerTitle = '') {
     case 'exact':
       return cleanSlug === normPattern || pathname === '/' + normPattern || pathname === '/' + normPattern + '/'
     case 'path-segment':
-      return cleanSlug === normPattern || slugSegments.includes(normPattern) || pathname.includes('/' + normPattern + '/')
+      return (
+        cleanSlug === normPattern ||
+        slugSegments.includes(normPattern) ||
+        pathname.includes('/' + normPattern + '/') ||
+        pathname.startsWith('/' + normPattern + '/') ||
+        pathname.endsWith('/' + normPattern) ||
+        pathname.endsWith('/' + normPattern + '/')
+      )
+    case 'slug-contains':
+    case 'path-contains':
+      return pathname.includes(normPattern) || cleanSlug.includes(normPattern)
     case 'starts-with': {
       const startsP = rawPattern.toLowerCase()
       return pathname.startsWith(startsP) || cleanSlug.startsWith(normPattern)

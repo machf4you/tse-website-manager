@@ -45,6 +45,13 @@ export async function pushMediaAltTextApi({ siteId, siteUrl, pageId, pageUrl, up
   }, 60000)
 }
 
+export async function pushPageSeoFieldsApi({ siteId, siteUrl, pageId, pageUrl, metaTitle, metaDescription, h1, targetPhrase }) {
+  return await fetchJson(`${API_BASE_URL}/wordpress/pages/seo-fields`, {
+    method: 'POST',
+    body: JSON.stringify({ siteId, siteUrl, pageId, pageUrl, metaTitle, metaDescription, h1, targetPhrase })
+  }, 60000)
+}
+
 export async function getActiveRegistryDomainsApi() {
   const SUPABASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_URL)
     ? process.env.VITE_SUPABASE_URL

@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/tse_production_gate.cjs",
+    "test": "node scripts/test_w4_workflow_regression.mjs",
+    "prebuild": "node scripts/test_w4_workflow_regression.mjs && node scripts/tse_production_gate.cjs",
     "sync-restore-points": "python3 scripts/sync_restore_points.py || python scripts/sync_restore_points.py",
     "dev": "vite",
-    "build": "node scripts/tse_production_gate.cjs && vite build",
+    "build": "node scripts/test_w4_workflow_regression.mjs && node scripts/tse_production_gate.cjs && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },

@@ -26,12 +26,15 @@ export default function W4FixIssueDialog({
 
   const [isPushing, setIsPushing] = useState(false)
   const [isPushed, setIsPushed] = useState(false)
-
-  const [syncStarted, setSyncStarted] = useState(false)
-  const [isSynced, setIsSynced] = useState(false)
-
-  const [isAudited, setIsAudited] = useState(false)
   const [pushError, setPushError] = useState(null)
+
+  const [isSyncingData, setIsSyncingData] = useState(false)
+  const [isSynced, setIsSynced] = useState(false)
+  const [syncError, setSyncError] = useState(null)
+
+  const [isAuditing, setIsAuditing] = useState(false)
+  const [isAudited, setIsAudited] = useState(false)
+  const [auditError, setAuditError] = useState(null)
 
   // Determine SEO Element type & pre-fill current text
   const seoType = (() => {
@@ -48,7 +51,7 @@ export default function W4FixIssueDialog({
 
   const [pushedActuals, setPushedActuals] = useState(null)
 
-  // Dynamic Actual live values computed directly from page prop or optimistic post-push state
+  // Dynamic Actual live values computed directly from page prop or optimistic post-push/sync state
   const actualMetaTitle = extractSafeString(pushedActuals?.metaTitle ?? page?.actualMetaTitle ?? '')
   const actualMetaDescription = extractSafeString(pushedActuals?.metaDescription ?? page?.actualMetaDescription ?? '')
   const actualH1 = extractSafeString(pushedActuals?.h1 ?? page?.actualH1 ?? '')
@@ -60,10 +63,13 @@ export default function W4FixIssueDialog({
     setIsSaved(false)
     setIsPushing(false)
     setIsPushed(false)
-    setSyncStarted(false)
+    setIsSyncingData(false)
     setIsSynced(false)
+    setIsAuditing(false)
     setIsAudited(false)
     setPushError(null)
+    setSyncError(null)
+    setAuditError(null)
     setPushedActuals(null)
 
     const actT = extractSafeString(page.actualMetaTitle || '')
@@ -80,10 +86,14 @@ export default function W4FixIssueDialog({
       siteName: site?.name || '',
     })
 
+    const rawSavedT = page.proposedTitle || page.metaTitle || ''
+    const rawSavedD = page.proposedMetaDescription || page.metaDescription || ''
+    const rawSavedH = page.proposedH1 || page.h1 || ''
+
     // Proposed values initially populated with genuine saved overrides or generated recommendations
-    const initT = resolveProposedField(extractSafeString(page.proposedTitle), actT, recs.proposedTitle, site?.name)
-    const initD = resolveProposedField(extractSafeString(page.proposedMetaDescription), actD, recs.proposedMetaDescription, site?.name)
-    const initH = resolveProposedField(extractSafeString(page.proposedH1), actH, recs.proposedH1, site?.name)
+    const initT = resolveProposedField(extractSafeString(rawSavedT), actT, recs.proposedTitle, site?.name)
+    const initD = resolveProposedField(extractSafeString(rawSavedD), actD, recs.proposedMetaDescription, site?.name)
+    const initH = resolveProposedField(extractSafeString(rawSavedH), actH, recs.proposedH1, site?.name)
 
     setMetaTitleVal(initT)
     setMetaDescVal(initD)
@@ -102,13 +112,6 @@ export default function W4FixIssueDialog({
     }
   }, [isOpen])
 
-  // Track global isSyncing prop completion
-  useEffect(() => {
-    if (syncStarted && !isSyncing) {
-      setIsSynced(true)
-    }
-  }, [syncStarted, isSyncing])
-
   if (!isOpen || !issue || !page) return null
 
   const handleSave = async () => {
@@ -120,8 +123,11 @@ export default function W4FixIssueDialog({
           seoType: 'batch_optimization',
           fieldValues: {
             metaTitle: metaTitleVal,
+            proposedTitle: metaTitleVal,
             metaDescription: metaDescVal,
+            proposedMetaDescription: metaDescVal,
             h1: h1Val,
+            proposedH1: h1Val,
           },
         })
         setIsSaved(true)
@@ -145,31 +151,38 @@ export default function W4FixIssueDialog({
         metaTitle: metaTitleVal,
         metaDescription: metaDescVal,
         h1: h1Val,
+        targetPhrase: page?.targetPhrase || page?.target || '',
       })
       if (res && res.success) {
+        const vTitle = res.verifiedActuals?.metaTitle || metaTitleVal
+        const vDesc = res.verifiedActuals?.metaDescription || metaDescVal
+        const vH1 = res.verifiedActuals?.h1 || h1Val
         setIsPushed(true)
         setPushError(null)
         setPushedActuals({
-          metaTitle: metaTitleVal,
-          metaDescription: metaDescVal,
-          h1: h1Val,
+          metaTitle: vTitle,
+          metaDescription: vDesc,
+          h1: vH1,
         })
         if (onSaveFix) {
-          onSaveFix({
+          await onSaveFix({
             page,
             seoType: 'batch_optimization',
             fieldValues: {
               metaTitle: metaTitleVal,
+              proposedTitle: metaTitleVal,
               metaDescription: metaDescVal,
+              proposedMetaDescription: metaDescVal,
               h1: h1Val,
-              pushedActualMetaTitle: metaTitleVal,
-              pushedActualMetaDescription: metaDescVal,
-              pushedActualH1: h1Val,
+              proposedH1: h1Val,
+              pushedActualMetaTitle: vTitle,
+              pushedActualMetaDescription: vDesc,
+              pushedActualH1: vH1,
             }
           })
         }
       } else {
-        setPushError(res?.message || 'WordPress update failed. Please check credentials and server connection.')
+        setPushError(res?.message || 'WordPress verification failed — changes were not applied by WordPress.')
         setIsPushed(false)
       }
     } catch (err) {
@@ -181,34 +194,55 @@ export default function W4FixIssueDialog({
   }
 
   const handleSyncClick = async () => {
-    if (!isPushed || isSyncing) return
-    setSyncStarted(true)
-    if (onSyncWebsiteData) {
-      try {
-        const res = onSyncWebsiteData()
-        if (res && typeof res.then === 'function') {
-          await res
+    if (!isPushed || isSyncingData) return
+    setIsSyncingData(true)
+    setSyncError(null)
+    try {
+      if (onSyncWebsiteData) {
+        const res = await onSyncWebsiteData()
+        if (res && (res.success || res.actualMetaTitle || res.actualH1)) {
+          const freshActualT = res.actualMetaTitle || metaTitleVal
+          const freshActualD = res.actualMetaDescription || metaDescVal
+          const freshActualH = res.actualH1 || h1Val
+          setPushedActuals({
+            metaTitle: freshActualT,
+            metaDescription: freshActualD,
+            h1: freshActualH,
+          })
+          setIsSynced(true)
+        } else {
+          setSyncError(res?.message || 'Failed to sync data from live page.')
         }
-      } catch (err) {
-        console.error('Sync error:', err)
+      } else {
+        setIsSynced(true)
       }
+    } catch (err) {
+      console.error('Sync error:', err)
+      setSyncError(err.message || 'Failed to sync data.')
     }
-    setIsSynced(true)
+    setIsSyncingData(false)
   }
 
   const handleAuditClick = async () => {
-    if (!isSynced) return
-    if (onRerunAudit) {
-      try {
-        const res = onRerunAudit()
-        if (res && typeof res.then === 'function') {
-          await res
+    if (!isSynced || isAuditing) return
+    setIsAuditing(true)
+    setAuditError(null)
+    try {
+      if (onRerunAudit) {
+        const res = await onRerunAudit()
+        if (res && res.success === false) {
+          setAuditError(res.message || 'Audit failed.')
+        } else {
+          setIsAudited(true)
         }
-      } catch (err) {
-        console.error('Audit error:', err)
+      } else {
+        setIsAudited(true)
       }
+    } catch (err) {
+      console.error('Audit error:', err)
+      setAuditError(err.message || 'Audit execution error.')
     }
-    setIsAudited(true)
+    setIsAuditing(false)
   }
 
   return (
@@ -433,34 +467,72 @@ export default function W4FixIssueDialog({
                 </div>
 
                 {/* Step 3: Sync Website Data */}
-                <div style={{ background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
+                <div style={{ background: isPushed ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isPushed ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: syncError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
                   <div>
                     <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>3. Sync Data</strong>
-                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Pull WP data to Manager</span>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Pulls the latest live page data from WordPress into Website Manager.</span>
                   </div>
+                  {syncError && (
+                    <div style={{ fontSize: '0.66rem', color: '#ef4444', marginTop: '2px', lineHeight: '1.1' }}>
+                      ⚠️ {syncError}
+                    </div>
+                  )}
                   <div style={{ marginTop: '4px' }}>
                     {isSynced ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Synced</span>
                     ) : (
-                      <button type="button" className={`w3-btn-secondary ${!isPushed || isSyncing ? 'btn-disabled' : ''}`} onClick={handleSyncClick} disabled={!isPushed || isSyncing} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
-                        {isSyncing ? 'Syncing...' : 'Sync Data'}
+                      <button
+                        type="button"
+                        className={`w3-btn-secondary ${isSyncingData ? 'btn-loading' : (!isPushed ? 'btn-disabled' : '')}`}
+                        onClick={handleSyncClick}
+                        disabled={!isPushed || isSyncingData}
+                        title="Pulls the latest live page data from WordPress into Website Manager."
+                        style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        {isSyncingData ? (
+                          <>
+                            <span className="w4-spinner" />
+                            <span>Syncing...</span>
+                          </>
+                        ) : (
+                          'Sync Data'
+                        )}
                       </button>
                     )}
                   </div>
                 </div>
 
                 {/* Step 4: Re-run Audit */}
-                <div style={{ background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
+                <div style={{ background: isSynced ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSynced ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: auditError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
                   <div>
                     <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>4. Re-run Audit</strong>
-                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Re-evaluate page SEO</span>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Re-checks the page against the latest live and proposed data and updates the audit results.</span>
                   </div>
+                  {auditError && (
+                    <div style={{ fontSize: '0.66rem', color: '#ef4444', marginTop: '2px', lineHeight: '1.1' }}>
+                      ⚠️ {auditError}
+                    </div>
+                  )}
                   <div style={{ marginTop: '4px' }}>
                     {isAudited ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Audit Complete</span>
                     ) : (
-                      <button type="button" className={`w3-btn-emerald ${!isSynced ? 'btn-disabled' : ''}`} onClick={handleAuditClick} disabled={!isSynced} style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%' }}>
-                        Re-run Audit ▷
+                      <button
+                        type="button"
+                        className={`w3-btn-emerald ${isAuditing ? 'btn-loading' : (!isSynced ? 'btn-disabled' : '')}`}
+                        onClick={handleAuditClick}
+                        disabled={!isSynced || isAuditing}
+                        title="Re-checks the page against the latest live and proposed data and updates the audit results."
+                        style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                      >
+                        {isAuditing ? (
+                          <>
+                            <span className="w4-spinner" />
+                            <span>Auditing...</span>
+                          </>
+                        ) : (
+                          'Re-run Audit ▷'
+                        )}
                       </button>
                     )}
                   </div>

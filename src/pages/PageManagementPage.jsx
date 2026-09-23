@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import { generateProposedTargetPhrase, isUtilityPage } from '../utils/targetPhraseGenerator'
-import ConfigurePageDialog from '../components/ConfigurePageDialog'
 import BulkConfigureTargetPhrasesDialog from '../components/BulkConfigureTargetPhrasesDialog'
 import {
   getPageConfigsApi,
@@ -21,6 +20,7 @@ import { formatReadableDateTime, formatCompactAuditDate } from '../utils/dateFor
 import { extractSafeString, safeLower, safeTrim } from '../utils/safeString'
 import { normalizeUrlForMatching } from '../utils/urlUtils'
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
+import { syncSingleWordPressPage } from '../services/wordpressApi'
 import './PageManagementPage.css'
 
 
@@ -36,7 +36,6 @@ export default function PageManagementPage({
   const [filter, setFilter] = useState('all') // 'all' | 'configured' | 'action_required' | 'excluded'
   const [sortColumn, setSortColumn] = useState('priority') // 'priority' | 'page' | 'type'
   const [sortDirection, setSortDirection] = useState('asc') // 'asc' | 'desc'
-  const [editingPage, setEditingPage] = useState(null)
   const [isBulkTargetDialogOpen, setIsBulkTargetDialogOpen] = useState(false)
   const [isBulkAuditing, setIsBulkAuditing] = useState(false)
   const [currentlyAuditingKey, setCurrentlyAuditingKey] = useState(null)
@@ -45,6 +44,9 @@ export default function PageManagementPage({
   const [pageRankings, setPageRankings] = useState({})
   const [checkingRankKey, setCheckingRankKey] = useState(null)
   const [checkingVolumeKey, setCheckingVolumeKey] = useState(null)
+  const [syncingPageKey, setSyncingPageKey] = useState(null)
+  const [pageSyncStatus, setPageSyncStatus] = useState(null)
+  const [inlineEditingTarget, setInlineEditingTarget] = useState(null)
 
   const [articlesMode, setArticlesMode] = useState(() => {
     try {
@@ -292,6 +294,21 @@ export default function PageManagementPage({
            null
   }
 
+  const getSecRankInfoForPage = (page) => {
+    if (!page || !pageRankings || typeof pageRankings !== 'object') return null
+    const idStr = page.id !== undefined && page.id !== null ? String(page.id).trim() : ''
+    const normId = idStr.endsWith('.0') ? idStr.slice(0, -2) : idStr
+    const urlStr = page.url ? String(page.url).trim().toLowerCase() : ''
+    const pageKey = page.pageKey ? String(page.pageKey).trim() : ''
+
+    return (normId && pageRankings[`${normId}_secondary`]) ||
+           (idStr && pageRankings[`${idStr}_secondary`]) ||
+           (page.url && pageRankings[`${page.url}_secondary`]) ||
+           (urlStr && pageRankings[`${urlStr}_secondary`]) ||
+           (pageKey && pageRankings[`${pageKey}_secondary`]) ||
+           null
+  }
+
   const handleSort = (col) => {
     if (sortColumn === col) {
       setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'))
@@ -304,11 +321,71 @@ export default function PageManagementPage({
   const [isRunningInitialData, setIsRunningInitialData] = useState(false)
   const [initialDataProgress, setInitialDataProgress] = useState({ current: 0, total: 0, stage: '' })
 
+  const handleSyncPageFromLiveSite = async (page) => {
+    const pageKey = page.id || page.url || page.pageUrl
+    if (syncingPageKey) return
+    setSyncingPageKey(pageKey)
+    setPageSyncStatus(null)
+
+    try {
+      const res = await syncSingleWordPressPage({ site, page })
+      if (res && res.success) {
+        const urlKey = page.url || page.pageUrl || ''
+        const currentConfig = configurations[pageKey] || (urlKey ? configurations[urlKey] : {}) || {}
+        const updatedConfig = {
+          ...currentConfig,
+          pageId: page.id || pageKey,
+          url: page.url || urlKey,
+          actualMetaTitle: res.actualMetaTitle || currentConfig.actualMetaTitle || '',
+          actualMetaDescription: res.actualMetaDescription || currentConfig.actualMetaDescription || '',
+          actualH1: res.actualH1 || currentConfig.actualH1 || '',
+          pushedActualMetaTitle: res.actualMetaTitle || currentConfig.pushedActualMetaTitle || '',
+          pushedActualMetaDescription: res.actualMetaDescription || currentConfig.pushedActualMetaDescription || '',
+          pushedActualH1: res.actualH1 || currentConfig.pushedActualH1 || '',
+          lastSyncTimestamp: res.lastSyncTimestamp,
+          updatedAt: new Date().toISOString()
+        }
+
+        const updatedMap = {
+          ...configurations,
+          [pageKey]: updatedConfig,
+          ...(urlKey ? { [urlKey]: updatedConfig } : {}),
+        }
+        setConfigurations(updatedMap)
+
+        if (site?.id) {
+          saveSinglePageConfigApi(site.id, updatedConfig).catch(err => {
+            console.error('Failed to save synced page config to API:', err)
+          })
+        }
+
+        try {
+          const siteIdKey = getSiteConfigsStorageKey(site)
+          localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
+        } catch (_err) {}
+
+        setPageSyncStatus({ key: pageKey, success: true, message: 'Live data synced successfully!' })
+        setTimeout(() => setPageSyncStatus(null), 3500)
+      } else {
+        setPageSyncStatus({ key: pageKey, success: false, message: res?.message || 'Sync failed.' })
+        setTimeout(() => setPageSyncStatus(null), 4000)
+      }
+    } catch (err) {
+      console.error('Failed to sync page from live site:', err)
+      setPageSyncStatus({ key: pageKey, success: false, message: 'Sync failed: ' + err.message })
+      setTimeout(() => setPageSyncStatus(null), 4000)
+    } finally {
+      setSyncingPageKey(null)
+    }
+  }
+
   const handleSavePageConfig = (config) => {
     const pageKey = config.pageId || config.url
     const oldConfig = configurations[pageKey] || (config.url ? configurations[config.url] : null) || {}
     const oldTarget = (oldConfig.targetPhrase || oldConfig.target || '').trim().toLowerCase()
     const newTarget = (config.targetPhrase || config.target || '').trim().toLowerCase()
+    const oldSecTarget = (oldConfig.secondaryTargetPhrase || '').trim().toLowerCase()
+    const newSecTarget = (config.secondaryTargetPhrase || '').trim().toLowerCase()
     const oldUrl = (oldConfig.url || '').trim().toLowerCase()
     const newUrl = (config.url || '').trim().toLowerCase()
 
@@ -330,8 +407,7 @@ export default function PageManagementPage({
     }
     setEditingPage(null)
 
-    // Save Workflow Trigger:
-    // When Save Configuration is clicked, automatically update UK Rank and UK Volume for that page
+    // Primary Target Phrase metric update & invalidation
     const targetPhraseStr = (config.targetPhrase || config.target || '').trim()
     if (targetPhraseStr) {
       if (newTarget !== oldTarget) {
@@ -359,7 +435,47 @@ export default function PageManagementPage({
       }
       handleCheckVolume(targetPage)
       handleCheckRank(targetPage)
-    } else if (newUrl !== oldUrl && (config.targetPhrase || config.target)) {
+    }
+
+    // Secondary Target Phrase metric update & invalidation
+    const secTargetPhraseStr = (config.secondaryTargetPhrase || '').trim()
+    const secPageKey = `${pageKey}_secondary`
+    if (secTargetPhraseStr) {
+      if (newSecTarget !== oldSecTarget) {
+        setPageRankings(prev => ({
+          ...prev,
+          [secPageKey]: {
+            siteId: site?.id,
+            pageKey: secPageKey,
+            targetPhrase: secTargetPhraseStr,
+            googleRank: null,
+            searchVolume: null,
+            isTop100: false,
+            rankingUrl: null,
+            isUrlMatch: false
+          }
+        }))
+      }
+
+      const secTargetPage = {
+        ...config,
+        id: secPageKey,
+        pageKey: secPageKey,
+        url: config.url || pageKey,
+        target: secTargetPhraseStr,
+        targetPhrase: secTargetPhraseStr
+      }
+      handleCheckVolume(secTargetPage)
+      handleCheckRank(secTargetPage)
+    } else if (!secTargetPhraseStr && oldSecTarget) {
+      setPageRankings(prev => {
+        const next = { ...prev }
+        delete next[secPageKey]
+        return next
+      })
+    }
+
+    if (newUrl !== oldUrl && (config.targetPhrase || config.target)) {
       // If only Configured URL changed: recalculate isUrlMatch locally against existing rankingUrl
       const rankInfo = pageRankings[pageKey] || (config.url ? pageRankings[config.url] : null)
       if (rankInfo?.rankingUrl) {
@@ -378,31 +494,182 @@ export default function PageManagementPage({
     }
   }
 
+  const handleSaveInlineTarget = (pageKey, field, rawNewVal) => {
+    const newVal = (rawNewVal || '').trim()
+    const page = (pagesList || []).find(p => (p.id || p.url) === pageKey || p.url === pageKey || String(p.id) === pageKey) || {}
+    const currentConfig = configurations[pageKey] || (page.url ? configurations[page.url] : {}) || page || {}
+
+    if (field === 'primary') {
+      const oldPrimary = (currentConfig.targetPhrase || currentConfig.target || page.targetPhrase || page.target || '').trim()
+      if (newVal !== oldPrimary) {
+        const isConfigured = Boolean(newVal.length > 0)
+        const updatedConfig = {
+          ...currentConfig,
+          pageId: page.id || pageKey,
+          url: page.url || currentConfig.url || pageKey,
+          targetPhrase: newVal,
+          target: newVal,
+          isConfigured,
+          status: isConfigured ? 'configured' : 'unconfigured',
+          updatedAt: new Date().toISOString()
+        }
+
+        const updatedMap = {
+          ...configurations,
+          [pageKey]: updatedConfig,
+          ...(page.url ? { [page.url]: updatedConfig } : {})
+        }
+        setConfigurations(updatedMap)
+
+        if (site?.id) {
+          saveSinglePageConfigApi(site.id, updatedConfig).catch(err => {
+            console.error('Failed to save inline primary target config:', err)
+          })
+        }
+        try {
+          const siteIdKey = getSiteConfigsStorageKey(site)
+          localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
+        } catch (e) {}
+
+        // Invalidate ONLY primary metrics
+        setPageRankings(prev => ({
+          ...prev,
+          [pageKey]: {
+            ...(prev[pageKey] || {}),
+            siteId: site?.id,
+            pageKey,
+            targetPhrase: newVal,
+            googleRank: null,
+            searchVolume: null,
+            isTop100: false,
+            rankingUrl: null,
+            isUrlMatch: false,
+            lastCheckedAt: null,
+            volumeCheckedAt: null
+          }
+        }))
+      }
+    } else if (field === 'secondary') {
+      const oldSecondary = (currentConfig.secondaryTargetPhrase || page.secondaryTargetPhrase || '').trim()
+      if (newVal !== oldSecondary) {
+        const updatedConfig = {
+          ...currentConfig,
+          pageId: page.id || pageKey,
+          url: page.url || currentConfig.url || pageKey,
+          secondaryTargetPhrase: newVal,
+          updatedAt: new Date().toISOString()
+        }
+
+        const updatedMap = {
+          ...configurations,
+          [pageKey]: updatedConfig,
+          ...(page.url ? { [page.url]: updatedConfig } : {})
+        }
+        setConfigurations(updatedMap)
+
+        if (site?.id) {
+          saveSinglePageConfigApi(site.id, updatedConfig).catch(err => {
+            console.error('Failed to save inline secondary target config:', err)
+          })
+        }
+        try {
+          const siteIdKey = getSiteConfigsStorageKey(site)
+          localStorage.setItem(siteIdKey, JSON.stringify(updatedMap))
+        } catch (e) {}
+
+        const secKey = `${pageKey}_secondary`
+        if (newVal) {
+          // Invalidate ONLY secondary metrics
+          setPageRankings(prev => ({
+            ...prev,
+            [secKey]: {
+              ...(prev[secKey] || {}),
+              siteId: site?.id,
+              pageKey: secKey,
+              targetPhrase: newVal,
+              googleRank: null,
+              searchVolume: null,
+              isTop100: false,
+              rankingUrl: null,
+              isUrlMatch: false,
+              lastCheckedAt: null,
+              volumeCheckedAt: null
+            }
+          }))
+        } else {
+          setPageRankings(prev => {
+            const next = { ...prev }
+            delete next[secKey]
+            return next
+          })
+        }
+      }
+    }
+
+    setInlineEditingTarget(null)
+  }
+
   const [isUpdatingRankAndVolume, setIsUpdatingRankAndVolume] = useState(false)
   const [rankVolumeProgress, setRankVolumeProgress] = useState({ current: 0, total: 0, stage: '' })
 
-  const handleUpdateAllRankAndVolume = async () => {
-    if (!site?.id || isUpdatingRankAndVolume || isRunningInitialData) return
-
-    // Identify all active (non-excluded) pages with a configured Target Phrase
-    const targetItems = []
+  const getItemsNeedingMetrics = () => {
+    const items = []
     const sourcePages = articlesMode === 'exclude' ? pagesList.filter(p => !isArticlePage(p)) : pagesList
     for (const page of sourcePages) {
       const pageKey = page.id || page.url
       const config = configurations[pageKey] || (page.url ? configurations[page.url] : null) || page
       const isExcluded = config.isExcluded || page.isExcluded || config.type === 'Excluded' || page.type === 'Excluded' || false
-      const targetPhrase = (config.targetPhrase || config.target || page.targetPhrase || page.target || '').trim()
+      if (isExcluded) continue
 
-      if (!isExcluded && targetPhrase) {
-        targetItems.push({
-          pageKey,
-          targetPhrase,
-          url: config.url || page.url || pageKey,
-          configuredUrl: config.url || page.url || pageKey
-        })
+      // Primary Target Phrase
+      const targetPhrase = (config.targetPhrase || config.target || page.targetPhrase || page.target || '').trim()
+      if (targetPhrase) {
+        const rankInfo = getRankInfoForPage(page)
+        const hasValidRank = Boolean(rankInfo?.lastCheckedAt)
+        const hasValidVolume = Boolean(rankInfo?.volumeCheckedAt) || (rankInfo?.searchVolume !== null && rankInfo?.searchVolume !== undefined)
+        const needsRank = !hasValidRank
+        const needsVolume = !hasValidVolume
+        if (needsRank || needsVolume) {
+          items.push({
+            pageKey,
+            targetPhrase,
+            url: config.url || page.url || pageKey,
+            configuredUrl: config.url || page.url || pageKey,
+            needsRank,
+            needsVolume
+          })
+        }
+      }
+
+      // Secondary Target Phrase
+      const secTargetPhrase = (config.secondaryTargetPhrase || page.secondaryTargetPhrase || '').trim()
+      if (secTargetPhrase) {
+        const secPageKey = `${pageKey}_secondary`
+        const secRankInfo = getSecRankInfoForPage(page)
+        const hasValidRank = Boolean(secRankInfo?.lastCheckedAt)
+        const hasValidVolume = Boolean(secRankInfo?.volumeCheckedAt) || (secRankInfo?.searchVolume !== null && secRankInfo?.searchVolume !== undefined)
+        const needsRank = !hasValidRank
+        const needsVolume = !hasValidVolume
+        if (needsRank || needsVolume) {
+          items.push({
+            pageKey: secPageKey,
+            targetPhrase: secTargetPhrase,
+            url: config.url || page.url || pageKey,
+            configuredUrl: config.url || page.url || pageKey,
+            isSecondary: true,
+            needsRank,
+            needsVolume
+          })
+        }
       }
     }
+    return items
+  }
 
+  const handleUpdateAllRankAndVolume = async () => {
+    if (!site?.id || isUpdatingRankAndVolume || isRunningInitialData) return
+
+    const targetItems = getItemsNeedingMetrics()
     if (targetItems.length === 0) return
 
     setIsUpdatingRankAndVolume(true)
@@ -410,19 +677,23 @@ export default function PageManagementPage({
 
     try {
       // 1. Batch Search Volume Check (DataForSEO)
-      await batchCheckSearchVolumeApi({ siteId: site.id, items: targetItems })
-      const freshRankings = await getPageRankingsApi(site.id)
-      if (freshRankings && typeof freshRankings === 'object') {
-        setPageRankings(prev => ({ ...prev, ...freshRankings }))
+      const volumeItems = targetItems.filter(item => item.needsVolume)
+      if (volumeItems.length > 0) {
+        await batchCheckSearchVolumeApi({ siteId: site.id, items: volumeItems })
+        const freshRankings = await getPageRankingsApi(site.id)
+        if (freshRankings && typeof freshRankings === 'object') {
+          setPageRankings(prev => ({ ...prev, ...freshRankings }))
+        }
       }
 
       // 2. Sequential UK Google Rank Checks (DataForSEO Live Mobile SERP)
-      for (let i = 0; i < targetItems.length; i++) {
-        const item = targetItems[i]
+      const rankItems = targetItems.filter(item => item.needsRank)
+      for (let i = 0; i < rankItems.length; i++) {
+        const item = rankItems[i]
         setRankVolumeProgress({
           current: i + 1,
-          total: targetItems.length,
-          stage: `Step 2: Checking UK Rank (${i + 1}/${targetItems.length}) "${item.targetPhrase}"...`
+          total: rankItems.length,
+          stage: `Step 2: Checking UK Rank (${i + 1}/${rankItems.length}) "${item.targetPhrase}"...`
         })
 
         try {
@@ -868,9 +1139,26 @@ export default function PageManagementPage({
       ? Math.round(Number(rawScore))
       : null
 
-    const autoType = page.type || page.seoPageType || override?.autoType || 'Unclassified'
-    const overrideType = override?.type || override?.seoPageType || ''
-    const isTypeActuallyOverridden = Boolean(override && override.isManualOverride === true && overrideType && overrideType !== (page.autoType || page.type || page.seoPageType))
+    const normalizeType = (t) => {
+      if (!t) return 'Topical'
+      const s = String(t).trim()
+      if (s === 'Hub') return 'Hub'
+      if (s === 'Landing') return 'Landing'
+      if (s === 'Topical') return 'Topical'
+      if (s === 'Article') return 'Article'
+      if (s === 'Excluded') return 'Excluded'
+      const lower = s.toLowerCase()
+      if (lower.includes('hub') || lower.includes('home')) return 'Hub'
+      if (lower.includes('landing') || lower.includes('service') || lower.includes('product') || lower.includes('location')) return 'Landing'
+      if (lower.includes('article') || lower.includes('post') || lower.includes('blog')) return 'Article'
+      if (lower.includes('exclu') || lower.includes('portfolio')) return 'Excluded'
+      return 'Topical'
+    }
+
+    const rawAutoType = page.type || page.seoPageType || override?.autoType || (page.isExcluded ? 'Excluded' : 'Topical')
+    const autoType = normalizeType(rawAutoType)
+    const overrideType = override?.type || override?.seoPageType ? normalizeType(override?.type || override?.seoPageType) : ''
+    const isTypeActuallyOverridden = Boolean(override && override.isManualOverride === true && overrideType && overrideType !== autoType)
     const isManualOverride = isTypeActuallyOverridden
     const effectiveType = isManualOverride ? overrideType : (overrideType || autoType)
 
@@ -892,6 +1180,7 @@ export default function PageManagementPage({
       : (effectiveType === 'Excluded' || Boolean(page.isExcluded))
 
     const targetPhraseStr = extractSafeString(override?.targetPhrase || override?.target || page.targetPhrase || page.target).trim()
+    const secondaryTargetPhraseStr = extractSafeString(override?.secondaryTargetPhrase || page.secondaryTargetPhrase || '').trim()
     const isConfigured = Boolean(targetPhraseStr.length > 0)
     const isStarred = Boolean(override?.isStarred)
 
@@ -907,6 +1196,7 @@ export default function PageManagementPage({
         proposedTitle: finalProposedTitle,
         target: targetPhraseStr,
         targetPhrase: targetPhraseStr,
+        secondaryTargetPhrase: secondaryTargetPhraseStr,
         type: effectiveType,
         seoPageType: effectiveType,
         priority: effectivePriority,
@@ -930,6 +1220,7 @@ export default function PageManagementPage({
       proposedTitle: rawPageTitle,
       target: targetPhraseStr,
       targetPhrase: targetPhraseStr,
+      secondaryTargetPhrase: secondaryTargetPhraseStr,
       isManualOverride: false,
       isConfigured,
       isStarred,
@@ -972,8 +1263,17 @@ export default function PageManagementPage({
   }
 
   const getPageTitle = (p) => {
-    const t = extractSafeString(p?.title || p?.originalTitle || p?.name).trim()
-    if (t && t.toLowerCase() !== 'untitled page') return t
+    // 1. Current LIVE SEO Meta Title already obtained from WordPress/sync (never proposedTitle/target/H1)
+    const liveMetaTitle = extractSafeString(p?.metaTitle || p?.actualMetaTitle).trim()
+    if (liveMetaTitle && liveMetaTitle.toLowerCase() !== 'untitled page') {
+      return liveMetaTitle
+    }
+    // 2. WordPress / internal page title only when no live SEO Meta Title exists
+    const wpTitle = extractSafeString(p?.originalTitle || p?.title || p?.name).trim()
+    if (wpTitle && wpTitle.toLowerCase() !== 'untitled page') {
+      return wpTitle
+    }
+    // 3. Fallback to URL
     return extractSafeString(p?.url || p?.link || '').trim()
   }
 
@@ -1368,6 +1668,8 @@ export default function PageManagementPage({
   const starredCount = activePagesList.filter(p => p.isStarred === true && !p.isExcluded && p.type !== 'Excluded').length
   const configuredCount = activePagesList.filter(p => p.isConfigured === true && !p.isExcluded && p.type !== 'Excluded').length
   const configuredWithPhraseCount = activePagesList.filter(p => !p.isExcluded && p.type !== 'Excluded' && Boolean((p.targetPhrase || p.target || '').trim())).length
+  const itemsNeedingMetrics = getItemsNeedingMetrics()
+  const phrasesNeedingMetricsCount = itemsNeedingMetrics.length
   const actionRequiredCount = activePagesList.filter(p => !p.isConfigured && !p.isExcluded && p.type !== 'Excluded').length
   const excludedCount = activePagesList.filter(p => p.isExcluded === true || p.type === 'Excluded').length
 
@@ -1432,15 +1734,17 @@ export default function PageManagementPage({
           siteId: site?.id || 'site-1',
           pageId: pageKey,
           url: urlKey,
-          targetPhrase: (page.target || page.targetPhrase || '').trim(),
-          seoPageType: page.type || page.seoPageType || 'Unclassified'
+          siteUrl: site?.url || '',
+          targetPhrase: (page.target || page.targetPhrase || page.title || '').trim(),
+          seoPageType: page.type || page.seoPageType || 'Landing'
         })
 
+        const isoTimestamp = new Date().toISOString()
         const auditRecord = {
           isAudited: true,
           isStale: false,
           staleReason: null,
-          lastAuditTimestamp: formattedTimestamp,
+          lastAuditTimestamp: isoTimestamp,
           auditResult
         }
 
@@ -1512,13 +1816,14 @@ export default function PageManagementPage({
           )}
         </div>
 
-        <div className="w3-header-actions">
+        <div className="w3-header-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
           <button
             type="button"
             className={`btn-run-full-url-audit ${isBulkAuditing ? 'is-auditing' : ''}`}
             onClick={handleRunFullUrlAudit}
             disabled={isBulkAuditing}
             id="btn-run-full-url-audit"
+            title="Runs a full URL audit across all active SEO pages on this website and updates their audit scores."
           >
             {isBulkAuditing ? (
               <>
@@ -1529,6 +1834,9 @@ export default function PageManagementPage({
               'Run Full URL Audit'
             )}
           </button>
+          <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: '500' }}>
+            Audit all active website URLs
+          </span>
         </div>
       </div>
 
@@ -1709,7 +2017,7 @@ export default function PageManagementPage({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {configuredWithPhraseCount > 0 && (
+          {phrasesNeedingMetricsCount > 0 && (
             <button
               type="button"
               className="w3-btn-update-rank-volume"
@@ -1739,7 +2047,7 @@ export default function PageManagementPage({
                   <span>Updating Rank &amp; Volume ({rankVolumeProgress.current}/{rankVolumeProgress.total})</span>
                 </>
               ) : (
-                <span>🔄 Update Rank &amp; Volume ({configuredWithPhraseCount})</span>
+                <span>🔄 Update Rank &amp; Volume ({phrasesNeedingMetricsCount})</span>
               )}
             </button>
           )}
@@ -1854,9 +2162,6 @@ export default function PageManagementPage({
               <th className="sortable-th col-type" onClick={() => handleSort('type')}>
                 Type {renderSortIndicator('type')}
               </th>
-              <th className="sortable-th col-priority" onClick={() => handleSort('priority')}>
-                ⭐ Priority {renderSortIndicator('priority')}
-              </th>
               <th className="sortable-th col-rank" onClick={() => handleSort('rank')}>
                 UK Rank {renderSortIndicator('rank')}
               </th>
@@ -1883,7 +2188,7 @@ export default function PageManagementPage({
                 if (row.type === 'SEPARATOR_ROW') {
                   return (
                     <tr key={row.id || `sep-${idx}`} className="w3-row-visual-separator">
-                      <td colSpan="9">
+                      <td colSpan="8">
                         <div className="w3-visual-separator-content" style={{ paddingLeft: `${(row.indent || 1) * 20 + 8}px` }}>
                           <span className="w3-separator-icon">📁</span>
                           <span className="w3-separator-label"><em>{row.title}</em></span>
@@ -1897,7 +2202,7 @@ export default function PageManagementPage({
                 if (row.type === 'SECTION_HEADER') {
                   return (
                     <tr key={row.id || `sec-${idx}`} className="w3-row-section-header">
-                      <td colSpan="9">
+                      <td colSpan="8">
                         <div className="w3-section-header-content">
                           <span className="w3-section-icon">📄</span>
                           <span className="w3-section-title">{row.title}</span>
@@ -1910,6 +2215,7 @@ export default function PageManagementPage({
                 const page = row.page
                 const pageKey = page.id || page.url
                 const rankInfo = getRankInfoForPage(page)
+                const secRankInfo = page.secondaryTargetPhrase ? getSecRankInfoForPage(page) : null
                 const isCheckingThisRank = checkingRankKey === pageKey || (page.url && checkingRankKey === page.url) || (page.id && checkingRankKey === page.id)
                 const isCheckingThisVolume = checkingVolumeKey === pageKey || (page.url && checkingVolumeKey === page.url) || (page.id && checkingVolumeKey === page.id)
 
@@ -1921,29 +2227,62 @@ export default function PageManagementPage({
                     <td className="col-page">
                       {row.isTopLevel ? (
                         <div className="w3-page-title-row">
-                          <span className="w3-page-title w3-top-cat-title">{page.title || 'Untitled Page'}</span>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <span className="w3-page-title w3-top-cat-title">{getPageTitle(page)}</span>
+                            <button
+                              type="button"
+                              className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
+                              onClick={() => handleToggleStar(page)}
+                              title={page.isStarred ? 'Remove work-priority star' : 'Set as work-priority star'}
+                              style={{ padding: '0 2px', display: 'inline-flex', verticalAlign: 'middle', cursor: 'pointer' }}
+                            >
+                              {page.isStarred ? '⭐' : '☆'}
+                            </button>
+                          </div>
                           <div className="w3-page-slug" style={{ width: '100%', marginTop: '2px' }}>{page.url || ''}</div>
                         </div>
                       ) : row.indent > 0 ? (
                         <div className="w3-indented-cell" style={{ paddingLeft: `${row.indent * 18}px` }}>
                           <span className="w3-tree-branch">↳</span>
                           <div className="w3-page-title-content">
-                            <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                              <span className="w3-page-title">{getPageTitle(page)}</span>
+                              <button
+                                type="button"
+                                className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
+                                onClick={() => handleToggleStar(page)}
+                                title={page.isStarred ? 'Remove work-priority star' : 'Set as work-priority star'}
+                                style={{ padding: '0 2px', display: 'inline-flex', verticalAlign: 'middle', cursor: 'pointer' }}
+                              >
+                                {page.isStarred ? '⭐' : '☆'}
+                              </button>
+                            </div>
                             <div className="w3-page-slug">{page.url || ''}</div>
                           </div>
                         </div>
                       ) : (
-                        <>
-                          <div className="w3-page-title">{page.title || 'Untitled Page'}</div>
+                        <div>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <span className="w3-page-title">{getPageTitle(page)}</span>
+                            <button
+                              type="button"
+                              className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
+                              onClick={() => handleToggleStar(page)}
+                              title={page.isStarred ? 'Remove work-priority star' : 'Set as work-priority star'}
+                              style={{ padding: '0 2px', display: 'inline-flex', verticalAlign: 'middle', cursor: 'pointer' }}
+                            >
+                              {page.isStarred ? '⭐' : '☆'}
+                            </button>
+                          </div>
                           <div className="w3-page-slug">{page.url || ''}</div>
-                        </>
+                        </div>
                       )}
                     </td>
                     <td className="col-type">
                       <div className="type-select-wrapper">
                         <select
-                          className={`type-select type-${(page.type || 'unclassified').toLowerCase()}`}
-                          value={page.type || 'Unclassified'}
+                          className={`type-select type-${(page.type || 'topical').toLowerCase()}`}
+                          value={page.type || 'Topical'}
                           onChange={(e) => handleInlineTypeChange(page, e.target.value)}
                         >
                           <option value="Hub">Hub</option>
@@ -1951,7 +2290,6 @@ export default function PageManagementPage({
                           <option value="Topical">Topical</option>
                           <option value="Article">Article</option>
                           <option value="Excluded">Excluded</option>
-                          <option value="Unclassified">Unclassified</option>
                         </select>
                         {page.isManualOverride && (
                           <span className="manual-override-indicator" title="Manual Override Active (Preserved across resyncs)">
@@ -1960,81 +2298,329 @@ export default function PageManagementPage({
                         )}
                       </div>
                     </td>
-                    <td className="col-priority">
-                      <div className="w3-priority-cell">
-                        <button
-                          type="button"
-                          className={`btn-star-toggle ${page.isStarred ? 'is-starred' : 'is-unstarred'}`}
-                          onClick={() => handleToggleStar(page)}
-                          title={page.isStarred ? 'Remove work-priority star' : 'Set as work-priority star'}
-                        >
-                          {page.isStarred ? '⭐' : '☆'}
-                        </button>
-                      </div>
-                    </td>
                     <td className="col-rank">
-                      <div className="w3-rank-cell">
-                        {isCheckingThisRank ? (
-                          <span className="w3-rank-badge rank-checking" title="Checking Google UK...">
-                            ⏳
-                          </span>
-                        ) : rankInfo?.isTop100 && rankInfo.googleRank ? (
-                          <div className="w3-rank-badge-wrapper">
-                            <span
-                              className={`w3-rank-badge ${rankInfo.googleRank <= 10 ? 'rank-top-10' : 'rank-top-100'}`}
-                              title={`Google UK Rank #${rankInfo.googleRank} (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
-                            >
-                              #{rankInfo.googleRank}
+                      <div className="w3-rank-cell" style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '44px', justifyContent: 'center' }}>
+                        {/* Primary Rank */}
+                        <div style={{ display: 'flex', alignItems: 'center', minHeight: '20px' }}>
+                          {isCheckingThisRank ? (
+                            <span className="w3-rank-badge rank-checking" title="Checking Google UK...">
+                              ⏳
                             </span>
-                            {!rankInfo.isUrlMatch && rankInfo.rankingUrl && (
+                          ) : rankInfo?.isTop100 && rankInfo.googleRank ? (
+                            <div className="w3-rank-badge-wrapper">
                               <span
-                                className="w3-rank-mismatch-mark"
-                                title={`Different ranking URL\nGoogle ranking URL: ${getDisplayPath(rankInfo.rankingUrl)}\nConfigured page: ${getDisplayPath(page.url)}`}
+                                className={`w3-rank-badge ${rankInfo.googleRank <= 10 ? 'rank-top-10' : 'rank-top-100'}`}
+                                title={`Primary Google UK Rank #${rankInfo.googleRank} (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
                               >
-                                ?
+                                #{rankInfo.googleRank}
+                              </span>
+                              {!rankInfo.isUrlMatch && rankInfo.rankingUrl && (
+                                <span
+                                  className="w3-rank-mismatch-mark"
+                                  title={`Different ranking URL\nGoogle ranking URL: ${getDisplayPath(rankInfo.rankingUrl)}\nConfigured page: ${getDisplayPath(page.url)}`}
+                                >
+                                  ?
+                                </span>
+                              )}
+                            </div>
+                          ) : rankInfo?.lastCheckedAt && !rankInfo.isTop100 ? (
+                            <span
+                              className="w3-rank-badge rank-not-top-100"
+                              title={`Not in Top 100 on Google UK (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
+                            >
+                              &gt;100
+                            </span>
+                          ) : (
+                            <span className="w3-rank-badge rank-unchecked" title="Not checked yet">
+                              —
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Secondary Rank */}
+                        {page.secondaryTargetPhrase && (
+                          <div style={{ display: 'flex', alignItems: 'center', minHeight: '18px' }}>
+                            {secRankInfo?.isTop100 && secRankInfo.googleRank ? (
+                              <div className="w3-rank-badge-wrapper" title={`Secondary: "${page.secondaryTargetPhrase}"`}>
+                                <span
+                                  className={`w3-rank-badge ${secRankInfo.googleRank <= 10 ? 'rank-top-10' : 'rank-top-100'}`}
+                                  style={{ opacity: 0.85, fontSize: '0.72rem' }}
+                                  title={`Secondary Google UK Rank #${secRankInfo.googleRank} (Checked ${formatReadableDateTime(secRankInfo.lastCheckedAt) || secRankInfo.lastCheckedAt})`}
+                                >
+                                  #{secRankInfo.googleRank}
+                                </span>
+                              </div>
+                            ) : secRankInfo?.lastCheckedAt && !secRankInfo.isTop100 ? (
+                              <span
+                                className="w3-rank-badge rank-not-top-100"
+                                style={{ opacity: 0.85, fontSize: '0.72rem' }}
+                                title={`Secondary Not in Top 100 on Google UK (Checked ${formatReadableDateTime(secRankInfo.lastCheckedAt) || secRankInfo.lastCheckedAt})`}
+                              >
+                                &gt;100
+                              </span>
+                            ) : (
+                              <span className="w3-rank-badge rank-unchecked" style={{ opacity: 0.7, fontSize: '0.72rem' }} title={`Secondary "${page.secondaryTargetPhrase}" not checked yet`}>
+                                —
                               </span>
                             )}
                           </div>
-                        ) : rankInfo?.lastCheckedAt && !rankInfo.isTop100 ? (
-                          <span
-                            className="w3-rank-badge rank-not-top-100"
-                            title={`Not in Top 100 on Google UK (Checked ${formatReadableDateTime(rankInfo.lastCheckedAt) || rankInfo.lastCheckedAt})`}
-                          >
-                            &gt;100
-                          </span>
-                        ) : (
-                          <span className="w3-rank-badge rank-unchecked" title="Not checked yet">
-                            —
-                          </span>
                         )}
                       </div>
                     </td>
                     <td className="col-volume">
-                      <div className="w3-volume-cell">
-                        {isCheckingThisVolume ? (
-                          <span className="w3-volume-badge volume-checking" title="Checking UK Monthly Search Volume...">
-                            ⏳
-                          </span>
-                        ) : (rankInfo?.volumeCheckedAt || (rankInfo?.searchVolume !== null && rankInfo?.searchVolume !== undefined)) ? (
-                          <span
-                            className="w3-volume-badge volume-value"
-                            title={`UK Monthly Search Volume: ${Number(rankInfo?.searchVolume || 0).toLocaleString()}${rankInfo?.volumeCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.volumeCheckedAt) || rankInfo.volumeCheckedAt})` : ''}`}
-                          >
-                            {Number(rankInfo?.searchVolume || 0).toLocaleString()}
-                          </span>
-                        ) : (
-                          <span className="w3-volume-badge volume-unchecked" title="Search volume not checked yet">
-                            —
-                          </span>
+                      <div className="w3-volume-cell" style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '44px', justifyContent: 'center' }}>
+                        {/* Primary Volume */}
+                        <div style={{ display: 'flex', alignItems: 'center', minHeight: '20px' }}>
+                          {isCheckingThisVolume ? (
+                            <span className="w3-volume-badge volume-checking" title="Checking UK Monthly Search Volume...">
+                              ⏳
+                            </span>
+                          ) : (rankInfo?.volumeCheckedAt || (rankInfo?.searchVolume !== null && rankInfo?.searchVolume !== undefined)) ? (
+                            <span
+                              className="w3-volume-badge volume-value"
+                              title={`UK Monthly Search Volume: ${Number(rankInfo?.searchVolume || 0).toLocaleString()}${rankInfo?.volumeCheckedAt ? ` (Checked ${formatReadableDateTime(rankInfo.volumeCheckedAt) || rankInfo.volumeCheckedAt})` : ''}`}
+                            >
+                              {Number(rankInfo?.searchVolume || 0).toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="w3-volume-badge volume-unchecked" title="Search volume not checked yet">
+                              —
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Secondary Volume */}
+                        {page.secondaryTargetPhrase && (
+                          <div style={{ display: 'flex', alignItems: 'center', minHeight: '18px' }}>
+                            {(secRankInfo?.volumeCheckedAt || (secRankInfo?.searchVolume !== null && secRankInfo?.searchVolume !== undefined)) ? (
+                              <span
+                                className="w3-volume-badge volume-value"
+                                style={{ opacity: 0.85, fontSize: '0.72rem' }}
+                                title={`Secondary UK Monthly Search Volume: ${Number(secRankInfo?.searchVolume || 0).toLocaleString()}${secRankInfo?.volumeCheckedAt ? ` (Checked ${formatReadableDateTime(secRankInfo.volumeCheckedAt) || secRankInfo.volumeCheckedAt})` : ''}`}
+                              >
+                                {Number(secRankInfo?.searchVolume || 0).toLocaleString()}
+                              </span>
+                            ) : (
+                              <span className="w3-volume-badge volume-unchecked" style={{ opacity: 0.7, fontSize: '0.72rem' }} title={`Secondary search volume not checked yet`}>
+                                —
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>
                     <td className="col-target">
-                      {(page.target || page.targetPhrase || '').trim() ? (
-                        <span className="w3-target-phrase-text">{page.target || page.targetPhrase}</span>
-                      ) : (
-                        <span className="target-not-set">Not Set</span>
-                      )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '44px', justifyContent: 'center' }}>
+                        {/* 1. Primary Target Phrase Row */}
+                        <div style={{ display: 'flex', alignItems: 'center', minHeight: '20px' }}>
+                          {inlineEditingTarget && inlineEditingTarget.pageKey === pageKey && inlineEditingTarget.field === 'primary' ? (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault()
+                                handleSaveInlineTarget(pageKey, 'primary', inlineEditingTarget.value)
+                              }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <input
+                                type="text"
+                                autoFocus
+                                className="w3-inline-target-input"
+                                value={inlineEditingTarget.value}
+                                onChange={(e) => setInlineEditingTarget(prev => ({ ...prev, value: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') setInlineEditingTarget(null)
+                                }}
+                                placeholder="Primary target phrase..."
+                                style={{
+                                  backgroundColor: '#0f172a',
+                                  border: '1px solid #3b82f6',
+                                  borderRadius: '4px',
+                                  color: '#f8fafc',
+                                  fontSize: '0.8rem',
+                                  padding: '2px 6px',
+                                  width: '180px'
+                                }}
+                              />
+                              <button
+                                type="submit"
+                                className="w3-btn-inline-save"
+                                title="Save (Enter)"
+                                style={{
+                                  backgroundColor: '#10b981',
+                                  border: 'none',
+                                  borderRadius: '3px',
+                                  color: '#fff',
+                                  fontSize: '0.72rem',
+                                  fontWeight: '700',
+                                  padding: '2px 6px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✓
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setInlineEditingTarget(null)}
+                                className="w3-btn-inline-cancel"
+                                title="Cancel (Esc)"
+                                style={{
+                                  backgroundColor: '#475569',
+                                  border: 'none',
+                                  borderRadius: '3px',
+                                  color: '#fff',
+                                  fontSize: '0.72rem',
+                                  fontWeight: '700',
+                                  padding: '2px 6px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </form>
+                          ) : (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              {(page.target || page.targetPhrase || '').trim() ? (
+                                <span className="w3-target-phrase-text">{page.target || page.targetPhrase}</span>
+                              ) : (
+                                <span className="target-not-set" style={{ color: '#64748b', fontStyle: 'italic', fontSize: '0.8rem' }}>Not Set</span>
+                              )}
+                              <button
+                                type="button"
+                                className="w3-btn-edit-target-pencil"
+                                onClick={() => setInlineEditingTarget({ pageKey, field: 'primary', value: page.target || page.targetPhrase || '' })}
+                                title="Edit primary target phrase"
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#94a3b8',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer',
+                                  padding: '0 2px',
+                                  lineHeight: 1,
+                                  opacity: 0.75
+                                }}
+                              >
+                                ✎
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 2. Secondary Target Phrase Row */}
+                        <div style={{ display: 'flex', alignItems: 'center', minHeight: '18px' }}>
+                          {inlineEditingTarget && inlineEditingTarget.pageKey === pageKey && inlineEditingTarget.field === 'secondary' ? (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault()
+                                handleSaveInlineTarget(pageKey, 'secondary', inlineEditingTarget.value)
+                              }}
+                              style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <input
+                                type="text"
+                                autoFocus
+                                className="w3-inline-target-input"
+                                value={inlineEditingTarget.value}
+                                onChange={(e) => setInlineEditingTarget(prev => ({ ...prev, value: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') setInlineEditingTarget(null)
+                                }}
+                                placeholder="Secondary target phrase..."
+                                style={{
+                                  backgroundColor: '#0f172a',
+                                  border: '1px solid #10b981',
+                                  borderRadius: '4px',
+                                  color: '#f8fafc',
+                                  fontSize: '0.78rem',
+                                  padding: '2px 6px',
+                                  width: '180px'
+                                }}
+                              />
+                              <button
+                                type="submit"
+                                className="w3-btn-inline-save"
+                                title="Save secondary phrase (Enter)"
+                                style={{
+                                  backgroundColor: '#10b981',
+                                  border: 'none',
+                                  borderRadius: '3px',
+                                  color: '#fff',
+                                  fontSize: '0.72rem',
+                                  fontWeight: '700',
+                                  padding: '2px 6px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✓
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setInlineEditingTarget(null)}
+                                className="w3-btn-inline-cancel"
+                                title="Cancel (Esc)"
+                                style={{
+                                  backgroundColor: '#475569',
+                                  border: 'none',
+                                  borderRadius: '3px',
+                                  color: '#fff',
+                                  fontSize: '0.72rem',
+                                  fontWeight: '700',
+                                  padding: '2px 6px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </form>
+                          ) : page.secondaryTargetPhrase ? (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                              <span className="w3-target-phrase-text" style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
+                                {page.secondaryTargetPhrase}
+                              </span>
+                              <button
+                                type="button"
+                                className="w3-btn-edit-target-pencil"
+                                onClick={() => setInlineEditingTarget({ pageKey, field: 'secondary', value: page.secondaryTargetPhrase || '' })}
+                                title="Edit secondary target phrase"
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#94a3b8',
+                                  fontSize: '0.72rem',
+                                  cursor: 'pointer',
+                                  padding: '0 2px',
+                                  lineHeight: 1,
+                                  opacity: 0.75
+                                }}
+                              >
+                                ✎
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="w3-btn-add-secondary-link"
+                              onClick={() => setInlineEditingTarget({ pageKey, field: 'secondary', value: '' })}
+                              title="Add secondary target phrase"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#64748b',
+                                fontSize: '0.72rem',
+                                cursor: 'pointer',
+                                padding: 0,
+                                textAlign: 'left',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                opacity: 0.8
+                              }}
+                            >
+                              <span style={{ fontSize: '0.65rem', color: '#34d399' }}>+</span> <span style={{ color: '#94a3b8' }}>2nd target</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="col-last-audit">
                       {page.isAudited ? (
@@ -2068,9 +2654,9 @@ export default function PageManagementPage({
                             className="btn-audit-stale-action"
                             onClick={() => onViewAudit && onViewAudit(page)}
                             id={`btn-audit-page-${page.id || idx}`}
-                            title={`WordPress content modified after audit - Re-audit recommended (${page.auditScore !== null ? `${page.auditScore} / 100` : 'Stale'})`}
+                            title={`WordPress content modified after audit - Re-audit recommended (${page.auditScore !== null ? `${page.auditScore}%` : 'Stale'})`}
                           >
-                            {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audit Required ?'}
+                            {page.auditScore !== null ? `${page.auditScore}%` : 'Audit Required ?'}
                           </button>
                         ) : (
                           <button
@@ -2084,7 +2670,7 @@ export default function PageManagementPage({
                             id={`btn-audit-page-${page.id || idx}`}
                             title="View completed audit results"
                           >
-                            {page.auditScore !== null ? `${page.auditScore} / 100` : 'Audited ✓'}
+                            {page.auditScore !== null ? `${page.auditScore}%` : 'Audited ✓'}
                           </button>
                         )
                       ) : page.isConfigured ? (
@@ -2110,13 +2696,28 @@ export default function PageManagementPage({
                     <td className="col-actions">
                       <button
                         type="button"
-                        className={`btn-configure-page ${page.isConfigured ? 'btn-configured-state' : ''}`}
-                        onClick={() => setEditingPage(page)}
-                        id={`btn-configure-page-${page.id || idx}`}
+                        className="btn-sync-page-live"
+                        onClick={() => handleSyncPageFromLiveSite(page)}
+                        disabled={syncingPageKey === (page.id || page.url)}
+                        id={`btn-sync-page-${page.id || idx}`}
+                        title="Sync latest live metadata & content directly from WordPress"
+                        style={{
+                          backgroundColor: syncingPageKey === (page.id || page.url) ? '#0284c7' : '#0369a1',
+                          color: '#ffffff',
+                          border: '1px solid #0284c7',
+                          borderRadius: '4px',
+                          padding: '3px 8px',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          cursor: syncingPageKey === (page.id || page.url) ? 'not-allowed' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
                       >
-                        {page.isConfigured ? 'Configured' : 'Configure'}
+                        {syncingPageKey === (page.id || page.url) ? '⏳ Syncing...' : 'Sync from Live'}
                       </button>
-                      {page.isExcluded || page.type === 'Excluded' ? (
+                      {(page.isExcluded || page.type === 'Excluded') && (
                         <button
                           type="button"
                           className="btn-row-include"
@@ -2125,16 +2726,6 @@ export default function PageManagementPage({
                           id={`btn-include-page-${page.id || idx}`}
                         >
                           Include
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn-row-exclude"
-                          onClick={() => handleExcludePage(page)}
-                          title="Exclude page with 1-click"
-                          id={`btn-exclude-page-${page.id || idx}`}
-                        >
-                          Exclude
                         </button>
                       )}
                     </td>
@@ -2151,16 +2742,6 @@ export default function PageManagementPage({
           </tbody>
         </table>
       </div>
-
-      {/* ── Configure Page Targeting Modal ── */}
-      {editingPage && (
-        <ConfigurePageDialog
-          siteUrl={site?.url}
-          page={editingPage}
-          onClose={() => setEditingPage(null)}
-          onSave={handleSavePageConfig}
-        />
-      )}
 
       {/* ── Bulk Configure Target Phrases Modal ── */}
       {isBulkTargetDialogOpen && (

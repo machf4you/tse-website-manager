@@ -9,7 +9,7 @@ const PAGE_AUDITOR_API_BASE = (import.meta.env && import.meta.env.VITE_PAGE_AUDI
  */
 export async function checkPageAuditorHealth() {
   try {
-    const res = await fetch(`${PAGE_AUDITOR_API_BASE}/`, { method: 'GET' })
+    const res = await fetch(`${PAGE_AUDITOR_API_BASE}/`, { method: 'GET', credentials: 'include' })
     if (res.ok) {
       const data = await res.json()
       return data.status === 'ok'
@@ -45,8 +45,8 @@ export async function executePageAudit({ siteId, pageId, url, siteUrl, targetPhr
     site_id: siteId || 'site-1',
     page_id: pageId || url,
     url: resolvedUrl,
-    primary_phrase: targetPhrase || '',
-    assigned_type: seoPageType || 'Unclassified',
+    primary_phrase: (targetPhrase || '').trim() || 'General',
+    assigned_type: ['Hub', 'Landing', 'Topical', 'Article'].includes(seoPageType) ? seoPageType : 'Landing',
     secondary_phrases: [],
     render_js: false,
     rules_parameters: rulesConfig || {

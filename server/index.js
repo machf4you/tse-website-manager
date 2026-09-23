@@ -9,6 +9,7 @@ import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOn
 import { generateArticleDocxBuffer } from './docxGenerator.js'
 import { getAllRestorePoints, registerNewRestorePoint } from './restorePointManager.js'
 import { batchRunner, getFullEstateEligibility } from './firstAuditBatchRunner.js'
+import { pushPageSeoFields } from './wordpressSeoPusher.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -119,7 +120,7 @@ app.get('/api/images/extract', async (req, res) => {
 
     const fetchRes = await fetch(targetUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'TSE-Website-Manager/2.52',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
       },
       redirect: 'follow',
@@ -202,8 +203,7 @@ app.get('/api/images/extract', async (req, res) => {
       if (seen.has(absUrl)) continue
 
       const ariaMatch = attrs.match(/\baria-label=["']([^"']*)["']/i)
-      const aria = ariaMatch ? ariaMatch[1].trim() : ''
-      const alt = aria && !aria.toLowerCase().startsWith('ascent') ? aria : ''
+      const alt = ariaMatch ? ariaMatch[1].trim() : ''
 
       if (isExcluded(absUrl, alt, attrs)) continue
 
@@ -470,6 +470,36 @@ app.post('/api/wordpress/media/alt-text', async (req, res) => {
     })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// W4 Server-Side Page SEO Fields Push Endpoint
+app.post(['/api/wordpress/pages/seo-fields', '/api/wordpress/update-seo-fields'], async (req, res) => {
+  try {
+    const { siteId, siteUrl, pageId, pageUrl, metaTitle, metaDescription, h1, targetPhrase } = req.body || {}
+    if (!siteId && !siteUrl && !pageUrl) {
+      return res.status(400).json({ success: false, message: 'siteId, siteUrl or pageUrl is required.' })
+    }
+
+    const result = await pushPageSeoFields({
+      siteId,
+      siteUrl,
+      pageId,
+      pageUrl,
+      metaTitle,
+      metaDescription,
+      h1,
+      targetPhrase
+    })
+
+    if (!result.success) {
+      return res.status(200).json(result)
+    }
+
+    res.json(result)
+  } catch (err) {
+    console.error('[SERVER_WP_SEO_ERROR]', err)
+    res.status(500).json({ success: false, message: `Server error executing WordPress push: ${err.message}` })
   }
 })
 
@@ -997,6 +1027,32 @@ app.get('/api/websites/:id/package', (req, res) => {
   }
 })
 
+function extractJsonFromText(rawText) {
+  if (!rawText || typeof rawText !== 'string') return null
+  const trimmed = rawText.trim()
+  try {
+    return JSON.parse(trimmed)
+  } catch (_e) {}
+
+  const firstBrace = trimmed.indexOf('{')
+  const lastBrace = trimmed.lastIndexOf('}')
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    try {
+      return JSON.parse(trimmed.substring(firstBrace, lastBrace + 1))
+    } catch (_e) {}
+  }
+
+  const firstBracket = trimmed.indexOf('[')
+  const lastBracket = trimmed.lastIndexOf(']')
+  if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+    try {
+      return JSON.parse(trimmed.substring(firstBracket, lastBracket + 1))
+    } catch (_e) {}
+  }
+
+  return null
+}
+
 // Save WP package for site
 app.post('/api/websites/:id/package', (req, res) => {
   try {
@@ -1012,10 +1068,28 @@ app.post('/api/websites/:id/package', (req, res) => {
       : (rawBody.pages || rawBody.posts ? rawBody : (rawBody.packageData || rawBody))
 
     // Calculate total pages
-    const rawPages = Array.isArray(cleanPackageData?.pages) ? cleanPackageData.pages : (Array.isArray(cleanPackageData?.data?.pages) ? cleanPackageData.data.pages : [])
-    const rawPosts = Array.isArray(cleanPackageData?.posts) ? cleanPackageData.posts : (Array.isArray(cleanPackageData?.data?.posts) ? cleanPackageData.data.posts : [])
+    const rawPages = Array.isArray(cleanPackageData?.pages) ? cleanPackageData.pages : (Array.isArray(cleanPackageData?.data?.pages) ? cleanPackageData.data.pages : (Array.isArray(cleanPackageData?.['full-export.json']) ? cleanPackageData['full-export.json'] : (Array.isArray(cleanPackageData?.['pages.json']) ? cleanPackageData['pages.json'] : [])))
+    const rawPosts = Array.isArray(cleanPackageData?.posts) ? cleanPackageData.posts : (Array.isArray(cleanPackageData?.data?.posts) ? cleanPackageData.data.posts : (Array.isArray(cleanPackageData?.['posts.json']) ? cleanPackageData['posts.json'] : []))
     const rawProjects = Array.isArray(cleanPackageData?.projects) ? cleanPackageData.projects : []
     const totalPagesCount = rawPages.length || (rawPages.length + rawPosts.length + rawProjects.length)
+
+    // SAFEGUARD: Never overwrite an existing populated package with an empty / 0-page payload
+    const existingPkgRow = db.prepare(`SELECT package_data FROM wp_packages WHERE site_id = ?`).get(id)
+    if (existingPkgRow && existingPkgRow.package_data) {
+      try {
+        const oldData = JSON.parse(existingPkgRow.package_data)
+        const oldPkg = oldData.packageData || oldData.data || oldData
+        const oldPages = Array.isArray(oldPkg.pages) ? oldPkg.pages : (Array.isArray(oldPkg['full-export.json']) ? oldPkg['full-export.json'] : (Array.isArray(oldPkg['pages.json']) ? oldPkg['pages.json'] : []))
+        const oldTotal = oldPages.length || (Array.isArray(oldPkg.posts) ? oldPkg.posts.length : 0)
+        if (totalPagesCount === 0 && oldTotal > 0) {
+          console.warn(`[SafeGuard] Refusing to overwrite package for site ${id} (${oldTotal} existing pages) with 0-page payload.`)
+          return res.status(400).json({
+            error: 'REFUSE_EMPTY_PACKAGE',
+            message: `Refusing to overwrite existing package containing ${oldTotal} pages with an empty payload. Existing package preserved.`
+          })
+        }
+      } catch (_e) {}
+    }
 
     const now = new Date().toISOString()
     const syncTx = db.transaction(() => {
@@ -1442,7 +1516,7 @@ async function fetchWordPressItemsPaginated(baseUrl, endpointPath, authHeader) {
 
   const headers = {
     'Accept': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'User-Agent': 'TSE-Website-Manager/2.52'
   }
   if (authHeader) {
     headers['Authorization'] = authHeader
@@ -1515,7 +1589,7 @@ async function syncWordPressSite(rawSiteUrl, username, password) {
 
   const defaultHeaders = {
     'Accept': 'application/json',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    'User-Agent': 'TSE-Website-Manager/2.52'
   }
   if (authHeader) {
     defaultHeaders['Authorization'] = authHeader
@@ -1529,8 +1603,9 @@ async function syncWordPressSite(rawSiteUrl, username, password) {
       signal: AbortSignal.timeout(15000)
     })
     if (exporterRes.ok) {
-      const pkg = await exporterRes.json()
-      if (pkg && (Array.isArray(pkg.pages) || Array.isArray(pkg.data?.pages) || Array.isArray(pkg.packageData?.pages))) {
+      const rawText = await exporterRes.text()
+      const pkg = extractJsonFromText(rawText)
+      if (pkg && (Array.isArray(pkg.pages) || Array.isArray(pkg.data?.pages) || Array.isArray(pkg.packageData?.pages) || Array.isArray(pkg['full-export.json']) || Array.isArray(pkg['pages.json']))) {
         return { success: true, packageData: pkg, source: 'tse-exporter' }
       }
     }
@@ -1551,11 +1626,11 @@ async function syncWordPressSite(rawSiteUrl, username, password) {
     ...(Array.isArray(projects) ? projects : [])
   ]
 
-  if (combinedPages.length === 0) {
+  if (combinedPages.length === 0 || !Array.isArray(pages) || pages.length === 0) {
     return {
       success: false,
       error: 'NO_PAGES_FOUND',
-      message: `Failed to retrieve pages or posts from WordPress REST API for ${cleanSiteUrl}.`
+      message: `Failed to retrieve standard pages from WordPress REST API for ${cleanSiteUrl}. Authentication may be required.`
     }
   }
 
@@ -1600,10 +1675,28 @@ app.post('/api/websites/:id/wordpress-sync', async (req, res) => {
       return res.status(500).json(result)
     }
 
-    const pagesCount = Array.isArray(result.packageData?.pages) ? result.packageData.pages.length : 0
+    const pagesCount = Array.isArray(result.packageData?.pages) ? result.packageData.pages.length : (Array.isArray(result.packageData?.['full-export.json']) ? result.packageData['full-export.json'].length : 0)
     const postsCount = Array.isArray(result.packageData?.posts) ? result.packageData.posts.length : 0
     const projectsCount = Array.isArray(result.packageData?.projects) ? result.packageData.projects.length : 0
     const totalPagesCount = pagesCount || (pagesCount + postsCount + projectsCount)
+
+    // SAFEGUARD: Never overwrite an existing populated package with an empty / 0-page payload
+    const existingPkgRow = db.prepare(`SELECT package_data FROM wp_packages WHERE site_id = ?`).get(id)
+    if (existingPkgRow && existingPkgRow.package_data) {
+      try {
+        const oldData = JSON.parse(existingPkgRow.package_data)
+        const oldPkg = oldData.packageData || oldData.data || oldData
+        const oldPages = Array.isArray(oldPkg.pages) ? oldPkg.pages : (Array.isArray(oldPkg['full-export.json']) ? oldPkg['full-export.json'] : (Array.isArray(oldPkg['pages.json']) ? oldPkg['pages.json'] : []))
+        const oldTotal = oldPages.length || (Array.isArray(oldPkg.posts) ? oldPkg.posts.length : 0)
+        if (totalPagesCount === 0 && oldTotal > 0) {
+          console.warn(`[SafeGuard] Refusing to overwrite package for site ${id} (${oldTotal} existing pages) with 0-page payload.`)
+          return res.status(400).json({
+            error: 'REFUSE_EMPTY_PACKAGE',
+            message: `Refusing to overwrite existing package containing ${oldTotal} pages with an empty payload. Existing package preserved.`
+          })
+        }
+      } catch (_e) {}
+    }
 
     const now = new Date().toISOString()
     // Save to wp_packages table
@@ -1618,9 +1711,9 @@ app.post('/api/websites/:id/wordpress-sync', async (req, res) => {
     // Update website sync status, total_pages, and normalized url
     db.prepare(`
       UPDATE websites
-      SET url = ?, sync_status = 'Synced', total_pages = ?, last_sync_timestamp = ?, updated_at = ?
+      SET url = ?, sync_status = 'Synced', total_pages = CASE WHEN ? > 0 THEN ? ELSE total_pages END, last_sync_timestamp = ?, updated_at = ?
       WHERE id = ?
-    `).run(cleanSiteUrl, totalPagesCount, now, now, String(id))
+    `).run(cleanSiteUrl, totalPagesCount, totalPagesCount, now, now, String(id))
 
     res.json({
       success: true,
@@ -1681,8 +1774,9 @@ app.get('/api/websites/:id/page-configs', (req, res) => {
         ...parsedConfig,
         url: r.url,
         title: r.title,
-        target: r.target_phrase || parsedConfig.target,
-        targetPhrase: r.target_phrase || parsedConfig.targetPhrase,
+        target: r.target_phrase || parsedConfig.target || '',
+        targetPhrase: r.target_phrase || parsedConfig.targetPhrase || '',
+        secondaryTargetPhrase: parsedConfig.secondaryTargetPhrase || '',
         type: r.seo_page_type || parsedConfig.type,
         seoPageType: r.seo_page_type || parsedConfig.seoPageType,
         priority: r.priority,
@@ -1712,13 +1806,16 @@ app.post('/api/websites/:id/page-configs/single', (req, res) => {
 
     const now = new Date().toISOString()
     const targetPhrase = (conf.target || conf.targetPhrase || '').trim()
+    const secondaryTargetPhrase = (conf.secondaryTargetPhrase || '').trim()
     const cleanConfig = {
+      ...(conf && typeof conf === 'object' ? conf : {}),
       pageId: conf.pageId || pageKey,
       url: conf.url || pageKey,
       proposedTitle: conf.proposedTitle || conf.title || '',
       title: conf.title || conf.proposedTitle || '',
       targetPhrase: targetPhrase,
       target: targetPhrase,
+      secondaryTargetPhrase: secondaryTargetPhrase,
       type: conf.type || conf.seoPageType || 'Topical',
       seoPageType: conf.seoPageType || conf.type || 'Topical',
       autoType: conf.autoType || conf.type || 'Topical',
@@ -1808,16 +1905,25 @@ app.post('/api/websites/:id/page-configs', (req, res) => {
     const insertMany = db.transaction((map) => {
       for (const [pageKey, conf] of Object.entries(map)) {
         if (!conf) continue
+        const confObj = typeof conf === 'object' ? conf : {}
+        const tp = (confObj.target || confObj.targetPhrase || '').trim()
+        const stp = (confObj.secondaryTargetPhrase || '').trim()
+        const cleanConf = {
+          ...confObj,
+          target: tp,
+          targetPhrase: tp,
+          secondaryTargetPhrase: stp
+        }
         stmt.run({
           site_id: id,
           page_key: pageKey,
-          url: conf.url || pageKey,
-          title: conf.title || conf.proposedTitle || '',
-          target_phrase: conf.target || conf.targetPhrase || '',
-          seo_page_type: conf.type || conf.seoPageType || '',
-          priority: Number(conf.priority) || 0,
-          is_excluded: conf.isExcluded || conf.type === 'Excluded' ? 1 : 0,
-          config_json: JSON.stringify(conf),
+          url: confObj.url || pageKey,
+          title: confObj.title || confObj.proposedTitle || '',
+          target_phrase: tp,
+          seo_page_type: confObj.type || confObj.seoPageType || '',
+          priority: Number(confObj.priority) || 0,
+          is_excluded: confObj.isExcluded || confObj.type === 'Excluded' ? 1 : 0,
+          config_json: JSON.stringify(cleanConf),
           updated_at: now
         })
 
@@ -3108,12 +3214,25 @@ app.post('/api/websites/:id/tasks/collect-rank-batch', handleCollectRankBatch)
 // ==========================================
 
 function getStoredUrlExclusions() {
+  let activeRules = DEFAULT_EXCLUSION_RULES
   try {
     const row = db.prepare(`SELECT value_json FROM global_settings WHERE key = 'url_exclusions'`).get()
     if (row && row.value_json) {
       const parsed = JSON.parse(row.value_json)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
+        // Merge any new default rules that might not be in the stored array
+        const existingIds = new Set(parsed.map(r => r.id))
+        const missingDefaults = DEFAULT_EXCLUSION_RULES.filter(r => !existingIds.has(r.id))
+        if (missingDefaults.length > 0) {
+          activeRules = [...parsed, ...missingDefaults]
+          const now = new Date().toISOString()
+          db.prepare(`
+            UPDATE global_settings SET value_json = ?, updated_at = ? WHERE key = 'url_exclusions'
+          `).run(JSON.stringify(activeRules), now)
+        } else {
+          activeRules = parsed
+        }
+        return activeRules
       }
     }
   } catch (e) {
@@ -3133,11 +3252,82 @@ function getStoredUrlExclusions() {
   return DEFAULT_EXCLUSION_RULES
 }
 
+export function applyGlobalExclusionsToDatabase() {
+  try {
+    const rules = getStoredUrlExclusions()
+    const now = new Date().toISOString()
+    const pageRows = db.prepare(`SELECT site_id, page_key, url, title, is_excluded, seo_page_type FROM page_configurations`).all()
+    const updatePageStmt = db.prepare(`
+      UPDATE page_configurations
+      SET is_excluded = 1,
+          seo_page_type = 'Excluded',
+          priority = 0,
+          updated_at = ?
+      WHERE site_id = ? AND page_key = ?
+    `)
+
+    const restorePageStmt = db.prepare(`
+      UPDATE page_configurations
+      SET is_excluded = 0,
+          seo_page_type = 'Landing',
+          priority = 2,
+          updated_at = ?
+      WHERE site_id = ? AND page_key = ? AND (seo_page_type = 'Excluded' OR is_excluded = 1)
+    `)
+
+    let updatedCount = 0
+    for (const row of pageRows) {
+      const urlInfo = normalizeUrlForExclusionCheck(row.url || row.page_key || '')
+      const lowerTitle = String(row.title || '').toLowerCase().trim()
+      const isCaseStudy = urlInfo.pathname.includes('/case-study/') || urlInfo.pathname.includes('/case-studies/') || urlInfo.cleanSlug === 'case-studies' || urlInfo.cleanSlug === 'case-study' || urlInfo.slugSegments.includes('case-studies') || urlInfo.slugSegments.includes('case-study')
+      const isPortfolio = urlInfo.pathname.includes('/portfolio/') || urlInfo.pathname.includes('/portfolios/') || urlInfo.cleanSlug === 'portfolio' || urlInfo.cleanSlug === 'portfolios' || urlInfo.slugSegments.includes('portfolio') || urlInfo.slugSegments.includes('portfolios')
+
+      let shouldExclude = isPortfolio || isCaseStudy
+      if (!shouldExclude) {
+        for (const rule of rules) {
+          if (testExclusionRule(rule, urlInfo, lowerTitle)) {
+            shouldExclude = true
+            break
+          }
+        }
+      }
+
+      if (shouldExclude && (row.is_excluded !== 1 || row.seo_page_type !== 'Excluded')) {
+        updatePageStmt.run(now, row.site_id, row.page_key)
+        updatedCount++
+      } else if (!shouldExclude && row.is_excluded === 1 && row.seo_page_type === 'Excluded' && row.url && row.url.includes('portfolio-websites-for-designers')) {
+        restorePageStmt.run(now, row.site_id, row.page_key)
+        updatedCount++
+      }
+    }
+    if (updatedCount > 0) {
+      console.log(`[URL_EXCLUSIONS] Retroactive classification applied: ${updatedCount} pages updated in database.`)
+    }
+    return updatedCount
+  } catch (err) {
+    console.error('[URL_EXCLUSIONS] Error applying exclusions to database:', err)
+    return 0
+  }
+}
+
+// Run initial exclusion synchronization on database load
+applyGlobalExclusionsToDatabase()
+
 // GET /api/global-settings/url-exclusions
 app.get('/api/global-settings/url-exclusions', (req, res) => {
   try {
     const rules = getStoredUrlExclusions()
     res.json({ success: true, rules })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+// POST /api/global-settings/url-exclusions/recalculate
+app.post('/api/global-settings/url-exclusions/recalculate', (req, res) => {
+  try {
+    const updatedCount = applyGlobalExclusionsToDatabase()
+    res.json({ success: true, updatedCount })
   } catch (e) {
     res.status(500).json({ success: false, error: e.message })
   }

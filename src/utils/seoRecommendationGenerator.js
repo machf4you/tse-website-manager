@@ -50,24 +50,18 @@ function containsPhrase(text = '', phrase = '') {
  * - If saved value is empty, returns recommendation (or actual fallback).
  * - If saved value is DIFFERENT from actual live value -> preserved as a genuine user override!
  */
-export function resolveProposedField(savedVal, actualVal, recVal, siteName = '') {
+export function resolveProposedField(savedVal, actualVal, recVal, _siteName = '') {
   const saved = (savedVal || '').replace(/\s+/g, ' ').trim()
   const actual = (actualVal || '').replace(/\s+/g, ' ').trim()
   const rec = (recVal || '').trim()
 
-  if (!saved) return rec || actual
-
-  let cleanActual = actual
-  if (siteName) {
-    const brandRegex = new RegExp(`\\s*[-|–—]\\s*${siteName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}.*`, 'i')
-    cleanActual = cleanActual.replace(brandRegex, '')
+  // Saved user metadata is authoritative — never discard or replace a saved value
+  if (saved) {
+    return saved
   }
-  cleanActual = cleanActual.replace(/\s*[-|–—]\s*(Ascent Builders|HF4You|TSE).*$/i, '').replace(/\s+/g, ' ').trim()
 
-  if (saved.toLowerCase() === actual.toLowerCase() || saved.toLowerCase() === cleanActual.toLowerCase()) {
-    return rec || actual
-  }
-  return saved
+  // Fallback to recommendation or live actual value only if no saved proposed value exists
+  return rec || actual
 }
 
 export function generateSeoRecommendations({
@@ -80,7 +74,7 @@ export function generateSeoRecommendations({
   siteName = ''
 }) {
   const target = (targetPhrase || '').trim()
-  const brand = (siteName || '').trim() || 'Ascent Builders'
+  const brand = (siteName || '').trim()
 
   // Extract cleanest topic text
   let topic = cleanTopicText(actualH1, brand)
@@ -100,11 +94,11 @@ export function generateSeoRecommendations({
   if (target && containsPhrase(actualMetaTitle, target) && actualMetaTitle.length >= 45 && actualMetaTitle.length <= 65) {
     proposedTitle = actualMetaTitle
   } else if (!target) {
-    proposedTitle = actualMetaTitle || `${topic} | ${brand}`
+    proposedTitle = actualMetaTitle || (brand ? `${topic} | ${brand}` : topic)
   } else {
     // Generate title using target phrase
     const cand1 = `${target}: ${cleanTitleTopic}`
-    const cand2 = `${target} - ${cleanTitleTopic} | ${brand}`
+    const cand2 = brand ? `${target} - ${cleanTitleTopic} | ${brand}` : cand1
     const cand3 = `${target} | ${cleanTitleTopic}`
 
     if (cand1.length >= 50 && cand1.length <= 60) {
@@ -114,7 +108,7 @@ export function generateSeoRecommendations({
     } else if (cand3.length >= 50 && cand3.length <= 60) {
       proposedTitle = cand3
     } else if (cand1.length < 50) {
-      const cand1Brand = `${cand1} | ${brand}`
+      const cand1Brand = brand ? `${cand1} | ${brand}` : cand1
       if (cand1Brand.length >= 50 && cand1Brand.length <= 62) {
         proposedTitle = cand1Brand
       } else {
@@ -138,10 +132,11 @@ export function generateSeoRecommendations({
     let descTopic = topic.toLowerCase().replace(/,\s*/g, ' ')
     descTopic = descTopic.replace(/\s{2,}/g, ' ').trim()
 
-    let descBase = `Explore our ${target} showcase featuring a ${descTopic}. Contact ${brand} today for expert building services.`
+    const contactStr = brand ? `Contact ${brand} today` : 'Contact us today'
+    let descBase = `Explore our ${target} showcase featuring ${descTopic}. ${contactStr} to find out more or get in touch.`
 
     if (descBase.length < 150) {
-      descBase = `Explore our ${target} showcase featuring a ${descTopic}. Contact ${brand} today for expert building services and a free consultation.`
+      descBase = `Explore our ${target} showcase featuring ${descTopic}. ${contactStr} to find out more and discuss how we can help.`
     }
 
     if (descBase.length > 160) {
