@@ -140,8 +140,10 @@ export default function W4FixIssueDialog({
     setIsSaving(false)
   }
 
+  const isStaticHtml = site?.platform === 'static_html' || site?.platform === 'static'
+
   const handlePushToWordPress = async () => {
-    if (!isSaved || isPushing) return
+    if (isStaticHtml || !isSaved || isPushing) return
     setIsPushing(true)
     setPushError(null)
     try {
@@ -443,7 +445,11 @@ export default function W4FixIssueDialog({
                     </div>
                   )}
                   <div style={{ marginTop: '4px' }}>
-                    {isPushed ? (
+                    {isStaticHtml ? (
+                      <span style={{ color: '#94a3b8', fontSize: '0.70rem', fontStyle: 'italic', display: 'block', padding: '2px 0' }}>
+                        Static HTML (Read-Only)
+                      </span>
+                    ) : isPushed ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ WP Updated</span>
                     ) : (
                       <button

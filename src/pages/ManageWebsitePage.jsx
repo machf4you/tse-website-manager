@@ -4,7 +4,7 @@ import PageAuditResultsPage from './PageAuditResultsPage'
 import InternalLinkingPage from './InternalLinkingPage'
 import GlobalSettings from './GlobalSettings'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
-import { fetchTseWordPressExportPackage, fetchMagentoExportPackage } from '../services/exporterApi'
+import { fetchTseWordPressExportPackage, fetchMagentoExportPackage, fetchStaticHtmlExportPackage } from '../services/exporterApi'
 import {
   getWpPackageApi,
   saveWpPackageApi,
@@ -100,8 +100,9 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
 
   const platformKey = String(site?.platform || '').toLowerCase()
   const isMagento = platformKey === 'magento'
-  const isWordPress = platformKey === 'wordpress' || (!isMagento && platformKey !== 'other')
-  const platformName = isMagento ? 'Magento' : (isWordPress ? 'WordPress' : 'Other')
+  const isStaticHtml = platformKey === 'static_html' || platformKey === 'static'
+  const isWordPress = !isMagento && !isStaticHtml && platformKey !== 'other'
+  const platformName = isStaticHtml ? 'Static HTML' : (isMagento ? 'Magento' : (isWordPress ? 'WordPress' : 'Other'))
 
   useEffect(() => {
     if (site?.id) {
@@ -119,8 +120,8 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
   const syncStages = [
     'Preparing synchronisation...',
     `Connecting to ${platformName}...`,
-    isMagento ? 'Calling Magento REST API...' : 'Calling TSE WordPress Exporter...',
-    'Waiting for API response...',
+    isStaticHtml ? 'Fetching sitemap.xml & discovering pages...' : (isMagento ? 'Calling Magento REST API...' : 'Calling TSE WordPress Exporter...'),
+    'Waiting for response...',
     'Receiving synchronisation package...',
     'Saving package...',
     'Synchronisation complete.',
@@ -503,21 +504,28 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     setStageIndex(0)
 
     const isMagento = site?.platform === 'magento' || site?.platform === 'Magento'
+    const isStatic = site?.platform === 'static_html' || site?.platform === 'static'
     const cfg = site?.configData || {}
 
-    // Call Exporter Service (WordPress vs Magento)
-    const exporterPromise = isMagento
-      ? fetchMagentoExportPackage({
-          websiteId: site.id,
-          site
-        })
-      : fetchTseWordPressExportPackage({
+    // Call Exporter Service (WordPress vs Magento vs Static HTML)
+    const exporterPromise = isStatic
+      ? fetchStaticHtmlExportPackage({
           websiteId: site.id,
           site,
           websiteUrl: site.url,
-          username: site.wpUser || site.connectedUser || '',
-          applicationPassword: site.wpPass || '',
         })
+      : (isMagento
+        ? fetchMagentoExportPackage({
+            websiteId: site.id,
+            site
+          })
+        : fetchTseWordPressExportPackage({
+            websiteId: site.id,
+            site,
+            websiteUrl: site.url,
+            username: site.wpUser || site.connectedUser || '',
+            applicationPassword: site.wpPass || '',
+          }))
 
     let idx = 0
     timerRef.current = setInterval(async () => {

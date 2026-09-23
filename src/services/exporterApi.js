@@ -288,3 +288,50 @@ export async function authorizeMagentoAdminTokenApi(siteId, username, password, 
     }
   }
 }
+
+/**
+ * Native Static HTML Page Discovery Service via sitemap.xml
+ * POST /api/websites/{siteId}/static-sync
+ */
+export async function fetchStaticHtmlExportPackage({ websiteId, site, websiteUrl }) {
+  const targetId = websiteId || site?.id
+  const targetUrl = websiteUrl || site?.url
+
+  if (targetId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/websites/${encodeURIComponent(targetId)}/static-sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ websiteUrl: targetUrl })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.packageData) {
+          return {
+            success: true,
+            packageData: data.packageData
+          }
+        }
+      }
+      const errData = await response.json().catch(() => ({}))
+      return {
+        success: false,
+        status: response.status,
+        message: errData.message || errData.error || `Static HTML page discovery failed (HTTP ${response.status}).`
+      }
+    } catch (err) {
+      console.warn('[StaticSync] Backend static sync failed:', err.message)
+      return {
+        success: false,
+        message: `Failed to connect to Website Manager backend for Static HTML sync: ${err.message}`
+      }
+    }
+  }
+
+  return { success: false, error: 'MISSING_TARGET', message: 'Target website identifier is required for Static HTML sync.' }
+}
+

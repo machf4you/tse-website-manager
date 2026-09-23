@@ -1128,6 +1128,154 @@ app.post('/api/websites/:id/package', (req, res) => {
   }
 })
 
+// Native Static HTML Page Discovery & Sync Endpoint via Sitemap.xml
+app.post('/api/websites/:id/static-sync', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { websiteUrl } = req.body || {}
+
+    // 1. Get website from DB if URL not provided
+    const site = getWebsiteByIdFromDb(id)
+    const targetUrl = (websiteUrl || site?.url || '').trim().replace(/\/+$/, '')
+    if (!targetUrl) {
+      return res.status(400).json({ error: 'MISSING_URL', message: 'Website URL is required for static HTML discovery.' })
+    }
+
+    console.log(`[StaticSync] Discovering pages for ${id} (${targetUrl})...`)
+
+    // 2. Fetch sitemap.xml
+    const sitemapUrls = [
+      `${targetUrl}/sitemap.xml`,
+      `${targetUrl.replace('www.', '')}/sitemap.xml`,
+      `${targetUrl}/sitemap_index.xml`
+    ]
+
+    let sitemapText = null
+    let fetchedSitemapUrl = null
+
+    for (const smUrl of sitemapUrls) {
+      try {
+        const resp = await fetch(smUrl, {
+          headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Static HTML Discovery)' },
+          signal: AbortSignal.timeout(10000)
+        })
+        if (resp.ok) {
+          const txt = await resp.text()
+          if (txt && (txt.includes('<urlset') || txt.includes('<loc>'))) {
+            sitemapText = txt
+            fetchedSitemapUrl = smUrl
+            break
+          }
+        }
+      } catch (err) {
+        console.warn(`[StaticSync] Sitemap check failed for ${smUrl}:`, err.message)
+      }
+    }
+
+    const discoveredUrls = []
+
+    if (sitemapText) {
+      // Parse <loc> entries
+      const locMatches = sitemapText.match(/<loc>\s*([^<]+)\s*<\/loc>/gi) || []
+      for (const locTag of locMatches) {
+        const urlMatch = locTag.match(/<loc>\s*([^<]+)\s*<\/loc>/i)
+        if (urlMatch && urlMatch[1]) {
+          const rawUrl = urlMatch[1].trim()
+          if (rawUrl && !discoveredUrls.includes(rawUrl)) {
+            discoveredUrls.push(rawUrl)
+          }
+        }
+      }
+    }
+
+    if (discoveredUrls.length === 0) {
+      // Fallback: at minimum discover the root homepage
+      discoveredUrls.push(`${targetUrl}/`)
+    }
+
+    // Helper: Convert slug to clean title
+    const slugToTitle = (slug) => {
+      if (!slug || slug === '/' || slug === '') return 'Home'
+      const clean = slug.replace(/^\/+|\/+$/g, '')
+      return clean
+        .split(/[-_]/)
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
+    }
+
+    // 3. Construct standard pages array
+    const pages = discoveredUrls.map((pageUrl, idx) => {
+      let pathName = pageUrl.replace(/^https?:\/\/[^/]+/i, '')
+      if (!pathName) pathName = '/'
+      const cleanSlug = pathName.replace(/^\/+|\/+$/g, '')
+      const isHome = pathName === '/' || pathName === '' || cleanSlug === ''
+      const pageTitle = isHome ? 'Home' : slugToTitle(cleanSlug)
+
+      return {
+        id: isHome ? 'home' : (cleanSlug || `page-${idx + 1}`),
+        title: pageTitle,
+        url: pageUrl,
+        slug: cleanSlug,
+        post_type: 'page',
+        type: 'page',
+        pageType: isHome ? 'Home' : 'Page',
+        status: 'publish',
+        modified: new Date().toISOString()
+      }
+    })
+
+    const packageData = {
+      siteInfo: {
+        id: site?.id || id,
+        name: site?.name || 'Digital Spain',
+        url: targetUrl,
+        platform: 'static_html',
+        portfolio: site?.portfolio || 'TSE',
+        discoveredFrom: fetchedSitemapUrl || 'root'
+      },
+      pages,
+      total_pages: pages.length
+    }
+
+    console.log(`[StaticSync] Successfully discovered ${pages.length} pages from ${fetchedSitemapUrl || 'fallback'}`)
+
+    // 4. Save to wp_packages and update website record in SQLite
+    const now = new Date().toISOString()
+    const syncTx = db.transaction(() => {
+      db.prepare(`
+        INSERT INTO wp_packages (site_id, package_data, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(site_id) DO UPDATE SET
+          package_data = excluded.package_data,
+          updated_at = excluded.updated_at
+      `).run(id, JSON.stringify(packageData), now)
+
+      db.prepare(`
+        UPDATE websites
+        SET sync_status = 'Synced',
+            platform = 'static_html',
+            total_pages = ?,
+            last_sync_timestamp = ?,
+            updated_at = ?
+        WHERE id = ?
+      `).run(pages.length, now, now, id)
+    })
+
+    syncTx()
+
+    res.json({
+      success: true,
+      siteId: id,
+      discoveredCount: pages.length,
+      packageData
+    })
+  } catch (err) {
+    console.error('[StaticSync] Discovery error:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // Server-side Magento REST Token generation endpoint
 app.post('/api/websites/:id/magento-token', async (req, res) => {
   try {

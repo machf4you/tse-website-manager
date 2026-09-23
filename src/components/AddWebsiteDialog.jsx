@@ -6,9 +6,10 @@ import { buildWordPressSite } from '../data/mockData'
 import './AddWebsiteDialog.css'
 
 const PLATFORMS = [
-  { id: 'wordpress', label: 'WordPress' },
-  { id: 'magento',   label: 'Magento'   },
-  { id: 'other',     label: 'Other'     },
+  { id: 'wordpress',   label: 'WordPress'   },
+  { id: 'magento',     label: 'Magento'     },
+  { id: 'static_html', label: 'Static HTML' },
+  { id: 'other',       label: 'Other'       },
 ]
 
 function normalizeDomain(val) {
@@ -246,8 +247,15 @@ export default function AddWebsiteDialog({
       const resolvedServerType = editingSite.serverType || editingSite.server_type || cfg.serverType || 'Unknown'
       const rawPlatform = String(editingSite.platform || editingSite.platform_type || '').toLowerCase()
       const isMg = rawPlatform === 'magento' || Boolean(cfg.mgBackendUrl) || Boolean(editingSite.mgBackendUrl)
+      const isStatic = rawPlatform === 'static_html' || rawPlatform === 'static'
 
-      if (isMg) {
+      if (isStatic) {
+        setPlatform('static_html')
+        setWpName(editingSite.name || '')
+        setWpUrl(editingSite.url || '')
+        setPortfolio(editingSite.portfolio || 'tse')
+        setServerType(resolvedServerType)
+      } else if (isMg) {
         setPlatform('magento')
         setMgName(editingSite.name || '')
         setMgUrl(editingSite.url || '')
@@ -382,6 +390,7 @@ export default function AddWebsiteDialog({
     const rawPlat = (domain.platform || '').toLowerCase()
     let mappedPlatform = 'wordpress'
     if (rawPlat === 'magento') mappedPlatform = 'magento'
+    else if (rawPlat === 'static_html' || rawPlat === 'static') mappedPlatform = 'static_html'
     else if (rawPlat === 'other') mappedPlatform = 'other'
     setPlatform(mappedPlatform)
 
@@ -396,7 +405,7 @@ export default function AddWebsiteDialog({
     setPortfolio(mappedPort)
     setMgPortfolio(mappedPort)
 
-    // Populate WordPress
+    // Populate WordPress / Static HTML
     setWpName(cleanName)
     setWpUrl(cleanUrl)
 
@@ -457,6 +466,65 @@ export default function AddWebsiteDialog({
     }
 
     const domainId = editingSite ? (editingSite.domain_id || editingSite.domainId || null) : selectedDomain?.id
+
+    if (platform === 'static_html') {
+      const cleanName = wpName.trim() || selectedDomain?.display_name || selectedDomain?.canonical_domain || editingSite?.name || 'Website'
+      const cleanUrl = wpUrl.trim() || selectedDomain?.primary_url || ('https://' + selectedDomain?.canonical_domain) || editingSite?.url || ''
+
+      if (!cleanName) {
+        setErrorMsg('Please enter a Website Name.')
+        return
+      }
+      if (!cleanUrl) {
+        setErrorMsg('Please enter a Website URL.')
+        return
+      }
+
+      const targetId = editingSite?.id || String(Date.now())
+      const staticTile = {
+        ...(editingSite || {}),
+        id: targetId,
+        domain_id: domainId,
+        domainId: domainId,
+        name: cleanName,
+        url: cleanUrl,
+        platform: 'static_html',
+        portfolio: portfolio || editingSite?.portfolio || 'tse',
+        serverType: serverType || editingSite?.serverType || 'Nginx',
+        lifecycleStage: 3,
+        topIndicator: 'connected',
+        isSynchronised: Boolean(editingSite?.isSynchronised),
+        lastSyncTimestamp: editingSite?.lastSyncTimestamp || null,
+        taskCount: 0,
+        configData: {
+          ...(editingSite?.configData || {}),
+          domain_id: domainId,
+          domainId: domainId,
+          platform: 'static_html',
+          serverType: serverType || editingSite?.serverType || 'Nginx',
+        },
+        status: {
+          connection: { label: 'Connected', value: 'Live & Verified', variant: 'green' },
+          platformApi: { label: 'Static HTML', value: 'Live & Verified', variant: 'green', icon: 'lock' },
+          configured: { label: 'Configured', value: 'Not Configured', variant: 'grey' },
+          audited: { label: 'Audited', value: 'Not Audited', variant: 'grey' },
+          tasksOutstanding: { label: 'Tasks Outstanding', value: '0 Outstanding', variant: 'green' },
+        }
+      }
+
+      await saveWebsiteApi(staticTile)
+
+      if (editingSite && onUpdateWebsite) {
+        onUpdateWebsite(staticTile)
+      } else if (onAddWebsite) {
+        onAddWebsite(staticTile)
+      }
+
+      setIsConnecting(false)
+      resetForm()
+      onClose()
+      return
+    }
 
     if (platform === 'magento') {
       if (!mgName.trim()) {
@@ -762,9 +830,11 @@ export default function AddWebsiteDialog({
   }
 
   const canConnect = (!editingSite && !selectedDomain) ? false : (
-    platform === 'magento'
-      ? Boolean(mgName.trim() && mgUrl.trim() && mgBackend.trim() && mgApi.trim() && mgUser.trim() && mgPass.trim())
-      : (platform === 'wordpress' ? Boolean(wpName.trim() && wpUrl.trim() && wpUser.trim() && wpPass.trim()) : false)
+    platform === 'static_html'
+      ? Boolean(wpName.trim() && wpUrl.trim())
+      : (platform === 'magento'
+        ? Boolean(mgName.trim() && mgUrl.trim() && mgBackend.trim() && mgApi.trim() && mgUser.trim() && mgPass.trim())
+        : (platform === 'wordpress' ? Boolean(wpName.trim() && wpUrl.trim() && wpUser.trim() && wpPass.trim()) : false))
   )
 
   return (
@@ -894,7 +964,7 @@ export default function AddWebsiteDialog({
                         </button>
                       </div>
                       <div className="aw-selected-meta">
-                        <span className="aw-meta-item"><strong>Platform:</strong> {platform === 'magento' ? 'Magento' : 'WordPress'}</span>
+                        <span className="aw-meta-item"><strong>Platform:</strong> {platform === 'static_html' ? 'Static HTML' : (platform === 'magento' ? 'Magento' : 'WordPress')}</span>
                         <span className="aw-meta-item"><strong>Portfolio:</strong> {portfolio.toUpperCase()}</span>
                         <span className="aw-meta-item"><strong>Domain ID:</strong> <code>{selectedDomain.id.substring(0, 8)}…</code></span>
                       </div>
@@ -906,7 +976,7 @@ export default function AddWebsiteDialog({
               {/* Website Info fields (Left Column) */}
               {(editingSite || selectedDomain) && (
                 <>
-                  {platform === 'wordpress' && (
+                  {(platform === 'wordpress' || platform === 'static_html') && (
                     <>
                       <Field
                         label="Website Name"
@@ -967,9 +1037,29 @@ export default function AddWebsiteDialog({
                 <>
                   {/* Permanent / Read-only platform indicator */}
                   <div className="aw-platform-readonly-badge">
-                    <span className="aw-section-subtitle">Platform: <strong>{platform === 'magento' ? 'Magento' : (platform === 'other' ? 'Other' : 'WordPress')}</strong></span>
+                    <span className="aw-section-subtitle">Platform: <strong>{platform === 'static_html' ? 'Static HTML' : (platform === 'magento' ? 'Magento' : (platform === 'other' ? 'Other' : 'WordPress'))}</strong></span>
                     <span className="aw-locked-badge">Locked to Site Registry</span>
                   </div>
+
+                  {platform === 'static_html' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                      <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '8px', padding: '1rem' }}>
+                        <div style={{ color: '#38bdf8', fontWeight: '600', marginBottom: '0.25rem', fontSize: '0.85rem' }}>✓ Zero Credentials Required</div>
+                        <div style={{ color: '#94a3b8', fontSize: '0.78rem', lineHeight: '1.4' }}>
+                          This is a verified Static HTML website. Website Manager discovers pages directly via <code>sitemap.xml</code> and audits live rendered HTML without requiring WordPress or Magento credentials.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="aw-btn-connect-inline"
+                        id="btn-connect-website-inline-static"
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                      >
+                        {isConnecting ? (editingSite ? 'UPDATING…' : 'CONNECTING…') : (editingSite ? 'UPDATE CONNECTION' : 'CONNECT WEBSITE')}
+                      </button>
+                    </div>
+                  )}
 
                   {platform === 'wordpress' && (
                     <>

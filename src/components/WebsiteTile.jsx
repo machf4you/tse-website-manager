@@ -161,10 +161,13 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
 
   const rawPlatform = String(site.platform || site.platform_type || '').toLowerCase()
   const isMg = rawPlatform === 'magento' || Boolean(site.configData?.mgBackendUrl) || Boolean(site.mgBackendUrl)
-  const apiLabel = isMg ? 'Magento API' : 'WordPress API'
+  const isStatic = rawPlatform === 'static_html' || rawPlatform === 'static'
+  const apiLabel = isStatic ? 'Platform' : (isMg ? 'Magento API' : 'WordPress API')
+  const apiValue = isStatic ? 'Static HTML' : (isConnected ? 'Securely Connected' : 'Not Connected')
+  const apiVariant = isStatic ? 'blue' : (isConnected ? 'green' : 'grey')
 
   const liveStatusRows = [
-    { label: apiLabel,           value: isConnected ? 'Securely Connected' : 'Not Connected', variant: isConnected ? 'green' : 'grey', icon: isConnected ? 'lock' : null },
+    { label: apiLabel,           value: apiValue, variant: apiVariant, icon: isConnected && !isStatic ? 'lock' : null },
     { label: 'Portfolio',        value: portfolioValue, variant: portfolioVariant },
     { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
     { label: 'Configured',       value: configuredText, variant: configuredVariant },
