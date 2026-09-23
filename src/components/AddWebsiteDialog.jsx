@@ -19,6 +19,8 @@ function normalizeDomain(val) {
     .replace(/^https?:\/\//, '')
     .replace(/^www\./, '')
     .replace(/\/.*$/, '')
+    .replace(/:\d+$/, '')
+    .trim()
 }
 
 /* ── Field helpers ── */
@@ -288,11 +290,22 @@ export default function AddWebsiteDialog({
   // Compute available, unconnected active Site Registry domains
   const availableRegistryDomains = useMemo(() => {
     const allConnected = activeConnectedSites.length > 0 ? activeConnectedSites : connectedSites
-    const connectedDomainIds = new Set(allConnected.map(s => s.domain_id || s.domainId).filter(Boolean))
-    const unlinkedConnectedCanonicals = new Set(
+    
+    // 1. Primary identifier check: domain_id / UUID of connected sites
+    const connectedDomainIds = new Set(
       allConnected
-        .filter(s => !s.domain_id && !s.domainId)
-        .map(s => normalizeDomain(s.url) || normalizeDomain(s.name))
+        .map(s => s.domain_id || s.domainId)
+        .filter(Boolean)
+    )
+
+    // 2. Mandatory secondary safeguard: Canonical domains of ALL connected sites (regardless of domain_id)
+    const connectedCanonicals = new Set(
+      allConnected
+        .flatMap(s => [
+          normalizeDomain(s.url),
+          normalizeDomain(s.name),
+          s.configData?.url ? normalizeDomain(s.configData.url) : null
+        ])
         .filter(Boolean)
     )
 
@@ -302,12 +315,12 @@ export default function AddWebsiteDialog({
       if (!d || !d.id) continue
       if (d.status && String(d.status).toLowerCase() !== 'active') continue
 
-      // 1. Primary identifier check: domain_id
+      // 1. Primary identifier check: domain_id / UUID match
       if (connectedDomainIds.has(d.id)) continue
 
-      // 2. Secondary safeguard: if a connected site tile does not have domain_id set, match by canonical domain
-      const dCanonical = normalizeDomain(d.canonical_domain)
-      if (dCanonical && unlinkedConnectedCanonicals.has(dCanonical)) continue
+      // 2. Mandatory secondary safeguard: Canonical domain match on ALL connected sites
+      const dCanonical = normalizeDomain(d.canonical_domain || d.primary_url)
+      if (dCanonical && connectedCanonicals.has(dCanonical)) continue
 
       available.push(d)
     }
