@@ -1328,23 +1328,24 @@ app.post('/api/websites/:id/static-sync', async (req, res) => {
       let metaDescription = ''
       let h1 = ''
 
+      let pageHtml = ''
       try {
         const resp = await fetch(pageUrl, {
           headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Static HTML Discovery)' },
           signal: AbortSignal.timeout(6000)
         })
         if (resp.ok) {
-          const html = await resp.text()
-          const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+          pageHtml = await resp.text()
+          const titleMatch = pageHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
           if (titleMatch && titleMatch[1]) {
             metaTitle = titleMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim()
           }
-          const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
-                            html.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i)
+          const descMatch = pageHtml.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
+                            pageHtml.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i)
           if (descMatch && descMatch[1]) {
             metaDescription = descMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
           }
-          const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+          const h1Match = pageHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
           if (h1Match && h1Match[1]) {
             h1 = h1Match[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
           }
@@ -1366,6 +1367,11 @@ app.post('/api/websites/:id/static-sync', async (req, res) => {
         type: 'page',
         pageType: isHome ? 'Home' : 'Page',
         status: 'publish',
+        content: {
+          rendered: pageHtml,
+          raw: pageHtml
+        },
+        html: pageHtml,
         modified: new Date().toISOString()
       }
     }))
