@@ -52,6 +52,42 @@ export async function pushPageSeoFieldsApi({ siteId, siteUrl, pageId, pageUrl, m
   }, 60000)
 }
 
+export async function getAllRegistryDomainsApi() {
+  const SUPABASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_URL)
+    ? process.env.VITE_SUPABASE_URL
+    : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL)
+        ? import.meta.env.VITE_SUPABASE_URL
+        : 'https://cbdfjdxqhqajzjblysqd.supabase.co')
+
+  const SUPABASE_KEY = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+    ? process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+    : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+        ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        : 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5')
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/domains?select=id,canonical_domain,display_name,primary_url,admin_url,platform,portfolio,status&order=canonical_domain.asc`, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data)) return data
+    }
+  } catch (err) {
+    console.warn('[WM_REGISTRY_FETCH] Direct Supabase fetch warning:', err)
+  }
+
+  try {
+    const backendData = await fetchJson(`${API_BASE_URL}/registry/domains?status=all`)
+    if (Array.isArray(backendData)) return backendData
+  } catch (e) {}
+
+  return []
+}
+
 export async function getActiveRegistryDomainsApi() {
   const SUPABASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_URL)
     ? process.env.VITE_SUPABASE_URL
@@ -88,6 +124,14 @@ export async function getActiveRegistryDomainsApi() {
   return []
 }
 
+export async function triggerRegistryReconcileApi() {
+  try {
+    return await fetchJson(`${API_BASE_URL}/registry/reconcile`)
+  } catch (e) {
+    return { success: false, error: e.message }
+  }
+}
+
 export async function getWebsitesApi() {
   try {
     const list = await fetchJson(`${API_BASE_URL}/websites`)
@@ -98,10 +142,13 @@ export async function getWebsitesApi() {
           try { cfg = JSON.parse(s.config_data) } catch (e) {}
         }
         cfg = cfg || {}
+        const regStatus = (s.registry_status || s.registryStatus || 'active').toLowerCase()
         return {
           ...s,
           domain_id: s.domain_id || s.domainId || null,
           domainId: s.domain_id || s.domainId || null,
+          registry_status: regStatus,
+          registryStatus: regStatus,
           configData: cfg,
           wpUser: s.wpUser || cfg.wpUser || s.connectedUser || cfg.connectedUser || '',
           wpPass: s.wpPass || cfg.wpPass || ''
@@ -119,6 +166,7 @@ export async function saveWebsiteApi(siteRecord) {
   if (!siteRecord || siteRecord.id === undefined) return
   const statusVal = typeof siteRecord.status === 'object' ? JSON.stringify(siteRecord.status) : siteRecord.status
   const domainId = siteRecord.domain_id || siteRecord.domainId || null
+  const regStatus = (siteRecord.registry_status || siteRecord.registryStatus || 'active').toLowerCase()
   const configData = {
     ...(siteRecord.configData || {}),
     domain_id: domainId,
@@ -133,6 +181,8 @@ export async function saveWebsiteApi(siteRecord) {
     domain_id: domainId,
     domainId: domainId,
     status: statusVal,
+    registry_status: regStatus,
+    registryStatus: regStatus,
     configData
   }
 

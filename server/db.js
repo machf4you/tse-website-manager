@@ -169,7 +169,7 @@ db.exec(`
   );
 `)
 
-// Safe idempotent migration: ensure domain_id column and index exist on websites table
+// Safe idempotent migration: ensure domain_id, total_pages, and registry_status columns exist on websites table
 try {
   const colCheck = db.pragma('table_info(websites)')
   const hasDomainId = colCheck.some(col => col.name === 'domain_id')
@@ -184,9 +184,16 @@ try {
       ALTER TABLE websites ADD COLUMN total_pages INTEGER DEFAULT 0;
     `)
   }
+  const hasRegistryStatus = colCheck.some(col => col.name === 'registry_status')
+  if (!hasRegistryStatus) {
+    db.exec(`
+      ALTER TABLE websites ADD COLUMN registry_status TEXT DEFAULT 'active';
+    `)
+  }
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_websites_domain_id ON websites(domain_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_websites_unique_domain_id ON websites(domain_id) WHERE domain_id IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_websites_registry_status ON websites(registry_status);
   `)
 } catch (e) {
   console.error('Error ensuring schema columns exist on websites table:', e)

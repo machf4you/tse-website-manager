@@ -106,7 +106,16 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
     (site.syncStatus === 'Unsynced' || site.sync_status === 'Unsynced' || (typeof site.status === 'object' ? site.status?.registryOrigin : site.status?.includes('registryOrigin')))
   )
 
-  const ind = isRegistryShell
+  const registryStatus = String(site.registry_status || site.registryStatus || 'active').toLowerCase()
+  const isInactiveSite = registryStatus !== 'active'
+  const formattedRegistryStatus = registryStatus.charAt(0).toUpperCase() + registryStatus.slice(1)
+
+  const ind = isInactiveSite
+    ? {
+        label: registryStatus === 'hosting' ? 'HOSTING' : registryStatus.toUpperCase(),
+        cls: registryStatus === 'hosting' ? 'status-hosting' : 'status-partial'
+      }
+    : isRegistryShell
     ? { label: 'SETUP REQUIRED', cls: 'status-partial' }
     : isConnected
     ? INDICATOR.connected
@@ -166,7 +175,12 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const apiValue = isStatic ? 'Static HTML' : (isConnected ? 'Securely Connected' : 'Not Connected')
   const apiVariant = isStatic ? 'blue' : (isConnected ? 'green' : 'grey')
 
+  let registryVariant = 'amber'
+  if (registryStatus === 'hosting') registryVariant = 'purple'
+  else if (registryStatus === 'archived' || registryStatus === 'inactive') registryVariant = 'grey'
+
   const liveStatusRows = [
+    ...(isInactiveSite ? [{ label: 'Registry Status', value: formattedRegistryStatus, variant: registryVariant }] : []),
     { label: apiLabel,           value: apiValue, variant: apiVariant, icon: isConnected && !isStatic ? 'lock' : null },
     { label: 'Portfolio',        value: portfolioValue, variant: portfolioVariant },
     { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
@@ -182,7 +196,19 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
           <span className="connection-dot" aria-hidden="true" />
           {ind.label}
         </span>
-        {isRegistryShell && (
+        {isInactiveSite ? (
+          <span
+            className="task-count-badge"
+            style={{
+              borderColor: registryStatus === 'hosting' ? 'rgba(168, 85, 247, 0.3)' : 'rgba(245, 158, 11, 0.3)',
+              color: registryStatus === 'hosting' ? 'rgb(192, 132, 252)' : 'rgb(251, 191, 36)',
+              backgroundColor: registryStatus === 'hosting' ? 'rgba(168, 85, 247, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+              fontSize: '0.65rem'
+            }}
+          >
+            INACTIVE | {formattedRegistryStatus.toUpperCase()}
+          </span>
+        ) : isRegistryShell ? (
           <span
             className="task-count-badge"
             style={{
@@ -194,7 +220,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
           >
             NEW FROM SITE REGISTRY
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* ── Site name ── */}

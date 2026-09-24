@@ -8,7 +8,8 @@ import {
   saveWebsitesBatchApi,
   deleteWebsiteApi,
   triggerLocalStorageMigrationApi,
-  getActiveRegistryDomainsApi
+  getActiveRegistryDomainsApi,
+  getAllRegistryDomainsApi
 } from '../services/websiteManagerApi'
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './WebsitesDashboard.css'
@@ -118,7 +119,6 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     initData()
     return () => { isMounted = false }
   }, [])
-
 
   const [managedSite, setManagedSiteState] = useState(() => {
     try {
@@ -259,31 +259,62 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     }
   }
 
-  // Fetch Site Registry domains on mount so we have authoritative portfolio assignments
+  // Fetch Site Registry domains on mount so we have authoritative portfolio & lifecycle status assignments
   const [registryMap, setRegistryMap] = useState({})
+  const [registryStatusMap, setRegistryStatusMap] = useState({})
   const [activeRegistryCount, setActiveRegistryCount] = useState(null)
 
   useEffect(() => {
     let isMounted = true
-    getActiveRegistryDomainsApi().then(domains => {
+    getAllRegistryDomainsApi().then(domains => {
       if (isMounted && Array.isArray(domains)) {
-        setActiveRegistryCount(domains.length)
-        const map = {}
+        const activeCount = domains.filter(d => (d.status || '').toLowerCase() === 'active').length
+        setActiveRegistryCount(activeCount)
+        const pMap = {}
+        const sMap = {}
         domains.forEach(d => {
-          if (d.id) map[d.id] = d.portfolio || 'Other'
-          const norm = String(d.canonical_domain || '')
+          const status = (d.status || 'active').toLowerCase()
+          if (d.id) {
+            pMap[d.id] = d.portfolio || 'Other'
+            sMap[d.id] = status
+          }
+          const norm = String(d.canonical_domain || d.primary_url || '')
             .toLowerCase()
             .trim()
             .replace(/^https?:\/\//, '')
             .replace(/^www\./, '')
             .replace(/\/.*$/, '')
-          if (norm) map[norm] = d.portfolio || 'Other'
+          if (norm) {
+            pMap[norm] = d.portfolio || 'Other'
+            sMap[norm] = status
+          }
         })
-        setRegistryMap(map)
+        setRegistryMap(pMap)
+        setRegistryStatusMap(sMap)
       }
     }).catch(() => {})
     return () => { isMounted = false }
   }, [])
+
+  const getSiteRegistryStatus = (s) => {
+    if (s.domain_id && registryStatusMap[s.domain_id]) {
+      return String(registryStatusMap[s.domain_id]).toLowerCase()
+    }
+    const norm = String(s.url || s.name || '')
+      .toLowerCase()
+      .trim()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/.*$/, '')
+    if (norm && registryStatusMap[norm]) {
+      return String(registryStatusMap[norm]).toLowerCase()
+    }
+    return String(s.registry_status || s.registryStatus || 'active').toLowerCase()
+  }
+
+  const isInactiveSite = (s) => {
+    return getSiteRegistryStatus(s) !== 'active'
+  }
 
   const getSitePortfolio = (s) => {
     if (s.domain_id && registryMap[s.domain_id]) {
@@ -305,29 +336,35 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
 
   const filterOptions = ['All', 'TSE', 'Chili', 'Other']
 
-  // Dynamically calculate portfolio counts from current connected websites
-  const allCount = sites.length
-  const tseCount = sites.filter(s => getSitePortfolio(s) === 'TSE').length
-  const chiliCount = sites.filter(s => getSitePortfolio(s) === 'Chili').length
-  const otherCount = sites.filter(s => {
+  // Separate Active and Inactive sites
+  const activeSites = sites.filter(s => !isInactiveSite(s))
+  const inactiveSites = sites.filter(s => isInactiveSite(s))
+
+  // Dynamically calculate portfolio counts strictly for ACTIVE connected websites
+  const allActiveCount = activeSites.length
+  const tseCount = activeSites.filter(s => getSitePortfolio(s) === 'TSE').length
+  const chiliCount = activeSites.filter(s => getSitePortfolio(s) === 'Chili').length
+  const otherCount = activeSites.filter(s => {
     const p = getSitePortfolio(s)
     return p !== 'TSE' && p !== 'Chili'
   }).length
+  const inactiveCount = inactiveSites.length
 
-  const filteredSites = sites
-    .filter(s => {
-      if (portfolioFilter === 'All') return true
-      const sitePort = getSitePortfolio(s)
-      if (portfolioFilter === 'Other') {
-        return sitePort !== 'TSE' && sitePort !== 'Chili'
-      }
-      return sitePort === portfolioFilter
-    })
-    .sort((a, b) => {
-      const nameA = String(a.name || a.title || a.siteName || '').trim()
-      const nameB = String(b.name || b.title || b.siteName || '').trim()
-      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
-    })
+  const filteredSites = (portfolioFilter === 'Inactive'
+    ? inactiveSites
+    : activeSites.filter(s => {
+        if (portfolioFilter === 'All') return true
+        const sitePort = getSitePortfolio(s)
+        if (portfolioFilter === 'Other') {
+          return sitePort !== 'TSE' && sitePort !== 'Chili'
+        }
+        return sitePort === portfolioFilter
+      })
+  ).sort((a, b) => {
+    const nameA = String(a.name || a.title || a.siteName || '').trim()
+    const nameB = String(b.name || b.title || b.siteName || '').trim()
+    return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
+  })
 
   const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)
   const isW1 = currentPath === '/w1-connected-sites' || (!managedSite && !isSubPage)
@@ -378,7 +415,7 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         <h1 className="w1-title">Connected Websites</h1>
       </div>
 
-      {/* ── ROW 2: W1 Badge + Site Registry Active + Portfolio Filters (Left) | Add Website Button (Right) ── */}
+      {/* ── ROW 2: W1 Badge + Site Registry Active + Portfolio Filters & Inactive Tab (Left) | Add Website Button (Right) ── */}
       <div className="w1-row-2">
         <div className="w1-row-2-left">
           <span className="w1-pill-badge">W1 | CONNECTED WEBSITES</span>
@@ -389,7 +426,7 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
             <span className="w1-filter-label">Portfolio:</span>
             {filterOptions.map(opt => {
               let count = 0
-              if (opt === 'All') count = allCount
+              if (opt === 'All') count = allActiveCount
               else if (opt === 'TSE') count = tseCount
               else if (opt === 'Chili') count = chiliCount
               else if (opt === 'Other') count = otherCount
@@ -407,6 +444,17 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
                 </button>
               )
             })}
+
+            <span style={{ display: 'inline-block', width: '1px', height: '14px', background: 'rgba(255,255,255,0.15)', margin: '0 4px', verticalAlign: 'middle' }} />
+
+            <button
+              type="button"
+              className={`w1-filter-btn ${portfolioFilter === 'Inactive' ? 'w1-filter-btn-active' : ''}`}
+              style={portfolioFilter === 'Inactive' ? { borderColor: 'rgba(245, 158, 11, 0.5)', color: '#fbbf24' } : {}}
+              onClick={() => setPortfolioFilter('Inactive')}
+            >
+              Inactive [{inactiveCount}]
+            </button>
           </div>
         </div>
 
@@ -435,11 +483,26 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         {filteredSites.map(site => (
           <WebsiteTile
             key={site.id}
-            site={{ ...site, portfolio: getSitePortfolio(site) }}
+            site={{
+              ...site,
+              portfolio: getSitePortfolio(site),
+              registry_status: getSiteRegistryStatus(site),
+              registryStatus: getSiteRegistryStatus(site)
+            }}
             onManage={handleManageSite}
             onEdit={setEditingSite}
           />
         ))}
+
+        {filteredSites.length === 0 && (
+          <div style={{ padding: '36px', textAlign: 'center', color: '#94a3b8', gridColumn: '1 / -1', background: 'rgba(17, 24, 39, 0.4)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)' }}>
+            <p style={{ margin: 0, fontSize: '0.95rem' }}>
+              {portfolioFilter === 'Inactive'
+                ? 'No inactive websites currently connected.'
+                : `No active websites found in ${portfolioFilter === 'All' ? 'the connected websites list' : `${portfolioFilter} portfolio`}.`}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Add / Edit Dialog */}

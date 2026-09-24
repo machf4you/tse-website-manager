@@ -536,9 +536,13 @@ app.get('/api/websites', (req, res) => {
         } catch (_e) {}
       }
 
+      const regStatus = (r.registry_status || 'active').toLowerCase()
+
       return {
         ...r,
         domainId: r.domain_id || null,
+        registryStatus: regStatus,
+        registry_status: regStatus,
         syncStatus: r.sync_status || r.syncStatus || 'Synced',
         lastSyncTimestamp: r.last_sync_timestamp || r.lastSyncTimestamp || null,
         totalPages: pageCount,
@@ -567,9 +571,9 @@ app.post('/api/websites', (req, res) => {
     const now = new Date().toISOString()
     const stmt = db.prepare(`
       INSERT INTO websites (
-        id, domain_id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, total_pages, config_data, created_at, updated_at
+        id, domain_id, name, url, platform, portfolio, status, registry_status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, total_pages, config_data, created_at, updated_at
       ) VALUES (
-        @id, @domain_id, @name, @url, @platform, @portfolio, @status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @total_pages, @config_data, @created_at, @updated_at
+        @id, @domain_id, @name, @url, @platform, @portfolio, @status, @registry_status, @is_audited, @last_audit_timestamp, @sync_status, @last_sync_timestamp, @total_pages, @config_data, @created_at, @updated_at
       )
       ON CONFLICT(id) DO UPDATE SET
         domain_id = COALESCE(excluded.domain_id, websites.domain_id),
@@ -578,6 +582,7 @@ app.post('/api/websites', (req, res) => {
         platform = excluded.platform,
         portfolio = excluded.portfolio,
         status = excluded.status,
+        registry_status = COALESCE(excluded.registry_status, websites.registry_status),
         is_audited = excluded.is_audited,
         last_audit_timestamp = excluded.last_audit_timestamp,
         sync_status = excluded.sync_status,
@@ -595,6 +600,7 @@ app.post('/api/websites', (req, res) => {
 
     const statusVal = typeof site.status === 'object' ? JSON.stringify(site.status) : (site.status || 'Active')
     const totalPagesVal = Number(site.totalPages || site.total_pages || 0)
+    const registryStatusVal = (site.registry_status || site.registryStatus || 'active').toLowerCase()
 
     stmt.run({
       id: String(site.id),
@@ -604,6 +610,7 @@ app.post('/api/websites', (req, res) => {
       platform: site.platform || 'WordPress',
       portfolio: site.portfolio || 'Primary Portfolio',
       status: statusVal,
+      registry_status: registryStatusVal,
       is_audited: site.isAudited ? 1 : 0,
       last_audit_timestamp: site.lastAuditTimestamp || null,
       sync_status: site.syncStatus || 'Synced',
@@ -701,6 +708,89 @@ app.post('/api/websites/:id/settings', (req, res) => {
   }
 })
 
+// Reconcile connected SQLite websites against Site Registry
+export async function reconcileWebsitesWithRegistry() {
+  try {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://cbdfjdxqhqajzjblysqd.supabase.co'
+    const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5'
+
+    const fetchRes = await fetch(`${supabaseUrl}/rest/v1/domains?select=id,canonical_domain,display_name,primary_url,admin_url,platform,portfolio,status&order=canonical_domain.asc`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    })
+    if (!fetchRes.ok) return { success: false, error: `Supabase status ${fetchRes.status}` }
+    const domains = await fetchRes.json()
+    if (!Array.isArray(domains)) return { success: false, error: 'Invalid domains response' }
+
+    const now = new Date().toISOString()
+    const updateStmt = db.prepare(`
+      UPDATE websites SET
+        registry_status = @registry_status,
+        domain_id = COALESCE(websites.domain_id, @domain_id),
+        updated_at = @now
+      WHERE id = @siteId
+    `)
+
+    let matchedCount = 0
+
+    const normalizeDomain = (str) => {
+      if (!str || typeof str !== 'string') return ''
+      return str.trim().toLowerCase()
+        .replace(/^https?:\/\//i, '')
+        .replace(/\/.*$/, '')
+        .replace(/^www\./i, '')
+        .split(':')[0]
+    }
+
+    const localWebsites = db.prepare(`SELECT id, domain_id, url, name, config_data FROM websites`).all()
+
+    for (const site of localWebsites) {
+      let matchedDomain = null
+      if (site.domain_id) {
+        matchedDomain = domains.find(d => String(d.id) === String(site.domain_id))
+      }
+
+      if (!matchedDomain) {
+        let cfgUrl = null
+        if (site.config_data) {
+          try {
+            const parsed = JSON.parse(site.config_data)
+            cfgUrl = parsed?.url
+          } catch (e) {}
+        }
+        const siteCanonicals = [
+          normalizeDomain(site.url),
+          normalizeDomain(site.name),
+          normalizeDomain(cfgUrl)
+        ].filter(Boolean)
+
+        matchedDomain = domains.find(d => {
+          const dCanonical = normalizeDomain(d.canonical_domain || d.primary_url)
+          return dCanonical && siteCanonicals.includes(dCanonical)
+        })
+      }
+
+      if (matchedDomain) {
+        const regStatus = (matchedDomain.status || 'active').toLowerCase()
+        updateStmt.run({
+          registry_status: regStatus,
+          domain_id: matchedDomain.id ? String(matchedDomain.id) : site.domain_id,
+          now,
+          siteId: site.id
+        })
+        matchedCount++
+      }
+    }
+
+    return { success: true, count: matchedCount, totalDomains: domains.length }
+  } catch (err) {
+    console.error('[RECONCILE_REGISTRY_ERROR]', err)
+    return { success: false, error: err.message }
+  }
+}
+
 // Active Domains from Site Registry
 app.get('/api/registry/domains', async (req, res) => {
   try {
@@ -708,7 +798,11 @@ app.get('/api/registry/domains', async (req, res) => {
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5'
     const statusFilter = req.query.status || 'active'
 
-    const fetchRes = await fetch(`${supabaseUrl}/rest/v1/domains?status=eq.${encodeURIComponent(statusFilter)}&select=id,canonical_domain,display_name,primary_url,admin_url,platform,portfolio,status&order=canonical_domain.asc`, {
+    const url = statusFilter === 'all'
+      ? `${supabaseUrl}/rest/v1/domains?select=id,canonical_domain,display_name,primary_url,admin_url,platform,portfolio,status&order=canonical_domain.asc`
+      : `${supabaseUrl}/rest/v1/domains?status=eq.${encodeURIComponent(statusFilter)}&select=id,canonical_domain,display_name,primary_url,admin_url,platform,portfolio,status&order=canonical_domain.asc`
+
+    const fetchRes = await fetch(url, {
       headers: {
         'apikey': supabaseKey,
         'Authorization': `Bearer ${supabaseKey}`
@@ -718,7 +812,21 @@ app.get('/api/registry/domains', async (req, res) => {
       return res.status(fetchRes.status).json({ success: false, error: `Supabase returned ${fetchRes.status}` })
     }
     const domains = await fetchRes.json()
+
+    // Trigger non-blocking reconcile in background
+    reconcileWebsitesWithRegistry().catch(() => {})
+
     res.json(domains)
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// Trigger explicit reconciliation
+app.get('/api/registry/reconcile', async (req, res) => {
+  try {
+    const result = await reconcileWebsitesWithRegistry()
+    res.json(result)
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
   }
@@ -795,11 +903,13 @@ app.post('/api/bridge/sync-master-domains', (req, res) => {
           UPDATE websites SET
             portfolio = COALESCE(@portfolio, portfolio),
             platform = COALESCE(@platform, platform),
+            registry_status = @status,
             updated_at = @now
           WHERE id = @siteId
         `).run({
           portfolio,
           platform,
+          status,
           now,
           siteId: existingByDomainId.id
         })
@@ -821,8 +931,9 @@ app.post('/api/bridge/sync-master-domains', (req, res) => {
         `).all(`%${canonical}%`, `%${canonical}%`)
 
         if (legacyMatches.length === 1) {
-          db.prepare(`UPDATE websites SET domain_id = ?, updated_at = ? WHERE id = ?`).run(
+          db.prepare(`UPDATE websites SET domain_id = ?, registry_status = ?, updated_at = ? WHERE id = ?`).run(
             masterId,
+            status,
             now,
             legacyMatches[0].id
           )
@@ -848,9 +959,9 @@ app.post('/api/bridge/sync-master-domains', (req, res) => {
 
       db.prepare(`
         INSERT INTO websites (
-          id, domain_id, name, url, platform, portfolio, status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
+          id, domain_id, name, url, platform, portfolio, status, registry_status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
         ) VALUES (
-          @id, @domain_id, @name, @url, @platform, @portfolio, @status, 0, NULL, 'Unsynced', NULL, NULL, @created_at, @updated_at
+          @id, @domain_id, @name, @url, @platform, @portfolio, @status, @registry_status, 0, NULL, 'Unsynced', NULL, NULL, @created_at, @updated_at
         )
       `).run({
         id: newInternalId,
@@ -860,6 +971,7 @@ app.post('/api/bridge/sync-master-domains', (req, res) => {
         platform,
         portfolio,
         status: shellStatusJson,
+        registry_status: status,
         created_at: now,
         updated_at: now
       })
@@ -4381,4 +4493,10 @@ if (fs.existsSync(distPath)) {
 
 app.listen(PORT, () => {
   console.log(`[Website Manager SQLite API] Running on http://localhost:${PORT}`)
+  // Run non-blocking background reconciliation against Site Registry on startup
+  reconcileWebsitesWithRegistry().then(res => {
+    console.log('[REGISTRY_RECONCILE] Startup sync completed:', res)
+  }).catch(err => {
+    console.warn('[REGISTRY_RECONCILE] Startup sync warning:', err)
+  })
 })
