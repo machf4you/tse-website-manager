@@ -1056,7 +1056,14 @@ export default function PageManagementPage({
       ...existingConfig,
       pageId: page.id,
       url: urlKey || pageKey,
+      title: existingConfig.title || page.title || '',
+      proposedTitle: existingConfig.proposedTitle || page.proposedTitle || page.title || '',
+      type: existingConfig.type || page.type || page.seoPageType,
+      seoPageType: existingConfig.seoPageType || page.seoPageType || page.type,
+      autoType: existingConfig.autoType || page.autoType || page.type,
+      priority: existingConfig.priority !== undefined ? existingConfig.priority : (page.priority !== undefined ? page.priority : 0),
       isStarred: newStarred,
+      isManualOverride: Boolean(existingConfig.isManualOverride),
     }
     handleSavePageConfig(updatedConfig)
   }
@@ -1160,7 +1167,7 @@ export default function PageManagementPage({
     const overrideType = override?.type || override?.seoPageType ? normalizeType(override?.type || override?.seoPageType) : ''
     const isTypeActuallyOverridden = Boolean(override && override.isManualOverride === true && overrideType && overrideType !== autoType)
     const isManualOverride = isTypeActuallyOverridden
-    const effectiveType = isManualOverride ? overrideType : (overrideType || autoType)
+    const effectiveType = isManualOverride ? overrideType : autoType
 
     const getPriorityForType = (t, fallback) => {
       if (t === 'Hub') return 1
@@ -2700,7 +2707,7 @@ export default function PageManagementPage({
                         onClick={() => handleSyncPageFromLiveSite(page)}
                         disabled={syncingPageKey === (page.id || page.url)}
                         id={`btn-sync-page-${page.id || idx}`}
-                        title="Sync latest live metadata & content directly from WordPress"
+                        title="Sync latest live metadata & content directly from live site"
                         style={{
                           backgroundColor: syncingPageKey === (page.id || page.url) ? '#0284c7' : '#0369a1',
                           color: '#ffffff',
@@ -2712,7 +2719,9 @@ export default function PageManagementPage({
                           cursor: syncingPageKey === (page.id || page.url) ? 'not-allowed' : 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px'
+                          gap: '4px',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0
                         }}
                       >
                         {syncingPageKey === (page.id || page.url) ? '⏳ Syncing...' : 'Sync from Live'}

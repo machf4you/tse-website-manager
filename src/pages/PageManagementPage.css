@@ -369,6 +369,16 @@
   text-align: center;
 }
 
+.col-actions {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.btn-sync-page-live {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .w3-volume-cell {
   display: inline-flex;
   align-items: center;

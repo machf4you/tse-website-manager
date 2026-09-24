@@ -1204,17 +1204,49 @@ app.post('/api/websites/:id/static-sync', async (req, res) => {
         .join(' ')
     }
 
-    // 3. Construct standard pages array
-    const pages = discoveredUrls.map((pageUrl, idx) => {
+    // 3. Construct standard pages array with live HTML metadata extraction
+    const pages = await Promise.all(discoveredUrls.map(async (pageUrl, idx) => {
       let pathName = pageUrl.replace(/^https?:\/\/[^/]+/i, '')
       if (!pathName) pathName = '/'
       const cleanSlug = pathName.replace(/^\/+|\/+$/g, '')
       const isHome = pathName === '/' || pathName === '' || cleanSlug === ''
       const pageTitle = isHome ? 'Home' : slugToTitle(cleanSlug)
+      let metaTitle = ''
+      let metaDescription = ''
+      let h1 = ''
+
+      try {
+        const resp = await fetch(pageUrl, {
+          headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Static HTML Discovery)' },
+          signal: AbortSignal.timeout(6000)
+        })
+        if (resp.ok) {
+          const html = await resp.text()
+          const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+          if (titleMatch && titleMatch[1]) {
+            metaTitle = titleMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim()
+          }
+          const descMatch = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
+                            html.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i)
+          if (descMatch && descMatch[1]) {
+            metaDescription = descMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
+          }
+          const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+          if (h1Match && h1Match[1]) {
+            h1 = h1Match[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
+          }
+        }
+      } catch (err) {
+        console.warn(`[StaticSync] Metadata fetch failed for ${pageUrl}:`, err.message)
+      }
 
       return {
         id: isHome ? 'home' : (cleanSlug || `page-${idx + 1}`),
         title: pageTitle,
+        originalTitle: pageTitle,
+        metaTitle: metaTitle || pageTitle,
+        metaDescription: metaDescription || '',
+        h1: h1 || pageTitle,
         url: pageUrl,
         slug: cleanSlug,
         post_type: 'page',
@@ -1223,7 +1255,7 @@ app.post('/api/websites/:id/static-sync', async (req, res) => {
         status: 'publish',
         modified: new Date().toISOString()
       }
-    })
+    }))
 
     const packageData = {
       siteInfo: {
@@ -1953,25 +1985,38 @@ app.post('/api/websites/:id/page-configs/single', (req, res) => {
     }
 
     const now = new Date().toISOString()
-    const targetPhrase = (conf.target || conf.targetPhrase || '').trim()
-    const secondaryTargetPhrase = (conf.secondaryTargetPhrase || '').trim()
+    const existingRow = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ? AND page_key = ?`).get(id, pageKey)
+    let existingJson = {}
+    if (existingRow?.config_json) {
+      try { existingJson = JSON.parse(existingRow.config_json) } catch (_) {}
+    }
+
+    const targetPhrase = (conf.target !== undefined ? conf.target : (conf.targetPhrase !== undefined ? conf.targetPhrase : (existingJson.targetPhrase || existingRow?.target_phrase || ''))).trim()
+    const secondaryTargetPhrase = (conf.secondaryTargetPhrase !== undefined ? conf.secondaryTargetPhrase : (existingJson.secondaryTargetPhrase || '')).trim()
+    const resolvedType = conf.type || conf.seoPageType || existingJson.type || existingJson.seoPageType || existingRow?.seo_page_type || ''
+    const resolvedPriority = conf.priority !== undefined ? Number(conf.priority) : (existingJson.priority !== undefined ? Number(existingJson.priority) : (existingRow?.priority || 0))
+    const resolvedIsStarred = conf.isStarred !== undefined ? Boolean(conf.isStarred) : Boolean(existingJson.isStarred)
+    const resolvedIsExcluded = conf.isExcluded !== undefined ? Boolean(conf.isExcluded) : Boolean(existingJson.isExcluded || existingRow?.is_excluded)
+    const resolvedIsManualOverride = conf.isManualOverride !== undefined ? Boolean(conf.isManualOverride) : Boolean(existingJson.isManualOverride)
+
     const cleanConfig = {
+      ...existingJson,
       ...(conf && typeof conf === 'object' ? conf : {}),
-      pageId: conf.pageId || pageKey,
-      url: conf.url || pageKey,
-      proposedTitle: conf.proposedTitle || conf.title || '',
-      title: conf.title || conf.proposedTitle || '',
+      pageId: conf.pageId || existingJson.pageId || pageKey,
+      url: conf.url || existingJson.url || pageKey,
+      proposedTitle: conf.proposedTitle || conf.title || existingJson.proposedTitle || existingJson.title || existingRow?.title || '',
+      title: conf.title || conf.proposedTitle || existingJson.title || existingJson.proposedTitle || existingRow?.title || '',
       targetPhrase: targetPhrase,
       target: targetPhrase,
       secondaryTargetPhrase: secondaryTargetPhrase,
-      type: conf.type || conf.seoPageType || 'Topical',
-      seoPageType: conf.seoPageType || conf.type || 'Topical',
-      autoType: conf.autoType || conf.type || 'Topical',
-      priority: Number(conf.priority) || 0,
+      type: resolvedType,
+      seoPageType: resolvedType,
+      autoType: conf.autoType || existingJson.autoType || resolvedType,
+      priority: resolvedPriority,
       isConfigured: Boolean(targetPhrase),
-      isStarred: Boolean(conf.isStarred),
-      isExcluded: Boolean(conf.isExcluded || conf.type === 'Excluded'),
-      isManualOverride: Boolean(conf.isManualOverride),
+      isStarred: resolvedIsStarred,
+      isExcluded: resolvedIsExcluded,
+      isManualOverride: resolvedIsManualOverride,
       status: targetPhrase ? 'configured' : 'unconfigured',
       updatedAt: now
     }
