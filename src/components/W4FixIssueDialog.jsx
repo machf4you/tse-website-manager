@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { extractSafeString } from '../utils/safeString'
 import { updateWordPressSEOFields } from '../services/wordpressApi'
+import { pushToWebsiteBuilderApi } from '../services/websiteManagerApi'
 import { generateSeoRecommendations, resolveProposedField } from '../utils/seoRecommendationGenerator'
 import './W4FixIssueDialog.css'
 
@@ -141,6 +142,59 @@ export default function W4FixIssueDialog({
   }
 
   const isStaticHtml = site?.platform === 'static_html' || site?.platform === 'static'
+
+  const handlePushToWebsiteBuilder = async () => {
+    if (!isSaved || isPushing) return
+    setIsPushing(true)
+    setPushError(null)
+    try {
+      const res = await pushToWebsiteBuilderApi(site.id, {
+        slug: page?.slug || '',
+        pageUrl: page?.url || '',
+        meta_title: metaTitleVal,
+        meta_description: metaDescVal,
+        h1: h1Val,
+        targetPhrase: page?.targetPhrase || page?.target || ''
+      })
+      if (res && res.success) {
+        const vTitle = res.verifiedActuals?.metaTitle || metaTitleVal
+        const vDesc = res.verifiedActuals?.metaDescription || metaDescVal
+        const vH1 = res.verifiedActuals?.h1 || h1Val
+        setIsPushed(true)
+        setPushError(null)
+        setPushedActuals({
+          metaTitle: vTitle,
+          metaDescription: vDesc,
+          h1: vH1,
+        })
+        if (onSaveFix) {
+          await onSaveFix({
+            page,
+            seoType: 'batch_optimization',
+            fieldValues: {
+              metaTitle: metaTitleVal,
+              proposedTitle: metaTitleVal,
+              metaDescription: metaDescVal,
+              proposedMetaDescription: metaDescVal,
+              h1: h1Val,
+              proposedH1: h1Val,
+              pushedActualMetaTitle: vTitle,
+              pushedActualMetaDescription: vDesc,
+              pushedActualH1: vH1,
+            }
+          })
+        }
+      } else {
+        setPushError(res?.error || res?.message || 'Website Builder push failed.')
+        setIsPushed(false)
+      }
+    } catch (err) {
+      console.error('Failed to push to Website Builder:', err)
+      setPushError(err.message || 'Push to Website Builder failed due to network error.')
+      setIsPushed(false)
+    }
+    setIsPushing(false)
+  }
 
   const handlePushToWordPress = async () => {
     if (isStaticHtml || !isSaved || isPushing) return
@@ -433,11 +487,15 @@ export default function W4FixIssueDialog({
                   </div>
                 </div>
 
-                {/* Step 2: Push Changes to WordPress */}
+                {/* Step 2: Push Changes to WordPress / Website Builder */}
                 <div style={{ background: isSaved ? 'rgba(30,41,59,0.7)' : 'rgba(15,23,42,0.4)', opacity: isSaved ? 1 : 0.5, padding: '6px 8px', borderRadius: '6px', border: pushError ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '62px' }}>
                   <div>
-                    <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>2. Push to WP</strong>
-                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>Send fields to live WP page</span>
+                    <strong style={{ color: '#f8fafc', fontSize: '0.76rem', display: 'block', marginBottom: '2px' }}>
+                      {isStaticHtml ? '2. Push to Builder' : '2. Push to WP'}
+                    </strong>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'block', lineHeight: '1.2' }}>
+                      {isStaticHtml ? 'Send fields to Website Builder & deploy' : 'Send fields to live WP page'}
+                    </span>
                   </div>
                   {pushError && (
                     <div style={{ fontSize: '0.66rem', color: '#ef4444', marginTop: '2px', lineHeight: '1.1' }}>
@@ -446,9 +504,26 @@ export default function W4FixIssueDialog({
                   )}
                   <div style={{ marginTop: '4px' }}>
                     {isStaticHtml ? (
-                      <span style={{ color: '#94a3b8', fontSize: '0.70rem', fontStyle: 'italic', display: 'block', padding: '2px 0' }}>
-                        Static HTML (Read-Only)
-                      </span>
+                      isPushed ? (
+                        <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ Builder Updated</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className={`w3-btn-blue ${isPushing ? 'btn-loading' : (!isSaved ? 'btn-disabled' : '')}`}
+                          onClick={handlePushToWebsiteBuilder}
+                          disabled={!isSaved || isPushing}
+                          style={{ padding: '4px 8px', fontSize: '0.74rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                        >
+                          {isPushing ? (
+                            <>
+                              <span className="w4-spinner" />
+                              <span>Pushing to Builder...</span>
+                            </>
+                          ) : (
+                            'Push to Website Builder'
+                          )}
+                        </button>
+                      )
                     ) : isPushed ? (
                       <span style={{ color: '#10b981', fontWeight: '700', fontSize: '0.74rem', display: 'block' }}>✓ WP Updated</span>
                     ) : (

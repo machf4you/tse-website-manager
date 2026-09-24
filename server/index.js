@@ -1241,189 +1241,311 @@ app.post('/api/websites/:id/package', (req, res) => {
   }
 })
 
+// Core Static HTML Discovery & Sync Routine
+async function performStaticSync(id, customUrl = null) {
+  const site = getWebsiteByIdFromDb(id)
+  const targetUrl = (customUrl || site?.url || '').trim().replace(/\/+$/, '')
+  if (!targetUrl) throw new Error('Website URL is required for static HTML discovery.')
+
+  console.log(`[StaticSync] Discovering pages for ${id} (${targetUrl})...`)
+
+  const sitemapUrls = [
+    `${targetUrl}/sitemap.xml`,
+    `${targetUrl.replace('www.', '')}/sitemap.xml`,
+    `${targetUrl}/sitemap_index.xml`
+  ]
+
+  let sitemapText = null
+  let fetchedSitemapUrl = null
+
+  for (const smUrl of sitemapUrls) {
+    try {
+      const resp = await fetch(smUrl, {
+        headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Static HTML Discovery)' },
+        signal: AbortSignal.timeout(10000)
+      })
+      if (resp.ok) {
+        const txt = await resp.text()
+        if (txt && (txt.includes('<urlset') || txt.includes('<loc>'))) {
+          sitemapText = txt
+          fetchedSitemapUrl = smUrl
+          break
+        }
+      }
+    } catch (err) {
+      console.warn(`[StaticSync] Sitemap check failed for ${smUrl}:`, err.message)
+    }
+  }
+
+  const discoveredUrls = []
+  if (sitemapText) {
+    const locMatches = sitemapText.match(/<loc>\s*([^<]+)\s*<\/loc>/gi) || []
+    for (const locTag of locMatches) {
+      const urlMatch = locTag.match(/<loc>\s*([^<]+)\s*<\/loc>/i)
+      if (urlMatch && urlMatch[1]) {
+        const rawUrl = urlMatch[1].trim()
+        if (rawUrl && !discoveredUrls.includes(rawUrl)) {
+          discoveredUrls.push(rawUrl)
+        }
+      }
+    }
+  }
+
+  if (discoveredUrls.length === 0) {
+    discoveredUrls.push(`${targetUrl}/`)
+  }
+
+  const slugToTitle = (slug) => {
+    if (!slug || slug === '/' || slug === '') return 'Home'
+    const clean = slug.replace(/^\/+|\/+$/g, '')
+    return clean
+      .split(/[-_]/)
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
+  }
+
+  const pages = await Promise.all(discoveredUrls.map(async (pageUrl, idx) => {
+    let pathName = pageUrl.replace(/^https?:\/\/[^/]+/i, '')
+    if (!pathName) pathName = '/'
+    const cleanSlug = pathName.replace(/^\/+|\/+$/g, '')
+    const isHome = pathName === '/' || pathName === '' || cleanSlug === ''
+    const pageTitle = isHome ? 'Home' : slugToTitle(cleanSlug)
+    let metaTitle = ''
+    let metaDescription = ''
+    let h1 = ''
+    let pageHtml = ''
+
+    try {
+      const resp = await fetch(pageUrl, {
+        headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Static HTML Discovery)' },
+        signal: AbortSignal.timeout(6000)
+      })
+      if (resp.ok) {
+        pageHtml = await resp.text()
+        const titleMatch = pageHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+        if (titleMatch && titleMatch[1]) {
+          metaTitle = titleMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim()
+        }
+        const descMatch = pageHtml.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
+                          pageHtml.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i)
+        if (descMatch && descMatch[1]) {
+          metaDescription = descMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
+        }
+        const h1Match = pageHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+        if (h1Match && h1Match[1]) {
+          h1 = h1Match[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
+        }
+      }
+    } catch (err) {
+      console.warn(`[StaticSync] Metadata fetch failed for ${pageUrl}:`, err.message)
+    }
+
+    return {
+      id: isHome ? 'home' : (cleanSlug || `page-${idx + 1}`),
+      title: pageTitle,
+      originalTitle: pageTitle,
+      metaTitle: metaTitle || pageTitle,
+      metaDescription: metaDescription || '',
+      h1: h1 || pageTitle,
+      url: pageUrl,
+      slug: cleanSlug,
+      post_type: 'page',
+      type: 'page',
+      pageType: isHome ? 'Home' : 'Page',
+      status: 'publish',
+      content: {
+        rendered: pageHtml,
+        raw: pageHtml
+      },
+      html: pageHtml,
+      modified: new Date().toISOString()
+    }
+  }))
+
+  const packageData = {
+    siteInfo: {
+      id: site?.id || id,
+      name: site?.name || 'Website',
+      url: targetUrl,
+      platform: 'static_html',
+      portfolio: site?.portfolio || 'TSE',
+      discoveredFrom: fetchedSitemapUrl || 'root'
+    },
+    pages,
+    total_pages: pages.length
+  }
+
+  console.log(`[StaticSync] Successfully discovered ${pages.length} pages from ${fetchedSitemapUrl || 'fallback'}`)
+
+  const now = new Date().toISOString()
+  const syncTx = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO wp_packages (site_id, package_data, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(site_id) DO UPDATE SET
+        package_data = excluded.package_data,
+        updated_at = excluded.updated_at
+    `).run(id, JSON.stringify(packageData), now)
+
+    db.prepare(`
+      UPDATE websites
+      SET sync_status = 'Synced',
+          platform = 'static_html',
+          total_pages = ?,
+          last_sync_timestamp = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).run(pages.length, now, now, id)
+  })
+
+  syncTx()
+  return { siteId: id, discoveredCount: pages.length, packageData }
+}
+
 // Native Static HTML Page Discovery & Sync Endpoint via Sitemap.xml
 app.post('/api/websites/:id/static-sync', async (req, res) => {
   try {
     const { id } = req.params
     const { websiteUrl } = req.body || {}
-
-    // 1. Get website from DB if URL not provided
-    const site = getWebsiteByIdFromDb(id)
-    const targetUrl = (websiteUrl || site?.url || '').trim().replace(/\/+$/, '')
-    if (!targetUrl) {
-      return res.status(400).json({ error: 'MISSING_URL', message: 'Website URL is required for static HTML discovery.' })
-    }
-
-    console.log(`[StaticSync] Discovering pages for ${id} (${targetUrl})...`)
-
-    // 2. Fetch sitemap.xml
-    const sitemapUrls = [
-      `${targetUrl}/sitemap.xml`,
-      `${targetUrl.replace('www.', '')}/sitemap.xml`,
-      `${targetUrl}/sitemap_index.xml`
-    ]
-
-    let sitemapText = null
-    let fetchedSitemapUrl = null
-
-    for (const smUrl of sitemapUrls) {
-      try {
-        const resp = await fetch(smUrl, {
-          headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Static HTML Discovery)' },
-          signal: AbortSignal.timeout(10000)
-        })
-        if (resp.ok) {
-          const txt = await resp.text()
-          if (txt && (txt.includes('<urlset') || txt.includes('<loc>'))) {
-            sitemapText = txt
-            fetchedSitemapUrl = smUrl
-            break
-          }
-        }
-      } catch (err) {
-        console.warn(`[StaticSync] Sitemap check failed for ${smUrl}:`, err.message)
-      }
-    }
-
-    const discoveredUrls = []
-
-    if (sitemapText) {
-      // Parse <loc> entries
-      const locMatches = sitemapText.match(/<loc>\s*([^<]+)\s*<\/loc>/gi) || []
-      for (const locTag of locMatches) {
-        const urlMatch = locTag.match(/<loc>\s*([^<]+)\s*<\/loc>/i)
-        if (urlMatch && urlMatch[1]) {
-          const rawUrl = urlMatch[1].trim()
-          if (rawUrl && !discoveredUrls.includes(rawUrl)) {
-            discoveredUrls.push(rawUrl)
-          }
-        }
-      }
-    }
-
-    if (discoveredUrls.length === 0) {
-      // Fallback: at minimum discover the root homepage
-      discoveredUrls.push(`${targetUrl}/`)
-    }
-
-    // Helper: Convert slug to clean title
-    const slugToTitle = (slug) => {
-      if (!slug || slug === '/' || slug === '') return 'Home'
-      const clean = slug.replace(/^\/+|\/+$/g, '')
-      return clean
-        .split(/[-_]/)
-        .filter(Boolean)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
-    }
-
-    // 3. Construct standard pages array with live HTML metadata extraction
-    const pages = await Promise.all(discoveredUrls.map(async (pageUrl, idx) => {
-      let pathName = pageUrl.replace(/^https?:\/\/[^/]+/i, '')
-      if (!pathName) pathName = '/'
-      const cleanSlug = pathName.replace(/^\/+|\/+$/g, '')
-      const isHome = pathName === '/' || pathName === '' || cleanSlug === ''
-      const pageTitle = isHome ? 'Home' : slugToTitle(cleanSlug)
-      let metaTitle = ''
-      let metaDescription = ''
-      let h1 = ''
-
-      let pageHtml = ''
-      try {
-        const resp = await fetch(pageUrl, {
-          headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Static HTML Discovery)' },
-          signal: AbortSignal.timeout(6000)
-        })
-        if (resp.ok) {
-          pageHtml = await resp.text()
-          const titleMatch = pageHtml.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-          if (titleMatch && titleMatch[1]) {
-            metaTitle = titleMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim()
-          }
-          const descMatch = pageHtml.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) ||
-                            pageHtml.match(/<meta[^>]+content=["']([^"']*)["'][^>]+name=["']description["']/i)
-          if (descMatch && descMatch[1]) {
-            metaDescription = descMatch[1].replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
-          }
-          const h1Match = pageHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
-          if (h1Match && h1Match[1]) {
-            h1 = h1Match[1].replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&#039;/g, "'").replace(/&quot;/g, '"').trim()
-          }
-        }
-      } catch (err) {
-        console.warn(`[StaticSync] Metadata fetch failed for ${pageUrl}:`, err.message)
-      }
-
-      return {
-        id: isHome ? 'home' : (cleanSlug || `page-${idx + 1}`),
-        title: pageTitle,
-        originalTitle: pageTitle,
-        metaTitle: metaTitle || pageTitle,
-        metaDescription: metaDescription || '',
-        h1: h1 || pageTitle,
-        url: pageUrl,
-        slug: cleanSlug,
-        post_type: 'page',
-        type: 'page',
-        pageType: isHome ? 'Home' : 'Page',
-        status: 'publish',
-        content: {
-          rendered: pageHtml,
-          raw: pageHtml
-        },
-        html: pageHtml,
-        modified: new Date().toISOString()
-      }
-    }))
-
-    const packageData = {
-      siteInfo: {
-        id: site?.id || id,
-        name: site?.name || 'Digital Spain',
-        url: targetUrl,
-        platform: 'static_html',
-        portfolio: site?.portfolio || 'TSE',
-        discoveredFrom: fetchedSitemapUrl || 'root'
-      },
-      pages,
-      total_pages: pages.length
-    }
-
-    console.log(`[StaticSync] Successfully discovered ${pages.length} pages from ${fetchedSitemapUrl || 'fallback'}`)
-
-    // 4. Save to wp_packages and update website record in SQLite
-    const now = new Date().toISOString()
-    const syncTx = db.transaction(() => {
-      db.prepare(`
-        INSERT INTO wp_packages (site_id, package_data, updated_at)
-        VALUES (?, ?, ?)
-        ON CONFLICT(site_id) DO UPDATE SET
-          package_data = excluded.package_data,
-          updated_at = excluded.updated_at
-      `).run(id, JSON.stringify(packageData), now)
-
-      db.prepare(`
-        UPDATE websites
-        SET sync_status = 'Synced',
-            platform = 'static_html',
-            total_pages = ?,
-            last_sync_timestamp = ?,
-            updated_at = ?
-        WHERE id = ?
-      `).run(pages.length, now, now, id)
-    })
-
-    syncTx()
-
+    const result = await performStaticSync(id, websiteUrl)
     res.json({
       success: true,
-      siteId: id,
-      discoveredCount: pages.length,
-      packageData
+      ...result
     })
   } catch (err) {
     console.error('[StaticSync] Discovery error:', err)
     res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// POST /api/websites/:id/builder-push (Push W4 SEO metadata or W5 internal links to Website Builder & deploy)
+app.post('/api/websites/:id/builder-push', async (req, res) => {
+  try {
+    const { id } = req.params
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) return res.status(404).json({ error: 'SITE_NOT_FOUND', message: `Site ${id} not found.` })
+
+    const {
+      slug,
+      pageUrl,
+      meta_title,
+      metaTitle,
+      meta_description,
+      metaDescription,
+      h1,
+      target_keyword,
+      targetPhrase,
+      content_markdown,
+      contentMarkdown,
+      sentenceToUse,
+      originalBlock,
+      targetUrl,
+      anchorText
+    } = req.body || {}
+
+    // 1. Resolve Website Builder project identifier
+    let configObj = {}
+    try { configObj = JSON.parse(site.config_data || '{}') } catch (e) {}
+    const builderTarget = configObj.builderProjectId || site.domain_id || site.url || site.name
+
+    const builderApiBase = process.env.WEBSITE_BUILDER_API_URL || 'http://127.0.0.1:5006'
+
+    // 2. Prepare payload for Website Builder writeback
+    let markdownToSend = content_markdown !== undefined ? content_markdown : contentMarkdown
+
+    // If W5 link sentence replacement was provided, fetch current page content from builder if needed, or convert sentence
+    if (sentenceToUse && originalBlock && !markdownToSend) {
+      try {
+        const fetchProjectRes = await fetch(`${builderApiBase}/api/projects/${encodeURIComponent(builderTarget)}`)
+        if (fetchProjectRes.ok) {
+          const pData = await fetchProjectRes.json()
+          const pId = pData.project?.id || builderTarget
+          const fetchContentRes = await fetch(`${builderApiBase}/api/projects/${pId}/content`)
+          if (fetchContentRes.ok) {
+            const cData = await fetchContentRes.json()
+            const pages = cData.content || cData.contentPages || cData.pages || []
+            const cleanTargetSlug = (slug || pageUrl || '').replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '')
+            const matchedPage = pages.find(p => {
+              const pSlug = (p.slug || '').replace(/^\/+|\/+$/g, '')
+              return pSlug === cleanTargetSlug || (cleanTargetSlug === '' && (pSlug === '' || pSlug === '/'))
+            })
+            if (matchedPage && matchedPage.content_markdown) {
+              const mdSentence = sentenceToUse.replace(/<a\s+[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
+              const cleanOrig = originalBlock.replace(/<[^>]+>/g, '').trim()
+              
+              if (matchedPage.content_markdown.includes(originalBlock)) {
+                markdownToSend = matchedPage.content_markdown.replace(originalBlock, mdSentence)
+              } else if (cleanOrig && matchedPage.content_markdown.includes(cleanOrig)) {
+                markdownToSend = matchedPage.content_markdown.replace(cleanOrig, mdSentence)
+              } else {
+                const lines = matchedPage.content_markdown.split('\n')
+                const lineIdx = lines.findIndex(l => l.includes(cleanOrig.substring(0, Math.min(30, cleanOrig.length))))
+                if (lineIdx !== -1) {
+                  lines[lineIdx] = mdSentence
+                  markdownToSend = lines.join('\n')
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[BuilderPush] Could not pre-fetch builder content markdown:', err.message)
+      }
+    }
+
+    const writebackPayload = {
+      slug: slug || (pageUrl ? pageUrl.replace(/^https?:\/\/[^/]+/i, '').replace(/^\/+|\/+$/g, '') : ''),
+      pageUrl,
+      meta_title: meta_title !== undefined ? meta_title : metaTitle,
+      meta_description: meta_description !== undefined ? meta_description : metaDescription,
+      h1,
+      target_keyword: target_keyword !== undefined ? target_keyword : targetPhrase,
+      content_markdown: markdownToSend,
+      autoDeploy: true
+    }
+
+    console.log(`[BuilderPush] Sending writeback to ${builderApiBase}/api/projects/${builderTarget}/writeback:`, writebackPayload)
+
+    const wbResp = await fetch(`${builderApiBase}/api/projects/${encodeURIComponent(builderTarget)}/writeback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(writebackPayload)
+    })
+
+    if (!wbResp.ok) {
+      const errBody = await wbResp.json().catch(() => ({}))
+      return res.status(wbResp.status).json({
+        success: false,
+        error: errBody.error || `Website Builder responded with HTTP ${wbResp.status}`
+      })
+    }
+
+    const wbResult = await wbResp.json()
+
+    // 3. Immediately run static sync to refresh SQLite package with newly built live HTML
+    let syncResult = null
+    try {
+      syncResult = await performStaticSync(id)
+    } catch (syncErr) {
+      console.warn('[BuilderPush] Automatic post-deploy static sync warning:', syncErr.message)
+    }
+
+    res.json({
+      success: true,
+      verified: true,
+      siteId: id,
+      writeback: wbResult,
+      syncResult,
+      verifiedActuals: {
+        metaTitle: writebackPayload.meta_title,
+        metaDescription: writebackPayload.meta_description,
+        h1: writebackPayload.h1
+      }
+    })
+  } catch (err) {
+    console.error('[BuilderPush] Error in builder push:', err)
+    res.status(500).json({ success: false, error: err.message || 'Builder push failed' })
   }
 })
 

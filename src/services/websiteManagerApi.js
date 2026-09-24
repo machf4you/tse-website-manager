@@ -339,6 +339,13 @@ export async function saveWpPackageApi(siteId, packageData) {
   } catch (err) {}
 }
 
+export async function pushToWebsiteBuilderApi(siteId, payload) {
+  return await fetchJson(`${API_BASE_URL}/websites/${siteId}/builder-push`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
 // 3. PAGE CONFIGURATIONS
 export async function getPageConfigsApi(rawSiteId) {
   const siteId = normalizeSiteId(rawSiteId)

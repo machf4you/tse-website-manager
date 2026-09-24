@@ -28,16 +28,20 @@ export default function W5LinkImplementationModal({
   const originalContext = rec.currentSourceText || ''
   const hasInsertionPoint = Boolean(originalContext && originalContext.trim() && !rec.error)
 
+  const isStaticHtml = site?.platform === 'static_html' || site?.platform === 'static'
+
   return (
     <div className="w4-modal-overlay" style={{ background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(4px)', zIndex: 9999 }}>
       <div className="w4-modal-content" style={{ maxWidth: '680px', width: '92%', padding: '20px 24px', borderRadius: '12px', background: '#0f172a', border: '1px solid rgba(255, 255, 255, 0.12)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
           <div>
             <h3 style={{ margin: 0, color: '#f8fafc', fontSize: '1.1rem', fontWeight: '700' }}>
-              🔗 Implement Internal Link on WordPress
+              {isStaticHtml ? '🔗 Implement Internal Link in Website Builder' : '🔗 Implement Internal Link on WordPress'}
             </h3>
             <span style={{ fontSize: '0.78rem', color: '#94a3b8', display: 'block', marginTop: '2px' }}>
-              Review original vs proposed content before pushing live to WordPress.
+              {isStaticHtml
+                ? 'Review original vs proposed content before updating Website Builder & rebuilding site.'
+                : 'Review original vs proposed content before pushing live to WordPress.'}
             </span>
           </div>
           <button
@@ -168,7 +172,9 @@ export default function W5LinkImplementationModal({
               cursor: (isPushing || !editableSentence.trim() || !hasInsertionPoint) ? 'not-allowed' : 'pointer'
             }}
           >
-            {isPushing ? 'Pushing & Verifying in WordPress...' : '🚀 Confirm & Push to WordPress'}
+            {isPushing
+              ? (isStaticHtml ? 'Updating Builder & Rebuilding...' : 'Pushing & Verifying in WordPress...')
+              : (isStaticHtml ? '🚀 Apply Link & Rebuild Site' : '🚀 Confirm & Push to WordPress')}
           </button>
         </div>
       </div>

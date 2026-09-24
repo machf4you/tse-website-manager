@@ -12,7 +12,8 @@ import {
   getInternalLinkRecommendationsApi,
   saveInternalLinkRecommendationsApi,
   getPageRankingsApi,
-  getPageConfigsApi
+  getPageConfigsApi,
+  pushToWebsiteBuilderApi
 } from '../services/websiteManagerApi'
 import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import { updateWordPressPageContent } from '../services/wordpressApi'
@@ -371,10 +372,74 @@ export default function InternalLinkingPage({
     setIsPushingLink(true)
     setModalError(null)
 
+    const isStaticHtml = site?.platform === 'static_html' || site?.platform === 'static'
     const rec = activeModalRec
     const sentenceToUse = (typeof customSentence === 'string' && customSentence.trim()) ? customSentence.trim() : (rec.savedSentence || '')
     const sourcePage = activeModalSourcePage || rec.sourcePageObj
     const originalBlock = rec.currentSourceText || ''
+
+    if (isStaticHtml) {
+      try {
+        const pushRes = await pushToWebsiteBuilderApi(site.id, {
+          slug: sourcePage?.slug || getPathSlugForMatching(sourcePage?.url || rec.sourceUrl || rec.suggestedSourceUrl),
+          pageUrl: sourcePage?.url || rec.sourceUrl || rec.suggestedSourceUrl,
+          sentenceToUse,
+          originalBlock,
+          targetUrl: rec.targetUrl,
+          anchorText: rec.anchorText || rec.targetTitle
+        })
+
+        if (!pushRes || !pushRes.success) {
+          setModalError(pushRes?.error || pushRes?.message || 'Push to Website Builder failed.')
+          setIsPushingLink(false)
+          return
+        }
+
+        // Successful Website Builder update! Update status in SQLite backend
+        const recKey = rec.id || `${rec.sourceUrl || rec.suggestedSourceUrl}_${rec.targetUrl}`
+        const existingSavedRecord = savedRecs[recKey] || {}
+        const updatedRecord = {
+          ...existingSavedRecord,
+          id: rec.id,
+          sourceUrl: rec.sourceUrl || rec.suggestedSourceUrl,
+          targetUrl: rec.targetUrl,
+          anchorText: rec.anchorText || rec.targetTitle,
+          currentSourceText: originalBlock,
+          savedSentence: sentenceToUse,
+          isSaved: true,
+          isImplemented: true,
+          status: 'IMPLEMENTED',
+          implementedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+
+        const updatedMap = {
+          ...savedRecs,
+          [recKey]: updatedRecord
+        }
+
+        setSavedRecs(updatedMap)
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(updatedMap))
+        } catch (_e) {}
+
+        if (site?.id) {
+          saveInternalLinkRecommendationsApi(site.id, updatedMap)
+        }
+
+        setActiveModalRec(null)
+        setIsPushingLink(false)
+        if (typeof onSync === 'function') {
+          onSync()
+        }
+        return
+      } catch (err) {
+        console.error('Failed to push link to Website Builder:', err)
+        setModalError(err.message || 'Push to Website Builder failed due to a network error.')
+        setIsPushingLink(false)
+        return
+      }
+    }
 
     const buildRes = buildModifiedSourceContent(
       sourcePage,
@@ -580,12 +645,15 @@ export default function InternalLinkingPage({
 
     if (currentDisplaySentence) {
       const isImplemented = Boolean(savedRecord && (savedRecord.isImplemented || savedRecord.status === 'IMPLEMENTED'))
+      const isStatic = site?.platform === 'static_html' || site?.platform === 'static'
 
       return (
         <div className="il-gen-block">
           <div className="il-gen-header-row">
             <span className="il-gen-heading" style={{ color: isImplemented ? '#10b981' : (isSaved ? '#34d399' : '#60a5fa') }}>
-              {isImplemented ? '✓ WORDPRESS UPDATED (READY TO SYNC)' : (isSaved ? 'SAVED RECOMMENDATION ✓' : 'SUGGESTED REPLACEMENT:')}
+              {isImplemented
+                ? (isStatic ? '✓ WEBSITE BUILDER UPDATED (DEPLOYED)' : '✓ WORDPRESS UPDATED (READY TO SYNC)')
+                : (isSaved ? 'SAVED RECOMMENDATION ✓' : 'SUGGESTED REPLACEMENT:')}
             </span>
             {!isImplemented && (
               <button
