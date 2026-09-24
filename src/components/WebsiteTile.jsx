@@ -46,6 +46,7 @@ const INDICATOR = {
 export default function WebsiteTile({ site, onManage, onEdit }) {
   const [apiConfigs, setApiConfigs] = useState({})
   const [apiPackageData, setApiPackageData] = useState(null)
+  const [apiError, setApiError] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -63,7 +64,11 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
         } else if (pkgRes) {
           setApiPackageData(pkgRes)
         }
-      }).catch(() => {})
+      }).catch(() => {
+        if (isMounted) {
+          setApiError(true)
+        }
+      })
     }
     return () => { isMounted = false }
   }, [site?.id])
@@ -85,9 +90,10 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   }
 
   const rawPages = extractPagesFromPackage(pkg)
-  const totalPages = rawPages.length > 0 ? rawPages.length : (site.totalPages || site.total_pages || 0)
+  const storedTotalPages = Number(site.totalPages || site.total_pages || site.pageCount || site.page_count || (Array.isArray(site.pages) ? site.pages.length : 0) || 0)
+  const totalPages = rawPages.length > 0 ? rawPages.length : storedTotalPages
 
-  const hasValidPackage = totalPages > 0 || Boolean(pkg && (pkg.pages?.length > 0 || pkg.posts?.length > 0 || pkg.data?.pages?.length > 0))
+  const hasValidPackage = totalPages > 0 || storedTotalPages > 0 || Boolean(pkg && (pkg.pages?.length > 0 || pkg.posts?.length > 0 || pkg.data?.pages?.length > 0))
 
   const isConnected = Boolean(
     site.syncStatus === 'Synced' ||
@@ -118,6 +124,8 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
       }
     : isRegistryShell
     ? { label: 'SETUP REQUIRED', cls: 'status-partial' }
+    : (apiError && hasValidPackage)
+    ? { label: 'API OFFLINE (CACHED)', cls: 'status-partial' }
     : isConnected
     ? INDICATOR.connected
     : (INDICATOR[site.topIndicator] || INDICATOR.disconnected)
@@ -153,7 +161,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
         const isExcluded = Boolean(override?.isExcluded || override?.type === 'Excluded' || p.isExcluded || p.type === 'Excluded')
         return isConfigured && !isExcluded
       }).length
-    : (site.configuredCount || site.configured_count || 0)
+    : Number(site.configuredCount || site.configured_count || 0)
 
   let configuredText = totalPages > 0 ? `${configuredPagesCount} of ${totalPages}` : 'Not Configured'
   let configuredVariant = totalPages > 0 ? (configuredPagesCount === totalPages ? 'green' : (configuredPagesCount > 0 ? 'amber' : 'grey')) : 'grey'
@@ -173,8 +181,16 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const isMg = rawPlatform === 'magento' || Boolean(site.configData?.mgBackendUrl) || Boolean(site.mgBackendUrl)
   const isStatic = rawPlatform === 'static_html' || rawPlatform === 'static'
   const apiLabel = isStatic ? 'Platform' : (isMg ? 'Magento API' : 'WordPress API')
-  const apiValue = isStatic ? 'Static HTML' : (isConnected ? 'Securely Connected' : 'Not Connected')
-  const apiVariant = isStatic ? 'blue' : (isConnected ? 'green' : 'grey')
+
+  let apiValue = isStatic ? 'Static HTML' : (isConnected ? 'Securely Connected' : 'Not Connected')
+  let apiVariant = isStatic ? 'blue' : (isConnected ? 'green' : 'grey')
+  let apiIcon = isConnected && !isStatic ? 'lock' : null
+
+  if (apiError && hasValidPackage && !isStatic) {
+    apiValue = 'Offline (Showing Stored Data)'
+    apiVariant = 'amber'
+    apiIcon = null
+  }
 
   let registryVariant = 'amber'
   if (isHosting) registryVariant = 'purple'
@@ -182,7 +198,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
 
   const liveStatusRows = [
     ...(isInactiveSite ? [{ label: 'Registry Status', value: formattedRegistryStatus, variant: registryVariant }] : []),
-    { label: apiLabel,           value: apiValue, variant: apiVariant, icon: isConnected && !isStatic ? 'lock' : null },
+    { label: apiLabel,           value: apiValue, variant: apiVariant, icon: apiIcon },
     { label: 'Portfolio',        value: portfolioValue, variant: portfolioVariant },
     { label: 'Total Pages',      value: totalPages > 0 ? String(totalPages) : '0', variant: totalPages > 0 ? 'green' : 'grey' },
     { label: 'Configured',       value: configuredText, variant: configuredVariant },
