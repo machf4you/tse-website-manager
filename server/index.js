@@ -1447,9 +1447,69 @@ app.post('/api/websites/:id/builder-push', async (req, res) => {
     // 1. Resolve Website Builder project identifier
     let configObj = {}
     try { configObj = JSON.parse(site.config_data || '{}') } catch (e) {}
-    const builderTarget = configObj.builderProjectId || site.domain_id || site.url || site.name
 
     const builderApiBase = process.env.WEBSITE_BUILDER_API_URL || 'http://127.0.0.1:5006'
+
+    // Extract canonical domain from site URL or name (never use Site Registry site.domain_id UUID)
+    let canonicalDomain = ''
+    const rawDomain = site.url || site.name || ''
+    if (rawDomain.startsWith('http://') || rawDomain.startsWith('https://')) {
+      try {
+        canonicalDomain = new URL(rawDomain).hostname.toLowerCase().replace(/^www\./, '')
+      } catch (e) {
+        canonicalDomain = rawDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').trim()
+      }
+    } else {
+      canonicalDomain = rawDomain.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').trim()
+    }
+
+    let resolvedProjectId = configObj.builderProjectId || null
+
+    // If not already cached/configured, resolve from Website Builder API via canonical domain
+    if (!resolvedProjectId && canonicalDomain) {
+      try {
+        const lookupRes = await fetch(`${builderApiBase}/api/projects/${encodeURIComponent(canonicalDomain)}`)
+        if (lookupRes.ok) {
+          const lookupData = await lookupRes.json()
+          if (lookupData.project && lookupData.project.id) {
+            resolvedProjectId = lookupData.project.id
+          }
+        }
+      } catch (err) {
+        console.warn('[BuilderPush] Direct domain lookup failed:', err.message)
+      }
+
+      if (!resolvedProjectId) {
+        try {
+          const listRes = await fetch(`${builderApiBase}/api/projects`)
+          if (listRes.ok) {
+            const listData = await listRes.json()
+            const projects = listData.projects || []
+            const matched = projects.find(p => {
+              const pDomain = (p.domain || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').trim()
+              return pDomain === canonicalDomain || p.id === canonicalDomain
+            })
+            if (matched) {
+              resolvedProjectId = matched.id
+            }
+          }
+        } catch (err) {
+          console.warn('[BuilderPush] Project list lookup failed:', err.message)
+        }
+      }
+    }
+
+    const builderTarget = resolvedProjectId || canonicalDomain
+
+    // Cache resolved builderProjectId in website config_data if found and not yet saved
+    if (resolvedProjectId && configObj.builderProjectId !== resolvedProjectId) {
+      try {
+        configObj.builderProjectId = resolvedProjectId
+        db.prepare('UPDATE websites SET config_data = ? WHERE id = ?').run(JSON.stringify(configObj), id)
+      } catch (e) {
+        console.warn('[BuilderPush] Failed to cache builderProjectId in config_data:', e.message)
+      }
+    }
 
     // 2. Prepare payload for Website Builder writeback
     let markdownToSend = content_markdown !== undefined ? content_markdown : contentMarkdown
