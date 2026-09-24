@@ -773,7 +773,8 @@ export async function reconcileWebsitesWithRegistry() {
       }
 
       if (matchedDomain) {
-        const regStatus = (matchedDomain.status || 'active').toLowerCase()
+        let regStatus = (matchedDomain.status || 'active').toLowerCase()
+        if (regStatus === 'hosted') regStatus = 'hosting'
         updateStmt.run({
           registry_status: regStatus,
           domain_id: matchedDomain.id ? String(matchedDomain.id) : site.domain_id,

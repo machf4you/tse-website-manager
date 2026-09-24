@@ -108,12 +108,13 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
 
   const registryStatus = String(site.registry_status || site.registryStatus || 'active').toLowerCase()
   const isInactiveSite = registryStatus !== 'active'
-  const formattedRegistryStatus = registryStatus.charAt(0).toUpperCase() + registryStatus.slice(1)
+  const isHosting = registryStatus === 'hosting' || registryStatus === 'hosted'
+  const formattedRegistryStatus = isHosting ? 'Hosting' : (registryStatus.charAt(0).toUpperCase() + registryStatus.slice(1))
 
   const ind = isInactiveSite
     ? {
-        label: registryStatus === 'hosting' ? 'HOSTING' : registryStatus.toUpperCase(),
-        cls: registryStatus === 'hosting' ? 'status-hosting' : 'status-partial'
+        label: isHosting ? 'HOSTING' : registryStatus.toUpperCase(),
+        cls: isHosting ? 'status-hosting' : 'status-partial'
       }
     : isRegistryShell
     ? { label: 'SETUP REQUIRED', cls: 'status-partial' }
@@ -176,7 +177,7 @@ export default function WebsiteTile({ site, onManage, onEdit }) {
   const apiVariant = isStatic ? 'blue' : (isConnected ? 'green' : 'grey')
 
   let registryVariant = 'amber'
-  if (registryStatus === 'hosting') registryVariant = 'purple'
+  if (isHosting) registryVariant = 'purple'
   else if (registryStatus === 'archived' || registryStatus === 'inactive') registryVariant = 'grey'
 
   const liveStatusRows = [
