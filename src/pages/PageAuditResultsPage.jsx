@@ -261,9 +261,9 @@ export default function PageAuditResultsPage({
     siteName: site?.name || '',
   })
 
-  const rawSavedTitle = overrideObj.proposedTitle || overrideObj.metaTitle || rawCurrentPage.proposedTitle || rawCurrentPage.metaTitle
-  const rawSavedDesc = overrideObj.proposedMetaDescription || overrideObj.metaDescription || rawCurrentPage.proposedMetaDescription || rawCurrentPage.metaDescription
-  const rawSavedH1 = overrideObj.proposedH1 || overrideObj.h1 || rawCurrentPage.proposedH1 || rawCurrentPage.h1
+  const rawSavedTitle = overrideObj.metaTitle || (rawCurrentPage.metaTitle && rawCurrentPage.metaTitle !== rawCurrentPage.title && rawCurrentPage.metaTitle !== rawCurrentPage.originalTitle ? rawCurrentPage.metaTitle : '') || ''
+  const rawSavedDesc = overrideObj.proposedMetaDescription || overrideObj.metaDescription || rawCurrentPage.proposedMetaDescription || rawCurrentPage.metaDescription || ''
+  const rawSavedH1 = overrideObj.proposedH1 || overrideObj.h1 || rawCurrentPage.proposedH1 || rawCurrentPage.h1 || ''
 
   const finalProposedTitle = resolveProposedField(rawSavedTitle, actualMetaTitle, recommendations.proposedTitle, site?.name)
   const finalProposedDesc = resolveProposedField(rawSavedDesc, actualMetaDescription, recommendations.proposedMetaDescription, site?.name)
@@ -277,7 +277,7 @@ export default function PageAuditResultsPage({
     actualMetaTitle,
     actualMetaDescription,
     actualH1,
-    title: finalProposedTitle,
+    title: rawCurrentPage.title || rawCurrentPage.originalTitle || finalProposedTitle,
     proposedTitle: finalProposedTitle,
     metaTitle: finalProposedTitle,
     proposedMetaDescription: finalProposedDesc,

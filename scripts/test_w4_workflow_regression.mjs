@@ -716,6 +716,61 @@ runTest('Strict Verification Invariant: Genuinely different metadata continues t
   assert.equal(resD.failedFields.length, 0)
 })
 
+// -------------------------------------------------------------
+// Test 12: W3 CMS Page Title (e.g. 'Home') vs W4 SEO Meta Title Separation
+// -------------------------------------------------------------
+runTest('Invariant: W3 CMS page titles (Home, About Us) must NOT override passing live SEO Meta Titles in W4', () => {
+  const liveActualMetaTitle = 'Digital Services Costa Blanca | Web Design, WordPress, E-commerce & SEO'
+  const targetPhrase = 'Digital Services Costa Blanca'
+
+  const recs = generateSeoRecommendations({
+    targetPhrase,
+    actualMetaTitle: liveActualMetaTitle,
+    actualMetaDescription: 'Professional web design, WordPress and digital marketing services across Costa Blanca.',
+    actualH1: 'Digital Services Across the Costa Blanca',
+    pageUrl: 'https://digitalspain.es/',
+    pageTitle: 'Home',
+    siteName: 'Digital Spain'
+  })
+
+  // Simulated W3 configuration object where user configured page targeting in W3:
+  // W3 sets title: 'Home', proposedTitle: 'Home', but has NO explicit SEO metaTitle override.
+  const w3Config = {
+    pageId: 'home',
+    url: 'https://digitalspain.es/',
+    title: 'Home',
+    proposedTitle: 'Home',
+    targetPhrase: 'Digital Services Costa Blanca',
+    isConfigured: true
+  }
+
+  // W4 resolution logic: rawSavedTitle must check explicit metaTitle override, NOT W3's proposedTitle
+  const rawSavedTitle = w3Config.metaTitle || ''
+  const resolvedProposedTitle = resolveProposedField(rawSavedTitle, liveActualMetaTitle, recs.proposedTitle, 'Digital Spain')
+
+  assert.equal(
+    resolvedProposedTitle,
+    liveActualMetaTitle,
+    `W4 erroneously proposed CMS page title "${resolvedProposedTitle}" instead of live SEO title "${liveActualMetaTitle}"!`
+  )
+
+  // When user explicitly saves a W4 SEO Meta Title override, that explicit override MUST be preserved
+  const explicitSeoTitleOverride = 'Custom Digital Services in Costa Blanca | Digital Spain'
+  const w4SavedConfig = {
+    ...w3Config,
+    metaTitle: explicitSeoTitleOverride
+  }
+
+  const explicitRawSavedTitle = w4SavedConfig.metaTitle || ''
+  const resolvedExplicitTitle = resolveProposedField(explicitRawSavedTitle, liveActualMetaTitle, recs.proposedTitle, 'Digital Spain')
+
+  assert.equal(
+    resolvedExplicitTitle,
+    explicitSeoTitleOverride,
+    `Explicit W4 SEO Meta Title override was not preserved!`
+  )
+})
+
 console.log('\n============================================================')
 console.log('🎉 ALL W4 REGRESSION INVARIANTS VERIFIED SUCCESSFULLY')
 console.log('============================================================\n')

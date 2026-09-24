@@ -75,6 +75,7 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
     const updatedConfig = {
       pageId: page.id || page.url,
       url: page.url,
+      title: proposedTitle.trim(),
       proposedTitle: proposedTitle.trim(),
       targetPhrase: targetPhraseStr,
       secondaryTargetPhrase: secTargetPhraseStr,
@@ -87,6 +88,9 @@ export default function ConfigurePageDialog({ _siteUrl = '', page, onClose, onSa
       isStarred: Boolean(page.isStarred),
       isExcluded: normalizedType === 'Excluded',
       status: isConfigured ? 'configured' : 'unconfigured',
+      ...(page.metaTitle ? { metaTitle: page.metaTitle } : {}),
+      ...(page.metaDescription ? { metaDescription: page.metaDescription } : {}),
+      ...(page.h1 ? { h1: page.h1 } : {}),
     }
 
     if (onSave) {

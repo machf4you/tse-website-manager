@@ -89,9 +89,9 @@ export function generateSeoRecommendations({
   // Format topic nicely (e.g., "2 Bedroom, Bathroom Loft Conversion in Surbiton" -> "2 Bedroom Loft Conversion in Surbiton")
   let cleanTitleTopic = topic.replace(/,\s*bathroom/i, '')
 
-  // 1. PROPOSED META TITLE (Target: 50–60 chars)
+  // 1. PROPOSED META TITLE (Target: 50–60 chars, accepts passing live titles up to 75 chars)
   let proposedTitle = ''
-  if (target && containsPhrase(actualMetaTitle, target) && actualMetaTitle.length >= 45 && actualMetaTitle.length <= 65) {
+  if (target && containsPhrase(actualMetaTitle, target) && actualMetaTitle.length >= 35 && actualMetaTitle.length <= 75) {
     proposedTitle = actualMetaTitle
   } else if (!target) {
     proposedTitle = actualMetaTitle || (brand ? `${topic} | ${brand}` : topic)

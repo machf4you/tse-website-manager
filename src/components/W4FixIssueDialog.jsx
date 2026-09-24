@@ -87,9 +87,11 @@ export default function W4FixIssueDialog({
       siteName: site?.name || '',
     })
 
-    const rawSavedT = page.proposedTitle || page.metaTitle || ''
-    const rawSavedD = page.proposedMetaDescription || page.metaDescription || ''
-    const rawSavedH = page.proposedH1 || page.h1 || ''
+    const rawSavedT = page.metaTitle && page.metaTitle !== page.title && page.metaTitle !== page.originalTitle
+      ? page.metaTitle
+      : (page.metaTitle || '')
+    const rawSavedD = page.metaDescription || page.proposedMetaDescription || ''
+    const rawSavedH = page.h1 || page.proposedH1 || ''
 
     // Proposed values initially populated with genuine saved overrides or generated recommendations
     const initT = resolveProposedField(extractSafeString(rawSavedT), actT, recs.proposedTitle, site?.name)
