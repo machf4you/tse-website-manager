@@ -1905,9 +1905,9 @@ export default function PageManagementPage({
           type="button"
           className="w3-tab"
           onClick={() => onTabChange && onTabChange('w6')}
-          id="tab-w3-site-analysis"
+          id="tab-w3-rank-tracker"
         >
-          W6 | Site Analysis
+          W6 | Rank Tracker
         </button>
         <button
           type="button"

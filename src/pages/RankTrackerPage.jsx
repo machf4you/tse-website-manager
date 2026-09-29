@@ -210,7 +210,7 @@ export default function RankTrackerPage({ site, onBack }) {
           onClick={onBack}
           style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.9rem', cursor: 'pointer' }}
         >
-          ← Back to Website Dashboard
+          ← Back to W3 Page Manager
         </button>
       </div>
 
