@@ -1913,9 +1913,9 @@ export default function PageManagementPage({
           type="button"
           className="w3-tab"
           onClick={() => onTabChange && onTabChange('w7')}
-          id="tab-w3-website-settings"
+          id="tab-w3-social"
         >
-          W7 | Website Settings
+          W7 | Social
         </button>
       </div>
 

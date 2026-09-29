@@ -16,7 +16,7 @@ const TargetIcon = () => (
   </svg>
 )
 
-export default function RankTrackerPage({ site, onBack }) {
+export default function RankTrackerPage({ site, onBack, onNavigateTab }) {
   const [rankings, setRankings] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSyncingKR, setIsSyncingKR] = useState(false)
@@ -202,8 +202,8 @@ export default function RankTrackerPage({ site, onBack }) {
 
   return (
     <div className="rank-tracker-page">
-      {/* Back Button */}
-      <div>
+      {/* Top Navigation */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <button
           type="button"
           className="w2-btn-back"
@@ -211,6 +211,26 @@ export default function RankTrackerPage({ site, onBack }) {
           style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.9rem', cursor: 'pointer' }}
         >
           ← Back to W3 Page Manager
+        </button>
+
+        <button
+          type="button"
+          className="rt-nav-btn-social"
+          id="btn-rt-social"
+          onClick={() => onNavigateTab && onNavigateTab('w7')}
+          style={{
+            background: 'rgba(236, 72, 153, 0.12)',
+            border: '1px solid rgba(236, 72, 153, 0.3)',
+            color: '#f472b6',
+            borderRadius: '6px',
+            padding: '6px 14px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          W7 | Social ›
         </button>
       </div>
 

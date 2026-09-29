@@ -654,6 +654,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       <RankTrackerPage
         site={site}
         onBack={() => setActiveTab('w3')}
+        onNavigateTab={(tab) => setActiveTab(tab)}
       />
     )
   }
