@@ -2910,12 +2910,20 @@ function normalizeDbPageKey(key) {
   return str
 }
 
-// GET all stored rankings for a website (with history enrichment)
+// GET all stored rankings for a website (W3 / MANAGE PAGES is authoritative source of truth)
 app.get('/api/websites/:id/rankings', (req, res) => {
   try {
     const { id } = req.params
-    const rows = db.prepare(`SELECT * FROM page_rankings WHERE site_id = ?`).all(id)
-    const result = {}
+    const configRows = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ?`).all(id)
+    const rankingRows = db.prepare(`SELECT * FROM page_rankings WHERE site_id = ?`).all(id)
+    const rankingsMap = {}
+    rankingRows.forEach(r => {
+      if (r.page_key) {
+        rankingsMap[r.page_key] = r
+        const cleanK = normalizeDbPageKey(r.page_key).replace(/^\/+/, '').replace(/\/+$/, '')
+        if (cleanK) rankingsMap[cleanK] = r
+      }
+    })
 
     const historyStmt = db.prepare(`
       SELECT google_rank, checked_at FROM rank_history 
@@ -2923,46 +2931,94 @@ app.get('/api/websites/:id/rankings', (req, res) => {
       ORDER BY checked_at DESC LIMIT 2
     `)
 
-    rows.forEach(r => {
-      const cleanKey = normalizeDbPageKey(r.page_key)
-      const hRows = historyStmt.all(id, r.page_key, r.target_phrase)
-      let previousRank = null
-      if (hRows && hRows.length > 1) {
-        previousRank = hRows[1].google_rank
-      }
+    const result = {}
 
-      const record = {
-        siteId: r.site_id,
-        pageKey: cleanKey || r.page_key,
-        targetPhrase: r.target_phrase,
-        googleRank: r.google_rank,
-        previousRank: previousRank,
-        isTop100: Boolean(r.is_top_100),
-        rankingUrl: r.ranking_url,
-        isUrlMatch: Boolean(r.is_url_match),
-        searchVolume: r.search_volume !== null && r.search_volume !== undefined ? Number(r.search_volume) : null,
-        volumeCheckedAt: r.volume_checked_at,
-        searchEngine: r.search_engine || 'google.co.uk',
-        locationCode: r.location_code || 2826,
-        device: r.device || 'mobile',
-        lastCheckedAt: r.last_checked_at,
-        updatedAt: r.updated_at
-      }
-      result[r.page_key] = record
-      if (cleanKey && cleanKey !== r.page_key) {
+    configRows.forEach(c => {
+      let parsed = {}
+      try { parsed = JSON.parse(c.config_json || '{}') } catch(e) {}
+
+      // Filter out excluded pages or unassigned utility pages without a target
+      const isExcluded = Boolean(c.is_excluded || parsed.isExcluded || c.seo_page_type === 'Excluded' || parsed.type === 'Excluded')
+      if (isExcluded) return
+
+      const rawKey = c.page_key || ''
+      const cleanKey = rawKey.replace(/^\/+/, '').replace(/\/+$/, '')
+      if (!cleanKey || rawKey.startsWith('/')) return // Skip duplicate leading-slash keys
+
+      const primaryPhrase = (c.target_phrase || parsed.targetPhrase || parsed.target || '').trim()
+      if (primaryPhrase) {
+        const rMatch = rankingsMap[cleanKey] || rankingsMap[rawKey] || {}
+        const hRows = historyStmt.all(id, cleanKey, primaryPhrase)
+        let previousRank = null
+        if (hRows && hRows.length > 1) {
+          previousRank = hRows[1].google_rank
+        }
+
+        const pagePath = c.url || parsed.url || (cleanKey === 'home' ? '/' : `/${cleanKey}`)
+        const record = {
+          siteId: id,
+          pageKey: cleanKey,
+          targetPhrase: primaryPhrase,
+          googleRank: rMatch.google_rank !== undefined ? rMatch.google_rank : null,
+          previousRank: previousRank,
+          isTop100: Boolean(rMatch.is_top_100),
+          rankingUrl: rMatch.ranking_url || pagePath,
+          isUrlMatch: Boolean(rMatch.is_url_match),
+          searchVolume: (rMatch.search_volume !== null && rMatch.search_volume !== undefined)
+            ? Number(rMatch.search_volume)
+            : (parsed.searchVolume || parsed.volume ? Number(parsed.searchVolume || parsed.volume) : null),
+          volumeCheckedAt: rMatch.volume_checked_at || null,
+          searchEngine: rMatch.search_engine || 'google.co.uk',
+          locationCode: rMatch.location_code || 2826,
+          device: rMatch.device || 'mobile',
+          lastCheckedAt: rMatch.last_checked_at || rMatch.updated_at || c.updated_at,
+          updatedAt: c.updated_at
+        }
         result[cleanKey] = record
       }
-      if (r.ranking_url) {
-        result[r.ranking_url] = record
+
+      // Check secondary target phrase configured in W3
+      const secPhrase = (parsed.secondaryTargetPhrase || parsed.secondary_target_phrase || parsed.secondaryTarget || '').trim()
+      if (secPhrase) {
+        const secKey = `${cleanKey}_secondary`
+        const rMatchSec = rankingsMap[secKey] || {}
+        const hRowsSec = historyStmt.all(id, secKey, secPhrase)
+        let previousRankSec = null
+        if (hRowsSec && hRowsSec.length > 1) {
+          previousRankSec = hRowsSec[1].google_rank
+        }
+
+        const pagePath = c.url || parsed.url || (cleanKey === 'home' ? '/' : `/${cleanKey}`)
+        const secRecord = {
+          siteId: id,
+          pageKey: secKey,
+          targetPhrase: secPhrase,
+          googleRank: rMatchSec.google_rank !== undefined ? rMatchSec.google_rank : null,
+          previousRank: previousRankSec,
+          isTop100: Boolean(rMatchSec.is_top_100),
+          rankingUrl: rMatchSec.ranking_url || pagePath,
+          isUrlMatch: Boolean(rMatchSec.is_url_match),
+          searchVolume: (rMatchSec.search_volume !== null && rMatchSec.search_volume !== undefined)
+            ? Number(rMatchSec.search_volume)
+            : (parsed.secondarySearchVolume ? Number(parsed.secondarySearchVolume) : null),
+          volumeCheckedAt: rMatchSec.volume_checked_at || null,
+          searchEngine: rMatchSec.search_engine || 'google.co.uk',
+          locationCode: rMatchSec.location_code || 2826,
+          device: rMatchSec.device || 'mobile',
+          lastCheckedAt: rMatchSec.last_checked_at || rMatchSec.updated_at || c.updated_at,
+          updatedAt: c.updated_at
+        }
+        result[secKey] = secRecord
       }
     })
+
     res.json(result)
   } catch (e) {
     res.status(500).json({ error: e.message })
   }
 })
 
-// POST sync approved Keyword Research target phrases for a website
+// POST sync approved Keyword Research target phrases for a website -> populates W3 page_configurations
 app.post('/api/websites/:id/sync-keyword-research', async (req, res) => {
   try {
     const { id } = req.params
@@ -3039,38 +3095,28 @@ app.post('/api/websites/:id/sync-keyword-research', async (req, res) => {
     const now = new Date().toISOString()
     const syncedPhrases = []
 
-    const upsertConfigStmt = db.prepare(`
-      INSERT INTO page_configurations (
-        site_id, page_key, target_phrase, updated_at
-      ) VALUES (
-        ?, ?, ?, ?
-      ) ON CONFLICT(site_id, page_key) DO UPDATE SET
-        target_phrase = excluded.target_phrase,
-        updated_at = excluded.updated_at
-    `)
-
-    const upsertRankingStmt = db.prepare(`
-      INSERT INTO page_rankings (
-        site_id, page_key, target_phrase, search_volume, volume_checked_at, search_engine, location_code, device, last_checked_at, updated_at
-      ) VALUES (
-        ?, ?, ?, ?, ?, 'google.co.uk', 2826, 'mobile', ?, ?
-      ) ON CONFLICT(site_id, page_key) DO UPDATE SET
-        target_phrase = excluded.target_phrase,
-        search_volume = COALESCE(excluded.search_volume, page_rankings.search_volume),
-        updated_at = excluded.updated_at
-    `)
-
     for (const page of approvedPages) {
       const phrase = (page.primary_target_phrase || '').trim()
       if (!phrase) continue
 
       const slug = page.suggested_slug || '/'
-      const cleanSlug = slug.startsWith('/') ? slug : '/' + slug
+      const cleanSlug = slug.replace(/^\/+/, '').replace(/\/+$/, '') || 'home'
       const pageKey = cleanSlug
       const volume = volumeMap[phrase.toLowerCase()] || (page.search_volume ? Number(page.search_volume) : null)
 
-      upsertConfigStmt.run(id, pageKey, phrase, now)
-      upsertRankingStmt.run(id, pageKey, phrase, volume, now, now, now)
+      const existingRow = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ? AND page_key = ?`).get(id, pageKey)
+      if (existingRow) {
+        let cfg = {}
+        try { cfg = JSON.parse(existingRow.config_json || '{}') } catch(e) {}
+        cfg.targetPhrase = phrase
+        if (volume !== null) cfg.searchVolume = volume
+        db.prepare(`UPDATE page_configurations SET target_phrase = ?, config_json = ?, updated_at = ? WHERE site_id = ? AND page_key = ?`)
+          .run(phrase, JSON.stringify(cfg), now, id, pageKey)
+      } else {
+        const cfg = { pageId: pageKey, url: `/${pageKey}`, targetPhrase: phrase, target: phrase, type: 'Landing', isConfigured: true, priority: 2, searchVolume: volume }
+        db.prepare(`INSERT INTO page_configurations (site_id, page_key, target_phrase, seo_page_type, priority, is_excluded, config_json, updated_at) VALUES (?, ?, ?, 'Landing', 2, 0, ?, ?)`)
+          .run(id, pageKey, phrase, JSON.stringify(cfg), now)
+      }
 
       syncedPhrases.push({
         pageKey,
@@ -3079,6 +3125,10 @@ app.post('/api/websites/:id/sync-keyword-research', async (req, res) => {
         pageName: page.page_name || pageKey
       })
     }
+
+    // Clean up duplicate leading-slash keys and utility policy/terms rows
+    db.prepare(`DELETE FROM page_configurations WHERE site_id = ? AND (page_key LIKE '/%' OR seo_page_type = '' OR seo_page_type IS NULL OR seo_page_type = 'Excluded' OR is_excluded = 1)`).run(id)
+    db.prepare(`DELETE FROM page_rankings WHERE site_id = ? AND (page_key LIKE '/%' OR target_phrase IN ('cookie policy', 'privacy policy', 'terms & conditions'))`).run(id)
 
     res.json({
       success: true,
