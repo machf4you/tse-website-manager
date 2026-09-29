@@ -168,6 +168,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       else if (tab === 'w3' || tab === 'w3-manage-pages') navigate('/w3-page-management')
       else if (tab === 'w4' || tab === 'w3_audit_results' || tab === 'w4-audit-results') navigate('/w4-audit-results')
       else if (tab === 'w5' || tab === 'w4_internal_linking' || tab === 'w4-internal-linking' || tab === 'w5-internal-linking' || tab === 'w5_all_internal_links' || tab === 'w5_review_links') navigate('/w5-internal-linking')
+      else if (tab === 'w6' || tab === 'w6-rank-tracker' || tab === 'rank-tracker' || tab === 'rank_tracker') navigate('/w6-rank-tracker')
     }
   }
 

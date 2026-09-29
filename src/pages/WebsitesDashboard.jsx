@@ -156,9 +156,9 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     return null
   })
 
-  // Ensure managedSite is hydrated if user lands directly on a W2/W3/W4/W5 route
+  // Ensure managedSite is hydrated if user lands directly on a W2/W3/W4/W5/W6 route
   useEffect(() => {
-    if (!managedSite && sites.length > 0 && ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)) {
+    if (!managedSite && sites.length > 0 && ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker'].includes(currentPath)) {
       const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
                       localStorage.getItem('tse_managed_site_id') ||
                       localStorage.getItem('tse_selected_site_id')
@@ -366,7 +366,7 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
   })
 
-  const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking'].includes(currentPath)
+  const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker'].includes(currentPath)
   const isW1 = currentPath === '/w1-connected-sites' || (!managedSite && !isSubPage)
 
   if (managedSite && !isW1) {
