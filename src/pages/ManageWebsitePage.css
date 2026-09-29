@@ -377,6 +377,7 @@
 .theme-purple  .w2-fc-icon-bg { background-color: rgba(168, 85, 247, 0.12); color: rgb(168, 85, 247); }
 .theme-blue    .w2-fc-icon-bg { background-color: rgba(59, 130, 246, 0.12); color: rgb(59, 130, 246); }
 .theme-amber   .w2-fc-icon-bg { background-color: rgba(245, 158, 11, 0.12); color: rgb(245, 158, 11); }
+.theme-pink    .w2-fc-icon-bg { background-color: rgba(236, 72, 153, 0.12); color: rgb(236, 72, 153); }
 
 .w2-fc-title {
   font-family: 'Outfit', sans-serif;
@@ -421,6 +422,7 @@
 .theme-purple  .chk-icon { color: rgb(168, 85, 247); }
 .theme-blue    .chk-icon { color: rgb(59, 130, 246); }
 .theme-amber   .chk-icon { color: rgb(245, 158, 11); }
+.theme-pink    .chk-icon { color: rgb(236, 72, 153); }
 
 /* Feature Action Buttons */
 .w2-fc-btn {
@@ -442,6 +444,7 @@
 .btn-open-purple  { background-color: rgb(168, 85, 247); }
 .btn-open-blue    { background-color: rgb(59, 130, 246); }
 .btn-open-amber   { background-color: rgb(245, 158, 11); }
+.btn-open-pink    { background-color: rgb(236, 72, 153); }
 
 .w2-fc-tag {
   font-size: 0.65rem;

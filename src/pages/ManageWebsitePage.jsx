@@ -3,7 +3,18 @@ import PageManagementPage from './PageManagementPage'
 import PageAuditResultsPage from './PageAuditResultsPage'
 import InternalLinkingPage from './InternalLinkingPage'
 import RankTrackerPage from './RankTrackerPage'
+import SocialDashboardPage from './SocialDashboardPage'
 import GlobalSettings from './GlobalSettings'
+
+const Share2Icon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <circle cx="18" cy="5" r="3"/>
+    <circle cx="6" cy="12" r="3"/>
+    <circle cx="18" cy="19" r="3"/>
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+  </svg>
+)
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import { fetchTseWordPressExportPackage, fetchMagentoExportPackage, fetchStaticHtmlExportPackage } from '../services/exporterApi'
 import {
@@ -138,6 +149,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     if (path === '/w4-audit-results' || path === '/w4' || path === '/w4-page-audit' || path === '/w3-audit-results') return 'w4'
     if (path === '/w5-internal-linking' || path === '/w5' || path === '/w4-internal-linking' || path === '/w5-all-internal-links' || path === '/w5-review-links') return 'w5'
     if (path === '/w6-rank-tracker' || path === '/w6' || path === '/rank-tracker') return 'w6'
+    if (path === '/w7-social' || path === '/w7' || path === '/social') return 'w7'
     return null
   }
 
@@ -169,6 +181,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       else if (tab === 'w4' || tab === 'w3_audit_results' || tab === 'w4-audit-results') navigate('/w4-audit-results')
       else if (tab === 'w5' || tab === 'w4_internal_linking' || tab === 'w4-internal-linking' || tab === 'w5-internal-linking' || tab === 'w5_all_internal_links' || tab === 'w5_review_links') navigate('/w5-internal-linking')
       else if (tab === 'w6' || tab === 'w6-rank-tracker' || tab === 'rank-tracker' || tab === 'rank_tracker') navigate('/w6-rank-tracker')
+      else if (tab === 'w7' || tab === 'w7-social' || tab === 'social' || tab === 'w7_social') navigate('/w7-social')
     }
   }
 
@@ -627,6 +640,15 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     }, 500)
   }
 
+  if (activeTab === 'w7' || activeTab === 'social' || activeTab === 'w7_social' || activeTab === 'w7-social') {
+    return (
+      <SocialDashboardPage
+        site={site}
+        onBack={() => setActiveTab('w2')}
+      />
+    )
+  }
+
   if (activeTab === 'w6' || activeTab === 'rank_tracker' || activeTab === 'w6_rank_tracker') {
     return (
       <RankTrackerPage
@@ -977,6 +999,34 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
             Open Rank Tracker ›
           </button>
           <span className="w2-fc-tag">W6 | RANK TRACKER</span>
+        </div>
+
+        {/* Card 4: Social */}
+        <div className="w2-feature-card theme-pink">
+          <div className="w2-fc-header">
+            <div className="w2-fc-icon-bg">
+              <Share2Icon />
+            </div>
+            <h3 className="w2-fc-title">Social</h3>
+          </div>
+          <p className="w2-fc-desc">
+            Create, schedule and publish social content for this website.
+          </p>
+          <ul className="w2-fc-checklist">
+            <li><span className="chk-icon">✓</span> Social account connections</li>
+            <li><span className="chk-icon">✓</span> Create and adapt posts</li>
+            <li><span className="chk-icon">✓</span> Schedule and publish</li>
+            <li><span className="chk-icon">✓</span> Track social activity</li>
+          </ul>
+          <button
+            type="button"
+            className="w2-fc-btn btn-open-pink"
+            id="btn-open-social"
+            onClick={() => setActiveTab('w7')}
+          >
+            Open Social Dashboard ›
+          </button>
+          <span className="w2-fc-tag">W7 | SOCIAL</span>
         </div>
 
       </div>

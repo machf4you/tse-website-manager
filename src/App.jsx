@@ -211,6 +211,15 @@ export function parseRoute(pathname) {
     }
   }
 
+  if (path === '/w7-social' || path === '/w7' || path === '/social') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w7',
+      canonicalPath: '/w7-social'
+    }
+  }
+
   // Fallback to W1
   return {
     currentView: 'website-manager',
@@ -338,7 +347,7 @@ function App() {
             aria-current={activeNavTab === 'websites' ? 'page' : undefined}
             id="nav-tab-websites"
             onClick={() => {
-              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker'].includes(currentPath)) {
+              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social'].includes(currentPath)) {
                 navigate(currentPath)
               } else {
                 navigate('/w1-connected-sites')
