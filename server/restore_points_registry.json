@@ -1,29 +1,42 @@
 [
   {
-    "id": "sr-v2.21-full-disaster-recovery",
-    "app": "Site Registry",
-    "version": "V2.21",
-    "gitTag": "sr-v2.21-full-disaster-recovery",
-    "commit": "c122a0e",
-    "date": "22-09-2026 08:08",
-    "title": "Site Registry V2.21 Full Disaster-Recovery Milestone",
-    "description": "Full disaster-recovery restore point containing verified PostgreSQL database dump (46 tables, 1,229 backlink sources / 305 active domains, 1,110 Fatima records / 186 active), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
-    "location": "site-registry/2026-09-22-v2.21-full/",
+    "id": "tld-v1.0.0-full-disaster-recovery",
+    "app": "TSE Lodged Deployer",
+    "version": "V1.0.0",
+    "gitTag": "tld-v1.0.0-full-disaster-recovery",
+    "commit": "48edfbc",
+    "date": "26-09-2026 08:08",
+    "title": "TSE Lodged Deployer V1.0.0 Full Disaster Recovery",
+    "description": "Verified full disaster-recovery restore point containing SQLite leadgen-deployments.db (32KB), config.json, queue, deployer, server backend, and PM2 process state.",
+    "location": "/opt/tse-apps/backups/tse-leadgen-deployer/2026-09-26-full/",
     "status": "Current",
-    "docFile": "RESTORE-POINT-sr-v2.21-full-disaster-recovery.md"
+    "docFile": "RESTORE-POINT-tld-v1.0.0-full-disaster-recovery.md"
   },
   {
-    "id": "wm-v2.52.1-full-disaster-recovery",
-    "app": "Website Manager",
-    "version": "V2.52.1",
-    "gitTag": "wm-v2.52.1-full-disaster-recovery",
-    "commit": "3242140",
-    "date": "18-09-2026 04:39",
-    "title": "Website Manager V2.52.1 Full Disaster-Recovery Milestone",
-    "description": "Full disaster-recovery restore point containing verified SQLite database snapshot (integrity check OK, 14 websites, 508 page configs, 307 audits, 13 WP packages, 58 page rankings), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
-    "location": "website-manager/2026-09-18-full/",
+    "id": "pa-v1.35-full-disaster-recovery",
+    "app": "Page Auditor",
+    "version": "V1.35",
+    "gitTag": "pa-v1.35-full-disaster-recovery",
+    "commit": "8e6ca60",
+    "date": "26-09-2026 08:08",
+    "title": "Page Auditor V1.35 Full Disaster Recovery",
+    "description": "Verified full disaster-recovery restore point containing complete Python backend audit engine, React frontend, test suites, PM2 configuration, and version specifications.",
+    "location": "/opt/tse-apps/backups/page-auditor/2026-09-26-full/",
     "status": "Current",
-    "docFile": "RESTORE-POINT-wm-v2.52.1-full-disaster-recovery.md"
+    "docFile": "RESTORE-POINT-pa-v1.35-full-disaster-recovery.md"
+  },
+  {
+    "id": "lg-v1.54-final-safe-point",
+    "app": "Lead Generator",
+    "version": "V1.54",
+    "gitTag": "lg-v1.54-final-safe-point",
+    "commit": "6f9d1c4",
+    "date": "25-09-2026 15:28",
+    "title": "Lead Generator 2026-09-25 Final Safe Point",
+    "description": "Verified full disaster-recovery restore point containing SQLite database.db (84KB), saved-searches-export.json (154KB), milestones.json, client & server source code, .env configs, and PM2 process state.",
+    "location": "/opt/tse-apps/backups/2026-09-25-final-safe-point/lead-generator/",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-lg-v1.54-final-safe-point.md"
   },
   {
     "id": "lg-v1.54.1-full-disaster-recovery",
@@ -35,60 +48,8 @@
     "title": "Lead Generator V1.54.1 Full Disaster-Recovery Milestone",
     "description": "Full disaster-recovery restore point containing verified SQLite database snapshot (integrity check OK, 8 saved searches, 20 shortlisted leads, 1 outreach pack, 17 contact history records, 7 email templates, 155 excluded domains), complete application source, Nginx reverse-proxy definitions, and Node/PM2 process configuration.",
     "location": "lead-gen/2026-09-18-full/",
-    "status": "Current",
+    "status": "Superseded",
     "docFile": "RESTORE-POINT-lg-v1.54.1-full-disaster-recovery.md"
-  },
-  {
-    "id": "sr-v2.20.1-full-disaster-recovery",
-    "app": "Site Registry",
-    "version": "V2.20.1",
-    "gitTag": "sr-v2.20.1-full-disaster-recovery",
-    "commit": "972756a",
-    "date": "18-09-2026 04:49",
-    "title": "Site Registry V2.20.1 Full Disaster-Recovery Milestone",
-    "description": "Full disaster-recovery restore point containing verified Supabase PostgreSQL domains snapshot (126 registered domains across all portfolios), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
-    "location": "site-registry/2026-09-18-full/",
-    "status": "Current",
-    "docFile": "RESTORE-POINT-sr-v2.20.1-full-disaster-recovery.md"
-  },
-  {
-    "id": "wb-v1.00-full-disaster-recovery",
-    "app": "Website Builder",
-    "version": "V1.00",
-    "gitTag": "wb-v1.00-full-disaster-recovery",
-    "commit": "9d48a94",
-    "date": "18-09-2026 08:05",
-    "title": "TSE Website Builder — Full Disaster-Recovery Restore Point",
-    "description": "Full disaster-recovery restore point containing verified production code, Nginx HTTPS configuration, SQLite database with Costa Blanca Digital Services project, PM2 process configuration (website-builder-api on port 3008), and Apps Hub portal integration.",
-    "location": "website-builder/2026-09-18-full/",
-    "status": "Current",
-    "docFile": "RESTORE-POINT-wb-v1.00-full-disaster-recovery.md"
-  },
-  {
-    "id": "auth-v1.10-full-disaster-recovery",
-    "app": "Auth / Apps Hub",
-    "version": "V1.10",
-    "gitTag": "auth-v1.10-full-disaster-recovery",
-    "commit": "9da9361",
-    "date": "16-09-2026 17:05",
-    "title": "TSE Central Auth & Apps Hub — Full Disaster-Recovery Restore Point",
-    "description": "Authoritative Full Disaster-Recovery Specification and Restore Point for TSE Central Auth & Apps Hub (https://auth.thesearchequation.co.uk), covering central authentication, cookie sessions, user management, and unified application dashboard with Website Builder tile.",
-    "location": "tse-auth-service/2026-09-16-full/",
-    "status": "Current",
-    "docFile": "RESTORE-POINT-auth-v1.10-full-disaster-recovery.md"
-  },
-  {
-    "id": "kr-v1.4.5-full-disaster-recovery",
-    "app": "Keyword Research",
-    "version": "V1.4.5",
-    "gitTag": "kr-v1.45-full-disaster-recovery",
-    "commit": "f710547",
-    "date": "16-09-2026 10:52",
-    "title": "Keyword Research V1.4.5 Full Disaster-Recovery Milestone",
-    "description": "Full disaster-recovery restore point containing verified cold database snapshot (7 tables, 1.90MB), complete application source, Nginx reverse-proxy definitions, PM2 process configuration, and DataForSEO/Central Forms integrations.",
-    "location": "keyword-research/2026-09-16-full/",
-    "status": "Current",
-    "docFile": "RESTORE-POINT-v1.4.5-full-disaster-recovery-keyword-research.md"
   },
   {
     "id": "v1.54-full-disaster-recovery-lead-generator",
@@ -103,43 +64,56 @@
     "docFile": "RESTORE-POINT-v1.54-full-disaster-recovery-lead-generator.md"
   },
   {
-    "id": "v2.52-full-disaster-recovery-apps-hub-migration",
-    "app": "Website Manager",
-    "version": "v2.52-full-disaster-recovery-apps-hub-migration",
-    "gitTag": "",
-    "commit": "[AUTO]",
-    "date": "16-09-2026 17:02",
-    "title": "TSE Website Manager — Full Disaster-Recovery Restore Point",
-    "description": "This document provides the authoritative **Full Disaster-Recovery Specification and Restore Point** for the TSE Website Manager application following the structural migration of the central Apps Platform Hub to `https://auth.thesearchequation.co.uk/`.",
-    "status": "Superseded",
-    "docFile": "RESTORE-POINT-v2.52-full-disaster-recovery-apps-hub-migration.md"
+    "id": "wb-v1.0.0-final-safe-point",
+    "app": "Website Builder",
+    "version": "V1.0.0",
+    "gitTag": "wb-v1.0.0-final-safe-point",
+    "commit": "f5d2814",
+    "date": "25-09-2026 15:28",
+    "title": "Website Builder 2026-09-25 Final Safe Point",
+    "description": "Verified full disaster-recovery restore point containing website_builder_store.json (1.45MB), complete application source, dist build assets, server/.env config, and PM2 process state.",
+    "location": "/opt/tse-apps/backups/2026-09-25-final-safe-point/website-builder/",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-wb-v1.0.0-final-safe-point.md"
   },
   {
-    "id": "leadgen-v1.42-full-disaster-recovery",
-    "app": "Lead Generator",
-    "version": "v1.42-lg-stable",
-    "gitTag": "lg-v1.42-full-disaster-recovery",
-    "commit": "4f7b121",
-    "date": "16-09-2026 11:12",
-    "title": "Lead Generator V1.42 Full Disaster-Recovery Milestone",
-    "description": "Full disaster-recovery restore point containing verified cold SQLite database snapshot (972KB, 8 master templates, saved searches), complete application source, Nginx reverse-proxy definitions, and Node/PM2 process configuration.",
+    "id": "wb-v1.00-full-disaster-recovery",
+    "app": "Website Builder",
+    "version": "V1.00",
+    "gitTag": "wb-v1.00-full-disaster-recovery",
+    "commit": "9d48a94",
+    "date": "18-09-2026 08:05",
+    "title": "TSE Website Builder — Full Disaster-Recovery Restore Point",
+    "description": "Full disaster-recovery restore point containing verified production code, Nginx HTTPS configuration, SQLite database with Costa Blanca Digital Services project, PM2 process configuration (website-builder-api on port 3008), and Apps Hub portal integration.",
+    "location": "website-builder/2026-09-18-full/",
     "status": "Superseded",
-    "docFile": "RESTORE-POINT-v1.42-full-disaster-recovery-lead-generator.md",
-    "purpose": "Complete disaster recovery snapshot capable of rebuilding Lead Generator from scratch.",
-    "verifiedWorking": [
-      "Complete application source tree and dependency manifests",
-      "Cold production SQLite database snapshot (972KB, 8 master templates, saved searches verified)",
-      "Nginx reverse-proxy & TLS/SSL certificates configuration",
-      "Node.js backend daemon specification on port 5000",
-      "Master email templates editor with personalisations variables",
-      "Opportunity Score 70+ highlights and full outreach pack workflow"
-    ],
-    "filesChanged": [
-      "RESTORE-POINT-v1.42-full-disaster-recovery-lead-generator.md",
-      "client/src/App.jsx",
-      "server/server.js",
-      "server/db.js"
-    ]
+    "docFile": "RESTORE-POINT-wb-v1.00-full-disaster-recovery.md"
+  },
+  {
+    "id": "sr-v2.21-full-disaster-recovery",
+    "app": "Site Registry",
+    "version": "V2.21",
+    "gitTag": "sr-v2.21-full-disaster-recovery",
+    "commit": "c122a0e",
+    "date": "22-09-2026 08:08",
+    "title": "Site Registry V2.21 Full Disaster-Recovery Milestone",
+    "description": "Full disaster-recovery restore point containing verified PostgreSQL database dump (46 tables, 1,229 backlink sources / 305 active domains, 1,110 Fatima records / 186 active), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
+    "location": "site-registry/2026-09-22-v2.21-full/",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-sr-v2.21-full-disaster-recovery.md"
+  },
+  {
+    "id": "sr-v2.20.1-full-disaster-recovery",
+    "app": "Site Registry",
+    "version": "V2.20.1",
+    "gitTag": "sr-v2.20.1-full-disaster-recovery",
+    "commit": "972756a",
+    "date": "18-09-2026 04:49",
+    "title": "Site Registry V2.20.1 Full Disaster-Recovery Milestone",
+    "description": "Full disaster-recovery restore point containing verified Supabase PostgreSQL domains snapshot (126 registered domains across all portfolios), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
+    "location": "site-registry/2026-09-18-full/",
+    "status": "Superseded",
+    "docFile": "RESTORE-POINT-sr-v2.20.1-full-disaster-recovery.md"
   },
   {
     "id": "sr-v2.19-full-disaster-recovery",
@@ -169,6 +143,31 @@
     ]
   },
   {
+    "id": "wm-v2.52.1-full-disaster-recovery",
+    "app": "Website Manager",
+    "version": "V2.52.1",
+    "gitTag": "wm-v2.52.1-full-disaster-recovery",
+    "commit": "3242140",
+    "date": "18-09-2026 04:39",
+    "title": "Website Manager V2.52.1 Full Disaster-Recovery Milestone",
+    "description": "Full disaster-recovery restore point containing verified SQLite database snapshot (integrity check OK, 14 websites, 508 page configs, 307 audits, 13 WP packages, 58 page rankings), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
+    "location": "website-manager/2026-09-18-full/",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-wm-v2.52.1-full-disaster-recovery.md"
+  },
+  {
+    "id": "v2.52-full-disaster-recovery-apps-hub-migration",
+    "app": "Website Manager",
+    "version": "v2.52-full-disaster-recovery-apps-hub-migration",
+    "gitTag": "",
+    "commit": "[AUTO]",
+    "date": "16-09-2026 17:02",
+    "title": "TSE Website Manager — Full Disaster-Recovery Restore Point",
+    "description": "This document provides the authoritative **Full Disaster-Recovery Specification and Restore Point** for the TSE Website Manager application following the structural migration of the central Apps Platform Hub to `https://auth.thesearchequation.co.uk/`.",
+    "status": "Superseded",
+    "docFile": "RESTORE-POINT-v2.52-full-disaster-recovery-apps-hub-migration.md"
+  },
+  {
     "id": "wm-v2.50-full-disaster-recovery",
     "app": "Website Manager",
     "version": "v2.50-wm-stable",
@@ -196,115 +195,30 @@
     ]
   },
   {
-    "id": "sr-v2.19-accepted-production",
-    "app": "Site Registry",
-    "version": "v2.19-sr-accepted",
-    "gitTag": "sr-v2.19-accepted",
-    "commit": "cc1566d",
-    "date": "16-09-2026 10:15",
-    "title": "Site Registry V2.19 Production Accepted & Domains Restoration",
-    "description": "Confirmed production accepted baseline for TSE Site Registry: 3-item restoration (Sortable domain table columns, Domain Details edit dialog persistence, and Auto-Renew unknown normalization to No/False), softer dashboard outline styling, medium headline typography, and Awaiting Indexing / Articles module.",
-    "status": "Superseded",
-    "docFile": "V2.19-STABLE-INDEXCHECKER-RECONCILIATION-NORMALIZATION.md",
-    "purpose": "Production accepted baseline for Site Registry with restored domain sorting, editing, and accurate auto-renew status.",
-    "verifiedWorking": [
-      "Sortable domain table columns (ascending, descending, active indicator)",
-      "Edit Domain dialog across sections with database save",
-      "Auto-Renew unknown normalized to NO / false with clean UI badges",
-      "Dashboard softer outlines and medium font weights",
-      "Articles navigation and CSV exports"
-    ],
-    "filesChanged": [
-      "src/pages/DomainsPage.tsx",
-      "src/components/EditDomainDialog.tsx",
-      "src/components/DashboardMetrics.tsx",
-      "src/components/AttentionRequired.tsx",
-      "src/components/PortfolioOverview.tsx"
-    ]
+    "id": "auth-v1.10-full-disaster-recovery",
+    "app": "Auth / Apps Hub",
+    "version": "V1.10",
+    "gitTag": "auth-v1.10-full-disaster-recovery",
+    "commit": "9da9361",
+    "date": "16-09-2026 17:05",
+    "title": "TSE Central Auth & Apps Hub — Full Disaster-Recovery Restore Point",
+    "description": "Authoritative Full Disaster-Recovery Specification and Restore Point for TSE Central Auth & Apps Hub (https://auth.thesearchequation.co.uk), covering central authentication, cookie sessions, user management, and unified application dashboard with Website Builder tile.",
+    "location": "tse-auth-service/2026-09-16-full/",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-auth-v1.10-full-disaster-recovery.md"
   },
   {
-    "id": "v2.15-stable-backlink-article-workflow-security-hardened",
-    "app": "Site Registry",
-    "version": "v2.15-stable-backlink-article-workflow-security-hardened",
-    "gitTag": "v2.15-stable-backlink-article-workflow-security-hardened",
-    "commit": "[AUTO]",
-    "date": "16-09-2026 07:48",
-    "title": "V2.15 Stable Restore Point",
-    "description": "`V2.15-STABLE-BACKLINK-ARTICLE-WORKFLOW-SECURITY-HARDENED`",
-    "status": "Superseded",
-    "docFile": "V2.15-STABLE-BACKLINK-ARTICLE-WORKFLOW-SECURITY-HARDENED.md"
-  },
-  {
-    "id": "leadgen-v1.42-stable-prior-to-user-workspace-separation",
-    "app": "Lead Generator",
-    "version": "v1.42-lg-stable",
-    "gitTag": "V1.42-STABLE-PRIOR-TO-USER-WORKSPACE-SEPARATION",
-    "commit": "1863136",
-    "date": "15-09-2026 12:32",
-    "title": "Lead Generator V1.42 Stable Baseline",
-    "description": "Confirmed stable release V1.42 capturing Master Email Templates management, personalisations variables panel, 70+ opportunity score highlighting, single template creation bar, website desktop preview, and full outreach pack workflow.",
-    "status": "Superseded",
-    "docFile": "RESTORE-POINT-V1.42-STABLE-PRIOR-TO-USER-WORKSPACE-SEPARATION.md",
-    "purpose": "Master email templates management, score 70+ highlights, and outreach pack workflow.",
-    "verifiedWorking": [
-      "Master email templates editor with personalisations variables",
-      "Opportunity Score 70+ green highlight",
-      "Website desktop preview modal",
-      "Outreach packs and email discovery integration"
-    ],
-    "filesChanged": [
-      "src/pages/MasterTemplatesPage.jsx",
-      "src/pages/SearchResultsPage.jsx",
-      "src/components/WebsitePreviewModal.jsx"
-    ]
-  },
-  {
-    "id": "wm-v2.43-baseline",
-    "app": "Website Manager",
-    "version": "v2.43-wm-stable",
-    "gitTag": "wm-v2.43-baseline",
-    "commit": "2b4274f",
-    "date": "15-09-2026 11:59",
-    "title": "Website Manager V2.43 Users & Access Management Baseline",
-    "description": "Confirmed stable baseline V2.43: globally suppressed browser address and credential autofill in modals, fixed password retrieval and show/hide functionality, verified Edit User modal footer visibility, and updated build versioning.",
-    "status": "Superseded",
-    "docFile": "RESTORE-POINT-v2.21-stable-classification-engine-hostname-isolation-fix.md",
-    "purpose": "Suppress browser address and credential autofill in modals, resolve password editing issues in Users & Access.",
-    "verifiedWorking": [
-      "Global autofill suppression across all application modals",
-      "Password Show/Hide toggle and reliable hash persistence",
-      "Edit User modal footer and Save button scrolling fixes",
-      "Multi-user live synchronization"
-    ],
-    "filesChanged": [
-      "src/pages/UsersAccessPage.jsx",
-      "src/components/EditUserDialog.jsx",
-      "server/index.js"
-    ]
-  },
-  {
-    "id": "wm-v2.24-stable-w5-contextual-sentence-generator",
-    "app": "Website Manager",
-    "version": "v2.24-wm-stable",
-    "gitTag": "v2.24-stable-w5-contextual-sentence-and-internal-linking-suite",
-    "commit": "fdb459e",
-    "date": "13-09-2026 12:46",
-    "title": "Website Manager V2.24 W5 Internal Linking Engine & 11-Stage Workflow",
-    "description": "Confirmed stable release V2.24: real 11-stage connected TSE website workflow journey on homepage, W5 in-place editorial block updates with Elementor _elementor_data push pipeline, natural anchor text generation with contextual AI sentence synthesis, and unique body-content internal link counts.",
-    "status": "Superseded",
-    "docFile": "RESTORE-POINT-v2.20-realtime-multi-user-website-manager.md",
-    "purpose": "11-stage TSE workflow visualization, W5 internal linking with in-place editorial updates and AI sentence generation.",
-    "verifiedWorking": [
-      "Unified HOW TSE WORKS 11-stage connected journey",
-      "In-place editorial block replacement without blind appending",
-      "Elementor _elementor_data push pipeline & verification",
-      "Unique body-content internal link counts"
-    ],
-    "filesChanged": [
-      "src/pages/HomePage.jsx",
-      "src/pages/InternalLinkingPage.jsx",
-      "src/services/wordpressApi.js"
-    ]
+    "id": "kr-v1.4.5-full-disaster-recovery",
+    "app": "Keyword Research",
+    "version": "V1.4.5",
+    "gitTag": "kr-v1.45-full-disaster-recovery",
+    "commit": "f710547",
+    "date": "16-09-2026 10:52",
+    "title": "Keyword Research V1.4.5 Full Disaster-Recovery Milestone",
+    "description": "Full disaster-recovery restore point containing verified cold database snapshot (7 tables, 1.90MB), complete application source, Nginx reverse-proxy definitions, PM2 process configuration, and DataForSEO/Central Forms integrations.",
+    "location": "keyword-research/2026-09-16-full/",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-v1.4.5-full-disaster-recovery-keyword-research.md"
   },
   {
     "id": "kr-v1.4.5-iframe-form-submission-fix",
@@ -351,89 +265,5 @@
       "src/components/SiteBuilder.jsx",
       "src/components/KeywordResearchView.jsx"
     ]
-  },
-  {
-    "id": "v1.0.6-stable-keyword-groups-research-workflow",
-    "app": "Keyword Research",
-    "version": "V1.0.6 (Stable Production Release)",
-    "gitTag": "",
-    "commit": "[AUTO]",
-    "date": "11-09-2026",
-    "title": "v1.0.6-stable-keyword-groups-research-workflow",
-    "description": "**Preserved Project & Keyword State**:",
-    "status": "Superseded",
-    "docFile": "RESTORE-POINT-v1.0.6-stable-keyword-groups-research-workflow.md"
-  },
-  {
-    "id": "v1.1.1-stable-keyword-research-to-site-architecture-workflow",
-    "app": "Keyword Research",
-    "version": "V1.1.1 (Stable Production Release)",
-    "gitTag": "",
-    "commit": "[AUTO]",
-    "date": "11-09-2026",
-    "title": "V1.1.1-STABLE-KEYWORD-RESEARCH-TO-SITE-ARCHITECTURE-WORKFLOW",
-    "description": "**OpenAI-Only Semantic Intelligence**:",
-    "status": "Superseded",
-    "docFile": "RESTORE-POINT-v1.1.1-stable-keyword-research-to-site-architecture-workflow.md"
-  },
-  {
-    "id": "v2.12-stable-before-website-manager-realtime",
-    "app": "Website Manager",
-    "version": "v2.12-stable-before-website-manager-realtime",
-    "gitTag": "v2.12-stable-before-website-manager-realtime",
-    "commit": "[AUTO]",
-    "date": "10-09-2026 09:50",
-    "title": "V2.12-STABLE-BEFORE-WEBSITE-MANAGER-REALTIME",
-    "description": "This is the **last confirmed stable restore point** of the TSE Website Manager prior to introducing the **Supabase Realtime Broadcast multi-user synchronization layer**.",
-    "status": "Superseded",
-    "docFile": "V2.12-STABLE-BEFORE-WEBSITE-MANAGER-REALTIME.md"
-  },
-  {
-    "id": "v2.17-stable-wordpress-structural-rules-and-classification",
-    "app": "Website Manager",
-    "version": "v2.17-stable-wordpress-structural-rules-and-classification",
-    "gitTag": "2.17-stable-wordpress-structural-rules-and-classification",
-    "commit": "[AUTO]",
-    "date": "09-09-2026 17:35",
-    "title": "V2.17-STABLE-WORDPRESS-STRUCTURAL-RULES-AND-CLASSIFICATION",
-    "description": "This restore point captures the verified completion of **V2.17 Generic WordPress Structural Classification Rules, W3 Column Sorting, Refresh State Persistence, and Live WordPress Push Resolution** across TSE Website Manager.",
-    "status": "Superseded",
-    "docFile": "V2.17-STABLE-WORDPRESS-STRUCTURAL-RULES-AND-CLASSIFICATION.md"
-  },
-  {
-    "id": "v2.16-stable-full-recovery-post-rollback",
-    "app": "Site Registry",
-    "version": "v2.16-stable-full-recovery-post-rollback",
-    "gitTag": "v2.16-stable-full-recovery-post-rollback",
-    "commit": "1c035ac",
-    "date": "09-09-2026",
-    "title": "V2.16-STABLE-FULL-RECOVERY-POST-ROLLBACK",
-    "description": "This stable milestone establishes a complete disaster-recovery point following the resolution of the legacy frontend rollback incident.",
-    "status": "Superseded",
-    "docFile": "V2.16-STABLE-FULL-RECOVERY-POST-ROLLBACK.md"
-  },
-  {
-    "id": "v2.17-stable-source-database-bulk-upload-flexibility",
-    "app": "Site Registry",
-    "version": "v2.17-stable-source-database-bulk-upload-flexibility",
-    "gitTag": "v2.17-stable-source-database-bulk-upload",
-    "commit": "11b00a5",
-    "date": "09-09-2026",
-    "title": "V2.17-STABLE-SOURCE-DATABASE-BULK-UPLOAD-FLEXIBILITY",
-    "description": "This stable restore point captures the completed, production-verified flexible Bulk Upload system for the Site Registry Source Database (`/backlinks/sources`).",
-    "status": "Superseded",
-    "docFile": "V2.17-STABLE-SOURCE-DATABASE-BULK-UPLOAD-FLEXIBILITY.md"
-  },
-  {
-    "id": "v2.18-stable-create-backlink-source-ranking-and-modern-order-source",
-    "app": "Site Registry",
-    "version": "v2.18-stable-create-backlink-source-ranking-and-modern-order-source",
-    "gitTag": "v2.18-stable-create-backlink-source-ranking-and-modern-order-source",
-    "commit": "87c294a",
-    "date": "09-09-2026",
-    "title": "V2.18-STABLE-CREATE-BACKLINK-SOURCE-RANKING-AND-MODERN-ORDER-SOURCE",
-    "description": "This formal stable restore point captures the completed, production-verified Create Backlink workflow enhancements, including Website Manager priority star authority, Step 4 source quality ranking, modern Source Database authority, and foreign-key-safe order persistence.",
-    "status": "Superseded",
-    "docFile": "V2.18-STABLE-CREATE-BACKLINK-SOURCE-RANKING-AND-MODERN-ORDER-SOURCE.md"
   }
 ]

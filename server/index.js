@@ -2910,19 +2910,33 @@ function normalizeDbPageKey(key) {
   return str
 }
 
-// GET all stored rankings for a website
+// GET all stored rankings for a website (with history enrichment)
 app.get('/api/websites/:id/rankings', (req, res) => {
   try {
     const { id } = req.params
     const rows = db.prepare(`SELECT * FROM page_rankings WHERE site_id = ?`).all(id)
     const result = {}
+
+    const historyStmt = db.prepare(`
+      SELECT google_rank, checked_at FROM rank_history 
+      WHERE site_id = ? AND (page_key = ? OR target_phrase = ?) 
+      ORDER BY checked_at DESC LIMIT 2
+    `)
+
     rows.forEach(r => {
       const cleanKey = normalizeDbPageKey(r.page_key)
+      const hRows = historyStmt.all(id, r.page_key, r.target_phrase)
+      let previousRank = null
+      if (hRows && hRows.length > 1) {
+        previousRank = hRows[1].google_rank
+      }
+
       const record = {
         siteId: r.site_id,
         pageKey: cleanKey || r.page_key,
         targetPhrase: r.target_phrase,
         googleRank: r.google_rank,
+        previousRank: previousRank,
         isTop100: Boolean(r.is_top_100),
         rankingUrl: r.ranking_url,
         isUrlMatch: Boolean(r.is_url_match),
@@ -2930,7 +2944,7 @@ app.get('/api/websites/:id/rankings', (req, res) => {
         volumeCheckedAt: r.volume_checked_at,
         searchEngine: r.search_engine || 'google.co.uk',
         locationCode: r.location_code || 2826,
-        device: r.device || 'desktop',
+        device: r.device || 'mobile',
         lastCheckedAt: r.last_checked_at,
         updatedAt: r.updated_at
       }
@@ -2945,6 +2959,136 @@ app.get('/api/websites/:id/rankings', (req, res) => {
     res.json(result)
   } catch (e) {
     res.status(500).json({ error: e.message })
+  }
+})
+
+// POST sync approved Keyword Research target phrases for a website
+app.post('/api/websites/:id/sync-keyword-research', async (req, res) => {
+  try {
+    const { id } = req.params
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) {
+      return res.status(404).json({ success: false, error: 'Website not found' })
+    }
+
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://cbdfjdxqhqajzjblysqd.supabase.co'
+    const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5'
+
+    const projRes = await fetch(`${supabaseUrl}/rest/v1/keyword_research_projects?architecture_status=eq.approved&select=*`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    })
+
+    if (!projRes.ok) {
+      const errText = await projRes.text()
+      return res.status(500).json({ success: false, error: `Supabase error: ${errText}` })
+    }
+
+    const projects = await projRes.json()
+    if (!Array.isArray(projects) || projects.length === 0) {
+      return res.json({ success: true, count: 0, message: 'No approved Keyword Research projects found.' })
+    }
+
+    const cleanSiteName = (site.name || '').toLowerCase()
+    const cleanSiteUrl = (site.url || '').toLowerCase()
+    const siteDomain = extractHostnameFromUrl(cleanSiteUrl)
+
+    let matchedProject = projects.find(p => {
+      const pDom = (p.domain || '').toLowerCase()
+      const pName = (p.project_name || p.name || '').toLowerCase()
+      const pSeed = (p.seed_phrase || '').toLowerCase()
+      if (pDom && siteDomain && (pDom.includes(siteDomain) || siteDomain.includes(pDom))) return true
+      if (pName && cleanSiteName && (pName.includes(cleanSiteName) || cleanSiteName.includes(pName))) return true
+      if (pSeed && cleanSiteName && cleanSiteName.includes(pSeed)) return true
+      return false
+    })
+
+    if (!matchedProject && projects.length === 1) {
+      matchedProject = projects[0]
+    }
+
+    if (!matchedProject || !matchedProject.site_architecture || !Array.isArray(matchedProject.site_architecture.pages)) {
+      return res.json({ success: true, count: 0, message: `No matching approved Keyword Research project found for ${site.name}.` })
+    }
+
+    const volumeMap = {}
+    try {
+      const itemRes = await fetch(`${supabaseUrl}/rest/v1/keyword_research_items?project_id=eq.${matchedProject.id}&select=keyword,search_volume`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      })
+      if (itemRes.ok) {
+        const items = await itemRes.json()
+        if (Array.isArray(items)) {
+          items.forEach(it => {
+            if (it.keyword && it.search_volume !== null && it.search_volume !== undefined) {
+              volumeMap[it.keyword.toLowerCase().trim()] = Number(it.search_volume)
+            }
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('Volume fetch warning:', e.message)
+    }
+
+    const approvedPages = matchedProject.site_architecture.pages || []
+    const now = new Date().toISOString()
+    const syncedPhrases = []
+
+    const upsertConfigStmt = db.prepare(`
+      INSERT INTO page_configurations (
+        site_id, page_key, target_phrase, updated_at
+      ) VALUES (
+        ?, ?, ?, ?
+      ) ON CONFLICT(site_id, page_key) DO UPDATE SET
+        target_phrase = excluded.target_phrase,
+        updated_at = excluded.updated_at
+    `)
+
+    const upsertRankingStmt = db.prepare(`
+      INSERT INTO page_rankings (
+        site_id, page_key, target_phrase, search_volume, volume_checked_at, search_engine, location_code, device, last_checked_at, updated_at
+      ) VALUES (
+        ?, ?, ?, ?, ?, 'google.co.uk', 2826, 'mobile', ?, ?
+      ) ON CONFLICT(site_id, page_key) DO UPDATE SET
+        target_phrase = excluded.target_phrase,
+        search_volume = COALESCE(excluded.search_volume, page_rankings.search_volume),
+        updated_at = excluded.updated_at
+    `)
+
+    for (const page of approvedPages) {
+      const phrase = (page.primary_target_phrase || '').trim()
+      if (!phrase) continue
+
+      const slug = page.suggested_slug || '/'
+      const cleanSlug = slug.startsWith('/') ? slug : '/' + slug
+      const pageKey = cleanSlug
+      const volume = volumeMap[phrase.toLowerCase()] || (page.search_volume ? Number(page.search_volume) : null)
+
+      upsertConfigStmt.run(id, pageKey, phrase, now)
+      upsertRankingStmt.run(id, pageKey, phrase, volume, now, now, now)
+
+      syncedPhrases.push({
+        pageKey,
+        targetPhrase: phrase,
+        searchVolume: volume,
+        pageName: page.page_name || pageKey
+      })
+    }
+
+    res.json({
+      success: true,
+      count: syncedPhrases.length,
+      projectName: matchedProject.project_name || matchedProject.seed_phrase,
+      phrases: syncedPhrases
+    })
+  } catch (e) {
+    console.error('Error in sync-keyword-research endpoint:', e)
+    res.status(500).json({ success: false, error: e.message })
   }
 })
 
@@ -3101,6 +3245,19 @@ async function handleSinglePhraseRankCheck(req, res) {
       last_checked_at: now,
       updated_at: now
     })
+
+    // Also record persistent ranking snapshot in rank_history table
+    try {
+      db.prepare(`
+        INSERT INTO rank_history (
+          site_id, page_key, target_phrase, google_rank, is_top_100, ranking_url, is_url_match, search_engine, location_code, device, checked_at
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?, ?, 'google.co.uk', 2826, 'mobile', ?
+        )
+      `).run(id, pageKey, targetPhrase, googleRank, isTop100, rankingUrl, isUrlMatch, now)
+    } catch (histErr) {
+      console.error('Error inserting rank_history snapshot:', histErr)
+    }
 
     // 7. Return clean JSON response
     res.json({

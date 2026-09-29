@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import PageManagementPage from './PageManagementPage'
 import PageAuditResultsPage from './PageAuditResultsPage'
 import InternalLinkingPage from './InternalLinkingPage'
+import RankTrackerPage from './RankTrackerPage'
 import GlobalSettings from './GlobalSettings'
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import { fetchTseWordPressExportPackage, fetchMagentoExportPackage, fetchStaticHtmlExportPackage } from '../services/exporterApi'
@@ -136,6 +137,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     if (path === '/w3-page-management' || path === '/w3' || path === '/w3-manage-pages') return 'w3'
     if (path === '/w4-audit-results' || path === '/w4' || path === '/w4-page-audit' || path === '/w3-audit-results') return 'w4'
     if (path === '/w5-internal-linking' || path === '/w5' || path === '/w4-internal-linking' || path === '/w5-all-internal-links' || path === '/w5-review-links') return 'w5'
+    if (path === '/w6-rank-tracker' || path === '/w6' || path === '/rank-tracker') return 'w6'
     return null
   }
 
@@ -624,6 +626,15 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     }, 500)
   }
 
+  if (activeTab === 'w6' || activeTab === 'rank_tracker' || activeTab === 'w6_rank_tracker') {
+    return (
+      <RankTrackerPage
+        site={site}
+        onBack={() => setActiveTab('w2')}
+      />
+    )
+  }
+
   if (activeTab === 'w5' || activeTab === 'w5_all_internal_links' || activeTab === 'w4_internal_linking' || activeTab === 'w4-internal-linking' || activeTab === 'w5_review_links') {
     return (
       <InternalLinkingPage
@@ -939,50 +950,32 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
           <span className="w2-fc-tag">W5 | ALL INTERNAL LINKS</span>
         </div>
 
-        {/* Card 3: Site Analysis */}
+        {/* Card 3: Rank Tracker */}
         <div className="w2-feature-card theme-blue">
           <div className="w2-fc-header">
             <div className="w2-fc-icon-bg">
               <ActivityIcon />
             </div>
-            <h3 className="w2-fc-title">Site Analysis</h3>
+            <h3 className="w2-fc-title">Rank Tracker</h3>
           </div>
           <p className="w2-fc-desc">
-            Review your site's structure, content and optimisation.
+            Track target keyword positions and ranking movement.
           </p>
           <ul className="w2-fc-checklist">
-            <li><span className="chk-icon">✓</span> Site Structure</li>
-            <li><span className="chk-icon">✓</span> Internal Links</li>
-            <li><span className="chk-icon">✓</span> External Links</li>
-            <li><span className="chk-icon">✓</span> Content Coverage</li>
+            <li><span className="chk-icon">✓</span> Track Google UK mobile keyword positions</li>
+            <li><span className="chk-icon">✓</span> Compare current vs previous rankings</li>
+            <li><span className="chk-icon">✓</span> Automatic Keyword Research phrase sync</li>
+            <li><span className="chk-icon">✓</span> DataForSEO SERP intelligence</li>
           </ul>
-          <button type="button" className="w2-fc-btn btn-open-blue" id="btn-open-site-analysis">
-            Open Site Analysis ›
+          <button
+            type="button"
+            className="w2-fc-btn btn-open-blue"
+            id="btn-open-rank-tracker"
+            onClick={() => setActiveTab('w6')}
+          >
+            Open Rank Tracker ›
           </button>
-          <span className="w2-fc-tag">W6 | SITE ANALYSIS</span>
-        </div>
-
-        {/* Card 4: Website Settings */}
-        <div className="w2-feature-card theme-amber">
-          <div className="w2-fc-header">
-            <div className="w2-fc-icon-bg">
-              <SlidersIcon />
-            </div>
-            <h3 className="w2-fc-title">Website Settings</h3>
-          </div>
-          <p className="w2-fc-desc">
-            Manage website options, platform, portfolio and configuration.
-          </p>
-          <ul className="w2-fc-checklist">
-            <li><span className="chk-icon">✓</span> Website classification</li>
-            <li><span className="chk-icon">✓</span> Platform and API settings</li>
-            <li><span className="chk-icon">✓</span> Portfolio management</li>
-            <li><span className="chk-icon">✓</span> General configuration</li>
-          </ul>
-          <button type="button" className="w2-fc-btn btn-open-amber" id="btn-open-settings">
-            Open Settings ›
-          </button>
-          <span className="w2-fc-tag">W7 | WEBSITE SETTINGS</span>
+          <span className="w2-fc-tag">W6 | RANK TRACKER</span>
         </div>
 
       </div>

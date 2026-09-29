@@ -103,6 +103,8 @@ function scanVpsBackupManifests() {
             else if (appDir === 'keyword-research') appName = 'Keyword Research'
             else if (appDir === 'website-builder') appName = 'Website Builder'
             else if (appDir === 'tse-auth-service') appName = 'Auth / Apps Hub'
+            else if (appDir === 'page-auditor') appName = 'Page Auditor'
+            else if (appDir === 'tse-leadgen-deployer') appName = 'TSE Lodged Deployer'
 
             const tag = tagMatch ? tagMatch[1].trim() : ''
             const commit = commitMatch ? commitMatch[1].trim() : ''
@@ -252,7 +254,9 @@ export function getAllRestorePoints() {
   for (const app of Object.keys(appGroups)) {
     const group = appGroups[app]
     group.sort((a, b) => parseDateToTimestamp(b.date) - parseDateToTimestamp(a.date))
-    group.forEach((item, idx) => {
+    // Enforce standing retention policy: MAXIMUM 3 restore points PER APP
+    const kept = group.slice(0, 3)
+    kept.forEach((item, idx) => {
       item.status = idx === 0 ? 'Current' : 'Superseded'
       result.push(item)
     })

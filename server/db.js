@@ -122,6 +122,25 @@ db.exec(`
     PRIMARY KEY(task_id, page_key)
   );
 
+  CREATE TABLE IF NOT EXISTS rank_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    site_id TEXT NOT NULL,
+    page_key TEXT NOT NULL,
+    target_phrase TEXT NOT NULL,
+    google_rank INTEGER DEFAULT NULL,
+    is_top_100 INTEGER DEFAULT 0,
+    ranking_url TEXT DEFAULT NULL,
+    is_url_match INTEGER DEFAULT 0,
+    search_volume INTEGER DEFAULT NULL,
+    search_engine TEXT DEFAULT 'google.co.uk',
+    location_code INTEGER DEFAULT 2826,
+    device TEXT DEFAULT 'mobile',
+    checked_at TEXT NOT NULL,
+    FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_rank_history_site_page ON rank_history(site_id, page_key, checked_at);
+
   CREATE TABLE IF NOT EXISTS article_drafts (
     id TEXT PRIMARY KEY,
     site_id TEXT NOT NULL,

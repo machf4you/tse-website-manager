@@ -36,6 +36,8 @@
     "scripts/advance_production_baseline.py",
     "src/pages/RestorePointsPage.jsx",
     "src/pages/RestorePointsPage.css",
+    "src/pages/RankTrackerPage.jsx",
+    "src/pages/RankTrackerPage.css",
     "scripts/sync_restore_points.py",
     "package.json",
     "src/data/restorePointData.js",
