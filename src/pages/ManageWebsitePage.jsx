@@ -497,9 +497,9 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
   useEffect(() => {
     if (!isPackageHydrated) return
 
-    // Do NOT force redirect to W2 if stored package data exists or package is still hydrating
+    // Do NOT force redirect to W2 if stored package data exists or if viewing W7 Social
     if (!storedPackageData && !site?.storedPackageData && (!isSynced || exportedPages.length === 0)) {
-      if (activeTab !== 'w2') {
+      if (activeTab !== 'w2' && activeTab !== 'w7' && activeTab !== 'w7-social' && activeTab !== 'social') {
         setActiveTab('w2')
       }
     }
