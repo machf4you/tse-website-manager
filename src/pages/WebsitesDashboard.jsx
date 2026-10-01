@@ -103,7 +103,19 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
                 return matched
               }
             }
-            // NEVER fall back to another site
+            // If no target site matched, default to first connected site
+            if (apiSites.length > 0) {
+              const defaultSite = apiSites[0]
+              try {
+                const siteIdStr = String(defaultSite.id)
+                localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(defaultSite))
+                localStorage.setItem('tse_managed_site', JSON.stringify(defaultSite))
+                localStorage.setItem('tse_managed_site_id_v1', siteIdStr)
+                localStorage.setItem('tse_managed_site_id', siteIdStr)
+                localStorage.setItem('tse_selected_site_id', siteIdStr)
+              } catch (e) {}
+              return defaultSite
+            }
             return prevManaged || null
           })
         }
