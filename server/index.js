@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, saveSocialGeneratedVideo, getSocialGeneratedVideos } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -184,6 +184,20 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
   }
 })
 
+app.delete('/api/w7-social/images/:id', (req, res) => {
+  try {
+    const { id } = req.params
+    const success = deleteSocialGeneratedImage(id)
+    if (!success) {
+      return res.status(404).json({ success: false, error: 'Image asset not found' })
+    }
+    return res.json({ success: true, message: 'Image asset deleted successfully' })
+  } catch (err) {
+    console.error('Error deleting image asset:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
 // ── W7 Social Veo Video Generation Endpoints ──
 app.get('/api/w7-social/videos', (req, res) => {
   try {
@@ -192,6 +206,20 @@ app.get('/api/w7-social/videos', (req, res) => {
     res.json({ success: true, videos })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.delete('/api/w7-social/videos/:id', (req, res) => {
+  try {
+    const { id } = req.params
+    const success = deleteSocialGeneratedVideo(id)
+    if (!success) {
+      return res.status(404).json({ success: false, error: 'Video asset not found' })
+    }
+    return res.json({ success: true, message: 'Video asset deleted successfully' })
+  } catch (err) {
+    console.error('Error deleting video asset:', err)
+    return res.status(500).json({ success: false, error: err.message })
   }
 })
 

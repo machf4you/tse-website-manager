@@ -386,4 +386,45 @@ export function getSocialGeneratedVideos(siteId = null) {
   return db.prepare(`SELECT * FROM social_generated_videos ORDER BY datetime(created_at) DESC LIMIT 50`).all()
 }
 
+export function deleteSocialGeneratedImage(id) {
+  const img = db.prepare(`SELECT * FROM social_generated_images WHERE id = ?`).get(String(id))
+  if (!img) return false
+
+  // Unset source_image_id reference in social_generated_videos so deleting source image doesn't delete videos created from it
+  db.prepare(`UPDATE social_generated_videos SET source_image_id = NULL WHERE source_image_id = ?`).run(String(id))
+
+  // Delete DB record
+  db.prepare(`DELETE FROM social_generated_images WHERE id = ?`).run(String(id))
+
+  // Unlink stored file from disk
+  try {
+    const fullPath = path.isAbsolute(img.file_path) ? img.file_path : path.resolve(__dirname, '..', img.file_path)
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath)
+    }
+  } catch (e) {
+    console.error('Error deleting image file from disk:', e)
+  }
+  return true
+}
+
+export function deleteSocialGeneratedVideo(id) {
+  const vid = db.prepare(`SELECT * FROM social_generated_videos WHERE id = ?`).get(String(id))
+  if (!vid) return false
+
+  // Delete DB record
+  db.prepare(`DELETE FROM social_generated_videos WHERE id = ?`).run(String(id))
+
+  // Unlink stored file from disk
+  try {
+    const fullPath = path.isAbsolute(vid.file_path) ? vid.file_path : path.resolve(__dirname, '..', vid.file_path)
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath)
+    }
+  } catch (e) {
+    console.error('Error deleting video file from disk:', e)
+  }
+  return true
+}
+
 export default db

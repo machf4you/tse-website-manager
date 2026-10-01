@@ -125,10 +125,103 @@ export default function SocialDashboardPage({ site, onBack }) {
     return () => { isMounted = false }
   }, [siteId])
 
+  const handleDeleteImage = async (imgId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this preserved image?')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/w7-social/images/${encodeURIComponent(imgId)}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setHistoryImages(prev => {
+          const updated = prev.filter(item => item.id !== imgId)
+          if (generatedImage?.id === imgId) {
+            if (updated.length > 0) {
+              const nextImg = updated[0]
+              setGeneratedImage({
+                id: nextImg.id,
+                url: nextImg.public_url || nextImg.url,
+                subject: nextImg.subject || 'Untitled Image',
+                format: nextImg.format || getFileFormat(nextImg),
+                aspectRatio: nextImg.aspect_ratio || nextImg.aspectRatio || '9:16',
+                prompt: nextImg.prompt,
+                model: nextImg.model,
+                createdAt: nextImg.created_at,
+                mimeType: nextImg.mime_type
+              })
+            } else {
+              setGeneratedImage(null)
+            }
+          }
+          return updated
+        })
+      } else {
+        alert(data.error || 'Failed to delete image asset.')
+      }
+    } catch (err) {
+      console.error('Error deleting image asset:', err)
+      alert('Network error deleting image asset.')
+    }
+  }
+
+  const handleDeleteVideo = async (videoId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this preserved video?')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/w7-social/videos/${encodeURIComponent(videoId)}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setHistoryVideos(prev => {
+          const updated = prev.filter(item => item.id !== videoId)
+          if (generatedVideo?.id === videoId) {
+            if (updated.length > 0) {
+              const nextVid = updated[0]
+              setGeneratedVideo({
+                id: nextVid.id,
+                url: nextVid.public_url || nextVid.url,
+                subject: nextVid.subject || 'Untitled Video',
+                aspectRatio: nextVid.aspect_ratio || nextVid.aspectRatio || '9:16',
+                prompt: nextVid.prompt,
+                model: nextVid.model,
+                sourceImageId: nextVid.source_image_id,
+                createdAt: nextVid.created_at
+              })
+            } else {
+              setGeneratedVideo(null)
+            }
+          }
+          return updated
+        })
+      } else {
+        alert(data.error || 'Failed to delete video asset.')
+      }
+    } catch (err) {
+      console.error('Error deleting video asset:', err)
+      alert('Network error deleting video asset.')
+    }
+  }
+
   const handleGenerateImage = async () => {
+    const cleanSubject = subject.trim()
+    if (!cleanSubject) {
+      setError('Please enter a Subject.')
+      return
+    }
+
     const cleanPrompt = prompt.trim()
-    const cleanSubject = subject.trim() || 'Untitled Image'
-    if (!cleanPrompt || isGenerating) return
+    if (!cleanPrompt) {
+      setError('Image prompt is required.')
+      return
+    }
+
+    if (isGenerating) return
 
     setIsGenerating(true)
     setError(null)
@@ -175,6 +268,9 @@ export default function SocialDashboardPage({ site, onBack }) {
           },
           ...prev
         ])
+
+        // Automatically clear Subject field on successful image generation
+        setSubject('')
       } else {
         setError(data.error || 'Failed to generate image via Google Nano Banana API.')
       }
@@ -445,6 +541,17 @@ export default function SocialDashboardPage({ site, onBack }) {
                         mimeType: item.mime_type
                       })}
                     >
+                      <button
+                        type="button"
+                        className="sd-history-delete-btn"
+                        title="Delete preserved image"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteImage(item.id)
+                        }}
+                      >
+                        &times;
+                      </button>
                       <img src={itemUrl} alt={item.prompt} className="sd-history-thumb" />
                       <div className="sd-history-meta">
                         <div className="sd-history-name">{displaySubject}</div>
@@ -669,6 +776,17 @@ export default function SocialDashboardPage({ site, onBack }) {
                         createdAt: item.created_at
                       })}
                     >
+                      <button
+                        type="button"
+                        className="sd-history-delete-btn"
+                        title="Delete preserved video"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteVideo(item.id)
+                        }}
+                      >
+                        &times;
+                      </button>
                       <video src={itemUrl} className="sd-history-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
                       <div className="sd-history-meta">
                         <div className="sd-history-name">{displaySubject}</div>
