@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -198,6 +198,24 @@ app.delete('/api/w7-social/images/:id', (req, res) => {
   }
 })
 
+const handleUpdateImageSubject = (req, res) => {
+  try {
+    const { id } = req.params
+    const { subject } = req.body || {}
+    const cleanSubject = String(subject || '').trim() || 'Untitled Image'
+    const success = updateSocialGeneratedImageSubject(id, cleanSubject)
+    if (!success) {
+      return res.status(404).json({ success: false, error: 'Image asset not found' })
+    }
+    return res.json({ success: true, id, subject: cleanSubject, message: 'Image subject updated successfully' })
+  } catch (err) {
+    console.error('Error updating image subject:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+}
+app.patch('/api/w7-social/images/:id/subject', handleUpdateImageSubject)
+app.put('/api/w7-social/images/:id/subject', handleUpdateImageSubject)
+
 // ── W7 Social Veo Video Generation Endpoints ──
 app.get('/api/w7-social/videos', (req, res) => {
   try {
@@ -222,6 +240,24 @@ app.delete('/api/w7-social/videos/:id', (req, res) => {
     return res.status(500).json({ success: false, error: err.message })
   }
 })
+
+const handleUpdateVideoSubject = (req, res) => {
+  try {
+    const { id } = req.params
+    const { subject } = req.body || {}
+    const cleanSubject = String(subject || '').trim() || 'Untitled Video'
+    const success = updateSocialGeneratedVideoSubject(id, cleanSubject)
+    if (!success) {
+      return res.status(404).json({ success: false, error: 'Video asset not found' })
+    }
+    return res.json({ success: true, id, subject: cleanSubject, message: 'Video subject updated successfully' })
+  } catch (err) {
+    console.error('Error updating video subject:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+}
+app.patch('/api/w7-social/videos/:id/subject', handleUpdateVideoSubject)
+app.put('/api/w7-social/videos/:id/subject', handleUpdateVideoSubject)
 
 app.post('/api/w7-social/generate-video', async (req, res) => {
   try {
@@ -489,6 +525,24 @@ app.delete('/api/w7-social/final-videos/:id', (req, res) => {
     return res.status(500).json({ success: false, error: err.message })
   }
 })
+
+const handleUpdateFinalVideoSubject = (req, res) => {
+  try {
+    const { id } = req.params
+    const { subject } = req.body || {}
+    const cleanSubject = String(subject || '').trim() || 'Untitled Video'
+    const success = updateSocialGeneratedFinalVideoSubject(id, cleanSubject)
+    if (!success) {
+      return res.status(404).json({ success: false, error: 'Final video asset not found' })
+    }
+    return res.json({ success: true, id, subject: cleanSubject, message: 'Final video subject updated successfully' })
+  } catch (err) {
+    console.error('Error updating final video subject:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+}
+app.patch('/api/w7-social/final-videos/:id/subject', handleUpdateFinalVideoSubject)
+app.put('/api/w7-social/final-videos/:id/subject', handleUpdateFinalVideoSubject)
 
 app.post('/api/w7-social/generate-final-video', async (req, res) => {
   try {

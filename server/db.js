@@ -495,5 +495,23 @@ export function deleteSocialGeneratedFinalVideo(id) {
   return true
 }
 
+export function updateSocialGeneratedImageSubject(id, subject) {
+  const cleanSubject = String(subject || '').trim() || 'Untitled Image'
+  const result = db.prepare(`UPDATE social_generated_images SET subject = ? WHERE id = ?`).run(cleanSubject, String(id))
+  return result.changes > 0
+}
+
+export function updateSocialGeneratedVideoSubject(id, subject) {
+  const cleanSubject = String(subject || '').trim() || 'Untitled Video'
+  const result = db.prepare(`UPDATE social_generated_videos SET subject = ? WHERE id = ?`).run(cleanSubject, String(id))
+  return result.changes > 0
+}
+
+export function updateSocialGeneratedFinalVideoSubject(id, subject) {
+  const cleanSubject = String(subject || '').trim() || 'Untitled Video'
+  const result = db.prepare(`UPDATE social_generated_final_videos SET subject = ? WHERE id = ?`).run(cleanSubject, String(id))
+  return result.changes > 0
+}
+
 export default db
 

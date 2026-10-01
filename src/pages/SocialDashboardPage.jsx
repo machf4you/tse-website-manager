@@ -77,6 +77,14 @@ export default function SocialDashboardPage({ site, onBack }) {
   const [historyFinalVideos, setHistoryFinalVideos] = useState([])
   const [isSourceVideoExpanded, setIsSourceVideoExpanded] = useState(false)
 
+  // Edit Subject State for Preserved Assets
+  const [editingImageId, setEditingImageId] = useState(null)
+  const [editingImageSubject, setEditingImageSubject] = useState('')
+  const [editingVideoId, setEditingVideoId] = useState(null)
+  const [editingVideoSubject, setEditingVideoSubject] = useState('')
+  const [editingFinalVideoId, setEditingFinalVideoId] = useState(null)
+  const [editingFinalVideoSubject, setEditingFinalVideoSubject] = useState('')
+
   const siteId = site?.id || null
 
   // Fetch server-preserved images, videos, and final videos on mount
@@ -280,6 +288,78 @@ export default function SocialDashboardPage({ site, onBack }) {
     } catch (err) {
       console.error('Error deleting final video asset:', err)
       alert('Network error deleting final video asset.')
+    }
+  }
+
+  const handleSaveImageSubject = async (imgId) => {
+    const newSubject = editingImageSubject.trim() || 'Untitled Image'
+    try {
+      const res = await fetch(`/api/w7-social/images/${encodeURIComponent(imgId)}/subject`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: newSubject })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setHistoryImages(prev => prev.map(item => item.id === imgId ? { ...item, subject: newSubject } : item))
+        if (generatedImage?.id === imgId) {
+          setGeneratedImage(prev => prev ? { ...prev, subject: newSubject } : null)
+        }
+        setEditingImageId(null)
+      } else {
+        alert(data.error || 'Failed to update image subject.')
+      }
+    } catch (err) {
+      console.error('Error updating image subject:', err)
+      alert('Network error updating image subject.')
+    }
+  }
+
+  const handleSaveVideoSubject = async (vidId) => {
+    const newSubject = editingVideoSubject.trim() || 'Untitled Video'
+    try {
+      const res = await fetch(`/api/w7-social/videos/${encodeURIComponent(vidId)}/subject`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: newSubject })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setHistoryVideos(prev => prev.map(item => item.id === vidId ? { ...item, subject: newSubject } : item))
+        if (generatedVideo?.id === vidId) {
+          setGeneratedVideo(prev => prev ? { ...prev, subject: newSubject } : null)
+        }
+        setEditingVideoId(null)
+      } else {
+        alert(data.error || 'Failed to update video subject.')
+      }
+    } catch (err) {
+      console.error('Error updating video subject:', err)
+      alert('Network error updating video subject.')
+    }
+  }
+
+  const handleSaveFinalVideoSubject = async (finalVidId) => {
+    const newSubject = editingFinalVideoSubject.trim() || 'Untitled Video'
+    try {
+      const res = await fetch(`/api/w7-social/final-videos/${encodeURIComponent(finalVidId)}/subject`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: newSubject })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setHistoryFinalVideos(prev => prev.map(item => item.id === finalVidId ? { ...item, subject: newSubject } : item))
+        if (generatedFinalVideo?.id === finalVidId) {
+          setGeneratedFinalVideo(prev => prev ? { ...prev, subject: newSubject } : null)
+        }
+        setEditingFinalVideoId(null)
+      } else {
+        alert(data.error || 'Failed to update final video subject.')
+      }
+    } catch (err) {
+      console.error('Error updating final video subject:', err)
+      alert('Network error updating final video subject.')
     }
   }
 
@@ -676,6 +756,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                   const displaySubject = item.subject || 'Untitled Image'
                   const displayFormat = item.format || getFileFormat(item)
                   const displayRatio = item.aspect_ratio || item.aspectRatio || '9:16'
+                  const isEditing = editingImageId === item.id
 
                   return (
                     <div
@@ -695,6 +776,18 @@ export default function SocialDashboardPage({ site, onBack }) {
                     >
                       <button
                         type="button"
+                        className="sd-history-edit-btn"
+                        title="Edit subject / title"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingImageId(item.id)
+                          setEditingImageSubject(displaySubject)
+                        }}
+                      >
+                        &#9998;
+                      </button>
+                      <button
+                        type="button"
                         className="sd-history-delete-btn"
                         title="Delete preserved image"
                         onClick={(e) => {
@@ -706,7 +799,27 @@ export default function SocialDashboardPage({ site, onBack }) {
                       </button>
                       <img src={itemUrl} alt={item.prompt} className="sd-history-thumb" />
                       <div className="sd-history-meta">
-                        <div className="sd-history-name">{displaySubject}</div>
+                        {isEditing ? (
+                          <div className="sd-history-edit-box" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              className="sd-history-edit-input"
+                              value={editingImageSubject}
+                              onChange={(e) => setEditingImageSubject(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveImageSubject(item.id)
+                                if (e.key === 'Escape') setEditingImageId(null)
+                              }}
+                              autoFocus
+                            />
+                            <div className="sd-history-edit-actions">
+                              <button type="button" className="sd-history-save-btn" onClick={() => handleSaveImageSubject(item.id)}>Save</button>
+                              <button type="button" className="sd-history-cancel-btn" onClick={() => setEditingImageId(null)}>&times;</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="sd-history-name" title={displaySubject}>{displaySubject}</div>
+                        )}
                         <div className="sd-history-fmt">IMAGE &middot; {displayFormat} &middot; {displayRatio}</div>
                       </div>
                     </div>
@@ -912,6 +1025,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                   const isSelected = generatedVideo?.id === item.id
                   const displaySubject = item.subject || 'Untitled Video'
                   const displayRatio = item.aspect_ratio || item.aspectRatio || '9:16'
+                  const isEditing = editingVideoId === item.id
 
                   return (
                     <div
@@ -930,6 +1044,18 @@ export default function SocialDashboardPage({ site, onBack }) {
                     >
                       <button
                         type="button"
+                        className="sd-history-edit-btn"
+                        title="Edit subject / title"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingVideoId(item.id)
+                          setEditingVideoSubject(displaySubject)
+                        }}
+                      >
+                        &#9998;
+                      </button>
+                      <button
+                        type="button"
                         className="sd-history-delete-btn"
                         title="Delete preserved video"
                         onClick={(e) => {
@@ -941,7 +1067,27 @@ export default function SocialDashboardPage({ site, onBack }) {
                       </button>
                       <video src={itemUrl} className="sd-history-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
                       <div className="sd-history-meta">
-                        <div className="sd-history-name">{displaySubject}</div>
+                        {isEditing ? (
+                          <div className="sd-history-edit-box" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              className="sd-history-edit-input"
+                              value={editingVideoSubject}
+                              onChange={(e) => setEditingVideoSubject(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveVideoSubject(item.id)
+                                if (e.key === 'Escape') setEditingVideoId(null)
+                              }}
+                              autoFocus
+                            />
+                            <div className="sd-history-edit-actions">
+                              <button type="button" className="sd-history-save-btn" onClick={() => handleSaveVideoSubject(item.id)}>Save</button>
+                              <button type="button" className="sd-history-cancel-btn" onClick={() => setEditingVideoId(null)}>&times;</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="sd-history-name" title={displaySubject}>{displaySubject}</div>
+                        )}
                         <div className="sd-history-fmt">VID &middot; {displayRatio}</div>
                       </div>
                     </div>
@@ -1164,6 +1310,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                   const isSelected = generatedFinalVideo?.id === item.id
                   const displaySubject = item.subject || 'Untitled Video'
                   const displayRatio = item.aspect_ratio || item.aspectRatio || '9:16'
+                  const isEditing = editingFinalVideoId === item.id
 
                   return (
                     <div
@@ -1183,6 +1330,18 @@ export default function SocialDashboardPage({ site, onBack }) {
                     >
                       <button
                         type="button"
+                        className="sd-history-edit-btn"
+                        title="Edit subject / title"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingFinalVideoId(item.id)
+                          setEditingFinalVideoSubject(displaySubject)
+                        }}
+                      >
+                        &#9998;
+                      </button>
+                      <button
+                        type="button"
                         className="sd-history-delete-btn"
                         title="Delete preserved final video"
                         onClick={(e) => {
@@ -1194,7 +1353,27 @@ export default function SocialDashboardPage({ site, onBack }) {
                       </button>
                       <video src={itemUrl} className="sd-history-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
                       <div className="sd-history-meta">
-                        <div className="sd-history-name">{displaySubject}</div>
+                        {isEditing ? (
+                          <div className="sd-history-edit-box" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              className="sd-history-edit-input"
+                              value={editingFinalVideoSubject}
+                              onChange={(e) => setEditingFinalVideoSubject(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveFinalVideoSubject(item.id)
+                                if (e.key === 'Escape') setEditingFinalVideoId(null)
+                              }}
+                              autoFocus
+                            />
+                            <div className="sd-history-edit-actions">
+                              <button type="button" className="sd-history-save-btn" onClick={() => handleSaveFinalVideoSubject(item.id)}>Save</button>
+                              <button type="button" className="sd-history-cancel-btn" onClick={() => setEditingFinalVideoId(null)}>&times;</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="sd-history-name" title={displaySubject}>{displaySubject}</div>
+                        )}
                         <div className="sd-history-fmt" style={{ color: '#ec4899' }}>FINAL VID &middot; {displayRatio}</div>
                       </div>
                     </div>
