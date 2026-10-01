@@ -26,6 +26,7 @@ if (!fs.existsSync(w7UploadsDir)) {
   fs.mkdirSync(w7UploadsDir, { recursive: true })
 }
 app.use('/uploads', express.static(uploadsDir))
+app.use('/api/uploads', express.static(uploadsDir))
 
 function resolveGeminiApiKey() {
   if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY
