@@ -41,15 +41,8 @@ const AlertTriangleIcon = () => (
   </svg>
 )
 
-const getShortTitle = (promptText) => {
-  if (!promptText) return 'Generated Image'
-  const clean = promptText.trim()
-  const words = clean.split(/\s+/)
-  if (words.length <= 4) return clean
-  return words.slice(0, 4).join(' ')
-}
-
 const getFileFormat = (item) => {
+  if (item?.format) return item.format.toUpperCase()
   const mime = item?.mime_type || item?.mimeType || ''
   const url = item?.public_url || item?.url || ''
   if (mime.includes('png') || url.endsWith('.png')) return 'PNG'
@@ -58,6 +51,8 @@ const getFileFormat = (item) => {
 
 export default function SocialDashboardPage({ site, onBack }) {
   // Stage 1: Nano Banana Image State
+  const [subject, setSubject] = useState('Dormer Loft Conversion')
+  const [format, setFormat] = useState('JPG')
   const [prompt, setPrompt] = useState('A sleek modern armchair in a sunlit architectural room with minimalist decor, high resolution 3d render')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
@@ -87,13 +82,16 @@ export default function SocialDashboardPage({ site, onBack }) {
         if (isMounted && data.success && Array.isArray(data.images)) {
           setHistoryImages(data.images)
           if (data.images.length > 0 && !generatedImage) {
+            const first = data.images[0]
             setGeneratedImage({
-              id: data.images[0].id,
-              url: data.images[0].public_url || data.images[0].url,
-              prompt: data.images[0].prompt,
-              model: data.images[0].model,
-              createdAt: data.images[0].created_at,
-              mimeType: data.images[0].mime_type
+              id: first.id,
+              url: first.public_url || first.url,
+              subject: first.subject || 'Untitled Image',
+              format: first.format || getFileFormat(first),
+              prompt: first.prompt,
+              model: first.model,
+              createdAt: first.created_at,
+              mimeType: first.mime_type
             })
           }
         }
@@ -135,6 +133,8 @@ export default function SocialDashboardPage({ site, onBack }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: cleanPrompt,
+          subject: subject.trim(),
+          format: format,
           siteId: siteId
         })
       })
@@ -145,6 +145,8 @@ export default function SocialDashboardPage({ site, onBack }) {
         const newImg = {
           id: data.image.id,
           url: data.image.url,
+          subject: data.image.subject || subject.trim() || 'Untitled Image',
+          format: data.image.format || format,
           prompt: data.image.prompt,
           model: data.model || 'models/nano-banana-pro-preview',
           createdAt: data.image.createdAt,
@@ -155,6 +157,8 @@ export default function SocialDashboardPage({ site, onBack }) {
           {
             id: newImg.id,
             public_url: newImg.url,
+            subject: newImg.subject,
+            format: newImg.format,
             prompt: newImg.prompt,
             model: newImg.model,
             created_at: newImg.createdAt,
@@ -274,20 +278,52 @@ export default function SocialDashboardPage({ site, onBack }) {
         <div className="sd-card sd-test-panel">
           <div className="sd-card-header">
             <SparklesIcon />
-            <h2 className="sd-card-title">Image Prompt & Controls</h2>
+            <h2 className="sd-card-title">Image Prompt &amp; Controls</h2>
           </div>
 
-          <div className="sd-form-group">
-            <label htmlFor="input-image-prompt" className="sd-label">
-              Image Prompt
-            </label>
+          {/* Subject & Format Row */}
+          <div className="sd-controls-row">
+            <div className="sd-form-group-half">
+              <label htmlFor="input-image-subject" className="sd-label">
+                Subject
+              </label>
+              <input
+                type="text"
+                id="input-image-subject"
+                className="sd-input-text"
+                placeholder="e.g. Dormer Loft Conversion"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                disabled={isGenerating}
+              />
+            </div>
+
+            <div className="sd-form-group-quarter">
+              <label htmlFor="select-image-format" className="sd-label">
+                Format
+              </label>
+              <select
+                id="select-image-format"
+                className="sd-select"
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+                disabled={isGenerating}
+              >
+                <option value="JPG">JPG</option>
+                <option value="PNG">PNG</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Taller Textarea directly underneath */}
+          <div className="sd-form-group" style={{ marginTop: '0.5rem' }}>
             <textarea
               id="input-image-prompt"
-              className="sd-textarea"
+              className="sd-textarea sd-textarea-large"
               placeholder="Describe the image you want Nano Banana to generate..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              rows={4}
+              rows={6}
               disabled={isGenerating}
             />
             <span className="sd-field-hint">
@@ -355,6 +391,9 @@ export default function SocialDashboardPage({ site, onBack }) {
                 {historyImages.map(item => {
                   const itemUrl = item.public_url || item.url
                   const isSelected = generatedImage?.id === item.id
+                  const displaySubject = item.subject || 'Untitled Image'
+                  const displayFormat = item.format || getFileFormat(item)
+
                   return (
                     <div
                       key={item.id}
@@ -362,6 +401,8 @@ export default function SocialDashboardPage({ site, onBack }) {
                       onClick={() => setGeneratedImage({
                         id: item.id,
                         url: itemUrl,
+                        subject: displaySubject,
+                        format: displayFormat,
                         prompt: item.prompt,
                         model: item.model,
                         createdAt: item.created_at,
@@ -370,8 +411,8 @@ export default function SocialDashboardPage({ site, onBack }) {
                     >
                       <img src={itemUrl} alt={item.prompt} className="sd-history-thumb" />
                       <div className="sd-history-meta">
-                        <div className="sd-history-name">{getShortTitle(item.prompt)}</div>
-                        <div className="sd-history-fmt">{getFileFormat(item)}</div>
+                        <div className="sd-history-name">{displaySubject}</div>
+                        <div className="sd-history-fmt">IMAGE &middot; {displayFormat}</div>
                       </div>
                     </div>
                   )
@@ -403,6 +444,14 @@ export default function SocialDashboardPage({ site, onBack }) {
                 />
               </div>
               <div className="sd-meta-card">
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Subject:</span>
+                  <span className="sd-meta-val" style={{ fontWeight: 700, color: '#10b981' }}>{generatedImage.subject || 'Untitled Image'}</span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Format:</span>
+                  <span className="sd-meta-val"><code className="sd-code">{generatedImage.format || 'JPG'}</code></span>
+                </div>
                 <div className="sd-meta-row">
                   <span className="sd-meta-label">Prompt:</span>
                   <span className="sd-meta-val">&ldquo;{generatedImage.prompt}&rdquo;</span>
@@ -460,7 +509,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                 <div className="sd-source-text-col">
                   <div className="sd-source-header-row">
                     <CheckCircleIcon />
-                    <span>Selected Source Image</span>
+                    <span>Selected Source Image ({generatedImage.subject || 'Untitled Image'})</span>
                   </div>
                   <div className={`sd-source-prompt-text ${isSourcePromptExpanded ? 'expanded' : ''}`}>
                     &ldquo;{generatedImage.prompt}&rdquo;

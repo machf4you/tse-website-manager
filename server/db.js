@@ -299,14 +299,29 @@ export function getWebsiteByDomainIdFromDb(domainId) {
   return getWebsiteByDomainIdStmt.get(String(domainId))
 }
 
+// Safe idempotent migration: ensure subject and format columns exist on social_generated_images
+try {
+  const imgCols = db.pragma('table_info(social_generated_images)')
+  if (!imgCols.some(col => col.name === 'subject')) {
+    db.exec(`ALTER TABLE social_generated_images ADD COLUMN subject TEXT DEFAULT NULL;`)
+  }
+  if (!imgCols.some(col => col.name === 'format')) {
+    db.exec(`ALTER TABLE social_generated_images ADD COLUMN format TEXT DEFAULT 'JPG';`)
+  }
+} catch (e) {
+  console.error('Error ensuring subject/format columns exist on social_generated_images table:', e)
+}
+
 export function saveSocialGeneratedImage(imgData) {
   const stmt = db.prepare(`
-    INSERT INTO social_generated_images (id, site_id, prompt, model, file_path, public_url, mime_type, file_size, created_at)
-    VALUES (@id, @site_id, @prompt, @model, @file_path, @public_url, @mime_type, @file_size, @created_at)
+    INSERT INTO social_generated_images (id, site_id, subject, format, prompt, model, file_path, public_url, mime_type, file_size, created_at)
+    VALUES (@id, @site_id, @subject, @format, @prompt, @model, @file_path, @public_url, @mime_type, @file_size, @created_at)
   `)
   stmt.run({
     id: String(imgData.id),
     site_id: imgData.site_id ? String(imgData.site_id) : null,
+    subject: imgData.subject ? String(imgData.subject).trim() : null,
+    format: imgData.format ? String(imgData.format).toUpperCase() : 'JPG',
     prompt: imgData.prompt,
     model: imgData.model,
     file_path: imgData.file_path,

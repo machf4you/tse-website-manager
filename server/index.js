@@ -73,8 +73,10 @@ app.get('/api/w7-social/images', (req, res) => {
 
 app.post('/api/w7-social/generate-image', async (req, res) => {
   try {
-    const { prompt, siteId } = req.body || {}
+    const { prompt, subject, format = 'JPG', siteId } = req.body || {}
     const cleanPrompt = (prompt || '').trim()
+    const cleanSubject = (subject || '').trim() || 'Untitled Image'
+    const cleanFormat = (format || 'JPG').toUpperCase() === 'PNG' ? 'PNG' : 'JPG'
 
     if (!cleanPrompt) {
       return res.status(400).json({ success: false, error: 'Image prompt is required' })
@@ -114,7 +116,6 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
     const candidate = data.candidates?.[0]
     const part = candidate?.content?.parts?.[0]
     const base64Data = part?.inlineData?.data
-    const mimeType = part?.inlineData?.mimeType || 'image/jpeg'
 
     if (!base64Data) {
       return res.status(500).json({
@@ -126,7 +127,8 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
     const imageBuffer = Buffer.from(base64Data, 'base64')
     const timestamp = Date.now()
     const randomSuffix = Math.random().toString(36).substring(2, 9)
-    const ext = mimeType.includes('png') ? 'png' : 'jpg'
+    const ext = cleanFormat === 'PNG' ? 'png' : 'jpg'
+    const finalMimeType = cleanFormat === 'PNG' ? 'image/png' : 'image/jpeg'
     const filename = `nano_banana_${timestamp}_${randomSuffix}.${ext}`
     const relativeFilePath = path.join('uploads', 'w7-social', filename)
     const absoluteFilePath = path.join(w7UploadsDir, filename)
@@ -139,11 +141,13 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
     const imageRecord = {
       id: imageId,
       site_id: siteId ? String(siteId) : null,
+      subject: cleanSubject,
+      format: cleanFormat,
       prompt: cleanPrompt,
       model: modelName,
       file_path: relativeFilePath,
       public_url: publicUrl,
-      mime_type: mimeType,
+      mime_type: finalMimeType,
       file_size: imageBuffer.length,
       created_at: new Date().toISOString()
     }
@@ -156,6 +160,8 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
       image: {
         id: imageRecord.id,
         siteId: imageRecord.site_id,
+        subject: imageRecord.subject,
+        format: imageRecord.format,
         prompt: imageRecord.prompt,
         model: imageRecord.model,
         url: imageRecord.public_url,
