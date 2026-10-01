@@ -127,6 +127,7 @@ export default function SocialDashboardPage({ site, onBack }) {
 
   const handleGenerateImage = async () => {
     const cleanPrompt = prompt.trim()
+    const cleanSubject = subject.trim() || 'Untitled Image'
     if (!cleanPrompt || isGenerating) return
 
     setIsGenerating(true)
@@ -138,7 +139,7 @@ export default function SocialDashboardPage({ site, onBack }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: cleanPrompt,
-          subject: subject.trim(),
+          subject: cleanSubject,
           format: format,
           aspectRatio: aspectRatio,
           siteId: siteId
@@ -151,7 +152,7 @@ export default function SocialDashboardPage({ site, onBack }) {
         const newImg = {
           id: data.image.id,
           url: data.image.url,
-          subject: data.image.subject || subject.trim() || 'Untitled Image',
+          subject: data.image.subject || cleanSubject,
           format: data.image.format || format,
           aspectRatio: data.image.aspectRatio || aspectRatio,
           prompt: data.image.prompt,
@@ -195,8 +196,8 @@ export default function SocialDashboardPage({ site, onBack }) {
     }
 
     const sourceImg = generatedImage || historyImages[0]
-    const inheritedSubject = sourceImg?.subject || 'Untitled Image'
-    const inheritedAspectRatio = sourceImg?.aspectRatio || sourceImg?.aspect_ratio || '9:16'
+    const inheritedSubject = sourceImg?.subject || subject.trim() || 'Untitled Image'
+    const inheritedAspectRatio = sourceImg?.aspectRatio || sourceImg?.aspect_ratio || aspectRatio || '9:16'
 
     setIsGeneratingVideo(true)
     setVideoError(null)

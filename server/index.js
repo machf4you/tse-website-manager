@@ -219,8 +219,8 @@ app.post('/api/w7-social/generate-video', async (req, res) => {
       try {
         const dbImg = db.prepare('SELECT * FROM social_generated_images WHERE id = ?').get(String(sourceImageId))
         if (dbImg) {
-          if (!inheritedSubject) inheritedSubject = dbImg.subject
-          if (!inheritedAspectRatio) inheritedAspectRatio = dbImg.aspect_ratio || dbImg.aspectRatio
+          if (dbImg.subject) inheritedSubject = dbImg.subject
+          if (dbImg.aspect_ratio) inheritedAspectRatio = dbImg.aspect_ratio
         }
       } catch (e) {
         console.error('Error fetching source image metadata for video:', e)
