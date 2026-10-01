@@ -41,6 +41,21 @@ const AlertTriangleIcon = () => (
   </svg>
 )
 
+const getShortTitle = (promptText) => {
+  if (!promptText) return 'Generated Image'
+  const clean = promptText.trim()
+  const words = clean.split(/\s+/)
+  if (words.length <= 4) return clean
+  return words.slice(0, 4).join(' ')
+}
+
+const getFileFormat = (item) => {
+  const mime = item?.mime_type || item?.mimeType || ''
+  const url = item?.public_url || item?.url || ''
+  if (mime.includes('png') || url.endsWith('.png')) return 'PNG'
+  return 'JPG'
+}
+
 export default function SocialDashboardPage({ site, onBack }) {
   // Stage 1: Nano Banana Image State
   const [prompt, setPrompt] = useState('A sleek modern armchair in a sunlit architectural room with minimalist decor, high resolution 3d render')
@@ -55,6 +70,7 @@ export default function SocialDashboardPage({ site, onBack }) {
   const [videoError, setVideoError] = useState(null)
   const [generatedVideo, setGeneratedVideo] = useState(null)
   const [historyVideos, setHistoryVideos] = useState([])
+  const [isSourcePromptExpanded, setIsSourcePromptExpanded] = useState(false)
 
   const siteId = site?.id || null
 
@@ -76,7 +92,8 @@ export default function SocialDashboardPage({ site, onBack }) {
               url: data.images[0].public_url || data.images[0].url,
               prompt: data.images[0].prompt,
               model: data.images[0].model,
-              createdAt: data.images[0].created_at
+              createdAt: data.images[0].created_at,
+              mimeType: data.images[0].mime_type
             })
           }
         }
@@ -130,7 +147,8 @@ export default function SocialDashboardPage({ site, onBack }) {
           url: data.image.url,
           prompt: data.image.prompt,
           model: data.model || 'models/nano-banana-pro-preview',
-          createdAt: data.image.createdAt
+          createdAt: data.image.createdAt,
+          mimeType: data.image.mimeType
         }
         setGeneratedImage(newImg)
         setHistoryImages(prev => [
@@ -139,7 +157,8 @@ export default function SocialDashboardPage({ site, onBack }) {
             public_url: newImg.url,
             prompt: newImg.prompt,
             model: newImg.model,
-            created_at: newImg.createdAt
+            created_at: newImg.createdAt,
+            mime_type: newImg.mimeType
           },
           ...prev
         ])
@@ -398,11 +417,15 @@ export default function SocialDashboardPage({ site, onBack }) {
                         url: itemUrl,
                         prompt: item.prompt,
                         model: item.model,
-                        createdAt: item.created_at
+                        createdAt: item.created_at,
+                        mimeType: item.mime_type
                       })}
                     >
                       <img src={itemUrl} alt={item.prompt} className="sd-history-thumb" />
-                      <div className="sd-history-prompt">{item.prompt}</div>
+                      <div className="sd-history-meta">
+                        <div className="sd-history-name">{getShortTitle(item.prompt)}</div>
+                        <div className="sd-history-fmt">{getFileFormat(item)}</div>
+                      </div>
                     </div>
                   )
                 })}
@@ -434,13 +457,23 @@ export default function SocialDashboardPage({ site, onBack }) {
             {generatedImage ? (
               <div className="sd-source-preview-box" id="selected-source-image">
                 <img src={generatedImage.url} alt="Source" className="sd-source-thumb" />
-                <div style={{ overflow: 'hidden' }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <CheckCircleIcon /> Selected Source Image
+                <div className="sd-source-text-col">
+                  <div className="sd-source-header-row">
+                    <CheckCircleIcon />
+                    <span>Selected Source Image</span>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div className={`sd-source-prompt-text ${isSourcePromptExpanded ? 'expanded' : ''}`}>
                     &ldquo;{generatedImage.prompt}&rdquo;
                   </div>
+                  {generatedImage.prompt && generatedImage.prompt.length > 50 && (
+                    <button
+                      type="button"
+                      className="sd-read-more-btn"
+                      onClick={() => setIsSourcePromptExpanded(!isSourcePromptExpanded)}
+                    >
+                      {isSourcePromptExpanded ? 'Show less' : 'Read more'}
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
