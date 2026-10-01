@@ -68,14 +68,24 @@ export default function SocialDashboardPage({ site, onBack }) {
   const [historyVideos, setHistoryVideos] = useState([])
   const [isSourcePromptExpanded, setIsSourcePromptExpanded] = useState(false)
 
+  // Stage 3: Creatomate Video Finishing State
+  const [headline, setHeadline] = useState('Transform Your Home with a Loft Extension')
+  const [cta, setCta] = useState('Get Your Free Quote Today!')
+  const [isGeneratingFinalVideo, setIsGeneratingFinalVideo] = useState(false)
+  const [finalVideoError, setFinalVideoError] = useState(null)
+  const [generatedFinalVideo, setGeneratedFinalVideo] = useState(null)
+  const [historyFinalVideos, setHistoryFinalVideos] = useState([])
+  const [isSourceVideoExpanded, setIsSourceVideoExpanded] = useState(false)
+
   const siteId = site?.id || null
 
-  // Fetch server-preserved images and videos on mount
+  // Fetch server-preserved images, videos, and final videos on mount
   useEffect(() => {
     let isMounted = true
 
     const imagesUrl = siteId ? `/api/w7-social/images?siteId=${encodeURIComponent(siteId)}` : '/api/w7-social/images'
     const videosUrl = siteId ? `/api/w7-social/videos?siteId=${encodeURIComponent(siteId)}` : '/api/w7-social/videos'
+    const finalVideosUrl = siteId ? `/api/w7-social/final-videos?siteId=${encodeURIComponent(siteId)}` : '/api/w7-social/final-videos'
 
     fetch(imagesUrl)
       .then(res => res.json())
@@ -121,6 +131,29 @@ export default function SocialDashboardPage({ site, onBack }) {
         }
       })
       .catch(err => console.error('Failed to load W7 Social videos history:', err))
+
+    fetch(finalVideosUrl)
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted && data.success && Array.isArray(data.videos)) {
+          setHistoryFinalVideos(data.videos)
+          if (data.videos.length > 0 && !generatedFinalVideo) {
+            const firstFinalVid = data.videos[0]
+            setGeneratedFinalVideo({
+              id: firstFinalVid.id,
+              url: firstFinalVid.public_url || firstFinalVid.url,
+              subject: firstFinalVid.subject || 'Untitled Video',
+              aspectRatio: firstFinalVid.aspect_ratio || firstFinalVid.aspectRatio || '9:16',
+              headline: firstFinalVid.headline,
+              cta: firstFinalVid.cta,
+              sourceVideoId: firstFinalVid.source_video_id,
+              renderId: firstFinalVid.render_id,
+              createdAt: firstFinalVid.created_at
+            })
+          }
+        }
+      })
+      .catch(err => console.error('Failed to load W7 Social final videos history:', err))
 
     return () => { isMounted = false }
   }, [siteId])
@@ -205,6 +238,48 @@ export default function SocialDashboardPage({ site, onBack }) {
     } catch (err) {
       console.error('Error deleting video asset:', err)
       alert('Network error deleting video asset.')
+    }
+  }
+
+  const handleDeleteFinalVideo = async (finalVidId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this preserved final video?')) {
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/w7-social/final-videos/${encodeURIComponent(finalVidId)}`, {
+        method: 'DELETE'
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setHistoryFinalVideos(prev => {
+          const updated = prev.filter(item => item.id !== finalVidId)
+          if (generatedFinalVideo?.id === finalVidId) {
+            if (updated.length > 0) {
+              const nextFinalVid = updated[0]
+              setGeneratedFinalVideo({
+                id: nextFinalVid.id,
+                url: nextFinalVid.public_url || nextFinalVid.url,
+                subject: nextFinalVid.subject || 'Untitled Video',
+                aspectRatio: nextFinalVid.aspect_ratio || nextFinalVid.aspectRatio || '9:16',
+                headline: nextFinalVid.headline,
+                cta: nextFinalVid.cta,
+                sourceVideoId: nextFinalVid.source_video_id,
+                renderId: nextFinalVid.render_id,
+                createdAt: nextFinalVid.created_at
+              })
+            } else {
+              setGeneratedFinalVideo(null)
+            }
+          }
+          return updated
+        })
+      } else {
+        alert(data.error || 'Failed to delete final video asset.')
+      }
+    } catch (err) {
+      console.error('Error deleting final video asset:', err)
+      alert('Network error deleting final video asset.')
     }
   }
 
@@ -350,6 +425,82 @@ export default function SocialDashboardPage({ site, onBack }) {
     }
   }
 
+  const handleGenerateFinalVideo = async () => {
+    const cleanHeadline = headline.trim()
+    const cleanCta = cta.trim()
+
+    if (!cleanHeadline) {
+      setFinalVideoError('Headline text is required.')
+      return
+    }
+    if (!cleanCta) {
+      setFinalVideoError('CTA text is required.')
+      return
+    }
+
+    const sourceVid = generatedVideo || historyVideos[0]
+    if (!sourceVid) {
+      setFinalVideoError('Please generate or select a Veo video first as the source for Creatomate.')
+      return
+    }
+
+    if (isGeneratingFinalVideo) return
+
+    setIsGeneratingFinalVideo(true)
+    setFinalVideoError(null)
+
+    try {
+      const response = await fetch('/api/w7-social/generate-final-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceVideoId: sourceVid.id,
+          headline: cleanHeadline,
+          cta: cleanCta,
+          siteId: siteId
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success && data.video) {
+        const newFinalVid = {
+          id: data.video.id,
+          url: data.video.url,
+          subject: data.video.subject || sourceVid.subject || 'Untitled Video',
+          aspectRatio: data.video.aspectRatio || '9:16',
+          headline: data.video.headline,
+          cta: data.video.cta,
+          sourceVideoId: data.video.sourceVideoId,
+          renderId: data.video.renderId,
+          createdAt: data.video.createdAt
+        }
+        setGeneratedFinalVideo(newFinalVid)
+        setHistoryFinalVideos(prev => [
+          {
+            id: newFinalVid.id,
+            public_url: newFinalVid.url,
+            subject: newFinalVid.subject,
+            aspect_ratio: newFinalVid.aspectRatio,
+            headline: newFinalVid.headline,
+            cta: newFinalVid.cta,
+            source_video_id: newFinalVid.sourceVideoId,
+            render_id: newFinalVid.renderId,
+            created_at: newFinalVid.createdAt
+          },
+          ...prev
+        ])
+      } else {
+        setFinalVideoError(data.error || 'Failed to finish video via Creatomate API.')
+      }
+    } catch (err) {
+      console.error('Error triggering Creatomate video rendering:', err)
+      setFinalVideoError(err.message || 'Network error connecting to backend API.')
+    } finally {
+      setIsGeneratingFinalVideo(false)
+    }
+  }
+
   return (
     <div className="social-dashboard-page">
       {/* Top-left Back Link */}
@@ -371,11 +522,12 @@ export default function SocialDashboardPage({ site, onBack }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span className="sd-pill-tag">W7 | SOCIAL</span>
             <span className="sd-pill-model-badge">● Stage 1: Nano Banana</span>
-            <span className="sd-pill-model-badge" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>● Stage 2: Veo (models/veo-3.1-fast-generate-preview)</span>
+            <span className="sd-pill-model-badge" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}>● Stage 2: Veo (Image-to-Video)</span>
+            <span className="sd-pill-model-badge" style={{ background: 'rgba(236, 72, 153, 0.15)', color: '#ec4899', borderColor: 'rgba(236, 72, 153, 0.3)' }}>● Stage 3: Creatomate (Video Finishing)</span>
           </div>
           <h1 className="sd-title">W7 AI Content Generation — {site?.name || 'Connected Site'}</h1>
           <p className="sd-subtitle">
-            Nano Banana Image Generation &rarr; Veo Image-to-Video Workflow
+            Nano Banana &rarr; Veo &rarr; Creatomate End-to-End Social Video Workflow
           </p>
         </div>
       </div>
@@ -750,7 +902,7 @@ export default function SocialDashboardPage({ site, onBack }) {
             </div>
           )}
 
-          {/* Server Preserved Video History List - MOVED TO LEFT COLUMN UNDER GENERATE VIDEO */}
+          {/* Server Preserved Video History List */}
           {historyVideos.length > 0 && (
             <div className="sd-history-section">
               <h3 className="sd-history-title">Server Preserved Videos ({historyVideos.length})</h3>
@@ -864,6 +1016,268 @@ export default function SocialDashboardPage({ site, onBack }) {
           )}
         </div>
       </div>
+
+      {/* SECTION 3: STAGE 3 — CREATOMATE VIDEO FINISHING */}
+      <div className="sd-section-title" style={{ marginTop: '2.5rem' }}>
+        <SparklesIcon />
+        <span>Stage 3: Creatomate Video Finishing</span>
+      </div>
+
+      <div className="sd-content-grid">
+        {/* Left Column: Creatomate Video Finishing Controls & Preserved Final Videos */}
+        <div className="sd-card sd-test-panel">
+          <div className="sd-card-header" style={{ color: '#ec4899' }}>
+            <SparklesIcon />
+            <h2 className="sd-card-title">Creatomate Video Finishing Controls</h2>
+          </div>
+
+          {/* Active Source Veo Video Preview */}
+          <div className="sd-form-group">
+            <label className="sd-label">
+              Source Video (Veo)
+            </label>
+            {generatedVideo ? (
+              <div className="sd-source-preview-box" id="selected-source-video" style={{ borderColor: 'rgba(236, 72, 153, 0.3)' }}>
+                <video src={generatedVideo.url} className="sd-source-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
+                <div className="sd-source-text-col">
+                  <div className="sd-source-header-row" style={{ color: '#ec4899' }}>
+                    <CheckCircleIcon />
+                    <span>Selected Source Veo Video ({generatedVideo.subject || 'Untitled Video'})</span>
+                  </div>
+                  <div className={`sd-source-prompt-text ${isSourceVideoExpanded ? 'expanded' : ''}`}>
+                    &ldquo;{generatedVideo.prompt}&rdquo;
+                  </div>
+                  {generatedVideo.prompt && generatedVideo.prompt.length > 50 && (
+                    <button
+                      type="button"
+                      className="sd-read-more-btn"
+                      style={{ color: '#ec4899' }}
+                      onClick={() => setIsSourceVideoExpanded(!isSourceVideoExpanded)}
+                    >
+                      {isSourceVideoExpanded ? 'Show less' : 'Read more'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '0.8rem', background: '#0f172a', borderRadius: '8px', border: '1px dashed #334155', color: '#94a3b8', fontSize: '0.85rem' }}>
+                ⚠️ Please select or generate a Veo video above to use as source for Creatomate.
+              </div>
+            )}
+          </div>
+
+          {/* Headline Field */}
+          <div className="sd-form-group">
+            <label htmlFor="input-final-headline" className="sd-label">
+              Headline
+            </label>
+            <input
+              type="text"
+              id="input-final-headline"
+              className="sd-input-text"
+              placeholder="e.g. Transform Your Home with a Loft Extension"
+              value={headline}
+              onChange={(e) => setHeadline(e.target.value)}
+              disabled={isGeneratingFinalVideo}
+            />
+          </div>
+
+          {/* CTA Field */}
+          <div className="sd-form-group">
+            <label htmlFor="input-final-cta" className="sd-label">
+              CTA (Call to Action)
+            </label>
+            <input
+              type="text"
+              id="input-final-cta"
+              className="sd-input-text"
+              placeholder="e.g. Get Your Free Quote Today!"
+              value={cta}
+              onChange={(e) => setCta(e.target.value)}
+              disabled={isGeneratingFinalVideo}
+            />
+            <span className="sd-field-hint">
+              Provider: <code className="sd-code">Creatomate API</code> (9:16 Vertical Finished MP4)
+            </span>
+          </div>
+
+          <div className="sd-action-row">
+            <button
+              type="button"
+              id="btn-finish-video-creatomate"
+              className="sd-btn-primary"
+              style={{ background: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)' }}
+              onClick={handleGenerateFinalVideo}
+              disabled={isGeneratingFinalVideo || !headline.trim() || !cta.trim() || !generatedVideo}
+            >
+              {isGeneratingFinalVideo ? (
+                <>
+                  <span className="sd-spinner" />
+                  Rendering via Creatomate...
+                </>
+              ) : (
+                <>
+                  <SparklesIcon />
+                  Finish Video (Creatomate)
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Final Video Loading / Status State */}
+          {isGeneratingFinalVideo && (
+            <div className="sd-status-box sd-status-loading" id="status-final-video-loading">
+              <div className="sd-spinner-lg" style={{ borderColor: '#ec4899', borderTopColor: 'transparent' }} />
+              <div>
+                <div style={{ fontWeight: 700, color: '#f8fafc', marginBottom: '0.2rem' }}>
+                  Rendering Finished Social Video via Creatomate...
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  Overlaying Headline &amp; CTA onto 9:16 Veo footage. This takes 10-20 seconds.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Final Video Error State */}
+          {finalVideoError && (
+            <div className="sd-status-box sd-status-error" id="status-final-video-error">
+              <AlertTriangleIcon />
+              <div>
+                <div style={{ fontWeight: 700, color: '#f87171', marginBottom: '0.2rem' }}>
+                  Creatomate Rendering Failed
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#fca5a5' }}>
+                  {finalVideoError}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Server Preserved Final Video History List */}
+          {historyFinalVideos.length > 0 && (
+            <div className="sd-history-section">
+              <h3 className="sd-history-title">Server Preserved Final Videos ({historyFinalVideos.length})</h3>
+              <div className="sd-history-grid">
+                {historyFinalVideos.map(item => {
+                  const itemUrl = item.public_url || item.url
+                  const isSelected = generatedFinalVideo?.id === item.id
+                  const displaySubject = item.subject || 'Untitled Video'
+                  const displayRatio = item.aspect_ratio || item.aspectRatio || '9:16'
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`sd-history-item ${isSelected ? 'selected' : ''}`}
+                      onClick={() => setGeneratedFinalVideo({
+                        id: item.id,
+                        url: itemUrl,
+                        subject: displaySubject,
+                        aspectRatio: displayRatio,
+                        headline: item.headline,
+                        cta: item.cta,
+                        sourceVideoId: item.source_video_id,
+                        renderId: item.render_id,
+                        createdAt: item.created_at
+                      })}
+                    >
+                      <button
+                        type="button"
+                        className="sd-history-delete-btn"
+                        title="Delete preserved final video"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteFinalVideo(item.id)
+                        }}
+                      >
+                        &times;
+                      </button>
+                      <video src={itemUrl} className="sd-history-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
+                      <div className="sd-history-meta">
+                        <div className="sd-history-name">{displaySubject}</div>
+                        <div className="sd-history-fmt" style={{ color: '#ec4899' }}>FINAL VID &middot; {displayRatio}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Display Generated Final Video Output */}
+        <div className="sd-card sd-display-panel">
+          <div className="sd-card-header" style={{ color: '#ec4899' }}>
+            <VideoIcon />
+            <h2 className="sd-card-title">Finished Video Output (Creatomate)</h2>
+          </div>
+
+          {generatedFinalVideo ? (
+            <div className="sd-preview-container" id="container-generated-final-video">
+              <div className="sd-preview-badge" style={{ background: 'rgba(236, 72, 153, 0.15)', color: '#ec4899', borderColor: 'rgba(236, 72, 153, 0.3)' }}>
+                <CheckCircleIcon />
+                <span>Creatomate MP4 Rendered &amp; Saved Server-Side</span>
+              </div>
+              <div className="sd-video-wrapper">
+                <video
+                  id="video-generated-final-output"
+                  src={generatedFinalVideo.url}
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                  className="sd-rendered-video"
+                />
+              </div>
+              <div className="sd-meta-card">
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Subject:</span>
+                  <span className="sd-meta-val" style={{ fontWeight: 700, color: '#ec4899' }}>{generatedFinalVideo.subject || 'Untitled Video'}</span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Aspect Ratio:</span>
+                  <span className="sd-meta-val"><code className="sd-code">{generatedFinalVideo.aspectRatio || '9:16'}</code></span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Headline:</span>
+                  <span className="sd-meta-val">&ldquo;{generatedFinalVideo.headline}&rdquo;</span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">CTA Text:</span>
+                  <span className="sd-meta-val">&ldquo;{generatedFinalVideo.cta}&rdquo;</span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Provider:</span>
+                  <span className="sd-meta-val"><code className="sd-code">Creatomate API</code></span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Render ID:</span>
+                  <span className="sd-meta-val"><code className="sd-code">{generatedFinalVideo.renderId || 'c21074...'}</code></span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Video ID:</span>
+                  <span className="sd-meta-val"><code className="sd-code">{generatedFinalVideo.id}</code></span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Server Path:</span>
+                  <span className="sd-meta-val"><a href={generatedFinalVideo.url} target="_blank" rel="noopener noreferrer" style={{ color: '#ec4899', textDecoration: 'underline' }}>{generatedFinalVideo.url}</a></span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="sd-empty-display" id="container-empty-final-video-output">
+              <div className="sd-empty-icon-bg" style={{ background: 'rgba(236, 72, 153, 0.1)', color: '#ec4899' }}>
+                <VideoIcon />
+              </div>
+              <h3 style={{ margin: '0 0 0.4rem 0', color: '#f8fafc', fontSize: '1.1rem' }}>No Finished Video Rendered Yet</h3>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', maxWidth: '320px' }}>
+                Select a Veo video above, enter Headline and CTA text, then click &ldquo;Finish Video (Creatomate)&rdquo;.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
+

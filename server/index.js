@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -431,6 +431,267 @@ app.post('/api/w7-social/generate-video', async (req, res) => {
   } catch (err) {
     console.error('Error in W7 Veo video generation:', err)
     return res.status(500).json({ success: false, error: err.message || 'Internal server error during video generation' })
+  }
+})
+
+// ── W7 Social Stage 3: Creatomate Video Finishing Endpoints ──
+function resolveCreatomateApiKey() {
+  if (process.env.CREATOMATE_API_KEY) return process.env.CREATOMATE_API_KEY
+
+  const candidatePaths = [
+    path.join(process.cwd(), '.env'),
+    path.join(__dirname, '..', '.env'),
+    path.join(__dirname, '.env'),
+    '/var/www/www-root/data/www/tse-website-manager/.env',
+    '/var/www/www-root/data/www/tse-website-manager/server/.env',
+    '/opt/tse-apps/website-manager/.env',
+    '/opt/tse-apps/website-manager/server/.env'
+  ]
+
+  for (const envPath of candidatePaths) {
+    try {
+      if (fs.existsSync(envPath)) {
+        const text = fs.readFileSync(envPath, 'utf8')
+        const lines = text.split('\n')
+        for (const line of lines) {
+          const clean = line.trim()
+          if (clean.startsWith('CREATOMATE_API_KEY=')) {
+            const val = clean.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '')
+            if (val) return val
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  return null
+}
+
+app.get('/api/w7-social/final-videos', (req, res) => {
+  try {
+    const siteId = req.query.siteId || null
+    const videos = getSocialGeneratedFinalVideos(siteId)
+    res.json({ success: true, videos })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.delete('/api/w7-social/final-videos/:id', (req, res) => {
+  try {
+    const { id } = req.params
+    const success = deleteSocialGeneratedFinalVideo(id)
+    if (!success) {
+      return res.status(404).json({ success: false, error: 'Final video asset not found' })
+    }
+    return res.json({ success: true, message: 'Final video asset deleted successfully' })
+  } catch (err) {
+    console.error('Error deleting final video asset:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/w7-social/generate-final-video', async (req, res) => {
+  try {
+    const { sourceVideoId, headline, cta, siteId } = req.body || {}
+    const cleanHeadline = (headline || '').trim()
+    const cleanCta = (cta || '').trim()
+
+    if (!sourceVideoId) {
+      return res.status(400).json({ success: false, error: 'Source Veo video is required.' })
+    }
+    if (!cleanHeadline) {
+      return res.status(400).json({ success: false, error: 'Headline text is required.' })
+    }
+    if (!cleanCta) {
+      return res.status(400).json({ success: false, error: 'CTA text is required.' })
+    }
+
+    const apiKey = resolveCreatomateApiKey()
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'Creatomate API Key (CREATOMATE_API_KEY) is not configured on the server.'
+      })
+    }
+
+    // Retrieve source video record from SQLite database
+    const sourceVideo = db.prepare('SELECT * FROM social_generated_videos WHERE id = ?').get(String(sourceVideoId))
+    if (!sourceVideo) {
+      return res.status(404).json({ success: false, error: 'Source Veo video asset not found in database.' })
+    }
+
+    const inheritedSubject = sourceVideo.subject || 'Untitled Video'
+    const inheritedAspectRatio = sourceVideo.aspect_ratio || '9:16'
+
+    // Formulate fully qualified public URL for Creatomate source video ingestion
+    let sourceVideoPublicUrl = sourceVideo.public_url || sourceVideo.url
+    if (sourceVideoPublicUrl.startsWith('/')) {
+      const host = req.get('host') || 'tse-website-manager.thesearchequation.co.uk'
+      const protocol = req.protocol === 'https' || req.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+      sourceVideoPublicUrl = `${protocol}://${host}${sourceVideoPublicUrl}`
+    }
+
+    console.log('[CREATOMATE_RENDER_START] Sending render request for source:', sourceVideoPublicUrl)
+
+    // Call Creatomate Renders API
+    const renderRes = await fetch('https://api.creatomate.com/v1/renders', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        source: {
+          output_format: 'mp4',
+          width: 1080,
+          height: 1920,
+          elements: [
+            {
+              type: 'video',
+              source: sourceVideoPublicUrl
+            },
+            {
+              type: 'text',
+              text: cleanHeadline,
+              font_family: 'Inter',
+              font_weight: '800',
+              font_size: '56 px',
+              fill_color: '#ffffff',
+              background_color: 'rgba(15, 23, 42, 0.85)',
+              background_padding: '24 px',
+              background_border_radius: '10%',
+              y: '22%',
+              width: '85%',
+              x_alignment: '50%',
+              y_alignment: '50%'
+            },
+            {
+              type: 'text',
+              text: cleanCta,
+              font_family: 'Inter',
+              font_weight: '700',
+              font_size: '42 px',
+              fill_color: '#ffffff',
+              background_color: '#ec4899',
+              background_padding: '18 px',
+              background_border_radius: '20%',
+              y: '82%',
+              width: '75%',
+              x_alignment: '50%',
+              y_alignment: '50%'
+            }
+          ]
+        }
+      })
+    })
+
+    if (!renderRes.ok) {
+      const errText = await renderRes.text()
+      console.error('Creatomate render request failed:', renderRes.status, errText)
+      return res.status(renderRes.status).json({
+        success: false,
+        error: `Creatomate API error (${renderRes.status}): ${errText}`
+      })
+    }
+
+    const renderData = await renderRes.json()
+    const renderObject = Array.isArray(renderData) ? renderData[0] : renderData
+    const renderId = renderObject?.id
+
+    if (!renderId) {
+      return res.status(500).json({ success: false, error: 'Creatomate returned invalid render response with no render ID.' })
+    }
+
+    // Poll Creatomate render status until succeeded or failed
+    let finalRenderResult = renderObject
+    const startTime = Date.now()
+    const maxTimeoutMs = 120000 // 2 minutes max
+
+    while (finalRenderResult.status !== 'succeeded' && finalRenderResult.status !== 'failed') {
+      if (Date.now() - startTime > maxTimeoutMs) {
+        return res.status(504).json({ success: false, error: 'Creatomate render timed out after 120 seconds.' })
+      }
+      await new Promise(r => setTimeout(r, 2500))
+
+      const pollRes = await fetch(`https://api.creatomate.com/v1/renders/${renderId}`, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      })
+      if (pollRes.ok) {
+        finalRenderResult = await pollRes.json()
+      }
+    }
+
+    if (finalRenderResult.status === 'failed') {
+      return res.status(500).json({
+        success: false,
+        error: `Creatomate video rendering failed: ${finalRenderResult.error || 'Unknown rendering error'}`
+      })
+    }
+
+    const renderedVideoUrl = finalRenderResult.url
+    if (!renderedVideoUrl) {
+      return res.status(500).json({ success: false, error: 'Creatomate rendered video URL is missing.' })
+    }
+
+    // Download rendered MP4 video buffer
+    console.log('[CREATOMATE_DOWNLOAD] Downloading finished video from:', renderedVideoUrl)
+    const dlRes = await fetch(renderedVideoUrl)
+    if (!dlRes.ok) {
+      return res.status(500).json({ success: false, error: `Failed to download rendered video file from Creatomate CDN (HTTP ${dlRes.status}).` })
+    }
+
+    const videoArrayBuffer = await dlRes.arrayBuffer()
+    const videoBuffer = Buffer.from(videoArrayBuffer)
+
+    const timestamp = Date.now()
+    const randomSuffix = Math.random().toString(36).substring(2, 9)
+    const filename = `creatomate_${timestamp}_${randomSuffix}.mp4`
+    const relativeFilePath = path.join('uploads', 'w7-social', filename)
+    const absoluteFilePath = path.join(w7UploadsDir, filename)
+
+    await fs.promises.writeFile(absoluteFilePath, videoBuffer)
+
+    const publicUrl = `/uploads/w7-social/${filename}`
+    const finalVideoId = `final_vid_${timestamp}_${randomSuffix}`
+
+    const finalRecord = {
+      id: finalVideoId,
+      site_id: siteId ? String(siteId) : null,
+      source_video_id: String(sourceVideoId),
+      subject: inheritedSubject,
+      aspect_ratio: inheritedAspectRatio,
+      headline: cleanHeadline,
+      cta: cleanCta,
+      render_id: renderId,
+      file_path: relativeFilePath,
+      public_url: publicUrl,
+      mime_type: 'video/mp4',
+      file_size: videoBuffer.length,
+      created_at: new Date().toISOString()
+    }
+
+    saveSocialGeneratedFinalVideo(finalRecord)
+
+    return res.json({
+      success: true,
+      video: {
+        id: finalRecord.id,
+        siteId: finalRecord.site_id,
+        sourceVideoId: finalRecord.source_video_id,
+        subject: finalRecord.subject,
+        aspectRatio: finalRecord.aspect_ratio,
+        headline: finalRecord.headline,
+        cta: finalRecord.cta,
+        renderId: finalRecord.render_id,
+        url: finalRecord.public_url,
+        mimeType: finalRecord.mime_type,
+        fileSize: finalRecord.file_size,
+        createdAt: finalRecord.created_at
+      }
+    })
+  } catch (err) {
+    console.error('Error in W7 Creatomate video finishing:', err)
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error during video finishing' })
   }
 })
 

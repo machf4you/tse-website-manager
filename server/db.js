@@ -211,6 +211,22 @@ db.exec(`
     logs_json TEXT,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS social_generated_final_videos (
+    id TEXT PRIMARY KEY,
+    site_id TEXT,
+    source_video_id TEXT,
+    subject TEXT,
+    aspect_ratio TEXT DEFAULT '9:16',
+    headline TEXT NOT NULL,
+    cta TEXT NOT NULL,
+    render_id TEXT,
+    file_path TEXT NOT NULL,
+    public_url TEXT NOT NULL,
+    mime_type TEXT DEFAULT 'video/mp4',
+    file_size INTEGER,
+    created_at TEXT NOT NULL
+  );
 `)
 
 // Safe idempotent migration: ensure domain_id, total_pages, and registry_status columns exist on websites table
@@ -386,6 +402,36 @@ export function getSocialGeneratedVideos(siteId = null) {
   return db.prepare(`SELECT * FROM social_generated_videos ORDER BY datetime(created_at) DESC LIMIT 50`).all()
 }
 
+export function saveSocialGeneratedFinalVideo(finalData) {
+  const stmt = db.prepare(`
+    INSERT INTO social_generated_final_videos (id, site_id, source_video_id, subject, aspect_ratio, headline, cta, render_id, file_path, public_url, mime_type, file_size, created_at)
+    VALUES (@id, @site_id, @source_video_id, @subject, @aspect_ratio, @headline, @cta, @render_id, @file_path, @public_url, @mime_type, @file_size, @created_at)
+  `)
+  stmt.run({
+    id: String(finalData.id),
+    site_id: finalData.site_id ? String(finalData.site_id) : null,
+    source_video_id: finalData.source_video_id ? String(finalData.source_video_id) : null,
+    subject: finalData.subject ? String(finalData.subject).trim() : null,
+    aspect_ratio: finalData.aspect_ratio || finalData.aspectRatio || '9:16',
+    headline: String(finalData.headline).trim(),
+    cta: String(finalData.cta).trim(),
+    render_id: finalData.render_id ? String(finalData.render_id) : null,
+    file_path: finalData.file_path,
+    public_url: finalData.public_url,
+    mime_type: finalData.mime_type || 'video/mp4',
+    file_size: finalData.file_size || 0,
+    created_at: finalData.created_at || new Date().toISOString()
+  })
+  return finalData
+}
+
+export function getSocialGeneratedFinalVideos(siteId = null) {
+  if (siteId) {
+    return db.prepare(`SELECT * FROM social_generated_final_videos WHERE site_id = ? ORDER BY datetime(created_at) DESC`).all(String(siteId))
+  }
+  return db.prepare(`SELECT * FROM social_generated_final_videos ORDER BY datetime(created_at) DESC LIMIT 50`).all()
+}
+
 export function deleteSocialGeneratedImage(id) {
   const img = db.prepare(`SELECT * FROM social_generated_images WHERE id = ?`).get(String(id))
   if (!img) return false
@@ -412,6 +458,9 @@ export function deleteSocialGeneratedVideo(id) {
   const vid = db.prepare(`SELECT * FROM social_generated_videos WHERE id = ?`).get(String(id))
   if (!vid) return false
 
+  // Unset source_video_id reference in social_generated_final_videos so deleting source video doesn't delete final videos
+  db.prepare(`UPDATE social_generated_final_videos SET source_video_id = NULL WHERE source_video_id = ?`).run(String(id))
+
   // Delete DB record
   db.prepare(`DELETE FROM social_generated_videos WHERE id = ?`).run(String(id))
 
@@ -427,4 +476,24 @@ export function deleteSocialGeneratedVideo(id) {
   return true
 }
 
+export function deleteSocialGeneratedFinalVideo(id) {
+  const finalVid = db.prepare(`SELECT * FROM social_generated_final_videos WHERE id = ?`).get(String(id))
+  if (!finalVid) return false
+
+  // Delete DB record
+  db.prepare(`DELETE FROM social_generated_final_videos WHERE id = ?`).run(String(id))
+
+  // Unlink stored file from disk
+  try {
+    const fullPath = path.isAbsolute(finalVid.file_path) ? finalVid.file_path : path.resolve(__dirname, '..', finalVid.file_path)
+    if (fs.existsSync(fullPath)) {
+      fs.unlinkSync(fullPath)
+    }
+  } catch (e) {
+    console.error('Error deleting final video file from disk:', e)
+  }
+  return true
+}
+
 export default db
+
