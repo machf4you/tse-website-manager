@@ -120,6 +120,19 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS social_generated_videos (
+    id TEXT PRIMARY KEY,
+    site_id TEXT,
+    source_image_id TEXT,
+    prompt TEXT NOT NULL,
+    model TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    public_url TEXT NOT NULL,
+    mime_type TEXT DEFAULT 'video/mp4',
+    file_size INTEGER,
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS serp_task_queue (
     task_id TEXT NOT NULL,
     site_id TEXT NOT NULL,
@@ -310,6 +323,33 @@ export function getSocialGeneratedImages(siteId = null) {
     return db.prepare(`SELECT * FROM social_generated_images WHERE site_id = ? ORDER BY datetime(created_at) DESC`).all(String(siteId))
   }
   return db.prepare(`SELECT * FROM social_generated_images ORDER BY datetime(created_at) DESC LIMIT 50`).all()
+}
+
+export function saveSocialGeneratedVideo(videoData) {
+  const stmt = db.prepare(`
+    INSERT INTO social_generated_videos (id, site_id, source_image_id, prompt, model, file_path, public_url, mime_type, file_size, created_at)
+    VALUES (@id, @site_id, @source_image_id, @prompt, @model, @file_path, @public_url, @mime_type, @file_size, @created_at)
+  `)
+  stmt.run({
+    id: String(videoData.id),
+    site_id: videoData.site_id ? String(videoData.site_id) : null,
+    source_image_id: videoData.source_image_id ? String(videoData.source_image_id) : null,
+    prompt: videoData.prompt,
+    model: videoData.model,
+    file_path: videoData.file_path,
+    public_url: videoData.public_url,
+    mime_type: videoData.mime_type || 'video/mp4',
+    file_size: videoData.file_size || 0,
+    created_at: videoData.created_at || new Date().toISOString()
+  })
+  return videoData
+}
+
+export function getSocialGeneratedVideos(siteId = null) {
+  if (siteId) {
+    return db.prepare(`SELECT * FROM social_generated_videos WHERE site_id = ? ORDER BY datetime(created_at) DESC`).all(String(siteId))
+  }
+  return db.prepare(`SELECT * FROM social_generated_videos ORDER BY datetime(created_at) DESC LIMIT 50`).all()
 }
 
 export default db

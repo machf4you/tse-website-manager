@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, saveSocialGeneratedVideo, getSocialGeneratedVideos } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -167,6 +167,207 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
   } catch (err) {
     console.error('Error in W7 Nano Banana image generation:', err)
     return res.status(500).json({ success: false, error: err.message || 'Internal server error during image generation' })
+  }
+})
+
+// ── W7 Social Veo Video Generation Endpoints ──
+app.get('/api/w7-social/videos', (req, res) => {
+  try {
+    const siteId = req.query.siteId || null
+    const videos = getSocialGeneratedVideos(siteId)
+    res.json({ success: true, videos })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/w7-social/generate-video', async (req, res) => {
+  try {
+    const { prompt, sourceImageId, sourceImageUrl, siteId } = req.body || {}
+    const cleanPrompt = (prompt || '').trim()
+
+    if (!cleanPrompt) {
+      return res.status(400).json({ success: false, error: 'Video prompt is required' })
+    }
+
+    const apiKey = resolveGeminiApiKey()
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'Google / Gemini API Key (GEMINI_API_KEY) is not configured on the server.'
+      })
+    }
+
+    // 1. Locate and read source image file
+    let imageFilename = ''
+    if (sourceImageUrl) {
+      const urlParts = sourceImageUrl.split('/')
+      imageFilename = urlParts[urlParts.length - 1]
+    }
+
+    let absoluteImagePath = imageFilename ? path.join(w7UploadsDir, imageFilename) : null
+    if (!absoluteImagePath || !fs.existsSync(absoluteImagePath)) {
+      // Fallback: search for any existing nano_banana image file in w7UploadsDir
+      const files = fs.readdirSync(w7UploadsDir).filter(f => f.startsWith('nano_banana_'))
+      if (files.length > 0) {
+        absoluteImagePath = path.join(w7UploadsDir, files[files.length - 1])
+      }
+    }
+
+    if (!absoluteImagePath || !fs.existsSync(absoluteImagePath)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Source image file not found on server. Please generate or select a Nano Banana image first.'
+      })
+    }
+
+    const imageBuffer = await fs.promises.readFile(absoluteImagePath)
+    const base64Img = imageBuffer.toString('base64')
+    const mimeType = absoluteImagePath.endsWith('.png') ? 'image/png' : 'image/jpeg'
+
+    // 2. Call Veo 3.1 predictLongRunning API
+    const modelName = 'models/veo-3.1-fast-generate-preview'
+    const startUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:predictLongRunning?key=${apiKey}`
+
+    const startResponse = await fetch(startUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{
+          prompt: cleanPrompt,
+          image: {
+            bytesBase64Encoded: base64Img,
+            mimeType: mimeType
+          }
+        }],
+        parameters: {
+          aspectRatio: '9:16',
+          sampleCount: 1
+        }
+      })
+    })
+
+    if (!startResponse.ok) {
+      const errText = await startResponse.text()
+      console.error('Google Veo API start error:', startResponse.status, errText)
+      return res.status(startResponse.status).json({
+        success: false,
+        error: `Google Veo API error (${startResponse.status}): ${errText}`
+      })
+    }
+
+    const startData = await startResponse.json()
+    const operationName = startData.name
+
+    if (!operationName) {
+      return res.status(500).json({
+        success: false,
+        error: 'Veo API did not return an operation name.'
+      })
+    }
+
+    // 3. Poll operation until done
+    const pollUrl = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`
+    let isDone = false
+    let resultData = null
+
+    for (let attempt = 0; attempt < 35; attempt++) {
+      await new Promise(r => setTimeout(r, 3000))
+      const pollResponse = await fetch(pollUrl)
+      if (pollResponse.ok) {
+        resultData = await pollResponse.json()
+        if (resultData.done) {
+          isDone = true
+          break
+        }
+      }
+    }
+
+    if (!isDone || !resultData) {
+      return res.status(504).json({
+        success: false,
+        error: 'Veo video generation timed out after 105 seconds.'
+      })
+    }
+
+    if (resultData.error) {
+      return res.status(500).json({
+        success: false,
+        error: `Veo video generation error: ${resultData.error.message || JSON.stringify(resultData.error)}`
+      })
+    }
+
+    const generatedSample = resultData.response?.generateVideoResponse?.generatedSamples?.[0]
+    const videoDownloadUri = generatedSample?.video?.uri
+
+    if (!videoDownloadUri) {
+      return res.status(500).json({
+        success: false,
+        error: 'Veo API completed but returned no video download URI.'
+      })
+    }
+
+    // 4. Download video file from Google
+    const finalDownloadUrl = videoDownloadUri.includes('key=')
+      ? videoDownloadUri
+      : `${videoDownloadUri}${videoDownloadUri.includes('?') ? '&' : '?'}key=${apiKey}`
+
+    const videoFetchRes = await fetch(finalDownloadUrl)
+    if (!videoFetchRes.ok) {
+      return res.status(videoFetchRes.status).json({
+        success: false,
+        error: `Failed to download generated video file (${videoFetchRes.status})`
+      })
+    }
+
+    const videoArrayBuffer = await videoFetchRes.arrayBuffer()
+    const videoBuffer = Buffer.from(videoArrayBuffer)
+
+    // 5. Save video server-side
+    const timestamp = Date.now()
+    const randomSuffix = Math.random().toString(36).substring(2, 9)
+    const videoFilename = `veo_video_${timestamp}_${randomSuffix}.mp4`
+    const relativeFilePath = path.join('uploads', 'w7-social', videoFilename)
+    const absoluteVideoPath = path.join(w7UploadsDir, videoFilename)
+
+    await fs.promises.writeFile(absoluteVideoPath, videoBuffer)
+
+    const publicUrl = `/uploads/w7-social/${videoFilename}`
+    const videoId = `vid_${timestamp}_${randomSuffix}`
+
+    const videoRecord = {
+      id: videoId,
+      site_id: siteId ? String(siteId) : null,
+      source_image_id: sourceImageId || null,
+      prompt: cleanPrompt,
+      model: modelName,
+      file_path: relativeFilePath,
+      public_url: publicUrl,
+      mime_type: 'video/mp4',
+      file_size: videoBuffer.length,
+      created_at: new Date().toISOString()
+    }
+
+    saveSocialGeneratedVideo(videoRecord)
+
+    return res.json({
+      success: true,
+      model: modelName,
+      video: {
+        id: videoRecord.id,
+        siteId: videoRecord.site_id,
+        sourceImageId: videoRecord.source_image_id,
+        prompt: videoRecord.prompt,
+        model: videoRecord.model,
+        url: videoRecord.public_url,
+        mimeType: videoRecord.mime_type,
+        fileSize: videoRecord.file_size,
+        createdAt: videoRecord.created_at
+      }
+    })
+  } catch (err) {
+    console.error('Error in W7 Veo video generation:', err)
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error during video generation' })
   }
 })
 
