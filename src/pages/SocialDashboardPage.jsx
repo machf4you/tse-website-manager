@@ -346,9 +346,42 @@ export default function SocialDashboardPage({ site, onBack }) {
               </div>
             </div>
           )}
+
+          {/* Server Preserved History List */}
+          {historyImages.length > 0 && (
+            <div className="sd-history-section">
+              <h3 className="sd-history-title">Server Preserved Images ({historyImages.length})</h3>
+              <div className="sd-history-grid">
+                {historyImages.map(item => {
+                  const itemUrl = item.public_url || item.url
+                  const isSelected = generatedImage?.id === item.id
+                  return (
+                    <div
+                      key={item.id}
+                      className={`sd-history-item ${isSelected ? 'selected' : ''}`}
+                      onClick={() => setGeneratedImage({
+                        id: item.id,
+                        url: itemUrl,
+                        prompt: item.prompt,
+                        model: item.model,
+                        createdAt: item.created_at,
+                        mimeType: item.mime_type
+                      })}
+                    >
+                      <img src={itemUrl} alt={item.prompt} className="sd-history-thumb" />
+                      <div className="sd-history-meta">
+                        <div className="sd-history-name">{getShortTitle(item.prompt)}</div>
+                        <div className="sd-history-fmt">{getFileFormat(item)}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Column: Display Generated Image & Server Preservation */}
+        {/* Right Column: Display Generated Image Output */}
         <div className="sd-card sd-display-panel">
           <div className="sd-card-header">
             <ImageIcon />
@@ -397,39 +430,6 @@ export default function SocialDashboardPage({ site, onBack }) {
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', maxWidth: '320px' }}>
                 Enter your prompt on the left and click &ldquo;Generate Image&rdquo; to test Google Nano Banana.
               </p>
-            </div>
-          )}
-
-          {/* Server Preserved History List */}
-          {historyImages.length > 0 && (
-            <div className="sd-history-section">
-              <h3 className="sd-history-title">Server Preserved Images ({historyImages.length})</h3>
-              <div className="sd-history-grid">
-                {historyImages.map(item => {
-                  const itemUrl = item.public_url || item.url
-                  const isSelected = generatedImage?.id === item.id
-                  return (
-                    <div
-                      key={item.id}
-                      className={`sd-history-item ${isSelected ? 'selected' : ''}`}
-                      onClick={() => setGeneratedImage({
-                        id: item.id,
-                        url: itemUrl,
-                        prompt: item.prompt,
-                        model: item.model,
-                        createdAt: item.created_at,
-                        mimeType: item.mime_type
-                      })}
-                    >
-                      <img src={itemUrl} alt={item.prompt} className="sd-history-thumb" />
-                      <div className="sd-history-meta">
-                        <div className="sd-history-name">{getShortTitle(item.prompt)}</div>
-                        <div className="sd-history-fmt">{getFileFormat(item)}</div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
             </div>
           )}
         </div>
