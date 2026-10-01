@@ -73,10 +73,11 @@ app.get('/api/w7-social/images', (req, res) => {
 
 app.post('/api/w7-social/generate-image', async (req, res) => {
   try {
-    const { prompt, subject, format = 'JPG', siteId } = req.body || {}
+    const { prompt, subject, format = 'JPG', aspectRatio = '9:16', siteId } = req.body || {}
     const cleanPrompt = (prompt || '').trim()
     const cleanSubject = (subject || '').trim() || 'Untitled Image'
     const cleanFormat = (format || 'JPG').toUpperCase() === 'PNG' ? 'PNG' : 'JPG'
+    const cleanAspectRatio = ['9:16', '16:9', '1:1'].includes(aspectRatio) ? aspectRatio : '9:16'
 
     if (!cleanPrompt) {
       return res.status(400).json({ success: false, error: 'Image prompt is required' })
@@ -99,7 +100,12 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
       body: JSON.stringify({
         contents: [{
           parts: [{ text: cleanPrompt }]
-        }]
+        }],
+        generationConfig: {
+          imageConfig: {
+            aspectRatio: cleanAspectRatio
+          }
+        }
       })
     })
 
@@ -143,6 +149,7 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
       site_id: siteId ? String(siteId) : null,
       subject: cleanSubject,
       format: cleanFormat,
+      aspect_ratio: cleanAspectRatio,
       prompt: cleanPrompt,
       model: modelName,
       file_path: relativeFilePath,
@@ -162,6 +169,7 @@ app.post('/api/w7-social/generate-image', async (req, res) => {
         siteId: imageRecord.site_id,
         subject: imageRecord.subject,
         format: imageRecord.format,
+        aspectRatio: imageRecord.aspect_ratio,
         prompt: imageRecord.prompt,
         model: imageRecord.model,
         url: imageRecord.public_url,
@@ -189,7 +197,7 @@ app.get('/api/w7-social/videos', (req, res) => {
 
 app.post('/api/w7-social/generate-video', async (req, res) => {
   try {
-    const { prompt, sourceImageId, sourceImageUrl, siteId } = req.body || {}
+    const { prompt, sourceImageId, sourceImageUrl, subject, aspectRatio, siteId } = req.body || {}
     const cleanPrompt = (prompt || '').trim()
 
     if (!cleanPrompt) {
@@ -203,6 +211,23 @@ app.post('/api/w7-social/generate-video', async (req, res) => {
         error: 'Google / Gemini API Key (GEMINI_API_KEY) is not configured on the server.'
       })
     }
+
+    // Inherit subject & aspect_ratio from DB if sourceImageId provided
+    let inheritedSubject = subject
+    let inheritedAspectRatio = aspectRatio
+    if (sourceImageId) {
+      try {
+        const dbImg = db.prepare('SELECT * FROM social_generated_images WHERE id = ?').get(String(sourceImageId))
+        if (dbImg) {
+          if (!inheritedSubject) inheritedSubject = dbImg.subject
+          if (!inheritedAspectRatio) inheritedAspectRatio = dbImg.aspect_ratio || dbImg.aspectRatio
+        }
+      } catch (e) {
+        console.error('Error fetching source image metadata for video:', e)
+      }
+    }
+    const cleanSubject = (inheritedSubject || 'Untitled Video').trim()
+    const cleanAspectRatio = ['9:16', '16:9', '1:1'].includes(inheritedAspectRatio) ? inheritedAspectRatio : '9:16'
 
     // 1. Locate and read source image file
     let imageFilename = ''
@@ -247,7 +272,7 @@ app.post('/api/w7-social/generate-video', async (req, res) => {
           }
         }],
         parameters: {
-          aspectRatio: '9:16',
+          aspectRatio: cleanAspectRatio,
           sampleCount: 1
         }
       })
@@ -345,6 +370,8 @@ app.post('/api/w7-social/generate-video', async (req, res) => {
       id: videoId,
       site_id: siteId ? String(siteId) : null,
       source_image_id: sourceImageId || null,
+      subject: cleanSubject,
+      aspect_ratio: cleanAspectRatio,
       prompt: cleanPrompt,
       model: modelName,
       file_path: relativeFilePath,
@@ -363,6 +390,8 @@ app.post('/api/w7-social/generate-video', async (req, res) => {
         id: videoRecord.id,
         siteId: videoRecord.site_id,
         sourceImageId: videoRecord.source_image_id,
+        subject: videoRecord.subject,
+        aspectRatio: videoRecord.aspect_ratio,
         prompt: videoRecord.prompt,
         model: videoRecord.model,
         url: videoRecord.public_url,

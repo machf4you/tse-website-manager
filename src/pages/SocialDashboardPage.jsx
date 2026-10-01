@@ -53,6 +53,7 @@ export default function SocialDashboardPage({ site, onBack }) {
   // Stage 1: Nano Banana Image State
   const [subject, setSubject] = useState('Dormer Loft Conversion')
   const [format, setFormat] = useState('JPG')
+  const [aspectRatio, setAspectRatio] = useState('9:16')
   const [prompt, setPrompt] = useState('A sleek modern armchair in a sunlit architectural room with minimalist decor, high resolution 3d render')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
@@ -88,6 +89,7 @@ export default function SocialDashboardPage({ site, onBack }) {
               url: first.public_url || first.url,
               subject: first.subject || 'Untitled Image',
               format: first.format || getFileFormat(first),
+              aspectRatio: first.aspect_ratio || first.aspectRatio || '9:16',
               prompt: first.prompt,
               model: first.model,
               createdAt: first.created_at,
@@ -104,13 +106,16 @@ export default function SocialDashboardPage({ site, onBack }) {
         if (isMounted && data.success && Array.isArray(data.videos)) {
           setHistoryVideos(data.videos)
           if (data.videos.length > 0 && !generatedVideo) {
+            const firstVid = data.videos[0]
             setGeneratedVideo({
-              id: data.videos[0].id,
-              url: data.videos[0].public_url || data.videos[0].url,
-              prompt: data.videos[0].prompt,
-              model: data.videos[0].model,
-              sourceImageId: data.videos[0].source_image_id,
-              createdAt: data.videos[0].created_at
+              id: firstVid.id,
+              url: firstVid.public_url || firstVid.url,
+              subject: firstVid.subject || 'Untitled Video',
+              aspectRatio: firstVid.aspect_ratio || firstVid.aspectRatio || '9:16',
+              prompt: firstVid.prompt,
+              model: firstVid.model,
+              sourceImageId: firstVid.source_image_id,
+              createdAt: firstVid.created_at
             })
           }
         }
@@ -135,6 +140,7 @@ export default function SocialDashboardPage({ site, onBack }) {
           prompt: cleanPrompt,
           subject: subject.trim(),
           format: format,
+          aspectRatio: aspectRatio,
           siteId: siteId
         })
       })
@@ -147,6 +153,7 @@ export default function SocialDashboardPage({ site, onBack }) {
           url: data.image.url,
           subject: data.image.subject || subject.trim() || 'Untitled Image',
           format: data.image.format || format,
+          aspectRatio: data.image.aspectRatio || aspectRatio,
           prompt: data.image.prompt,
           model: data.model || 'models/nano-banana-pro-preview',
           createdAt: data.image.createdAt,
@@ -159,6 +166,7 @@ export default function SocialDashboardPage({ site, onBack }) {
             public_url: newImg.url,
             subject: newImg.subject,
             format: newImg.format,
+            aspect_ratio: newImg.aspectRatio,
             prompt: newImg.prompt,
             model: newImg.model,
             created_at: newImg.createdAt,
@@ -187,6 +195,8 @@ export default function SocialDashboardPage({ site, onBack }) {
     }
 
     const sourceImg = generatedImage || historyImages[0]
+    const inheritedSubject = sourceImg?.subject || 'Untitled Image'
+    const inheritedAspectRatio = sourceImg?.aspectRatio || sourceImg?.aspect_ratio || '9:16'
 
     setIsGeneratingVideo(true)
     setVideoError(null)
@@ -199,6 +209,8 @@ export default function SocialDashboardPage({ site, onBack }) {
           prompt: cleanVideoPrompt,
           sourceImageId: sourceImg?.id,
           sourceImageUrl: sourceImg?.url || sourceImg?.public_url,
+          subject: inheritedSubject,
+          aspectRatio: inheritedAspectRatio,
           siteId: siteId
         })
       })
@@ -209,6 +221,8 @@ export default function SocialDashboardPage({ site, onBack }) {
         const newVid = {
           id: data.video.id,
           url: data.video.url,
+          subject: data.video.subject || inheritedSubject,
+          aspectRatio: data.video.aspectRatio || inheritedAspectRatio,
           prompt: data.video.prompt,
           model: data.model || 'models/veo-3.1-fast-generate-preview',
           sourceImageId: data.video.sourceImageId,
@@ -219,6 +233,8 @@ export default function SocialDashboardPage({ site, onBack }) {
           {
             id: newVid.id,
             public_url: newVid.url,
+            subject: newVid.subject,
+            aspect_ratio: newVid.aspectRatio,
             prompt: newVid.prompt,
             model: newVid.model,
             source_image_id: newVid.sourceImageId,
@@ -281,9 +297,9 @@ export default function SocialDashboardPage({ site, onBack }) {
             <h2 className="sd-card-title">Image Prompt &amp; Controls</h2>
           </div>
 
-          {/* Subject & Format Row */}
+          {/* Subject | Format | Aspect Ratio Row */}
           <div className="sd-controls-row">
-            <div className="sd-form-group-half">
+            <div className="sd-form-group-subject">
               <label htmlFor="input-image-subject" className="sd-label">
                 Subject
               </label>
@@ -298,7 +314,7 @@ export default function SocialDashboardPage({ site, onBack }) {
               />
             </div>
 
-            <div className="sd-form-group-quarter">
+            <div className="sd-form-group-fmt">
               <label htmlFor="select-image-format" className="sd-label">
                 Format
               </label>
@@ -311,6 +327,23 @@ export default function SocialDashboardPage({ site, onBack }) {
               >
                 <option value="JPG">JPG</option>
                 <option value="PNG">PNG</option>
+              </select>
+            </div>
+
+            <div className="sd-form-group-ratio">
+              <label htmlFor="select-image-aspect-ratio" className="sd-label">
+                Aspect Ratio
+              </label>
+              <select
+                id="select-image-aspect-ratio"
+                className="sd-select"
+                value={aspectRatio}
+                onChange={(e) => setAspectRatio(e.target.value)}
+                disabled={isGenerating}
+              >
+                <option value="9:16">9:16 &mdash; Portrait</option>
+                <option value="16:9">16:9 &mdash; Landscape</option>
+                <option value="1:1">1:1 &mdash; Square</option>
               </select>
             </div>
           </div>
@@ -393,6 +426,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                   const isSelected = generatedImage?.id === item.id
                   const displaySubject = item.subject || 'Untitled Image'
                   const displayFormat = item.format || getFileFormat(item)
+                  const displayRatio = item.aspect_ratio || item.aspectRatio || '9:16'
 
                   return (
                     <div
@@ -403,6 +437,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                         url: itemUrl,
                         subject: displaySubject,
                         format: displayFormat,
+                        aspectRatio: displayRatio,
                         prompt: item.prompt,
                         model: item.model,
                         createdAt: item.created_at,
@@ -412,7 +447,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                       <img src={itemUrl} alt={item.prompt} className="sd-history-thumb" />
                       <div className="sd-history-meta">
                         <div className="sd-history-name">{displaySubject}</div>
-                        <div className="sd-history-fmt">IMAGE &middot; {displayFormat}</div>
+                        <div className="sd-history-fmt">IMAGE &middot; {displayFormat} &middot; {displayRatio}</div>
                       </div>
                     </div>
                   )
@@ -453,6 +488,10 @@ export default function SocialDashboardPage({ site, onBack }) {
                   <span className="sd-meta-val"><code className="sd-code">{generatedImage.format || 'JPG'}</code></span>
                 </div>
                 <div className="sd-meta-row">
+                  <span className="sd-meta-label">Aspect Ratio:</span>
+                  <span className="sd-meta-val"><code className="sd-code">{generatedImage.aspectRatio || '9:16'}</code></span>
+                </div>
+                <div className="sd-meta-row">
                   <span className="sd-meta-label">Prompt:</span>
                   <span className="sd-meta-val">&ldquo;{generatedImage.prompt}&rdquo;</span>
                 </div>
@@ -491,7 +530,7 @@ export default function SocialDashboardPage({ site, onBack }) {
       </div>
 
       <div className="sd-content-grid">
-        {/* Left Column: Veo Video Controls */}
+        {/* Left Column: Veo Video Controls & Server Preserved Videos */}
         <div className="sd-card sd-test-panel">
           <div className="sd-card-header">
             <VideoIcon />
@@ -546,7 +585,7 @@ export default function SocialDashboardPage({ site, onBack }) {
               disabled={isGeneratingVideo}
             />
             <span className="sd-field-hint">
-              Model: <code className="sd-code">models/veo-3.1-fast-generate-preview</code> (9:16 Vertical Video)
+              Model: <code className="sd-code">models/veo-3.1-fast-generate-preview</code> ({generatedImage?.aspectRatio || '9:16'} Inherited Aspect Ratio)
             </span>
           </div>
 
@@ -579,7 +618,7 @@ export default function SocialDashboardPage({ site, onBack }) {
               <div className="sd-spinner-lg" style={{ borderColor: '#38bdf8', borderTopColor: 'transparent' }} />
               <div>
                 <div style={{ fontWeight: 700, color: '#f8fafc', marginBottom: '0.2rem' }}>
-                  Generating 9:16 Vertical Video via Veo 3.1...
+                  Generating Video ({generatedImage?.aspectRatio || '9:16'}) via Veo 3.1...
                 </div>
                 <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
                   Model: <code className="sd-code">models/veo-3.1-fast-generate-preview</code> via <code className="sd-code">predictLongRunning</code>. This takes 15-30 seconds.
@@ -602,9 +641,47 @@ export default function SocialDashboardPage({ site, onBack }) {
               </div>
             </div>
           )}
+
+          {/* Server Preserved Video History List - MOVED TO LEFT COLUMN UNDER GENERATE VIDEO */}
+          {historyVideos.length > 0 && (
+            <div className="sd-history-section">
+              <h3 className="sd-history-title">Server Preserved Videos ({historyVideos.length})</h3>
+              <div className="sd-history-grid">
+                {historyVideos.map(item => {
+                  const itemUrl = item.public_url || item.url
+                  const isSelected = generatedVideo?.id === item.id
+                  const displaySubject = item.subject || 'Untitled Video'
+                  const displayRatio = item.aspect_ratio || item.aspectRatio || '9:16'
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`sd-history-item ${isSelected ? 'selected' : ''}`}
+                      onClick={() => setGeneratedVideo({
+                        id: item.id,
+                        url: itemUrl,
+                        subject: displaySubject,
+                        aspectRatio: displayRatio,
+                        prompt: item.prompt,
+                        model: item.model,
+                        sourceImageId: item.source_image_id,
+                        createdAt: item.created_at
+                      })}
+                    >
+                      <video src={itemUrl} className="sd-history-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
+                      <div className="sd-history-meta">
+                        <div className="sd-history-name">{displaySubject}</div>
+                        <div className="sd-history-fmt">VID &middot; {displayRatio}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right Column: Display Generated Video Output & History */}
+        {/* Right Column: Display Generated Video Output Only */}
         <div className="sd-card sd-display-panel">
           <div className="sd-card-header">
             <VideoIcon />
@@ -629,6 +706,14 @@ export default function SocialDashboardPage({ site, onBack }) {
                 />
               </div>
               <div className="sd-meta-card">
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Subject:</span>
+                  <span className="sd-meta-val" style={{ fontWeight: 700, color: '#38bdf8' }}>{generatedVideo.subject || 'Untitled Video'}</span>
+                </div>
+                <div className="sd-meta-row">
+                  <span className="sd-meta-label">Aspect Ratio:</span>
+                  <span className="sd-meta-val"><code className="sd-code">{generatedVideo.aspectRatio || '9:16'}</code></span>
+                </div>
                 <div className="sd-meta-row">
                   <span className="sd-meta-label">Motion Prompt:</span>
                   <span className="sd-meta-val">&ldquo;{generatedVideo.prompt}&rdquo;</span>
@@ -656,37 +741,6 @@ export default function SocialDashboardPage({ site, onBack }) {
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', maxWidth: '320px' }}>
                 Select a Nano Banana image above, enter motion instructions, and click &ldquo;Generate Video (Veo)&rdquo;.
               </p>
-            </div>
-          )}
-
-          {/* Server Preserved Video History List */}
-          {historyVideos.length > 0 && (
-            <div className="sd-history-section">
-              <h3 className="sd-history-title">Server Preserved Videos ({historyVideos.length})</h3>
-              <div className="sd-history-grid">
-                {historyVideos.map(item => {
-                  const itemUrl = item.public_url || item.url
-                  const isSelected = generatedVideo?.id === item.id
-                  return (
-                    <div
-                      key={item.id}
-                      className={`sd-history-item ${isSelected ? 'selected' : ''}`}
-                      style={{ height: '140px' }}
-                      onClick={() => setGeneratedVideo({
-                        id: item.id,
-                        url: itemUrl,
-                        prompt: item.prompt,
-                        model: item.model,
-                        sourceImageId: item.source_image_id,
-                        createdAt: item.created_at
-                      })}
-                    >
-                      <video src={itemUrl} className="sd-history-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
-                      <div className="sd-history-prompt">🎥 {item.prompt}</div>
-                    </div>
-                  )
-                })}
-              </div>
             </div>
           )}
         </div>
