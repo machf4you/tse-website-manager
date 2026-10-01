@@ -108,6 +108,18 @@ db.exec(`
     FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS social_generated_images (
+    id TEXT PRIMARY KEY,
+    site_id TEXT,
+    prompt TEXT NOT NULL,
+    model TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    public_url TEXT NOT NULL,
+    mime_type TEXT DEFAULT 'image/jpeg',
+    file_size INTEGER,
+    created_at TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS serp_task_queue (
     task_id TEXT NOT NULL,
     site_id TEXT NOT NULL,
@@ -272,6 +284,32 @@ export function getWebsiteByIdFromDb(id) {
 
 export function getWebsiteByDomainIdFromDb(domainId) {
   return getWebsiteByDomainIdStmt.get(String(domainId))
+}
+
+export function saveSocialGeneratedImage(imgData) {
+  const stmt = db.prepare(`
+    INSERT INTO social_generated_images (id, site_id, prompt, model, file_path, public_url, mime_type, file_size, created_at)
+    VALUES (@id, @site_id, @prompt, @model, @file_path, @public_url, @mime_type, @file_size, @created_at)
+  `)
+  stmt.run({
+    id: String(imgData.id),
+    site_id: imgData.site_id ? String(imgData.site_id) : null,
+    prompt: imgData.prompt,
+    model: imgData.model,
+    file_path: imgData.file_path,
+    public_url: imgData.public_url,
+    mime_type: imgData.mime_type || 'image/jpeg',
+    file_size: imgData.file_size || 0,
+    created_at: imgData.created_at || new Date().toISOString()
+  })
+  return imgData
+}
+
+export function getSocialGeneratedImages(siteId = null) {
+  if (siteId) {
+    return db.prepare(`SELECT * FROM social_generated_images WHERE site_id = ? ORDER BY datetime(created_at) DESC`).all(String(siteId))
+  }
+  return db.prepare(`SELECT * FROM social_generated_images ORDER BY datetime(created_at) DESC LIMIT 50`).all()
 }
 
 export default db

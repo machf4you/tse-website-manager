@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -19,6 +19,155 @@ const PORT = process.env.PORT || 3005
 
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
+
+const uploadsDir = path.join(__dirname, 'uploads')
+const w7UploadsDir = path.join(uploadsDir, 'w7-social')
+if (!fs.existsSync(w7UploadsDir)) {
+  fs.mkdirSync(w7UploadsDir, { recursive: true })
+}
+app.use('/uploads', express.static(uploadsDir))
+
+function resolveGeminiApiKey() {
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY
+  if (process.env.GOOGLE_API_KEY) return process.env.GOOGLE_API_KEY
+
+  const candidatePaths = [
+    path.join(process.cwd(), '.env'),
+    path.join(__dirname, '..', '.env'),
+    path.join(__dirname, '.env'),
+    '/var/www/www-root/data/www/tse-website-manager/.env',
+    '/var/www/www-root/data/www/tse-website-manager/server/.env',
+    '/opt/tse-apps/website-manager/.env',
+    '/opt/tse-apps/website-manager/server/.env'
+  ]
+
+  for (const envPath of candidatePaths) {
+    try {
+      if (fs.existsSync(envPath)) {
+        const text = fs.readFileSync(envPath, 'utf8')
+        const lines = text.split('\n')
+        for (const line of lines) {
+          const clean = line.trim()
+          if (clean.startsWith('GEMINI_API_KEY=') || clean.startsWith('GOOGLE_API_KEY=')) {
+            const val = clean.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '')
+            if (val) return val
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  return null
+}
+
+// ── W7 Social Image Generation Endpoints ──
+app.get('/api/w7-social/images', (req, res) => {
+  try {
+    const siteId = req.query.siteId || null
+    const images = getSocialGeneratedImages(siteId)
+    res.json({ success: true, images })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/w7-social/generate-image', async (req, res) => {
+  try {
+    const { prompt, siteId } = req.body || {}
+    const cleanPrompt = (prompt || '').trim()
+
+    if (!cleanPrompt) {
+      return res.status(400).json({ success: false, error: 'Image prompt is required' })
+    }
+
+    const apiKey = resolveGeminiApiKey()
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'Google / Gemini API Key (GEMINI_API_KEY) is not configured on the server.'
+      })
+    }
+
+    const modelName = 'models/nano-banana-pro-preview'
+    const googleEndpoint = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`
+
+    const response = await fetch(googleEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{ text: cleanPrompt }]
+        }]
+      })
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      console.error('Google Nano Banana API error:', response.status, errText)
+      return res.status(response.status).json({
+        success: false,
+        error: `Google Nano Banana API error (${response.status}): ${errText}`
+      })
+    }
+
+    const data = await response.json()
+    const candidate = data.candidates?.[0]
+    const part = candidate?.content?.parts?.[0]
+    const base64Data = part?.inlineData?.data
+    const mimeType = part?.inlineData?.mimeType || 'image/jpeg'
+
+    if (!base64Data) {
+      return res.status(500).json({
+        success: false,
+        error: 'Nano Banana API returned no image data.'
+      })
+    }
+
+    const imageBuffer = Buffer.from(base64Data, 'base64')
+    const timestamp = Date.now()
+    const randomSuffix = Math.random().toString(36).substring(2, 9)
+    const ext = mimeType.includes('png') ? 'png' : 'jpg'
+    const filename = `nano_banana_${timestamp}_${randomSuffix}.${ext}`
+    const relativeFilePath = path.join('uploads', 'w7-social', filename)
+    const absoluteFilePath = path.join(w7UploadsDir, filename)
+
+    await fs.promises.writeFile(absoluteFilePath, imageBuffer)
+
+    const publicUrl = `/uploads/w7-social/${filename}`
+    const imageId = `img_${timestamp}_${randomSuffix}`
+
+    const imageRecord = {
+      id: imageId,
+      site_id: siteId ? String(siteId) : null,
+      prompt: cleanPrompt,
+      model: modelName,
+      file_path: relativeFilePath,
+      public_url: publicUrl,
+      mime_type: mimeType,
+      file_size: imageBuffer.length,
+      created_at: new Date().toISOString()
+    }
+
+    saveSocialGeneratedImage(imageRecord)
+
+    return res.json({
+      success: true,
+      model: modelName,
+      image: {
+        id: imageRecord.id,
+        siteId: imageRecord.site_id,
+        prompt: imageRecord.prompt,
+        model: imageRecord.model,
+        url: imageRecord.public_url,
+        mimeType: imageRecord.mime_type,
+        fileSize: imageRecord.file_size,
+        createdAt: imageRecord.created_at
+      }
+    })
+  } catch (err) {
+    console.error('Error in W7 Nano Banana image generation:', err)
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error during image generation' })
+  }
+})
 
 // Deployment Status Endpoints
 let inMemoryDeploymentStatus = {
