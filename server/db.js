@@ -227,6 +227,22 @@ db.exec(`
     file_size INTEGER,
     created_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS social_publications (
+    id TEXT PRIMARY KEY,
+    final_video_id TEXT,
+    subject TEXT,
+    platform TEXT NOT NULL,
+    account_name TEXT,
+    account_id TEXT NOT NULL,
+    team_id TEXT NOT NULL,
+    caption TEXT NOT NULL,
+    status TEXT DEFAULT 'PUBLISHED',
+    bundle_post_id TEXT,
+    bundle_upload_id TEXT,
+    published_at TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
 `)
 
 // Safe idempotent migration: ensure domain_id, total_pages, and registry_status columns exist on websites table
@@ -511,6 +527,33 @@ export function updateSocialGeneratedFinalVideoSubject(id, subject) {
   const cleanSubject = String(subject || '').trim() || 'Untitled Video'
   const result = db.prepare(`UPDATE social_generated_final_videos SET subject = ? WHERE id = ?`).run(cleanSubject, String(id))
   return result.changes > 0
+}
+
+export function saveSocialPublication(pubData) {
+  const stmt = db.prepare(`
+    INSERT INTO social_publications (id, final_video_id, subject, platform, account_name, account_id, team_id, caption, status, bundle_post_id, bundle_upload_id, published_at, created_at)
+    VALUES (@id, @final_video_id, @subject, @platform, @account_name, @account_id, @team_id, @caption, @status, @bundle_post_id, @bundle_upload_id, @published_at, @created_at)
+  `)
+  stmt.run({
+    id: String(pubData.id),
+    final_video_id: pubData.final_video_id ? String(pubData.final_video_id) : null,
+    subject: pubData.subject ? String(pubData.subject).trim() : null,
+    platform: String(pubData.platform || 'FACEBOOK').toUpperCase(),
+    account_name: pubData.account_name ? String(pubData.account_name).trim() : null,
+    account_id: String(pubData.account_id),
+    team_id: String(pubData.team_id),
+    caption: String(pubData.caption || '').trim(),
+    status: pubData.status || 'PUBLISHED',
+    bundle_post_id: pubData.bundle_post_id ? String(pubData.bundle_post_id) : null,
+    bundle_upload_id: pubData.bundle_upload_id ? String(pubData.bundle_upload_id) : null,
+    published_at: pubData.published_at || new Date().toISOString(),
+    created_at: pubData.created_at || new Date().toISOString()
+  })
+  return pubData
+}
+
+export function getSocialPublications() {
+  return db.prepare(`SELECT * FROM social_publications ORDER BY datetime(created_at) DESC LIMIT 50`).all()
 }
 
 export default db

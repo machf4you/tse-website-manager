@@ -77,6 +77,18 @@ export default function SocialDashboardPage({ site, onBack }) {
   const [historyFinalVideos, setHistoryFinalVideos] = useState([])
   const [isSourceVideoExpanded, setIsSourceVideoExpanded] = useState(false)
 
+  // Stage 4: Social Publishing State (bundle.social)
+  const [connectedAccounts, setConnectedAccounts] = useState([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
+  const [accountsError, setAccountsError] = useState(null)
+  const [selectedAccountKey, setSelectedAccountKey] = useState('')
+  const [publishCaption, setPublishCaption] = useState('Discover our latest custom project! Contact us today for details.')
+  const [isApproved, setIsApproved] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [publishError, setPublishError] = useState(null)
+  const [publishSuccess, setPublishSuccess] = useState(null)
+  const [publicationsHistory, setPublicationsHistory] = useState([])
+
   // Edit Subject State for Preserved Assets
   const [editingImageId, setEditingImageId] = useState(null)
   const [editingImageSubject, setEditingImageSubject] = useState('')
@@ -87,7 +99,7 @@ export default function SocialDashboardPage({ site, onBack }) {
 
   const siteId = site?.id || null
 
-  // Fetch server-preserved images, videos, and final videos on mount
+  // Fetch server-preserved images, videos, final videos, and connected accounts on mount
   useEffect(() => {
     let isMounted = true
 
@@ -162,6 +174,41 @@ export default function SocialDashboardPage({ site, onBack }) {
         }
       })
       .catch(err => console.error('Failed to load W7 Social final videos history:', err))
+
+    // Fetch connected accounts from bundle.social
+    setIsLoadingAccounts(true)
+    fetch('/api/w7-social/connected-accounts')
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted) {
+          setIsLoadingAccounts(false)
+          if (data.success && Array.isArray(data.accounts)) {
+            setConnectedAccounts(data.accounts)
+            if (data.accounts.length > 0) {
+              const first = data.accounts[0]
+              setSelectedAccountKey(`${first.teamId}_${first.accountId}_${first.channelId || ''}`)
+            }
+          } else if (data.error) {
+            setAccountsError(data.error)
+          }
+        }
+      })
+      .catch(err => {
+        if (isMounted) {
+          setIsLoadingAccounts(false)
+          setAccountsError(err.message || 'Failed to load connected bundle.social accounts.')
+        }
+      })
+
+    // Fetch publications history
+    fetch('/api/w7-social/publications')
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted && data.success && Array.isArray(data.publications)) {
+          setPublicationsHistory(data.publications)
+        }
+      })
+      .catch(err => console.error('Failed to load publications history:', err))
 
     return () => { isMounted = false }
   }, [siteId])
@@ -578,6 +625,59 @@ export default function SocialDashboardPage({ site, onBack }) {
       setFinalVideoError(err.message || 'Network error connecting to backend API.')
     } finally {
       setIsGeneratingFinalVideo(false)
+    }
+  }
+
+  const handlePublishNow = async () => {
+    if (!generatedFinalVideo) return
+    if (!isApproved) return
+    if (!publishCaption.trim()) return
+    if (!selectedAccountKey) return
+
+    const targetAccount = connectedAccounts.find(
+      a => `${a.teamId}_${a.accountId}_${a.channelId || ''}` === selectedAccountKey
+    )
+    if (!targetAccount) return
+
+    setIsPublishing(true)
+    setPublishError(null)
+    setPublishSuccess(null)
+
+    try {
+      const response = await fetch('/api/w7-social/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          finalVideoId: generatedFinalVideo.id,
+          teamId: targetAccount.teamId,
+          accountId: targetAccount.accountId,
+          channelId: targetAccount.channelId,
+          platform: targetAccount.platform || 'FACEBOOK',
+          accountName: targetAccount.accountName || targetAccount.displayName,
+          caption: publishCaption.trim()
+        })
+      })
+
+      const data = await response.json()
+      setIsPublishing(false)
+
+      if (!response.ok || !data.success) {
+        setPublishError(data.error || 'Publishing failed. Please check bundle.social connection.')
+        return
+      }
+
+      setPublishSuccess({
+        message: `Video published successfully to ${targetAccount.accountName || targetAccount.displayName}!`,
+        postId: data.publication?.bundle_post_id || data.post?.id,
+        publishedAt: data.publication?.published_at || new Date().toISOString()
+      })
+
+      if (data.publication) {
+        setPublicationsHistory(prev => [data.publication, ...prev])
+      }
+    } catch (err) {
+      setIsPublishing(false)
+      setPublishError(err.message || 'Network error occurred during social publishing.')
     }
   }
 
@@ -1451,6 +1551,235 @@ export default function SocialDashboardPage({ site, onBack }) {
               <h3 style={{ margin: '0 0 0.4rem 0', color: '#f8fafc', fontSize: '1.1rem' }}>No Finished Video Rendered Yet</h3>
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', maxWidth: '320px' }}>
                 Select a Veo video above, enter Headline and CTA text, then click &ldquo;Finish Video (Creatomate)&rdquo;.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* SECTION 4: STAGE 4 — APPROVE & PUBLISH */}
+      <div className="sd-section-title" style={{ marginTop: '2.5rem' }}>
+        <SparklesIcon />
+        <span>Stage 4: Approve &amp; Publish</span>
+      </div>
+
+      <div className="sd-content-grid">
+        {/* Left Column: Stage 4 Publish Controls */}
+        <div className="sd-card sd-test-panel">
+          <div className="sd-card-header" style={{ color: '#3b82f6' }}>
+            <SparklesIcon />
+            <h2 className="sd-card-title">STAGE 4 — APPROVE &amp; PUBLISH</h2>
+          </div>
+
+          {/* Selected Creatomate Final Video Preview */}
+          <div className="sd-form-group">
+            <label className="sd-label">
+              Selected Final Video (Creatomate)
+            </label>
+            {generatedFinalVideo ? (
+              <div className="sd-source-preview-box" id="selected-publish-final-video" style={{ borderColor: 'rgba(59, 130, 246, 0.4)' }}>
+                <video src={generatedFinalVideo.url} className="sd-source-thumb" style={{ objectFit: 'cover' }} muted preload="metadata" />
+                <div className="sd-source-text-col">
+                  <div className="sd-source-header-row" style={{ color: '#3b82f6' }}>
+                    <CheckCircleIcon />
+                    <span>Selected Creatomate MP4 ({generatedFinalVideo.subject || 'Untitled Video'})</span>
+                  </div>
+                  <div className="sd-source-prompt-text" style={{ color: '#cbd5e1' }}>
+                    <strong>Headline:</strong> &ldquo;{generatedFinalVideo.headline}&rdquo;<br/>
+                    <strong>CTA:</strong> &ldquo;{generatedFinalVideo.cta}&rdquo;
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '0.8rem', background: '#0f172a', borderRadius: '8px', border: '1px dashed #334155', color: '#94a3b8', fontSize: '0.85rem' }}>
+                ⚠️ Please select or generate a Creatomate final video above to publish.
+              </div>
+            )}
+          </div>
+
+          {/* Connected Account Selector */}
+          <div className="sd-form-group">
+            <label htmlFor="select-connected-account" className="sd-label">
+              Connected Social Account (bundle.social)
+            </label>
+            {isLoadingAccounts ? (
+              <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                <span className="sd-spinner" /> Loading connected accounts from bundle.social...
+              </div>
+            ) : accountsError ? (
+              <div style={{ color: '#ef4444', fontSize: '0.85rem' }}>
+                ⚠️ {accountsError}
+              </div>
+            ) : (
+              <select
+                id="select-connected-account"
+                className="sd-select"
+                value={selectedAccountKey}
+                onChange={(e) => setSelectedAccountKey(e.target.value)}
+                disabled={isPublishing}
+              >
+                <option value="">-- Select Connected Social Account --</option>
+                {connectedAccounts.map(acc => {
+                  const key = `${acc.teamId}_${acc.accountId}_${acc.channelId || ''}`
+                  return (
+                    <option key={key} value={key}>
+                      {acc.displayName} (Team: {acc.teamName})
+                    </option>
+                  )
+                })}
+              </select>
+            )}
+            <span className="sd-field-hint">
+              Target Provider: <code className="sd-code">bundle.social REST API</code>
+            </span>
+          </div>
+
+          {/* Social Caption Textarea */}
+          <div className="sd-form-group">
+            <label htmlFor="input-publish-caption" className="sd-label">
+              Social Caption
+            </label>
+            <textarea
+              id="input-publish-caption"
+              className="sd-textarea"
+              rows="3"
+              placeholder="Enter short social caption for the post..."
+              value={publishCaption}
+              onChange={(e) => setPublishCaption(e.target.value)}
+              disabled={isPublishing}
+            />
+          </div>
+
+          {/* Approval Checkbox */}
+          <div className="sd-form-group">
+            <label className="sd-checkbox-container" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', color: '#f8fafc', fontSize: '0.9rem', fontWeight: 600 }}>
+              <input
+                type="checkbox"
+                id="checkbox-approve-publish"
+                checked={isApproved}
+                onChange={(e) => setIsApproved(e.target.checked)}
+                disabled={isPublishing}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#3b82f6' }}
+              />
+              <span>Approve for Publishing</span>
+            </label>
+          </div>
+
+          {/* Publish Button */}
+          <div className="sd-action-row">
+            <button
+              type="button"
+              id="btn-publish-now"
+              className="sd-btn-primary"
+              style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}
+              onClick={handlePublishNow}
+              disabled={isPublishing || !generatedFinalVideo || !isApproved || !publishCaption.trim() || !selectedAccountKey}
+            >
+              {isPublishing ? (
+                <>
+                  <span className="sd-spinner" />
+                  Publishing...
+                </>
+              ) : (
+                <>
+                  <SparklesIcon />
+                  PUBLISH NOW
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Publishing Loading / Status */}
+          {isPublishing && (
+            <div className="sd-status-box sd-status-loading" id="status-publish-loading">
+              <div className="sd-spinner-lg" style={{ borderColor: '#3b82f6', borderTopColor: 'transparent' }} />
+              <div>
+                <div style={{ fontWeight: 700, color: '#f8fafc', marginBottom: '0.2rem' }}>
+                  Publishing Video to Social Network...
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                  Uploading media and executing live post via bundle.social API.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Publishing Error State */}
+          {publishError && (
+            <div className="sd-status-box sd-status-error" id="status-publish-error">
+              <AlertTriangleIcon />
+              <div>
+                <div style={{ fontWeight: 700, color: '#f87171', marginBottom: '0.2rem' }}>
+                  Social Publishing Failed
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#fca5a5' }}>
+                  {publishError}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Publishing Success State */}
+          {publishSuccess && (
+            <div className="sd-status-box sd-status-success" id="status-publish-success" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399' }}>
+              <CheckCircleIcon />
+              <div>
+                <div style={{ fontWeight: 700, color: '#34d399', marginBottom: '0.2rem' }}>
+                  Published
+                </div>
+                <div style={{ fontSize: '0.85rem', color: '#a7f3d0' }}>
+                  {publishSuccess.message}
+                </div>
+                {publishSuccess.postId && (
+                  <div style={{ fontSize: '0.78rem', color: '#6ee7b7', marginTop: '0.2rem' }}>
+                    Bundle Post ID: <code className="sd-code">{publishSuccess.postId}</code>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Server Preserved Social Publications History */}
+        <div className="sd-card sd-display-panel">
+          <div className="sd-card-header" style={{ color: '#3b82f6' }}>
+            <SparklesIcon />
+            <h2 className="sd-card-title">Publishing History</h2>
+          </div>
+
+          {publicationsHistory.length > 0 ? (
+            <div className="sd-publications-list" id="container-publications-history" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {publicationsHistory.map(pub => (
+                <div key={pub.id} className="sd-pub-card" style={{ background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', padding: '0.9rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                    <span style={{ fontWeight: 700, color: '#f8fafc', fontSize: '0.9rem' }}>
+                      {pub.subject || 'Social Video Post'}
+                    </span>
+                    <span className="sd-pill-model-badge" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.3)' }}>
+                      {pub.platform || 'FACEBOOK'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
+                    <strong>Account:</strong> {pub.account_name || pub.account_id}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#cbd5e1', fontStyle: 'italic', background: '#1e293b', padding: '0.5rem', borderRadius: '6px', marginBottom: '0.5rem' }}>
+                    &ldquo;{pub.caption}&rdquo;
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b' }}>
+                    <span>Status: <strong style={{ color: pub.status === 'PUBLISHED' ? '#34d399' : '#f87171' }}>{pub.status}</strong></span>
+                    <span>{new Date(pub.published_at || pub.created_at).toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="sd-empty-display" id="container-empty-publications-history">
+              <div className="sd-empty-icon-bg" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                <SparklesIcon />
+              </div>
+              <h3 style={{ margin: '0 0 0.4rem 0', color: '#f8fafc', fontSize: '1.1rem' }}>No Social Posts Published Yet</h3>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', maxWidth: '320px' }}>
+                Approved final videos published to connected social networks via bundle.social will be listed here.
               </p>
             </div>
           )}

@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, getSocialPublications } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -746,6 +746,244 @@ app.post('/api/w7-social/generate-final-video', async (req, res) => {
   } catch (err) {
     console.error('Error in W7 Creatomate video finishing:', err)
     return res.status(500).json({ success: false, error: err.message || 'Internal server error during video finishing' })
+  }
+})
+
+// ── W7 Social Stage 4: Social Publishing Endpoints ──
+function resolveBundleSocialApiKey() {
+  if (process.env.BUNDLE_SOCIAL_API_KEY) return process.env.BUNDLE_SOCIAL_API_KEY
+
+  const candidatePaths = [
+    path.join(process.cwd(), '.env'),
+    path.join(__dirname, '..', '.env'),
+    path.join(__dirname, '.env'),
+    '/var/www/www-root/data/www/tse-website-manager/.env',
+    '/var/www/www-root/data/www/tse-website-manager/server/.env',
+    '/opt/tse-apps/website-manager/.env',
+    '/opt/tse-apps/website-manager/server/.env'
+  ]
+
+  for (const envPath of candidatePaths) {
+    try {
+      if (fs.existsSync(envPath)) {
+        const text = fs.readFileSync(envPath, 'utf8')
+        const lines = text.split('\n')
+        for (const line of lines) {
+          const clean = line.trim()
+          if (clean.startsWith('BUNDLE_SOCIAL_API_KEY=')) {
+            const val = clean.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '')
+            if (val) return val
+          }
+        }
+      }
+    } catch (e) {}
+  }
+  return null
+}
+
+app.get('/api/w7-social/connected-accounts', async (req, res) => {
+  try {
+    const apiKey = resolveBundleSocialApiKey()
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'bundle.social API key (BUNDLE_SOCIAL_API_KEY) is not configured on the server.'
+      })
+    }
+
+    const response = await fetch('https://api.bundle.social/api/v1/team', {
+      headers: {
+        'x-api-key': apiKey,
+        'User-Agent': 'W7Social/1.0 (WebsiteManager Integration)',
+        'Accept': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      const errText = await response.text()
+      return res.status(response.status).json({
+        success: false,
+        error: `bundle.social API error (${response.status}): ${errText}`
+      })
+    }
+
+    const data = await response.json()
+    const accounts = []
+
+    for (const team of data.items || []) {
+      for (const acc of team.socialAccounts || []) {
+        if (Array.isArray(acc.channels) && acc.channels.length > 0) {
+          for (const ch of acc.channels) {
+            accounts.push({
+              teamId: team.id,
+              teamName: team.name,
+              accountId: acc.id,
+              channelId: ch.id,
+              platform: (acc.type || 'FACEBOOK').toUpperCase(),
+              displayName: `${ch.name || acc.displayName || 'Social Account'} (${(acc.type || 'FACEBOOK').toUpperCase()})`,
+              accountName: ch.name || acc.displayName || 'Social Account',
+              avatarUrl: ch.avatarUrl || acc.avatarUrl
+            })
+          }
+        } else {
+          accounts.push({
+            teamId: team.id,
+            teamName: team.name,
+            accountId: acc.id,
+            channelId: null,
+            platform: (acc.type || 'FACEBOOK').toUpperCase(),
+            displayName: `${acc.displayName || 'Social Account'} (${(acc.type || 'FACEBOOK').toUpperCase()})`,
+            accountName: acc.displayName || 'Social Account',
+            avatarUrl: acc.avatarUrl
+          })
+        }
+      }
+    }
+
+    return res.json({ success: true, accounts })
+  } catch (err) {
+    console.error('Error fetching connected accounts from bundle.social:', err)
+    return res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.get('/api/w7-social/publications', (req, res) => {
+  try {
+    const publications = getSocialPublications()
+    res.json({ success: true, publications })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/w7-social/publish', async (req, res) => {
+  try {
+    const { finalVideoId, teamId, accountId, channelId, platform = 'FACEBOOK', caption, accountName } = req.body || {}
+    const cleanCaption = (caption || '').trim()
+
+    if (!finalVideoId) return res.status(400).json({ success: false, error: 'Final video ID is required.' })
+    if (!teamId) return res.status(400).json({ success: false, error: 'Team ID is required.' })
+    if (!accountId) return res.status(400).json({ success: false, error: 'Account ID is required.' })
+    if (!cleanCaption) return res.status(400).json({ success: false, error: 'Social caption is required.' })
+
+    const apiKey = resolveBundleSocialApiKey()
+    if (!apiKey) {
+      return res.status(500).json({
+        success: false,
+        error: 'bundle.social API key (BUNDLE_SOCIAL_API_KEY) is not configured on the server.'
+      })
+    }
+
+    const finalVid = db.prepare('SELECT * FROM social_generated_final_videos WHERE id = ?').get(String(finalVideoId))
+    if (!finalVid) {
+      return res.status(404).json({ success: false, error: 'Preserved Creatomate final video asset not found.' })
+    }
+
+    const absoluteFilePath = path.isAbsolute(finalVid.file_path)
+      ? finalVid.file_path
+      : path.resolve(__dirname, '..', finalVid.file_path)
+
+    if (!fs.existsSync(absoluteFilePath)) {
+      return res.status(404).json({ success: false, error: `Stored video file not found on disk at ${absoluteFilePath}` })
+    }
+
+    // 1. Upload video file to bundle.social API via multipart/form-data
+    const fileBuffer = await fs.promises.readFile(absoluteFilePath)
+    const blob = new Blob([fileBuffer], { type: 'video/mp4' })
+    const uploadForm = new FormData()
+    uploadForm.append('file', blob, path.basename(absoluteFilePath))
+    uploadForm.append('teamId', String(teamId))
+
+    const uploadRes = await fetch('https://api.bundle.social/api/v1/upload', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'User-Agent': 'W7Social/1.0'
+      },
+      body: uploadForm
+    })
+
+    if (!uploadRes.ok) {
+      const errText = await uploadRes.text()
+      console.error('bundle.social upload failed:', uploadRes.status, errText)
+      return res.status(uploadRes.status).json({
+        success: false,
+        error: `bundle.social media upload failed (${uploadRes.status}): ${errText}`
+      })
+    }
+
+    const uploadData = await uploadRes.json()
+    const uploadId = uploadData.uploadId || uploadData.id
+    if (!uploadId) {
+      return res.status(500).json({ success: false, error: 'bundle.social upload response missing uploadId.' })
+    }
+
+    // 2. Create social post on bundle.social API
+    const targetPlatform = String(platform || 'FACEBOOK').toUpperCase()
+    const postPayload = {
+      teamId: String(teamId),
+      title: finalVid.subject || 'W7 Social Video Post',
+      postDate: new Date().toISOString(),
+      status: 'SCHEDULED',
+      socialAccountTypes: [targetPlatform],
+      socialAccountIds: [String(accountId)],
+      data: {
+        [targetPlatform]: {
+          type: 'POST',
+          text: cleanCaption,
+          uploadIds: [uploadId]
+        }
+      }
+    }
+
+    const postRes = await fetch('https://api.bundle.social/api/v1/post', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'User-Agent': 'W7Social/1.0'
+      },
+      body: JSON.stringify(postPayload)
+    })
+
+    if (!postRes.ok) {
+      const errText = await postRes.text()
+      console.error('bundle.social post creation failed:', postRes.status, errText)
+      return res.status(postRes.status).json({
+        success: false,
+        error: `bundle.social post creation failed (${postRes.status}): ${errText}`
+      })
+    }
+
+    const postData = await postRes.json()
+    const bundlePostId = postData.id || null
+
+    const pubRecord = {
+      id: `pub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      final_video_id: String(finalVideoId),
+      subject: finalVid.subject,
+      platform: targetPlatform,
+      account_name: accountName || 'Connected Social Account',
+      account_id: String(accountId),
+      team_id: String(teamId),
+      caption: cleanCaption,
+      status: 'PUBLISHED',
+      bundle_post_id: bundlePostId,
+      bundle_upload_id: String(uploadId),
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
+    }
+
+    saveSocialPublication(pubRecord)
+
+    return res.json({
+      success: true,
+      publication: pubRecord,
+      post: postData
+    })
+  } catch (err) {
+    console.error('Error publishing video to bundle.social:', err)
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error during publishing' })
   }
 })
 
