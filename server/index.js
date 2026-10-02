@@ -817,48 +817,62 @@ app.get('/api/w7-social/connected-accounts', async (req, res) => {
     const rawAccounts = []
     const seenKeys = new Set()
 
+    const teamsMap = []
     for (const team of data.items || []) {
+      const teamAccs = []
       for (const acc of team.socialAccounts || []) {
         if (Array.isArray(acc.channels) && acc.channels.length > 0) {
           for (const ch of acc.channels) {
-            const uniqueKey = `${ch.id}_${(acc.type || 'FACEBOOK').toUpperCase()}`
-            if (!seenKeys.has(uniqueKey)) {
-              seenKeys.add(uniqueKey)
-              rawAccounts.push({
-                teamId: team.id,
-                teamName: team.name,
-                accountId: acc.id,
-                channelId: ch.id,
-                platform: (acc.type || 'FACEBOOK').toUpperCase(),
-                displayName: `${ch.name || acc.displayName || 'Social Account'} (${(acc.type || 'FACEBOOK').toUpperCase()})`,
-                accountName: ch.name || acc.displayName || 'Social Account',
-                avatarUrl: ch.avatarUrl || acc.avatarUrl
-              })
-            }
-          }
-        } else {
-          const uniqueKey = `${acc.id}_${(acc.type || 'FACEBOOK').toUpperCase()}`
-          if (!seenKeys.has(uniqueKey)) {
-            seenKeys.add(uniqueKey)
-            rawAccounts.push({
+            const accObj = {
               teamId: team.id,
               teamName: team.name,
               accountId: acc.id,
-              channelId: null,
+              channelId: ch.id,
               platform: (acc.type || 'FACEBOOK').toUpperCase(),
-              displayName: `${acc.displayName || 'Social Account'} (${(acc.type || 'FACEBOOK').toUpperCase()})`,
-              accountName: acc.displayName || 'Social Account',
-              avatarUrl: acc.avatarUrl
-            })
+              displayName: `${ch.name || acc.displayName || 'Social Account'} (${(acc.type || 'FACEBOOK').toUpperCase()})`,
+              accountName: ch.name || acc.displayName || 'Social Account',
+              avatarUrl: ch.avatarUrl || acc.avatarUrl
+            }
+            teamAccs.push(accObj)
+
+            const uniqueKey = `${ch.id}_${(acc.type || 'FACEBOOK').toUpperCase()}`
+            if (!seenKeys.has(uniqueKey)) {
+              seenKeys.add(uniqueKey)
+              rawAccounts.push(accObj)
+            }
+          }
+        } else {
+          const accObj = {
+            teamId: team.id,
+            teamName: team.name,
+            accountId: acc.id,
+            channelId: null,
+            platform: (acc.type || 'FACEBOOK').toUpperCase(),
+            displayName: `${acc.displayName || 'Social Account'} (${(acc.type || 'FACEBOOK').toUpperCase()})`,
+            accountName: acc.displayName || 'Social Account',
+            avatarUrl: acc.avatarUrl
+          }
+          teamAccs.push(accObj)
+
+          const uniqueKey = `${acc.id}_${(acc.type || 'FACEBOOK').toUpperCase()}`
+          if (!seenKeys.has(uniqueKey)) {
+            seenKeys.add(uniqueKey)
+            rawAccounts.push(accObj)
           }
         }
       }
+
+      teamsMap.push({
+        id: team.id,
+        name: team.name,
+        accounts: teamAccs
+      })
     }
 
     // Sort accounts alphabetically by account name
     rawAccounts.sort((a, b) => a.accountName.localeCompare(b.accountName, undefined, { sensitivity: 'base' }))
 
-    return res.json({ success: true, accounts: rawAccounts })
+    return res.json({ success: true, teams: teamsMap, accounts: rawAccounts })
   } catch (err) {
     console.error('Error fetching connected accounts from bundle.social:', err)
     return res.status(500).json({ success: false, error: err.message })

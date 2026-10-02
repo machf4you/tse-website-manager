@@ -78,6 +78,8 @@ export default function SocialDashboardPage({ site, onBack }) {
   const [isSourceVideoExpanded, setIsSourceVideoExpanded] = useState(false)
 
   // Stage 4: Social Publishing State (bundle.social)
+  const [teamsList, setTeamsList] = useState([])
+  const [selectedTeamId, setSelectedTeamId] = useState('')
   const [connectedAccounts, setConnectedAccounts] = useState([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
   const [accountsError, setAccountsError] = useState(null)
@@ -182,11 +184,21 @@ export default function SocialDashboardPage({ site, onBack }) {
       .then(data => {
         if (isMounted) {
           setIsLoadingAccounts(false)
-          if (data.success && Array.isArray(data.accounts)) {
-            setConnectedAccounts(data.accounts)
-            if (data.accounts.length > 0) {
-              const first = data.accounts[0]
-              setSelectedAccountKey(`${first.teamId}_${first.accountId}_${first.channelId || ''}`)
+          if (data.success) {
+            if (Array.isArray(data.teams)) {
+              setTeamsList(data.teams)
+              if (data.teams.length > 0) {
+                // Auto-select I Want A New Kitchen if present, or first team
+                const kitchenTeam = data.teams.find(t => t.name.toLowerCase().includes('kitchen')) || data.teams[0]
+                setSelectedTeamId(kitchenTeam.id)
+                if (kitchenTeam.accounts && kitchenTeam.accounts.length > 0) {
+                  const firstAcc = kitchenTeam.accounts[0]
+                  setSelectedAccountKey(`${firstAcc.teamId}_${firstAcc.accountId}_${firstAcc.channelId || ''}`)
+                }
+              }
+            }
+            if (Array.isArray(data.accounts)) {
+              setConnectedAccounts(data.accounts)
             }
           } else if (data.error) {
             setAccountsError(data.error)
@@ -1597,10 +1609,51 @@ export default function SocialDashboardPage({ site, onBack }) {
             )}
           </div>
 
+          {/* Team Selector */}
+          <div className="sd-form-group">
+            <label htmlFor="select-team" className="sd-label">
+              bundle.social Team
+            </label>
+            {isLoadingAccounts ? (
+              <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                <span className="sd-spinner" /> Loading teams from bundle.social...
+              </div>
+            ) : accountsError ? (
+              <div style={{ color: '#ef4444', fontSize: '0.85rem' }}>
+                ⚠️ {accountsError}
+              </div>
+            ) : (
+              <select
+                id="select-team"
+                className="sd-select"
+                value={selectedTeamId}
+                onChange={(e) => {
+                  const newTeamId = e.target.value
+                  setSelectedTeamId(newTeamId)
+                  const filtered = newTeamId ? connectedAccounts.filter(a => a.teamId === newTeamId) : connectedAccounts
+                  if (filtered.length > 0) {
+                    const firstAcc = filtered[0]
+                    setSelectedAccountKey(`${firstAcc.teamId}_${firstAcc.accountId}_${firstAcc.channelId || ''}`)
+                  } else {
+                    setSelectedAccountKey('')
+                  }
+                }}
+                disabled={isPublishing}
+              >
+                <option value="">-- All Teams --</option>
+                {teamsList.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
           {/* Connected Account Selector */}
           <div className="sd-form-group">
             <label htmlFor="select-connected-account" className="sd-label">
-              Connected Social Account (bundle.social)
+              Connected Social Account / Facebook Page
             </label>
             {isLoadingAccounts ? (
               <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
@@ -1619,7 +1672,7 @@ export default function SocialDashboardPage({ site, onBack }) {
                 disabled={isPublishing}
               >
                 <option value="">-- Select Connected Social Account --</option>
-                {connectedAccounts.map(acc => {
+                {(selectedTeamId ? connectedAccounts.filter(a => a.teamId === selectedTeamId) : connectedAccounts).map(acc => {
                   const key = `${acc.teamId}_${acc.accountId}_${acc.channelId || ''}`
                   return (
                     <option key={key} value={key}>
