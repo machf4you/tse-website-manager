@@ -25,8 +25,37 @@ const w7UploadsDir = path.join(uploadsDir, 'w7-social')
 if (!fs.existsSync(w7UploadsDir)) {
   fs.mkdirSync(w7UploadsDir, { recursive: true })
 }
+try {
+  const rootUploads = path.resolve(__dirname, '..', 'uploads')
+  if (!fs.existsSync(rootUploads)) {
+    fs.symlinkSync(uploadsDir, rootUploads, 'dir')
+  }
+} catch (e) {}
+
 app.use('/uploads', express.static(uploadsDir))
 app.use('/api/uploads', express.static(uploadsDir))
+
+function resolveStoredFilePath(storedPath) {
+  if (!storedPath) return null
+  if (path.isAbsolute(storedPath) && fs.existsSync(storedPath)) return storedPath
+
+  const filename = path.basename(storedPath)
+
+  const candidates = [
+    path.resolve(w7UploadsDir, filename),
+    path.resolve(__dirname, storedPath),
+    path.resolve(__dirname, '..', storedPath),
+    path.resolve(process.cwd(), storedPath),
+    path.resolve(process.cwd(), 'server', storedPath)
+  ]
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate
+    }
+  }
+  return null
+}
 
 function resolveGeminiApiKey() {
   if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY
@@ -911,12 +940,10 @@ app.post('/api/w7-social/publish', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Preserved Creatomate final video asset not found.' })
     }
 
-    const absoluteFilePath = path.isAbsolute(finalVid.file_path)
-      ? finalVid.file_path
-      : path.resolve(__dirname, '..', finalVid.file_path)
+    const absoluteFilePath = resolveStoredFilePath(finalVid.file_path)
 
-    if (!fs.existsSync(absoluteFilePath)) {
-      return res.status(404).json({ success: false, error: `Stored video file not found on disk at ${absoluteFilePath}` })
+    if (!absoluteFilePath || !fs.existsSync(absoluteFilePath)) {
+      return res.status(404).json({ success: false, error: `Stored video file not found on disk at ${finalVid.file_path}` })
     }
 
     // 1. Upload video file to bundle.social API via multipart/form-data
