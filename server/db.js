@@ -238,6 +238,8 @@ db.exec(`
     team_id TEXT NOT NULL,
     caption TEXT NOT NULL,
     status TEXT DEFAULT 'PUBLISHED',
+    error_message TEXT,
+    external_post_id TEXT,
     bundle_post_id TEXT,
     bundle_upload_id TEXT,
     published_at TEXT NOT NULL,
@@ -273,6 +275,19 @@ try {
   `)
 } catch (e) {
   console.error('Error ensuring schema columns exist on websites table:', e)
+}
+
+// Safe idempotent migration: ensure error_message and external_post_id columns exist on social_publications table
+try {
+  const pubCols = db.pragma('table_info(social_publications)')
+  if (!pubCols.some(col => col.name === 'error_message')) {
+    db.exec(`ALTER TABLE social_publications ADD COLUMN error_message TEXT DEFAULT NULL;`)
+  }
+  if (!pubCols.some(col => col.name === 'external_post_id')) {
+    db.exec(`ALTER TABLE social_publications ADD COLUMN external_post_id TEXT DEFAULT NULL;`)
+  }
+} catch (e) {
+  console.error('Error ensuring schema columns exist on social_publications table:', e)
 }
 
 // Safe idempotent migration: ensure search_volume and volume_checked_at columns exist on page_rankings
@@ -531,8 +546,8 @@ export function updateSocialGeneratedFinalVideoSubject(id, subject) {
 
 export function saveSocialPublication(pubData) {
   const stmt = db.prepare(`
-    INSERT INTO social_publications (id, final_video_id, subject, platform, account_name, account_id, team_id, caption, status, bundle_post_id, bundle_upload_id, published_at, created_at)
-    VALUES (@id, @final_video_id, @subject, @platform, @account_name, @account_id, @team_id, @caption, @status, @bundle_post_id, @bundle_upload_id, @published_at, @created_at)
+    INSERT INTO social_publications (id, final_video_id, subject, platform, account_name, account_id, team_id, caption, status, error_message, external_post_id, bundle_post_id, bundle_upload_id, published_at, created_at)
+    VALUES (@id, @final_video_id, @subject, @platform, @account_name, @account_id, @team_id, @caption, @status, @error_message, @external_post_id, @bundle_post_id, @bundle_upload_id, @published_at, @created_at)
   `)
   stmt.run({
     id: String(pubData.id),
@@ -544,12 +559,28 @@ export function saveSocialPublication(pubData) {
     team_id: String(pubData.team_id),
     caption: String(pubData.caption || '').trim(),
     status: pubData.status || 'PUBLISHED',
+    error_message: pubData.error_message ? String(pubData.error_message).trim() : null,
+    external_post_id: pubData.external_post_id ? String(pubData.external_post_id).trim() : null,
     bundle_post_id: pubData.bundle_post_id ? String(pubData.bundle_post_id) : null,
     bundle_upload_id: pubData.bundle_upload_id ? String(pubData.bundle_upload_id) : null,
     published_at: pubData.published_at || new Date().toISOString(),
     created_at: pubData.created_at || new Date().toISOString()
   })
   return pubData
+}
+
+export function updateSocialPublicationStatus(idOrBundlePostId, status, errorMessage = null, externalPostId = null) {
+  const stmt = db.prepare(`
+    UPDATE social_publications
+    SET status = ?,
+        error_message = ?,
+        external_post_id = COALESCE(?, external_post_id)
+    WHERE id = ? OR bundle_post_id = ?
+  `)
+  const cleanError = errorMessage ? String(errorMessage).trim() : null
+  const cleanExtId = externalPostId ? String(externalPostId).trim() : null
+  const result = stmt.run(String(status), cleanError, cleanExtId, String(idOrBundlePostId), String(idOrBundlePostId))
+  return result.changes > 0
 }
 
 export function getSocialPublications() {

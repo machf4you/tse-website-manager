@@ -674,18 +674,22 @@ export default function SocialDashboardPage({ site, onBack }) {
       setIsPublishing(false)
 
       if (!response.ok || !data.success) {
-        setPublishError(data.error || 'Publishing failed. Please check bundle.social connection.')
+        setPublishError(data.error || 'Publishing failed. Provider rejected social post.')
+        if (data.publication) {
+          setPublicationsHistory(prev => [data.publication, ...prev.filter(p => p.id !== data.publication.id)])
+        }
         return
       }
 
       setPublishSuccess({
-        message: `Video published successfully to ${targetAccount.accountName || targetAccount.displayName}!`,
+        message: data.message || `Video published successfully to ${targetAccount.accountName || targetAccount.displayName}!`,
         postId: data.publication?.bundle_post_id || data.post?.id,
-        publishedAt: data.publication?.published_at || new Date().toISOString()
+        publishedAt: data.publication?.published_at || new Date().toISOString(),
+        isQueued: Boolean(data.isQueued)
       })
 
       if (data.publication) {
-        setPublicationsHistory(prev => [data.publication, ...prev])
+        setPublicationsHistory(prev => [data.publication, ...prev.filter(p => p.id !== data.publication.id)])
       }
     } catch (err) {
       setIsPublishing(false)
@@ -1819,9 +1823,14 @@ export default function SocialDashboardPage({ site, onBack }) {
                     &ldquo;{pub.caption}&rdquo;
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b' }}>
-                    <span>Status: <strong style={{ color: pub.status === 'PUBLISHED' ? '#34d399' : '#f87171' }}>{pub.status}</strong></span>
+                    <span>Status: <strong style={{ color: pub.status === 'PUBLISHED' ? '#34d399' : (pub.status === 'QUEUED' ? '#f59e0b' : '#f87171') }}>{pub.status}</strong></span>
                     <span>{new Date(pub.published_at || pub.created_at).toLocaleString()}</span>
                   </div>
+                  {pub.error_message && (
+                    <div style={{ marginTop: '0.55rem', fontSize: '0.75rem', color: '#f87171', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '0.45rem 0.6rem', borderRadius: '6px' }}>
+                      <strong>Provider Error:</strong> {pub.error_message}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

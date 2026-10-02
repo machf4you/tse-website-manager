@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, getSocialPublications } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -908,9 +908,53 @@ app.get('/api/w7-social/connected-accounts', async (req, res) => {
   }
 })
 
-app.get('/api/w7-social/publications', (req, res) => {
+app.get('/api/w7-social/publications', async (req, res) => {
   try {
     const publications = getSocialPublications()
+    const apiKey = resolveBundleSocialApiKey()
+
+    if (apiKey && Array.isArray(publications) && publications.length > 0) {
+      for (const pub of publications) {
+        if (pub.bundle_post_id) {
+          try {
+            const checkRes = await fetch(`https://api.bundle.social/api/v1/post/${pub.bundle_post_id}`, {
+              headers: { 'x-api-key': apiKey, 'User-Agent': 'W7Social/1.0' }
+            })
+            if (checkRes.ok) {
+              const checkData = await checkRes.json()
+              const currentStatus = String(checkData.status || '').toUpperCase()
+
+              if (currentStatus === 'ERROR' || currentStatus === 'FAILED') {
+                const fbErr = checkData.errorsVerbose?.FACEBOOK || checkData.errors?.FACEBOOK
+                let errText = 'Provider rejected publish request.'
+                if (typeof fbErr === 'object') {
+                  errText = fbErr.userFacingMessage || fbErr.errorMessage || errText
+                } else if (typeof fbErr === 'string') {
+                  errText = fbErr
+                } else if (checkData.error) {
+                  errText = checkData.error
+                }
+                updateSocialPublicationStatus(pub.id, 'FAILED', errText, null)
+                pub.status = 'FAILED'
+                pub.error_message = errText
+              } else if (currentStatus === 'PUBLISHED' || currentStatus === 'SUCCESS') {
+                const sa = Array.isArray(checkData.socialAccounts) ? checkData.socialAccounts[0] : null
+                const extId = sa?.externalPostId || sa?.externalAlternatePostId || null
+                updateSocialPublicationStatus(pub.id, 'PUBLISHED', null, extId)
+                pub.status = 'PUBLISHED'
+                if (extId) pub.external_post_id = extId
+              } else if (currentStatus === 'SCHEDULED' || currentStatus === 'PROCESSING' || currentStatus === 'QUEUED') {
+                updateSocialPublicationStatus(pub.id, 'QUEUED', pub.error_message || null, null)
+                pub.status = 'QUEUED'
+              }
+            }
+          } catch (syncErr) {
+            console.error(`Error syncing publication status for ${pub.bundle_post_id}:`, syncErr)
+          }
+        }
+      }
+    }
+
     res.json({ success: true, publications })
   } catch (err) {
     res.status(500).json({ success: false, error: err.message })
@@ -1017,6 +1061,51 @@ app.post('/api/w7-social/publish', async (req, res) => {
     const postData = await postRes.json()
     const bundlePostId = postData.id || null
 
+    // 3. Poll bundle.social post status endpoint until provider confirms final state (or polling times out)
+    let finalPostStatus = 'QUEUED'
+    let providerErrorMsg = null
+    let externalPostId = null
+
+    if (bundlePostId) {
+      const maxAttempts = 8
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        try {
+          const checkRes = await fetch(`https://api.bundle.social/api/v1/post/${bundlePostId}`, {
+            headers: {
+              'x-api-key': apiKey,
+              'User-Agent': 'W7Social/1.0'
+            }
+          })
+          if (checkRes.ok) {
+            const checkData = await checkRes.json()
+            const currentStatus = String(checkData.status || '').toUpperCase()
+
+            if (currentStatus === 'PUBLISHED' || currentStatus === 'SUCCESS') {
+              finalPostStatus = 'PUBLISHED'
+              const sa = Array.isArray(checkData.socialAccounts) ? checkData.socialAccounts[0] : null
+              externalPostId = sa?.externalPostId || sa?.externalAlternatePostId || null
+              break
+            } else if (currentStatus === 'ERROR' || currentStatus === 'FAILED') {
+              finalPostStatus = 'FAILED'
+              const fbErr = checkData.errorsVerbose?.FACEBOOK || checkData.errors?.FACEBOOK
+              if (typeof fbErr === 'object') {
+                providerErrorMsg = fbErr.userFacingMessage || fbErr.errorMessage || 'Provider rejected publish request.'
+              } else if (typeof fbErr === 'string') {
+                providerErrorMsg = fbErr
+              } else {
+                providerErrorMsg = checkData.error || 'Provider reported posting error.'
+              }
+              break
+            }
+          }
+        } catch (pollErr) {
+          console.error('Error polling bundle.social post status:', pollErr)
+        }
+      }
+    }
+
     const pubRecord = {
       id: `pub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       final_video_id: String(finalVideoId),
@@ -1026,7 +1115,9 @@ app.post('/api/w7-social/publish', async (req, res) => {
       account_id: String(accountId),
       team_id: String(teamId),
       caption: cleanCaption,
-      status: 'PUBLISHED',
+      status: finalPostStatus,
+      error_message: providerErrorMsg,
+      external_post_id: externalPostId,
       bundle_post_id: bundlePostId,
       bundle_upload_id: String(uploadId),
       published_at: new Date().toISOString(),
@@ -1035,8 +1126,27 @@ app.post('/api/w7-social/publish', async (req, res) => {
 
     saveSocialPublication(pubRecord)
 
+    if (finalPostStatus === 'FAILED') {
+      return res.status(400).json({
+        success: false,
+        error: `Publishing failed: ${providerErrorMsg || 'Provider rejected social post.'}`,
+        publication: pubRecord
+      })
+    }
+
+    if (finalPostStatus === 'QUEUED') {
+      return res.json({
+        success: true,
+        isQueued: true,
+        message: `Video submitted to ${accountName || 'social account'} and is queued for processing by bundle.social.`,
+        publication: pubRecord,
+        post: postData
+      })
+    }
+
     return res.json({
       success: true,
+      message: `Video published successfully to ${accountName || 'social account'}!`,
       publication: pubRecord,
       post: postData
     })
