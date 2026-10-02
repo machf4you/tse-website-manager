@@ -1232,7 +1232,6 @@ export default function SocialDashboardPage({ site, onBack }) {
                   id="video-generated-output"
                   src={generatedVideo.url}
                   controls
-                  autoPlay
                   loop
                   playsInline
                   className="sd-rendered-video"
@@ -1518,7 +1517,6 @@ export default function SocialDashboardPage({ site, onBack }) {
                   id="video-generated-final-output"
                   src={generatedFinalVideo.url}
                   controls
-                  autoPlay
                   loop
                   playsInline
                   className="sd-rendered-video"

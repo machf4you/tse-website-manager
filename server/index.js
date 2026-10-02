@@ -924,7 +924,23 @@ app.get('/api/w7-social/publications', async (req, res) => {
               const checkData = await checkRes.json()
               const currentStatus = String(checkData.status || '').toUpperCase()
 
-              if (currentStatus === 'ERROR' || currentStatus === 'FAILED') {
+              const sa = Array.isArray(checkData.socialAccounts) ? checkData.socialAccounts[0] : null
+              const extId = sa?.externalPostId || sa?.externalAlternatePostId || checkData.externalData?.postId || null
+              const isPublished = (
+                currentStatus === 'POSTED' ||
+                currentStatus === 'PUBLISHED' ||
+                currentStatus === 'SUCCESS' ||
+                currentStatus === 'COMPLETED' ||
+                Boolean(checkData.postedDate) ||
+                Boolean(extId)
+              )
+
+              if (isPublished) {
+                updateSocialPublicationStatus(pub.id, 'PUBLISHED', null, extId)
+                pub.status = 'PUBLISHED'
+                pub.error_message = null
+                if (extId) pub.external_post_id = extId
+              } else if (currentStatus === 'ERROR' || currentStatus === 'FAILED') {
                 const fbErr = checkData.errorsVerbose?.FACEBOOK || checkData.errors?.FACEBOOK
                 let errText = 'Provider rejected publish request.'
                 if (typeof fbErr === 'object') {
@@ -937,13 +953,7 @@ app.get('/api/w7-social/publications', async (req, res) => {
                 updateSocialPublicationStatus(pub.id, 'FAILED', errText, null)
                 pub.status = 'FAILED'
                 pub.error_message = errText
-              } else if (currentStatus === 'PUBLISHED' || currentStatus === 'SUCCESS') {
-                const sa = Array.isArray(checkData.socialAccounts) ? checkData.socialAccounts[0] : null
-                const extId = sa?.externalPostId || sa?.externalAlternatePostId || null
-                updateSocialPublicationStatus(pub.id, 'PUBLISHED', null, extId)
-                pub.status = 'PUBLISHED'
-                if (extId) pub.external_post_id = extId
-              } else if (currentStatus === 'SCHEDULED' || currentStatus === 'PROCESSING' || currentStatus === 'QUEUED') {
+              } else {
                 updateSocialPublicationStatus(pub.id, 'QUEUED', pub.error_message || null, null)
                 pub.status = 'QUEUED'
               }
@@ -1080,12 +1090,20 @@ app.post('/api/w7-social/publish', async (req, res) => {
           })
           if (checkRes.ok) {
             const checkData = await checkRes.json()
-            const currentStatus = String(checkData.status || '').toUpperCase()
+            const sa = Array.isArray(checkData.socialAccounts) ? checkData.socialAccounts[0] : null
+            const extId = sa?.externalPostId || sa?.externalAlternatePostId || checkData.externalData?.postId || null
+            const isPublished = (
+              currentStatus === 'POSTED' ||
+              currentStatus === 'PUBLISHED' ||
+              currentStatus === 'SUCCESS' ||
+              currentStatus === 'COMPLETED' ||
+              Boolean(checkData.postedDate) ||
+              Boolean(extId)
+            )
 
-            if (currentStatus === 'PUBLISHED' || currentStatus === 'SUCCESS') {
+            if (isPublished) {
               finalPostStatus = 'PUBLISHED'
-              const sa = Array.isArray(checkData.socialAccounts) ? checkData.socialAccounts[0] : null
-              externalPostId = sa?.externalPostId || sa?.externalAlternatePostId || null
+              externalPostId = extId
               break
             } else if (currentStatus === 'ERROR' || currentStatus === 'FAILED') {
               finalPostStatus = 'FAILED'
