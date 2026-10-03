@@ -35,7 +35,8 @@ const SETTINGS_SECTIONS = [
       { id: 'ref-fb-ig-connection', label: 'FB + IG Connection', icon: 'book' },
       { id: 'app-integrations',       label: 'App Integrations',    icon: 'layers' },
       { id: 'ref-google-tree',        label: 'Google Tree',         icon: 'git-branch' },
-      { id: 'ref-website-creation',   label: 'Website Creation',    icon: 'compass' }
+      { id: 'ref-website-creation',   label: 'Website Creation',    icon: 'compass' },
+      { id: 'ref-app-costs',          label: 'App Costs & Subscriptions', icon: 'dollar-sign' }
     ]
   }
 ]

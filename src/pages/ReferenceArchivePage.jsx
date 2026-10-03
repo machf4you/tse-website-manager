@@ -25,6 +25,14 @@ export const REFERENCE_GUIDES = [
     updatedDate: '3 October 2026',
     provenWith: 'All TSE Production Apps',
     coreRule: 'STATIC HTML WEBSITE CREATION → DEDICATED LEADGEN DEPLOYER → SITE REGISTRY → W7 SOCIAL'
+  },
+  {
+    id: 'app-costs',
+    title: 'TSE App Costs & Subscriptions Financial Register',
+    category: 'Operational Finance & Subscriptions',
+    updatedDate: '3 October 2026',
+    provenWith: 'All TSE Production Apps & External Integrations',
+    coreRule: 'CENTRAL FINANCIAL REGISTER → THIRD-PARTY SUBSCRIPTIONS, API CREDITS & DEVELOPMENT COSTS'
   }
 ]
 
@@ -75,6 +83,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
           <span>⚡</span> TSE GOLDEN RULE FOR {
             activeGuide.id === 'google-tree' ? 'GOOGLE ARCHITECTURE' :
             activeGuide.id === 'website-creation' ? 'STATIC WEBSITE CREATION & LAUNCH' :
+            activeGuide.id === 'app-costs' ? 'TSE APP FINANCIAL REGISTER & SUBSCRIPTIONS' :
             'SOCIAL CONNECTIONS'
           }
         </div>
@@ -786,6 +795,418 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
           <div className="ref-section" style={{ marginTop: '2rem', marginBottom: 0 }}>
             <div className="ref-step-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #1e293b' }}>
               🔒 <strong>Security Protocol:</strong> API keys, service account credentials, OAuth tokens, and passwords are not displayed and remain encrypted in server environment storage.
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* Guide Content Card: App Costs & Subscriptions */}
+      {selectedGuideId === 'app-costs' && (
+        <div className="ref-guide-card" id="card-app-costs-guide">
+          
+          {/* Operational Purpose */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>💳</span> Central Financial &amp; Subscription Register
+            </h2>
+            <div className="ref-step-desc" style={{ fontSize: '0.95rem', background: '#1e293b', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid #334155', color: '#cbd5e1' }}>
+              Central reference showing third-party services, SaaS subscriptions, API spend, usage credits/top-ups, server hosting, domains, and development tooling involved in building and operating the TSE Apps ecosystem.
+              <br /><br />
+              <strong style={{ color: '#fbbf24' }}>Notice:</strong> All monetary values default to <strong>TBC</strong> while Mac verifies each account directly. Summary cards do not calculate totals until verified figures are entered.
+            </div>
+          </div>
+
+          {/* Financial Summary Cards */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>📊</span> Financial Summary Overview
+            </h2>
+            <div className="cost-summary-grid">
+              <div className="cost-summary-card">
+                <div className="cost-card-icon">💳</div>
+                <div className="cost-card-title">MONTHLY FIXED COST</div>
+                <div className="cost-card-value badge-tbc">TBC</div>
+                <div className="cost-card-sub">Recurring monthly SaaS subscriptions</div>
+              </div>
+              <div className="cost-summary-card">
+                <div className="cost-card-icon">📅</div>
+                <div className="cost-card-title">ANNUAL FIXED COST</div>
+                <div className="cost-card-value badge-tbc">TBC</div>
+                <div className="cost-card-sub">Annual domain &amp; license renewals</div>
+              </div>
+              <div className="cost-summary-card">
+                <div className="cost-card-icon">⚡</div>
+                <div className="cost-card-title">USAGE / VARIABLE SPEND</div>
+                <div className="cost-card-value badge-tbc">TBC</div>
+                <div className="cost-card-sub">Pay-as-you-go &amp; API credits</div>
+              </div>
+              <div className="cost-summary-card">
+                <div className="cost-card-icon">🛠️</div>
+                <div className="cost-card-title">ONE-OFF / DEV SPEND</div>
+                <div className="cost-card-value badge-tbc">TBC</div>
+                <div className="cost-card-sub">Setup fees &amp; development tooling</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Provider Register */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>📋</span> Third-Party Service Provider Register
+            </h2>
+
+            <div className="cost-table-wrapper">
+              <table className="cost-register-table">
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>Used By / TSE App</th>
+                    <th>Account Email</th>
+                    <th>Purpose</th>
+                    <th>Billing Type</th>
+                    <th>Cost</th>
+                    <th>Currency</th>
+                    <th>Frequency</th>
+                    <th>One-Off Payment</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Row 1: Google Workspace */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://workspace.google.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Google Workspace ↗
+                      </a>
+                    </td>
+                    <td>Auth / Apps Hub, All TSE Apps</td>
+                    <td className="email-cell">macworkspace@thesearchequation.com</td>
+                    <td>Enterprise email, Google Docs, Sheets, Drive, Admin Console</td>
+                    <td><span className="billing-type-tag monthly">Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 2: DataForSEO */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://dataforseo.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        DataForSEO ↗
+                      </a>
+                    </td>
+                    <td>Keyword Research</td>
+                    <td className="email-cell">TBC</td>
+                    <td>SERP API, Keyword Volume, Difficulty &amp; Intent metrics</td>
+                    <td><span className="billing-type-tag usage">Usage / API</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 3: OpenAI */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://openai.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        OpenAI ↗
+                      </a>
+                    </td>
+                    <td>Keyword Research, Website Builder, Website Manager</td>
+                    <td className="email-cell">TBC</td>
+                    <td>GPT-4o / GPT-4 API for AI keyword analysis &amp; content structuring</td>
+                    <td><span className="billing-type-tag usage">Usage / API</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 4: Google Gemini Developer API */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://ai.google.dev" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Google Gemini Developer API ↗
+                      </a>
+                    </td>
+                    <td>W7 Social, Keyword Research, Website Builder</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Gemini AI models &amp; Nano Banana image generation engine</td>
+                    <td><span className="billing-type-tag usage">Usage / API</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 5: Google Cloud / Vertex AI */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://cloud.google.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Google Cloud / Vertex AI ↗
+                      </a>
+                    </td>
+                    <td>W7 Social (Veo 3.1 Fast), IAM Infrastructure</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Veo 3.1 Fast video generation AI model &amp; GCP Service Accounts</td>
+                    <td><span className="billing-type-tag usage">Usage / API</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 6: Creatomate */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://creatomate.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Creatomate ↗
+                      </a>
+                    </td>
+                    <td>W7 Social</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Automated video template rendering, branding &amp; audio overlays</td>
+                    <td><span className="billing-type-tag monthly">Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 7: bundle.social */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://bundle.social" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        bundle.social ↗
+                      </a>
+                    </td>
+                    <td>W7 Social</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Multi-channel social media publishing API (Meta, YouTube, LinkedIn, X, TikTok)</td>
+                    <td><span className="billing-type-tag monthly">Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 8: Canva */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Canva ↗
+                      </a>
+                    </td>
+                    <td>W7 Social, Graphic Assets</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Graphic design templates, brand kits, and asset design</td>
+                    <td><span className="billing-type-tag monthly">Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge configured">Configured</span></td>
+                  </tr>
+
+                  {/* Row 9: Supabase */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://supabase.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Supabase ↗
+                      </a>
+                    </td>
+                    <td>Auth / Apps Hub, TSE Auth Service</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Hosted PostgreSQL database, user authentication &amp; JWT sessions</td>
+                    <td><span className="billing-type-tag monthly">Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 10: Apify */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://apify.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Apify ↗
+                      </a>
+                    </td>
+                    <td>Lead Generator</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Web scraping actors, directory extraction &amp; lead generation automation</td>
+                    <td><span className="billing-type-tag usage">Usage / API</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 11: Resend */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Resend ↗
+                      </a>
+                    </td>
+                    <td>Lead Generator, Website Manager</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Transactional email delivery API for lead alerts &amp; system notifications</td>
+                    <td><span className="billing-type-tag usage">Usage / Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 12: Ahrefs */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://ahrefs.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Ahrefs ↗
+                      </a>
+                    </td>
+                    <td>Keyword Research, SEO Auditing</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Backlink profile analysis, domain authority metrics &amp; keyword research</td>
+                    <td><span className="billing-type-tag monthly">Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge configured">Configured</span></td>
+                  </tr>
+
+                  {/* Row 13: Unsplash */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Unsplash ↗
+                      </a>
+                    </td>
+                    <td>Website Builder</td>
+                    <td className="email-cell">TBC</td>
+                    <td>High-resolution stock photo API for generated static HTML sites</td>
+                    <td><span className="billing-type-tag free">Free</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 14: Hostinger / VPS Infrastructure */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.hostinger.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        VPS Server Provider (Hostinger) ↗
+                      </a>
+                    </td>
+                    <td>All Live TSE Production Apps</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Ubuntu Linux VPS server hosting Node.js services, PM2, and Nginx reverse proxy</td>
+                    <td><span className="billing-type-tag monthly">Monthly</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 15: Domain Registrar / Cloudflare */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.cloudflare.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Domain Registrar &amp; DNS (Cloudflare/Namecheap) ↗
+                      </a>
+                    </td>
+                    <td>All TSE Apps &amp; Live Client Sites</td>
+                    <td className="email-cell">TBC</td>
+                    <td>Domain registrations, DNS record routing, SSL certificates, CDN &amp; security</td>
+                    <td><span className="billing-type-tag annual">Annual</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 16: Antigravity Development Tooling */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://deepmind.google" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Antigravity Dev Tooling ↗
+                      </a>
+                    </td>
+                    <td>TSE Codebase Architecture &amp; Maintenance</td>
+                    <td className="email-cell">TBC</td>
+                    <td>AI agentic development workspace, automated refactoring &amp; system maintenance</td>
+                    <td><span className="billing-type-tag usage">Usage</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="cost-tbc-tag">TBC</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 17: IndexNow Protocol */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.indexnow.org" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        IndexNow Protocol ↗
+                      </a>
+                    </td>
+                    <td>Site Registry</td>
+                    <td className="email-cell">N/A (Open Protocol)</td>
+                    <td>Instant search engine indexing notification API (Bing &amp; Yandex)</td>
+                    <td><span className="billing-type-tag free">Free</span></td>
+                    <td><span className="cost-zero-tag">£0</span></td>
+                    <td><span>GBP (£)</span></td>
+                    <td><span>N/A</span></td>
+                    <td><span>N/A</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                  {/* Row 18: Meta for Developers */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Meta for Developers ↗
+                      </a>
+                    </td>
+                    <td>W7 Social, bundle.social Integrations</td>
+                    <td className="email-cell">macworkspace@thesearchequation.com</td>
+                    <td>Graph API Developer App, Meta Business Portfolio OAuth &amp; page connections</td>
+                    <td><span className="billing-type-tag free">Free</span></td>
+                    <td><span className="cost-zero-tag">£0</span></td>
+                    <td><span>GBP (£)</span></td>
+                    <td><span>N/A</span></td>
+                    <td><span>N/A</span></td>
+                    <td><span className="status-badge active">Active</span></td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          {/* Security & Confidentiality Footer */}
+          <div className="ref-section" style={{ marginTop: '2rem', marginBottom: 0 }}>
+            <div className="ref-step-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #1e293b' }}>
+              🔒 <strong>Security Protocol:</strong> Passwords, API keys, OAuth access tokens, credit card details, bank account numbers, and secret credentials are strictly prohibited from this financial register and stored in encrypted server environment storage.
             </div>
           </div>
 
