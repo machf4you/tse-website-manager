@@ -1,5 +1,18 @@
 [
   {
+    "id": "wm-v2.53-2026-10-03",
+    "app": "Website Manager",
+    "version": "V2.53",
+    "gitTag": "wm-v2.53-2026-10-03",
+    "commit": "7956fd0c",
+    "date": "03-10-2026 04:51",
+    "title": "Website Manager V2.53 Reference Archive & W7 Social Restore Point",
+    "description": "Full production restore point including Reference Archive, W7 Social, and database snapshot.",
+    "location": "",
+    "status": "Current",
+    "docFile": "RESTORE-POINT-wm-v2.53-2026-10-03.md"
+  },
+  {
     "id": "tld-v1.0.0-full-disaster-recovery",
     "app": "TSE Lodged Deployer",
     "version": "V1.0.0",
@@ -152,7 +165,7 @@
     "title": "Website Manager V2.52.1 Full Disaster-Recovery Milestone",
     "description": "Full disaster-recovery restore point containing verified SQLite database snapshot (integrity check OK, 14 websites, 508 page configs, 307 audits, 13 WP packages, 58 page rankings), complete application source, Nginx reverse-proxy definitions, and PM2 process configuration.",
     "location": "website-manager/2026-09-18-full/",
-    "status": "Current",
+    "status": "Superseded",
     "docFile": "RESTORE-POINT-wm-v2.52.1-full-disaster-recovery.md"
   },
   {
