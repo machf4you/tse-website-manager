@@ -33,7 +33,8 @@ const SETTINGS_SECTIONS = [
     sectionIcon: '📚',
     items: [
       { id: 'ref-fb-ig-connection', label: 'FB + IG Connection', icon: 'book' },
-      { id: 'app-integrations',       label: 'App Integrations',    icon: 'layers' }
+      { id: 'app-integrations',       label: 'App Integrations',    icon: 'layers' },
+      { id: 'ref-google-tree',        label: 'Google Tree',         icon: 'git-branch' }
     ]
   }
 ]

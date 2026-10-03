@@ -9,6 +9,14 @@ export const REFERENCE_GUIDES = [
     updatedDate: '2 October 2026',
     provenWith: 'I Want A New Kitchen',
     coreRule: 'ONE BUSINESS → ONE META BUSINESS PORTFOLIO → ONE FACEBOOK PAGE → ONE INSTAGRAM BUSINESS ACCOUNT → ONE bundle.social TEAM'
+  },
+  {
+    id: 'google-tree',
+    title: 'Google Tree — Ecosystem, AI Models & Developer Routes',
+    category: 'Google Architecture Reference',
+    updatedDate: '3 October 2026',
+    provenWith: 'W7 Social & TSE Infrastructure',
+    coreRule: 'CONSUMER APPS vs DEVELOPER AI STUDIO vs GOOGLE CLOUD VERTEX AI'
   }
 ]
 
@@ -56,14 +64,14 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
       {/* Prominent Core Rule Banner */}
       <div className="ref-core-rule-banner" id="banner-core-rule">
         <div className="ref-core-rule-tag">
-          <span>⚡</span> TSE GOLDEN RULE FOR SOCIAL CONNECTIONS
+          <span>⚡</span> TSE GOLDEN RULE FOR {activeGuide.id === 'google-tree' ? 'GOOGLE ARCHITECTURE' : 'SOCIAL CONNECTIONS'}
         </div>
         <div className="ref-core-rule-text">
           {activeGuide.coreRule}
         </div>
       </div>
 
-      {/* Guide Content Card */}
+      {/* Guide Content Card: Facebook + Instagram Connection */}
       {selectedGuideId === 'fb-ig-connection' && (
         <div className="ref-guide-card" id="card-fb-ig-guide">
           
@@ -77,7 +85,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             </div>
           </div>
 
-          {/* Section 1: Create Instagram Account */}
+          {/* Part 1 */}
           <div className="ref-section" id="section-part1">
             <h2 className="ref-section-title">
               <span>1️⃣</span> Part 1 — Create the Instagram Account
@@ -126,7 +134,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             </div>
           </div>
 
-          {/* Section 2: Link Instagram to Facebook Page */}
+          {/* Part 2 */}
           <div className="ref-section" id="section-part2">
             <h2 className="ref-section-title">
               <span>2️⃣</span> Part 2 — Link Instagram to the Facebook Page &amp; Portfolio
@@ -240,7 +248,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             </div>
           </div>
 
-          {/* Section 3: Connect to bundle.social */}
+          {/* Part 3 */}
           <div className="ref-section" id="section-part3">
             <h2 className="ref-section-title">
               <span>3️⃣</span> Part 3 — Connect the Pair to bundle.social
@@ -276,69 +284,20 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                   During Meta OAuth, follow strict asset isolation:
                   <ul style={{ margin: '0.5rem 0 0 1.2rem', padding: 0 }}>
                     <li style={{ marginBottom: '0.3rem' }}><strong>Meta Pages screen:</strong> Choose <em>&quot;Opt in to current Pages only&quot;</em> and select ONLY the matching Facebook Page.</li>
-                    <li style={{ marginBottom: '0.3rem' }}><strong>Meta Businesses screen:</strong> Choose <em>&quot;Opt in to current Businesses only&quot;</em> and select ONLY the matching business portfolio (for Kitchen, select <em>I Want A New Kitchen</em> — not an older umbrella portfolio).</li>
+                    <li style={{ marginBottom: '0.3rem' }}><strong>Meta Businesses screen:</strong> Choose <em>&quot;Opt in to current Businesses only&quot;</em> and select ONLY the matching business portfolio.</li>
                     <li><strong>Meta Instagram screen:</strong> Choose <em>&quot;Opt in to current Instagram accounts only&quot;</em> and select ONLY the matching Instagram account.</li>
                   </ul>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                  <div
-                    className="ref-screenshot-container"
-                    onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image7.png', title: 'Meta OAuth — current Pages only; select only I Want A New Kitchen' })}
-                  >
-                    <img src="/reference-archive/fb-ig-assets/image7.png" alt="Meta OAuth Pages" className="ref-screenshot-img" />
-                    <div className="ref-screenshot-caption">
-                      <span>1. Current Pages only.</span>
-                      <span className="ref-zoom-hint">🔍 Enlarge</span>
-                    </div>
-                  </div>
-
-                  <div
-                    className="ref-screenshot-container"
-                    onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image8.png', title: 'Meta OAuth — current Businesses only; select the I Want A New Kitchen portfolio' })}
-                  >
-                    <img src="/reference-archive/fb-ig-assets/image8.png" alt="Meta OAuth Businesses" className="ref-screenshot-img" />
-                    <div className="ref-screenshot-caption">
-                      <span>2. Current Businesses only.</span>
-                      <span className="ref-zoom-hint">🔍 Enlarge</span>
-                    </div>
-                  </div>
-
-                  <div
-                    className="ref-screenshot-container"
-                    onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image9.png', title: 'Meta OAuth — current Instagram accounts only; select @iwantanewkitchenuk' })}
-                  >
-                    <img src="/reference-archive/fb-ig-assets/image9.png" alt="Meta OAuth Instagram" className="ref-screenshot-img" />
-                    <div className="ref-screenshot-caption">
-                      <span>3. Current Instagram only.</span>
-                      <span className="ref-zoom-hint">🔍 Enlarge</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="ref-step-item">
-                <div className="ref-step-header">
-                  <span className="ref-step-number">3</span>
-                  <span className="ref-step-title">Permissions &amp; Final Confirmation</span>
-                </div>
-                <div className="ref-step-desc">
-                  On the final permissions review, leave all requested permissions enabled (access profile/posts, upload media, create posts). 
-                  Save/Continue and return to bundle.social. Confirm the Instagram account appears under the correct team before publishing.
                 </div>
               </div>
 
             </div>
           </div>
 
-          {/* Section 4: Kitchen Configuration Example */}
+          {/* Section 4 */}
           <div className="ref-section" id="section-kitchen-example">
             <h2 className="ref-section-title">
               <span>📋</span> Proven Setup Example — I Want A New Kitchen
             </h2>
-            <div className="ref-step-desc">
-              Reference configuration established and verified on 2 October 2026:
-            </div>
             <table className="ref-config-table">
               <thead>
                 <tr>
@@ -367,56 +326,199 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                   <td>bundle.social Team</td>
                   <td>I Want A New Kitchen</td>
                 </tr>
-                <tr>
-                  <td>OAuth Scope Approach</td>
-                  <td>Current assets only; Kitchen assets only</td>
-                </tr>
               </tbody>
             </table>
           </div>
 
-          {/* Section 5: Avoid These Traps */}
-          <div className="ref-section" id="section-traps">
-            <h2 className="ref-section-title" style={{ color: '#f87171' }}>
-              <span>⚠️</span> Avoid These Traps
+        </div>
+      )}
+
+      {/* Guide Content Card: Google Tree */}
+      {selectedGuideId === 'google-tree' && (
+        <div className="ref-guide-card" id="card-google-tree-guide">
+
+          {/* Prominent Subscription Box */}
+          <div className="ref-sub-card">
+            <div className="ref-sub-header">
+              <span className="ref-sub-badge">ACTIVE SUBSCRIPTION</span>
+              <h2 className="ref-sub-title">OUR GOOGLE WORKSPACE SUBSCRIPTION</h2>
+            </div>
+            <div className="ref-sub-grid">
+              <div className="ref-sub-item">
+                <span className="ref-sub-label">Account Email</span>
+                <span className="ref-sub-value">macworkspace@thesearchequation.com</span>
+              </div>
+              <div className="ref-sub-item">
+                <span className="ref-sub-label">Recorded Subscription Cost</span>
+                <span className="ref-sub-price">£70 / month</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 1: Main Hierarchy Tree */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>🌳</span> Google Ecosystem &amp; Infrastructure Tree
             </h2>
-            <div className="ref-traps-grid">
+            <div className="ref-step-desc">
+              Authoritative visual map of Google consumer products, developer AI Studio API tools, Google Cloud Console, and Vertex AI enterprise services.
+            </div>
+
+            <div className="ref-tree-container">
+              <pre className="ref-tree-code">
+{`GOOGLE
+│
+├── Consumer products
+│   ├── Gemini
+│   │   ├── Gemini website/app
+│   │   ├── Gemini chat
+│   │   └── Uses Gemini models + other Google AI models/features
+│   │
+│   └── Google Workspace
+│       ├── Gmail
+│       ├── Docs
+│       ├── Sheets
+│       └── Gemini features inside Workspace
+│
+├── Developer / AI experimentation
+│   ├── Google AI Studio
+│   │   ├── Playground/testing interface
+│   │   ├── Create/manage Gemini API keys
+│   │   └── Gemini Developer API
+│   │       ├── Gemini language/multimodal models
+│   │       ├── Nano Banana image models
+│   │       └── Veo video models
+│   │
+│   └── Gemini API
+│       └── What software such as W7 can call programmatically
+│
+└── Google Cloud
+    ├── Google Cloud Console
+    │   ├── Projects
+    │   ├── Billing
+    │   ├── API credentials
+    │   ├── Service accounts
+    │   └── Usage / quotas
+    │
+    └── Vertex AI
+        ├── Enterprise/developer AI platform
+        ├── Gemini models
+        ├── Nano Banana/image models
+        ├── Veo/video models
+        └── Other Google/partner AI models`}
+              </pre>
+            </div>
+          </div>
+
+          {/* Section 2: Model Relationship */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>🤖</span> Model Relationship &amp; Functional Breakdown
+            </h2>
+            <div className="ref-models-grid">
+              <div className="ref-model-card">
+                <div className="ref-model-tag tag-gemini">Gemini API</div>
+                <h3 className="ref-model-name">Gemini Models</h3>
+                <p className="ref-model-desc">Text generation, reasoning, code synthesis, and multimodal AI analysis.</p>
+              </div>
+
+              <div className="ref-model-card">
+                <div className="ref-model-tag tag-nano">Gemini API</div>
+                <h3 className="ref-model-name">Nano Banana</h3>
+                <p className="ref-model-desc">IMAGE generation, photo editing, visual synthesis, and prompt-driven graphic creation.</p>
+              </div>
+
+              <div className="ref-model-card">
+                <div className="ref-model-tag tag-veo">Gemini API</div>
+                <h3 className="ref-model-name">Veo</h3>
+                <p className="ref-model-desc">VIDEO generation, image animation, and dynamic video clip creation.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Developer Routes */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>🛠️</span> Developer Integration Routes
+            </h2>
+            <div className="ref-routes-grid">
               
-              <div className="ref-trap-card">
-                <span className="ref-trap-icon">🚫</span>
-                <div className="ref-trap-text">
-                  <strong>Do NOT use browser developer console tricks:</strong> Never attempt to bypass Facebook connection errors using dev console hacks. Fix permissions properly in Meta Business Suite.
+              <div className="ref-route-card">
+                <div className="ref-route-header">
+                  <span className="ref-route-badge badge-studio">SIMPLER ROUTE</span>
+                  <h3>Gemini Developer API</h3>
                 </div>
+                <ul className="ref-route-list">
+                  <li><strong>API Key Based:</strong> Fast setup via Google AI Studio</li>
+                  <li><strong>Testing Playground:</strong> Direct prompt engineering &amp; token testing</li>
+                  <li><strong>Usage:</strong> Programmatic access for web apps (e.g. W7 Social)</li>
+                </ul>
               </div>
 
-              <div className="ref-trap-card">
-                <span className="ref-trap-icon">🚫</span>
-                <div className="ref-trap-text">
-                  <strong>Do NOT select &quot;All current and future assets&quot;:</strong> Always select <em>current assets only</em> during Meta OAuth to prevent giving bundle.social blanket access to unrelated pages.
+              <div className="ref-route-card">
+                <div className="ref-route-header">
+                  <span className="ref-route-badge badge-cloud">ENTERPRISE ROUTE</span>
+                  <h3>Vertex AI (Google Cloud)</h3>
                 </div>
+                <ul className="ref-route-list">
+                  <li><strong>Google Cloud Infrastructure:</strong> Project-based IAM &amp; quotas</li>
+                  <li><strong>Enterprise Controls:</strong> Custom fine-tuning, SLA guarantees, and security compliance</li>
+                  <li><strong>Partner Models:</strong> Access to third-party &amp; Google Cloud ecosystem models</li>
+                </ul>
               </div>
 
-              <div className="ref-trap-card">
-                <span className="ref-trap-icon">🚫</span>
-                <div className="ref-trap-text">
-                  <strong>Do NOT mix assets across teams:</strong> Keep each business unit strictly isolated inside its own bundle.social team.
+            </div>
+          </div>
+
+          {/* Section 4: Our W7 Workflow Pipeline */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>🎬</span> Our W7 Social Video Publishing Workflow
+            </h2>
+            <div className="ref-pipeline-container">
+              <div className="ref-pipe-step">
+                <span className="pipe-num">1</span>
+                <span className="pipe-title">W7 SOCIAL</span>
+                <span className="pipe-sub">User initiates video campaign</span>
+              </div>
+              <span className="pipe-arrow">↓</span>
+
+              <div className="ref-pipe-step pipe-highlight">
+                <span className="pipe-num">2</span>
+                <span className="pipe-title">GOOGLE AI API</span>
+                <div className="pipe-sub-box">
+                  <span><strong>Nano Banana:</strong> Create image</span>
+                  <span><strong>Veo:</strong> Animate image into video</span>
                 </div>
               </div>
+              <span className="pipe-arrow">↓</span>
 
-              <div className="ref-trap-card">
-                <span className="ref-trap-icon">🚫</span>
-                <div className="ref-trap-text">
-                  <strong>Do NOT assume initial API acceptance equals Published:</strong> bundle.social initial 200 OK only means queued. W7 Social verifies actual provider delivery status before declaring success.
-                </div>
+              <div className="ref-pipe-step">
+                <span className="pipe-num">3</span>
+                <span className="pipe-title">CREATOMATE</span>
+                <span className="pipe-sub">Text overlays, branding theme &amp; audio rendering</span>
               </div>
+              <span className="pipe-arrow">↓</span>
 
-              <div className="ref-trap-card">
-                <span className="ref-trap-icon">🚫</span>
-                <div className="ref-trap-text">
-                  <strong>Do NOT use legacy umbrella portfolios:</strong> Once a business has its own proper Meta Business Portfolio, use that dedicated portfolio instead of older personal or legacy portfolios.
-                </div>
+              <div className="ref-pipe-step">
+                <span className="pipe-num">4</span>
+                <span className="pipe-title">BUNDLE.SOCIAL</span>
+                <span className="pipe-sub">Multi-channel dispatch supervisor</span>
               </div>
+              <span className="pipe-arrow">↓</span>
 
+              <div className="ref-pipe-step pipe-final">
+                <span className="pipe-num">5</span>
+                <span className="pipe-title">SOCIAL NETWORKS</span>
+                <span className="pipe-sub">Published to Facebook Page &amp; Instagram Profile</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Security & Confidentiality Footer */}
+          <div className="ref-section" style={{ marginBottom: 0 }}>
+            <div className="ref-step-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #1e293b' }}>
+              🔒 <strong>Security Protocol:</strong> API keys, service account credentials, OAuth tokens, and passwords are not displayed and remain encrypted in server environment storage.
             </div>
           </div>
 
