@@ -1,0 +1,429 @@
+/* ── APP INTEGRATIONS PAGE LAYOUT ── */
+
+.ai-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: #e2e8f0;
+  font-family: inherit;
+}
+
+/* Header */
+.ai-header {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.ai-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.ai-header-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.ai-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.ai-subtitle {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Metrics Row */
+.ai-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.ai-metric-card {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  backdrop-filter: blur(8px);
+}
+
+.ai-metric-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: -0.03em;
+}
+
+.ai-metric-active {
+  color: #34d399;
+}
+
+.ai-metric-configured {
+  color: #60a5fa;
+}
+
+.ai-metric-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Toolbar */
+.ai-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+}
+
+.ai-search-box {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+  display: flex;
+  align-items: center;
+}
+
+.ai-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.ai-search-input {
+  width: 100%;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.5rem 2.2rem 0.5rem 2.2rem;
+  font-size: 0.85rem;
+  color: #f8fafc;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.ai-search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+}
+
+.ai-clear-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.ai-filter-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.ai-select {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+  outline: none;
+  cursor: pointer;
+}
+
+.ai-select:focus {
+  border-color: #38bdf8;
+}
+
+/* App Section Cards */
+.ai-apps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ai-app-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ai-app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.75rem;
+}
+
+.ai-app-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.ai-app-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #38bdf8;
+  margin: 0;
+}
+
+.ai-app-domain-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.ai-app-domain-link:hover {
+  color: #f8fafc;
+  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.ai-count-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem 0.55rem;
+  border-radius: 12px;
+}
+
+.ai-app-desc {
+  font-size: 0.84rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Integrations Table */
+.ai-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.3);
+}
+
+.ai-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+  text-align: left;
+}
+
+.ai-table th {
+  background: rgba(15, 23, 42, 0.8);
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ai-table-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.12s ease;
+}
+
+.ai-table-row:last-child {
+  border-bottom: none;
+}
+
+.ai-table-row:hover {
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.ai-table td {
+  padding: 0.75rem 1rem;
+  vertical-align: middle;
+}
+
+/* Service Cell Link */
+.ai-service-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #f8fafc;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.ai-service-link:hover {
+  color: #38bdf8;
+  text-decoration: underline;
+}
+
+.ai-ext-icon {
+  width: 13px;
+  height: 13px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.ai-purpose-text {
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.ai-type-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.ai-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.ai-status-active {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+}
+
+.ai-status-configured {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+.ai-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.ai-visit-btn {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.ai-visit-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+/* Empty State */
+.ai-empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.ai-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.ai-btn-reset {
+  margin-top: 1rem;
+  background: #38bdf8;
+  color: #0f172a;
+  border: none;
+  font-weight: 600;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Security Note */
+.ai-security-note {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.85rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 1rem;
+}
+
+.ai-security-icon {
+  font-size: 1.1rem;
+}
+
+.ai-security-text strong {
+  color: #cbd5e1;
+}

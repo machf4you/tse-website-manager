@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import RestorePointsPage from './RestorePointsPage'
 import DeploymentRecoveryPage from './DeploymentRecoveryPage'
+import AppIntegrationsPage from './AppIntegrationsPage'
 import UsersAccessPage from './UsersAccessPage'
 import UrlExclusionsPage from './UrlExclusionsPage'
 import WordPressImportRulesPage from './WordPressImportRulesPage'
@@ -16,6 +17,7 @@ const SETTINGS_SECTIONS = [
     items: [
       { id: 'restore-points',            label: 'Restore Points',            icon: 'history' },
       { id: 'deployment-recovery',       label: 'Deployment & Recovery',     icon: 'shield' },
+      { id: 'app-integrations',          label: 'App Integrations',          icon: 'layers' },
       { id: 'users-access',              label: 'Users & Access',            icon: 'users',    adminOnly: true },
       { id: 'url-exclusions',            label: 'URL Exclusions',            icon: 'slash' },
       { id: 'import-rules',              label: 'WordPress Import Rules',    icon: 'download' },
@@ -112,6 +114,7 @@ export default function GlobalSettings({ currentUser }) {
       <main className="gs-content">
         {activeTab === 'restore-points'            && <RestorePointsPage />}
         {activeTab === 'deployment-recovery'       && <DeploymentRecoveryPage />}
+        {activeTab === 'app-integrations'          && <AppIntegrationsPage />}
         {activeTab === 'users-access'              && isAdmin && <UsersAccessPage currentUser={currentUser} />}
         {activeTab === 'url-exclusions'            && <UrlExclusionsPage />}
         {activeTab === 'import-rules'              && <WordPressImportRulesPage />}

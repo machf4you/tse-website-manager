@@ -1264,6 +1264,22 @@ app.post('/api/restore-points/register', (req, res) => {
   }
 })
 
+// ── App Integrations API (Central Reference for Ecosystem Integrations) ──
+app.get('/api/app-integrations', async (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  })
+  try {
+    const { appIntegrationsData } = await import('../src/data/appIntegrationsData.js')
+    res.json({ success: true, apps: appIntegrationsData })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+
 // Extract genuine content images server-side (excludes logos, badges, background sliders, and third-party placeholders)
 app.get('/api/images/extract', async (req, res) => {
   try {
