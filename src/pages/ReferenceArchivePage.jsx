@@ -1259,7 +1259,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
               <div className="sc-flow-card selected-card">
                 <div className="sc-flow-layer-tag">LAYER 1 — IMAGE CREATION</div>
                 <div className="sc-flow-title">NANO BANANA</div>
-                <div className="sc-flow-tech">Google Gemini / Imagen 3</div>
+                <div className="sc-flow-tech">Google Gemini API (models/nano-banana-pro-preview)</div>
                 <div className="sc-flow-sub">Photorealistic brand image generation</div>
               </div>
 
@@ -1325,7 +1325,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             <div className="sc-layer-box">
               <div className="sc-layer-header">
                 <h3>LAYER 1 — IMAGE CREATION</h3>
-                <span className="sc-selected-badge">SELECTED SOLUTION: NANO BANANA (Google Gemini / Imagen 3)</span>
+                <span className="sc-selected-badge">SELECTED SOLUTION: NANO BANANA (Google Gemini API)</span>
               </div>
               <p className="sc-layer-desc">
                 High-fidelity image generation engine tailored for creating brand-aligned local business visuals.
@@ -1333,51 +1333,51 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
               <div className="sc-platform-list">
                 <div className="sc-platform-item selected">
                   <div className="pl-top">
-                    <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="pl-name">Nano Banana / Gemini Imagen 3 ↗</a>
+                    <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="pl-name">Nano Banana (Google Gemini API) ↗</a>
                     <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Selection Rationale:</strong> Native integration with Google Gemini AI ecosystem. Produces exceptional photorealistic local business imagery with prompt control and fast API generation latency.
+                    <strong>Selection Rationale:</strong> Selected production image generator using model endpoint <code>models/nano-banana-pro-preview</code> via Google Gemini Developer API.
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.midjourney.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Midjourney ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> High visual quality, but lacks an official REST API endpoint for automated backend server pipelines.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://openai.com/dall-e-3" target="_blank" rel="noopener noreferrer" className="pl-name">DALL-E 3 (OpenAI) ↗</a>
-                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Good API availability; evaluated during initial testing, but Gemini Imagen 3 was selected for superior photorealism in UK local service business contexts.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://blackforestlabs.ai/" target="_blank" rel="noopener noreferrer" className="pl-name">Stable Diffusion / Flux ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> Open-source flexibility, but rejected due to self-hosted GPU infrastructure and maintenance overhead.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Canva AI Image Generator ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> Desktop interactive tool; rejected for automated W7 backend generation because it requires manual browser UI interaction.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
               </div>
@@ -1399,57 +1399,57 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Selection Rationale:</strong> Enterprise Google Cloud Vertex AI infrastructure. Delivers fast 9:16 video generation from image prompts with consistent motion, high uptime, and reliable API SLA.
+                    <strong>Selection Rationale:</strong> Enterprise Google Cloud Vertex AI infrastructure for fast 9:16 video generation from image prompts.
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://lumalabs.ai/dream-machine" target="_blank" rel="noopener noreferrer" className="pl-name">Luma Dream Machine ↗</a>
-                    <span className="status-badge status-investigated">INVESTIGATED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Impressive camera motion output; API access limits during initial evaluation led to selecting Veo 3.1 Fast.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://runwayml.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Runway Gen-2 / Gen-3 ↗</a>
-                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> High quality video output; evaluated during stack testing, but higher latency and cost per second compared to Veo 3.1 Fast.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://pika.art/" target="_blank" rel="noopener noreferrer" className="pl-name">Pika Labs ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> Consumer animation platform; rejected due to lack of enterprise webhook and automated API support.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://klingai.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Kling AI ↗</a>
-                    <span className="status-badge status-investigated">INVESTIGATED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Emerging video model; rejected for production due to regional API latency constraints.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://openai.com/sora" target="_blank" rel="noopener noreferrer" className="pl-name">OpenAI Sora ↗</a>
-                    <span className="status-badge status-norecord">INVESTIGATED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Investigated during architecture planning; enterprise API was not available for backend deployment during W7 build (<em>Reason not recorded</em>).
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
               </div>
@@ -1471,7 +1471,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Selection Rationale:</strong> Enterprise automated video rendering API. Enables JSON template rendering, animated text overlays, headline styling, CTA placement, audio embedding, and brand kit enforcement.
+                    <strong>Selection Rationale:</strong> Automated video rendering API for JSON template rendering, animated text overlays, headline styling, CTA placement, audio embedding, and brand kit enforcement.
                   </div>
                 </div>
 
@@ -1488,40 +1488,40 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.capcut.com/" target="_blank" rel="noopener noreferrer" className="pl-name">CapCut API ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> Popular social editor, but rejected due to restricted enterprise API access for server-side video rendering.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.bannerbear.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Bannerbear ↗</a>
-                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Evaluated during testing; image rendering was strong, but Creatomate provided superior multi-track video timeline and dynamic text animation capabilities.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://invideo.io/" target="_blank" rel="noopener noreferrer" className="pl-name">InVideo API ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> Rigid template structures and lack of flexible programmatic branding overlays.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.remotion.dev/" target="_blank" rel="noopener noreferrer" className="pl-name">Remotion ↗</a>
-                    <span className="status-badge status-investigated">INVESTIGATED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Code-driven React video engine; rejected due to higher infrastructure and rendering server maintenance overhead compared to Creatomate's managed rendering API.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
               </div>
@@ -1543,47 +1543,47 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Selection Rationale:</strong> Robust unified REST API for publishing video and image content across Meta (Facebook &amp; Instagram), YouTube, LinkedIn, X, and TikTok. Excellent team workspace isolation.
+                    <strong>Selection Rationale:</strong> Unified REST API for publishing video and image content across Meta (Facebook &amp; Instagram), YouTube, LinkedIn, X, and TikTok.
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://buffer.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Buffer API ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> Restrictive API rate limits and high multi-channel tier pricing.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.hootsuite.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Hootsuite API ↗</a>
-                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Rejection Rationale:</strong> Enterprise pricing model and complex developer application onboarding requirements.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.ayrshare.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Ayrshare ↗</a>
-                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Evaluated during stack testing; bundle.social selected for cleaner team isolation and direct asset mapping for local service brands.
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
 
                 <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://publer.io/" target="_blank" rel="noopener noreferrer" className="pl-name">Publer / Latepoint ↗</a>
-                    <span className="status-badge status-norecord">INVESTIGATED</span>
+                    <span className="status-badge status-norecord">NOT RECORDED</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Decision:</strong> Evaluated during early planning; not selected due to limited REST API automation endpoints (<em>Reason not recorded</em>).
+                    <strong>Decision / Reason:</strong> Reason not recorded
                   </div>
                 </div>
               </div>
@@ -1616,7 +1616,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Live Verification Status:</strong> Meta Business Portfolio and Instagram Business Account fully connected via OAuth to bundle.social team workspace; end-to-end live post dispatch pending final live publishing verification.
+                    <strong>Live Verification Status:</strong> Meta Business Portfolio and Instagram Business Account connected via OAuth in bundle.social workspace; final live post publishing test pending verification.
                   </div>
                 </div>
 
@@ -1656,7 +1656,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <span className="status-badge status-planned">PLANNED / NOT YET PROVEN 🟣</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; account connection planned for upcoming campaign phase.
+                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; account connection planned.
                   </div>
                 </div>
 
@@ -1688,13 +1688,13 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                   <tr>
                     <td className="provider-cell">
                       <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
-                        Nano Banana (Gemini) ↗
+                        Nano Banana ↗
                       </a>
                     </td>
                     <td>Layer 1: Image Creation</td>
                     <td>AI brand image generation</td>
                     <td><span className="status-badge active">PROVEN LIVE</span></td>
-                    <td>Selected for photorealism &amp; native Gemini API integration</td>
+                    <td>Selected production image generator (Google Gemini API models/nano-banana-pro-preview)</td>
                   </tr>
 
                   {/* Midjourney */}
@@ -1706,8 +1706,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 1: Image Creation</td>
                     <td>AI image generation</td>
-                    <td><span className="status-badge status-rejected">REJECTED</span></td>
-                    <td>No official REST API for automated backend pipelines</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* DALL-E 3 */}
@@ -1719,8 +1719,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 1: Image Creation</td>
                     <td>AI image generation</td>
-                    <td><span className="status-badge status-tested">TESTED</span></td>
-                    <td>Gemini Imagen 3 preferred for photorealism in UK local business context</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Stable Diffusion */}
@@ -1732,8 +1732,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 1: Image Creation</td>
                     <td>Open-source image model</td>
-                    <td><span className="status-badge status-rejected">REJECTED</span></td>
-                    <td>Self-hosted GPU infrastructure &amp; maintenance complexity</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Veo 3.1 Fast */}
@@ -1746,7 +1746,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <td>Layer 2: Image → Video</td>
                     <td>Vertical 9:16 video generation</td>
                     <td><span className="status-badge active">PROVEN LIVE</span></td>
-                    <td>Selected for fast 9:16 video synthesis &amp; reliable GCP API SLA</td>
+                    <td>Selected production video generator (Google Cloud Vertex AI)</td>
                   </tr>
 
                   {/* Luma Dream Machine */}
@@ -1758,8 +1758,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 2: Image → Video</td>
                     <td>AI video animation</td>
-                    <td><span className="status-badge status-investigated">INVESTIGATED</span></td>
-                    <td>API rate limit constraints during initial evaluation</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Runway */}
@@ -1771,8 +1771,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 2: Image → Video</td>
                     <td>AI video synthesis</td>
-                    <td><span className="status-badge status-tested">TESTED</span></td>
-                    <td>Higher latency and higher cost per video second compared to Veo 3.1 Fast</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Pika Labs */}
@@ -1784,8 +1784,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 2: Image → Video</td>
                     <td>AI video animation</td>
-                    <td><span className="status-badge status-rejected">REJECTED</span></td>
-                    <td>Lacks enterprise webhooks and automated API endpoints</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Creatomate */}
@@ -1798,7 +1798,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <td>Layer 3: Video Assembly</td>
                     <td>Template rendering, overlays &amp; CTA</td>
                     <td><span className="status-badge active">PROVEN LIVE</span></td>
-                    <td>Selected for automated JSON rendering, branding &amp; video timeline control</td>
+                    <td>Selected production video template rendering API</td>
                   </tr>
 
                   {/* Canva */}
@@ -1823,8 +1823,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 3: Video Assembly</td>
                     <td>Social video editor</td>
-                    <td><span className="status-badge status-rejected">REJECTED</span></td>
-                    <td>Restricted enterprise API access for server-side video rendering</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Bannerbear */}
@@ -1836,8 +1836,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 3: Video Assembly</td>
                     <td>Automated media rendering</td>
-                    <td><span className="status-badge status-tested">TESTED</span></td>
-                    <td>Creatomate provided superior video timeline animation &amp; multi-track rendering</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* bundle.social */}
@@ -1850,7 +1850,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     <td>Layer 4: Social Publishing</td>
                     <td>Multi-account social publishing API</td>
                     <td><span className="status-badge active">PROVEN LIVE</span></td>
-                    <td>Selected for unified API publishing across Meta, YouTube, LinkedIn &amp; X</td>
+                    <td>Selected production social publishing API</td>
                   </tr>
 
                   {/* Buffer */}
@@ -1862,8 +1862,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 4: Social Publishing</td>
                     <td>Social scheduling API</td>
-                    <td><span className="status-badge status-rejected">REJECTED</span></td>
-                    <td>Restrictive API tier limits &amp; high multi-channel costs</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Ayrshare */}
@@ -1875,8 +1875,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 4: Social Publishing</td>
                     <td>Social API gateway</td>
-                    <td><span className="status-badge status-tested">TESTED</span></td>
-                    <td>bundle.social selected for superior team workspace isolation &amp; asset routing</td>
+                    <td><span className="status-badge status-norecord">NOT RECORDED</span></td>
+                    <td>Reason not recorded</td>
                   </tr>
 
                   {/* Facebook Page */}
