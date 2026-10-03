@@ -45,6 +45,16 @@ export default function GlobalSettings({ currentUser }) {
 
   const [activeTab, setActiveTab] = useState(() => {
     try {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search)
+        const tabParam = urlParams.get('tab')
+        if (tabParam && visibleItems.some(m => m.id === tabParam && !m.disabled)) {
+          return tabParam
+        }
+        if (window.location.pathname.includes('app-integrations')) {
+          return 'app-integrations'
+        }
+      }
       const saved = localStorage.getItem('tse_global_settings_tab_v1')
       if (saved && visibleItems.some(m => m.id === saved && !m.disabled)) {
         return saved

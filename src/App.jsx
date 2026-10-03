@@ -139,7 +139,7 @@ export function parseRoute(pathname) {
     }
   }
 
-  if (path === '/global-settings' || path === '/settings') {
+  if (path === '/global-settings' || path === '/settings' || path.startsWith('/global-settings/') || path === '/app-integrations') {
     return {
       currentView: 'website-manager',
       activeNavTab: 'global-settings',
