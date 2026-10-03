@@ -36,7 +36,8 @@ const SETTINGS_SECTIONS = [
       { id: 'app-integrations',       label: 'App Integrations',    icon: 'layers' },
       { id: 'ref-google-tree',        label: 'Google Tree',         icon: 'git-branch' },
       { id: 'ref-website-creation',   label: 'Website Creation',    icon: 'compass' },
-      { id: 'ref-app-costs',          label: 'App Costs & Subscriptions', icon: 'dollar-sign' }
+      { id: 'ref-app-costs',          label: 'App Costs & Subscriptions', icon: 'dollar-sign' },
+      { id: 'ref-social-creation',    label: 'Social Creation Process',   icon: 'share-2' }
     ]
   }
 ]

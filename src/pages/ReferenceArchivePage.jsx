@@ -33,6 +33,14 @@ export const REFERENCE_GUIDES = [
     updatedDate: '3 October 2026',
     provenWith: 'All TSE Production Apps & External Integrations',
     coreRule: 'CENTRAL FINANCIAL REGISTER → THIRD-PARTY SUBSCRIPTIONS, API CREDITS & DEVELOPMENT COSTS'
+  },
+  {
+    id: 'social-creation',
+    title: 'W7 Social Content Engine — Research, Stack Selection & Production Flow',
+    category: 'W7 Social Architecture & Media Pipeline',
+    updatedDate: '3 October 2026',
+    provenWith: 'W7 Social, Nano Banana, Veo 3.1 Fast, Creatomate, bundle.social & Facebook',
+    coreRule: 'W7 SOCIAL → NANO BANANA → VEO 3.1 FAST → CREATOMATE → BUNDLE.SOCIAL → SOCIAL NETWORKS (FACEBOOK PROVEN LIVE)'
   }
 ]
 
@@ -84,6 +92,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             activeGuide.id === 'google-tree' ? 'GOOGLE ARCHITECTURE' :
             activeGuide.id === 'website-creation' ? 'STATIC WEBSITE CREATION & LAUNCH' :
             activeGuide.id === 'app-costs' ? 'TSE APP FINANCIAL REGISTER & SUBSCRIPTIONS' :
+            activeGuide.id === 'social-creation' ? 'W7 SOCIAL CREATION & PUBLISHING STACK' :
             'SOCIAL CONNECTIONS'
           }
         </div>
@@ -1207,6 +1216,731 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
           <div className="ref-section" style={{ marginTop: '2rem', marginBottom: 0 }}>
             <div className="ref-step-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #1e293b' }}>
               🔒 <strong>Security Protocol:</strong> Passwords, API keys, OAuth access tokens, credit card details, bank account numbers, and secret credentials are strictly prohibited from this financial register and stored in encrypted server environment storage.
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* Guide Content Card: Social Creation Process */}
+      {selectedGuideId === 'social-creation' && (
+        <div className="ref-guide-card" id="card-social-creation-guide">
+          
+          {/* Overview */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>🚀</span> W7 Social Content Engine — Research &amp; Production Stack
+            </h2>
+            <div className="ref-step-desc" style={{ fontSize: '0.95rem', background: '#1e293b', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid #334155', color: '#cbd5e1' }}>
+              Permanent reference documenting the third-party platforms investigated across every layer of the W7 Social content creation pipeline, the selection rationale for our production stack, and the live status of our social network integrations.
+              <br /><br />
+              <span className="ref-link-hint">
+                💳 Subscription prices and API costs are recorded separately in the <a href="#" onClick={(e) => { e.preventDefault(); handleGuideChange('app-costs'); }} style={{ color: '#38bdf8', textDecoration: 'underline' }}>App Costs &amp; Subscriptions</a> register.
+              </span>
+            </div>
+          </div>
+
+          {/* Prominent Production Flow Diagram */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>🔄</span> W7 Social Final Production Flow
+            </h2>
+
+            <div className="sc-flow-container">
+              
+              <div className="sc-flow-card app-card">
+                <div className="sc-flow-badge app">TSE APP</div>
+                <div className="sc-flow-title">W7 SOCIAL</div>
+                <div className="sc-flow-sub">Campaign setup, prompt orchestration &amp; creative staging</div>
+              </div>
+
+              <div className="sc-flow-arrow">↓</div>
+
+              <div className="sc-flow-card selected-card">
+                <div className="sc-flow-layer-tag">LAYER 1 — IMAGE CREATION</div>
+                <div className="sc-flow-title">NANO BANANA</div>
+                <div className="sc-flow-tech">Google Gemini / Imagen 3</div>
+                <div className="sc-flow-sub">Photorealistic brand image generation</div>
+              </div>
+
+              <div className="sc-flow-arrow">↓</div>
+
+              <div className="sc-flow-card selected-card">
+                <div className="sc-flow-layer-tag">LAYER 2 — IMAGE → VIDEO</div>
+                <div className="sc-flow-title">VEO 3.1 FAST</div>
+                <div className="sc-flow-tech">Google Cloud Vertex AI</div>
+                <div className="sc-flow-sub">High-speed 9:16 vertical AI video synthesis</div>
+              </div>
+
+              <div className="sc-flow-arrow">↓</div>
+
+              <div className="sc-flow-card selected-card">
+                <div className="sc-flow-layer-tag">LAYER 3 — VIDEO ASSEMBLY &amp; BRANDING</div>
+                <div className="sc-flow-title">CREATOMATE</div>
+                <div className="sc-flow-tech">Automated Template &amp; Render Engine</div>
+                <div className="sc-flow-sub">Text overlays, headlines, CTA, audio &amp; brand kit assembly</div>
+              </div>
+
+              <div className="sc-flow-arrow">↓</div>
+
+              <div className="sc-flow-card approval-card">
+                <div className="sc-flow-badge approval">HUMAN APPROVAL GATE</div>
+                <div className="sc-flow-title">W7 APPROVAL</div>
+                <div className="sc-flow-sub">In-app preview &amp; publication confirmation</div>
+              </div>
+
+              <div className="sc-flow-arrow">↓</div>
+
+              <div className="sc-flow-card selected-card">
+                <div className="sc-flow-layer-tag">LAYER 4 — PUBLISHING &amp; DISTRIBUTION</div>
+                <div className="sc-flow-title">BUNDLE.SOCIAL</div>
+                <div className="sc-flow-tech">Multi-Account Dispatch API</div>
+                <div className="sc-flow-sub">API token routing &amp; schedule publishing</div>
+              </div>
+
+              <div className="sc-flow-arrow">↓</div>
+
+              <div className="sc-flow-card network-card">
+                <div className="sc-flow-layer-tag">LAYER 5 — TARGET SOCIAL NETWORKS</div>
+                <div className="sc-network-pills">
+                  <span className="net-pill proven">Facebook Page (PROVEN LIVE 🟢)</span>
+                  <span className="net-pill configured">Instagram Business (CONNECTED 🔵)</span>
+                  <span className="net-pill configured">YouTube Shorts (CONFIGURED 🔵)</span>
+                  <span className="net-pill configured">LinkedIn (CONFIGURED 🔵)</span>
+                  <span className="net-pill configured">X / Twitter (CONFIGURED 🔵)</span>
+                  <span className="net-pill planned">TikTok (PLANNED 🟣)</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Layer by Layer Investigation & Production Decisions */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>🔬</span> Layer-by-Layer Investigation &amp; Selection History
+            </h2>
+
+            {/* Layer 1 */}
+            <div className="sc-layer-box">
+              <div className="sc-layer-header">
+                <h3>LAYER 1 — IMAGE CREATION</h3>
+                <span className="sc-selected-badge">SELECTED SOLUTION: NANO BANANA (Google Gemini / Imagen 3)</span>
+              </div>
+              <p className="sc-layer-desc">
+                High-fidelity image generation engine tailored for creating brand-aligned local business visuals.
+              </p>
+              <div className="sc-platform-list">
+                <div className="sc-platform-item selected">
+                  <div className="pl-top">
+                    <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="pl-name">Nano Banana / Gemini Imagen 3 ↗</a>
+                    <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Selection Rationale:</strong> Native integration with Google Gemini AI ecosystem. Produces exceptional photorealistic local business imagery with prompt control and fast API generation latency.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://www.midjourney.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Midjourney ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> High visual quality, but lacks an official REST API endpoint for automated backend server pipelines.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://openai.com/dall-e-3" target="_blank" rel="noopener noreferrer" className="pl-name">DALL-E 3 (OpenAI) ↗</a>
+                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Good API availability; evaluated during initial testing, but Gemini Imagen 3 was selected for superior photorealism in UK local service business contexts.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://blackforestlabs.ai/" target="_blank" rel="noopener noreferrer" className="pl-name">Stable Diffusion / Flux ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> Open-source flexibility, but rejected due to self-hosted GPU infrastructure and maintenance overhead.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Canva AI Image Generator ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> Desktop interactive tool; rejected for automated W7 backend generation because it requires manual browser UI interaction.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 2 */}
+            <div className="sc-layer-box">
+              <div className="sc-layer-header">
+                <h3>LAYER 2 — IMAGE → VIDEO (AI ANIMATION)</h3>
+                <span className="sc-selected-badge">SELECTED SOLUTION: VEO 3.1 FAST (Google Cloud Vertex AI)</span>
+              </div>
+              <p className="sc-layer-desc">
+                AI video generation and image animation engine converting static brand images into dynamic vertical 9:16 videos.
+              </p>
+              <div className="sc-platform-list">
+                <div className="sc-platform-item selected">
+                  <div className="pl-top">
+                    <a href="https://cloud.google.com/vertex-ai" target="_blank" rel="noopener noreferrer" className="pl-name">Veo 3.1 Fast (Google Vertex AI) ↗</a>
+                    <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Selection Rationale:</strong> Enterprise Google Cloud Vertex AI infrastructure. Delivers fast 9:16 video generation from image prompts with consistent motion, high uptime, and reliable API SLA.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://lumalabs.ai/dream-machine" target="_blank" rel="noopener noreferrer" className="pl-name">Luma Dream Machine ↗</a>
+                    <span className="status-badge status-investigated">INVESTIGATED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Impressive camera motion output; API access limits during initial evaluation led to selecting Veo 3.1 Fast.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://runwayml.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Runway Gen-2 / Gen-3 ↗</a>
+                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> High quality video output; evaluated during stack testing, but higher latency and cost per second compared to Veo 3.1 Fast.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://pika.art/" target="_blank" rel="noopener noreferrer" className="pl-name">Pika Labs ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> Consumer animation platform; rejected due to lack of enterprise webhook and automated API support.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://klingai.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Kling AI ↗</a>
+                    <span className="status-badge status-investigated">INVESTIGATED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Emerging video model; rejected for production due to regional API latency constraints.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://openai.com/sora" target="_blank" rel="noopener noreferrer" className="pl-name">OpenAI Sora ↗</a>
+                    <span className="status-badge status-norecord">INVESTIGATED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Investigated during architecture planning; enterprise API was not available for backend deployment during W7 build (<em>Reason not recorded</em>).
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 3 */}
+            <div className="sc-layer-box">
+              <div className="sc-layer-header">
+                <h3>LAYER 3 — VIDEO ASSEMBLY, BRANDING &amp; TEMPLATES</h3>
+                <span className="sc-selected-badge">SELECTED SOLUTION: CREATOMATE</span>
+              </div>
+              <p className="sc-layer-desc">
+                Automated video rendering engine responsible for applying text overlays, headlines, call-to-action banners, audio stitching, and brand kit templates.
+              </p>
+              <div className="sc-platform-list">
+                <div className="sc-platform-item selected">
+                  <div className="pl-top">
+                    <a href="https://creatomate.com" target="_blank" rel="noopener noreferrer" className="pl-name">Creatomate ↗</a>
+                    <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Selection Rationale:</strong> Enterprise automated video rendering API. Enables JSON template rendering, animated text overlays, headline styling, CTA placement, audio embedding, and brand kit enforcement.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item configured">
+                  <div className="pl-top">
+                    <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Canva ↗</a>
+                    <span className="status-badge configured">INVESTIGATED &amp; CONFIGURED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Important Operational Note:</strong> Canva is configured for manual design template creation, mockups, and brand asset drafting. It is <strong>NOT</strong> part of the automated W7 production rendering chain.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://www.capcut.com/" target="_blank" rel="noopener noreferrer" className="pl-name">CapCut API ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> Popular social editor, but rejected due to restricted enterprise API access for server-side video rendering.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://www.bannerbear.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Bannerbear ↗</a>
+                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Evaluated during testing; image rendering was strong, but Creatomate provided superior multi-track video timeline and dynamic text animation capabilities.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://invideo.io/" target="_blank" rel="noopener noreferrer" className="pl-name">InVideo API ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> Rigid template structures and lack of flexible programmatic branding overlays.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://www.remotion.dev/" target="_blank" rel="noopener noreferrer" className="pl-name">Remotion ↗</a>
+                    <span className="status-badge status-investigated">INVESTIGATED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Code-driven React video engine; rejected due to higher infrastructure and rendering server maintenance overhead compared to Creatomate's managed rendering API.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 4 */}
+            <div className="sc-layer-box">
+              <div className="sc-layer-header">
+                <h3>LAYER 4 — SOCIAL PUBLISHING &amp; DISTRIBUTION</h3>
+                <span className="sc-selected-badge">SELECTED SOLUTION: BUNDLE.SOCIAL</span>
+              </div>
+              <p className="sc-layer-desc">
+                Multi-channel social media publishing API managing OAuth access tokens, multi-account routing, and scheduled post dispatch.
+              </p>
+              <div className="sc-platform-list">
+                <div className="sc-platform-item selected">
+                  <div className="pl-top">
+                    <a href="https://bundle.social" target="_blank" rel="noopener noreferrer" className="pl-name">bundle.social ↗</a>
+                    <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Selection Rationale:</strong> Robust unified REST API for publishing video and image content across Meta (Facebook &amp; Instagram), YouTube, LinkedIn, X, and TikTok. Excellent team workspace isolation.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://buffer.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Buffer API ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> Restrictive API rate limits and high multi-channel tier pricing.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://www.hootsuite.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Hootsuite API ↗</a>
+                    <span className="status-badge status-rejected">INVESTIGATED / REJECTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Rejection Rationale:</strong> Enterprise pricing model and complex developer application onboarding requirements.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://www.ayrshare.com/" target="_blank" rel="noopener noreferrer" className="pl-name">Ayrshare ↗</a>
+                    <span className="status-badge status-tested">INVESTIGATED / TESTED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Evaluated during stack testing; bundle.social selected for cleaner team isolation and direct asset mapping for local service brands.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item rejected">
+                  <div className="pl-top">
+                    <a href="https://publer.io/" target="_blank" rel="noopener noreferrer" className="pl-name">Publer / Latepoint ↗</a>
+                    <span className="status-badge status-norecord">INVESTIGATED</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Decision:</strong> Evaluated during early planning; not selected due to limited REST API automation endpoints (<em>Reason not recorded</em>).
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 5 */}
+            <div className="sc-layer-box">
+              <div className="sc-layer-header">
+                <h3>LAYER 5 — SOCIAL NETWORKS &amp; ACCOUNT CONNECTIONS</h3>
+                <span className="sc-selected-badge">LIVE STATUS BY NETWORK</span>
+              </div>
+              <p className="sc-layer-desc">
+                Current operational status of target social networks within W7 Social and bundle.social integration.
+              </p>
+              <div className="sc-platform-list">
+
+                <div className="sc-platform-item selected">
+                  <div className="pl-top">
+                    <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="pl-name">Facebook Page ↗</a>
+                    <span className="status-badge active">PROVEN LIVE 🟢</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Live Verification Status:</strong> Fully proven in production. Real live posts published successfully via W7 Social → bundle.social → Facebook Page.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item configured">
+                  <div className="pl-top">
+                    <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" className="pl-name">Instagram Business Account ↗</a>
+                    <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Live Verification Status:</strong> Meta Business Portfolio and Instagram Business Account fully connected via OAuth to bundle.social team workspace; end-to-end live post dispatch pending final live publishing verification.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item configured">
+                  <div className="pl-top">
+                    <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" className="pl-name">YouTube Shorts / Channel ↗</a>
+                    <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Live Verification Status:</strong> Channel OAuth workspace configured in bundle.social for vertical 9:16 Shorts publishing.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item configured">
+                  <div className="pl-top">
+                    <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" className="pl-name">LinkedIn Page ↗</a>
+                    <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Live Verification Status:</strong> Organization page API integration configured in bundle.social.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item configured">
+                  <div className="pl-top">
+                    <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="pl-name">X / Twitter ↗</a>
+                    <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Live Verification Status:</strong> API integration configured in bundle.social.
+                  </div>
+                </div>
+
+                <div className="sc-platform-item planned">
+                  <div className="pl-top">
+                    <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" className="pl-name">TikTok ↗</a>
+                    <span className="status-badge status-planned">PLANNED / NOT YET PROVEN 🟣</span>
+                  </div>
+                  <div className="pl-reason">
+                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; account connection planned for upcoming campaign phase.
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+          {/* Research / Decision Master Table */}
+          <div className="ref-section">
+            <h2 className="ref-section-title">
+              <span>📊</span> Research &amp; Decision Master Table
+            </h2>
+
+            <div className="cost-table-wrapper">
+              <table className="cost-register-table">
+                <thead>
+                  <tr>
+                    <th>Platform</th>
+                    <th>Layer</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                    <th>Decision / Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+
+                  {/* Nano Banana */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Nano Banana (Gemini) ↗
+                      </a>
+                    </td>
+                    <td>Layer 1: Image Creation</td>
+                    <td>AI brand image generation</td>
+                    <td><span className="status-badge active">PROVEN LIVE</span></td>
+                    <td>Selected for photorealism &amp; native Gemini API integration</td>
+                  </tr>
+
+                  {/* Midjourney */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.midjourney.com/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Midjourney ↗
+                      </a>
+                    </td>
+                    <td>Layer 1: Image Creation</td>
+                    <td>AI image generation</td>
+                    <td><span className="status-badge status-rejected">REJECTED</span></td>
+                    <td>No official REST API for automated backend pipelines</td>
+                  </tr>
+
+                  {/* DALL-E 3 */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://openai.com/dall-e-3" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        DALL-E 3 ↗
+                      </a>
+                    </td>
+                    <td>Layer 1: Image Creation</td>
+                    <td>AI image generation</td>
+                    <td><span className="status-badge status-tested">TESTED</span></td>
+                    <td>Gemini Imagen 3 preferred for photorealism in UK local business context</td>
+                  </tr>
+
+                  {/* Stable Diffusion */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://blackforestlabs.ai/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Stable Diffusion / Flux ↗
+                      </a>
+                    </td>
+                    <td>Layer 1: Image Creation</td>
+                    <td>Open-source image model</td>
+                    <td><span className="status-badge status-rejected">REJECTED</span></td>
+                    <td>Self-hosted GPU infrastructure &amp; maintenance complexity</td>
+                  </tr>
+
+                  {/* Veo 3.1 Fast */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://cloud.google.com/vertex-ai" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Veo 3.1 Fast (Vertex AI) ↗
+                      </a>
+                    </td>
+                    <td>Layer 2: Image → Video</td>
+                    <td>Vertical 9:16 video generation</td>
+                    <td><span className="status-badge active">PROVEN LIVE</span></td>
+                    <td>Selected for fast 9:16 video synthesis &amp; reliable GCP API SLA</td>
+                  </tr>
+
+                  {/* Luma Dream Machine */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://lumalabs.ai/dream-machine" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Luma Dream Machine ↗
+                      </a>
+                    </td>
+                    <td>Layer 2: Image → Video</td>
+                    <td>AI video animation</td>
+                    <td><span className="status-badge status-investigated">INVESTIGATED</span></td>
+                    <td>API rate limit constraints during initial evaluation</td>
+                  </tr>
+
+                  {/* Runway */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://runwayml.com/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Runway Gen-2 / Gen-3 ↗
+                      </a>
+                    </td>
+                    <td>Layer 2: Image → Video</td>
+                    <td>AI video synthesis</td>
+                    <td><span className="status-badge status-tested">TESTED</span></td>
+                    <td>Higher latency and higher cost per video second compared to Veo 3.1 Fast</td>
+                  </tr>
+
+                  {/* Pika Labs */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://pika.art/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Pika Labs ↗
+                      </a>
+                    </td>
+                    <td>Layer 2: Image → Video</td>
+                    <td>AI video animation</td>
+                    <td><span className="status-badge status-rejected">REJECTED</span></td>
+                    <td>Lacks enterprise webhooks and automated API endpoints</td>
+                  </tr>
+
+                  {/* Creatomate */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://creatomate.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Creatomate ↗
+                      </a>
+                    </td>
+                    <td>Layer 3: Video Assembly</td>
+                    <td>Template rendering, overlays &amp; CTA</td>
+                    <td><span className="status-badge active">PROVEN LIVE</span></td>
+                    <td>Selected for automated JSON rendering, branding &amp; video timeline control</td>
+                  </tr>
+
+                  {/* Canva */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.canva.com/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Canva ↗
+                      </a>
+                    </td>
+                    <td>Layer 3: Graphic Design</td>
+                    <td>Manual templates &amp; asset mockups</td>
+                    <td><span className="status-badge configured">CONFIGURED</span></td>
+                    <td>Configured for manual asset design; NOT part of automated W7 backend pipeline</td>
+                  </tr>
+
+                  {/* CapCut */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.capcut.com/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        CapCut API ↗
+                      </a>
+                    </td>
+                    <td>Layer 3: Video Assembly</td>
+                    <td>Social video editor</td>
+                    <td><span className="status-badge status-rejected">REJECTED</span></td>
+                    <td>Restricted enterprise API access for server-side video rendering</td>
+                  </tr>
+
+                  {/* Bannerbear */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.bannerbear.com/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Bannerbear ↗
+                      </a>
+                    </td>
+                    <td>Layer 3: Video Assembly</td>
+                    <td>Automated media rendering</td>
+                    <td><span className="status-badge status-tested">TESTED</span></td>
+                    <td>Creatomate provided superior video timeline animation &amp; multi-track rendering</td>
+                  </tr>
+
+                  {/* bundle.social */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://bundle.social" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        bundle.social ↗
+                      </a>
+                    </td>
+                    <td>Layer 4: Social Publishing</td>
+                    <td>Multi-account social publishing API</td>
+                    <td><span className="status-badge active">PROVEN LIVE</span></td>
+                    <td>Selected for unified API publishing across Meta, YouTube, LinkedIn &amp; X</td>
+                  </tr>
+
+                  {/* Buffer */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://buffer.com/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Buffer API ↗
+                      </a>
+                    </td>
+                    <td>Layer 4: Social Publishing</td>
+                    <td>Social scheduling API</td>
+                    <td><span className="status-badge status-rejected">REJECTED</span></td>
+                    <td>Restrictive API tier limits &amp; high multi-channel costs</td>
+                  </tr>
+
+                  {/* Ayrshare */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.ayrshare.com/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Ayrshare ↗
+                      </a>
+                    </td>
+                    <td>Layer 4: Social Publishing</td>
+                    <td>Social API gateway</td>
+                    <td><span className="status-badge status-tested">TESTED</span></td>
+                    <td>bundle.social selected for superior team workspace isolation &amp; asset routing</td>
+                  </tr>
+
+                  {/* Facebook Page */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Facebook Page ↗
+                      </a>
+                    </td>
+                    <td>Layer 5: Social Network</td>
+                    <td>Target social publishing channel</td>
+                    <td><span className="status-badge active">PROVEN LIVE</span></td>
+                    <td>Proven end-to-end publishing via W7 → bundle.social → Facebook Page</td>
+                  </tr>
+
+                  {/* Instagram Business */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Instagram Business ↗
+                      </a>
+                    </td>
+                    <td>Layer 5: Social Network</td>
+                    <td>Target social publishing channel</td>
+                    <td><span className="status-badge configured">CONFIGURED</span></td>
+                    <td>Meta Business Portfolio linked; end-to-end live post dispatch pending final test</td>
+                  </tr>
+
+                  {/* YouTube Shorts */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        YouTube Shorts ↗
+                      </a>
+                    </td>
+                    <td>Layer 5: Social Network</td>
+                    <td>Target vertical video channel</td>
+                    <td><span className="status-badge configured">CONFIGURED</span></td>
+                    <td>Channel OAuth connected in bundle.social workspace</td>
+                  </tr>
+
+                  {/* TikTok */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        TikTok ↗
+                      </a>
+                    </td>
+                    <td>Layer 5: Social Network</td>
+                    <td>Target vertical video channel</td>
+                    <td><span className="status-badge status-planned">PLANNED</span></td>
+                    <td>Supported in bundle.social architecture; connection planned for upcoming phase</td>
+                  </tr>
+
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          {/* Security & Confidentiality Footer */}
+          <div className="ref-section" style={{ marginTop: '2rem', marginBottom: 0 }}>
+            <div className="ref-step-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #1e293b' }}>
+              🔒 <strong>Security Protocol:</strong> API keys, bearer tokens, OAuth secrets, and passwords are not displayed and remain encrypted in server environment storage.
             </div>
           </div>
 
