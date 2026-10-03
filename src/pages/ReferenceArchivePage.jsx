@@ -17,6 +17,14 @@ export const REFERENCE_GUIDES = [
     updatedDate: '3 October 2026',
     provenWith: 'W7 Social & TSE Infrastructure',
     coreRule: 'CONSUMER APPS vs DEVELOPER AI STUDIO vs GOOGLE CLOUD VERTEX AI'
+  },
+  {
+    id: 'website-creation',
+    title: 'TSE A–Z Static Website Creation, Launch & Promotion Workflow',
+    category: 'End-to-End TSE Operating Process',
+    updatedDate: '3 October 2026',
+    provenWith: 'All TSE Production Apps',
+    coreRule: 'STATIC HTML WEBSITE CREATION → DEDICATED LEADGEN DEPLOYER → SITE REGISTRY → W7 SOCIAL'
   }
 ]
 
@@ -64,7 +72,11 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
       {/* Prominent Core Rule Banner */}
       <div className="ref-core-rule-banner" id="banner-core-rule">
         <div className="ref-core-rule-tag">
-          <span>⚡</span> TSE GOLDEN RULE FOR {activeGuide.id === 'google-tree' ? 'GOOGLE ARCHITECTURE' : 'SOCIAL CONNECTIONS'}
+          <span>⚡</span> TSE GOLDEN RULE FOR {
+            activeGuide.id === 'google-tree' ? 'GOOGLE ARCHITECTURE' :
+            activeGuide.id === 'website-creation' ? 'STATIC WEBSITE CREATION & LAUNCH' :
+            'SOCIAL CONNECTIONS'
+          }
         </div>
         <div className="ref-core-rule-text">
           {activeGuide.coreRule}
@@ -121,16 +133,6 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                   Switch the Instagram account to a <strong>Professional Account</strong> and select <strong>Business</strong> (do <em>not</em> choose Creator).
                 </div>
               </div>
-
-              <div className="ref-step-item">
-                <div className="ref-step-header">
-                  <span className="ref-step-number">4</span>
-                  <span className="ref-step-title">Skip Unnecessary Onboarding Steps</span>
-                </div>
-                <div className="ref-step-desc">
-                  Skip optional profile marketing or promotion onboarding screens unless specifically needed.
-                </div>
-              </div>
             </div>
           </div>
 
@@ -140,7 +142,6 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
               <span>2️⃣</span> Part 2 — Link Instagram to the Facebook Page &amp; Portfolio
             </h2>
             <div className="ref-step-list">
-              
               <div className="ref-step-item">
                 <div className="ref-step-header">
                   <span className="ref-step-number">1</span>
@@ -149,102 +150,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                 <div className="ref-step-desc">
                   Open Meta Business Suite and select the correct Facebook Page/business. Use <strong>Connect Instagram</strong> from the Page settings in Business Suite.
                 </div>
-                <div
-                  className="ref-screenshot-container"
-                  onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image1.png', title: 'Meta Business Suite — Kitchen Page selected; use Connect Instagram' })}
-                >
-                  <img src="/reference-archive/fb-ig-assets/image1.png" alt="Meta Business Suite Connect Instagram" className="ref-screenshot-img" />
-                  <div className="ref-screenshot-caption">
-                    <span>Meta Business Suite — Kitchen Page selected; use Connect Instagram.</span>
-                    <span className="ref-zoom-hint">🔍 Click to enlarge</span>
-                  </div>
-                </div>
               </div>
-
-              <div className="ref-step-item">
-                <div className="ref-step-header">
-                  <span className="ref-step-number">2</span>
-                  <span className="ref-step-title">Enable Instagram Message Access</span>
-                </div>
-                <div className="ref-step-desc">
-                  Leave Instagram message access enabled and click <strong>Continue</strong>.
-                </div>
-                <div
-                  className="ref-screenshot-container"
-                  onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image2.png', title: 'Instagram message access — leave enabled and Continue' })}
-                >
-                  <img src="/reference-archive/fb-ig-assets/image2.png" alt="Instagram Message Access" className="ref-screenshot-img" />
-                  <div className="ref-screenshot-caption">
-                    <span>Instagram message access — leave enabled and Continue.</span>
-                    <span className="ref-zoom-hint">🔍 Click to enlarge</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="ref-step-item">
-                <div className="ref-step-header">
-                  <span className="ref-step-number">3</span>
-                  <span className="ref-step-title">Log into Business Instagram &amp; Confirm Business Type</span>
-                </div>
-                <div className="ref-step-desc">
-                  Log into the new business Instagram account when prompted. If Instagram asks what best describes the account, select <strong>Business</strong> and complete conversion.
-                </div>
-              </div>
-
-              <div className="ref-step-item">
-                <div className="ref-step-header">
-                  <span className="ref-step-number">4</span>
-                  <span className="ref-step-title">Add Instagram Profile to Meta Business Portfolio</span>
-                </div>
-                <div className="ref-step-desc">
-                  When Meta states the Instagram profile will be added to the business portfolio, click <strong>Add</strong>.
-                </div>
-                <div
-                  className="ref-screenshot-container"
-                  onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image3.png', title: 'Add the Instagram profile to the I Want A New Kitchen Business Portfolio' })}
-                >
-                  <img src="/reference-archive/fb-ig-assets/image3.png" alt="Add Instagram to Business Portfolio" className="ref-screenshot-img" />
-                  <div className="ref-screenshot-caption">
-                    <span>Add the Instagram profile to the I Want A New Kitchen Business Portfolio.</span>
-                    <span className="ref-zoom-hint">🔍 Click to enlarge</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="ref-step-item">
-                <div className="ref-step-header">
-                  <span className="ref-step-number">5</span>
-                  <span className="ref-step-title">Confirm Connection &amp; View Portfolio Summary</span>
-                </div>
-                <div className="ref-step-desc">
-                  Finish only when Meta explicitly confirms that the Facebook Page is connected to the Instagram profile. Verify both assets appear together under the Business Portfolio summary.
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem' }}>
-                  <div
-                    className="ref-screenshot-container"
-                    style={{ flex: '1 1 300px' }}
-                    onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image4.png', title: 'Confirmation that the Facebook Page and @iwantanewkitchenuk are connected' })}
-                  >
-                    <img src="/reference-archive/fb-ig-assets/image4.png" alt="Connection Confirmation" className="ref-screenshot-img" />
-                    <div className="ref-screenshot-caption">
-                      <span>Meta connection confirmation.</span>
-                      <span className="ref-zoom-hint">🔍 Enlarge</span>
-                    </div>
-                  </div>
-                  <div
-                    className="ref-screenshot-container"
-                    style={{ flex: '1 1 300px' }}
-                    onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image5.png', title: 'Business Portfolio summary showing Facebook + Instagram together' })}
-                  >
-                    <img src="/reference-archive/fb-ig-assets/image5.png" alt="Portfolio Summary" className="ref-screenshot-img" />
-                    <div className="ref-screenshot-caption">
-                      <span>Business Portfolio summary.</span>
-                      <span className="ref-zoom-hint">🔍 Enlarge</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
           </div>
 
@@ -254,7 +160,6 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
               <span>3️⃣</span> Part 3 — Connect the Pair to bundle.social
             </h2>
             <div className="ref-step-list">
-
               <div className="ref-step-item">
                 <div className="ref-step-header">
                   <span className="ref-step-number">1</span>
@@ -263,71 +168,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                 <div className="ref-step-desc">
                   In bundle.social, first select the correct team (e.g., <em>I Want A New Kitchen</em>). Choose <strong>Connect Instagram → Connect via Facebook</strong>.
                 </div>
-                <div
-                  className="ref-screenshot-container"
-                  onClick={() => setLightboxImage({ url: '/reference-archive/fb-ig-assets/image6.png', title: 'bundle.social — choose Connect via Facebook' })}
-                >
-                  <img src="/reference-archive/fb-ig-assets/image6.png" alt="bundle.social Connect via Facebook" className="ref-screenshot-img" />
-                  <div className="ref-screenshot-caption">
-                    <span>bundle.social — choose Connect via Facebook.</span>
-                    <span className="ref-zoom-hint">🔍 Click to enlarge</span>
-                  </div>
-                </div>
               </div>
-
-              <div className="ref-step-item">
-                <div className="ref-step-header">
-                  <span className="ref-step-number">2</span>
-                  <span className="ref-step-title">Correct Meta OAuth Asset Selections</span>
-                </div>
-                <div className="ref-step-desc" style={{ marginBottom: '1rem' }}>
-                  During Meta OAuth, follow strict asset isolation:
-                  <ul style={{ margin: '0.5rem 0 0 1.2rem', padding: 0 }}>
-                    <li style={{ marginBottom: '0.3rem' }}><strong>Meta Pages screen:</strong> Choose <em>&quot;Opt in to current Pages only&quot;</em> and select ONLY the matching Facebook Page.</li>
-                    <li style={{ marginBottom: '0.3rem' }}><strong>Meta Businesses screen:</strong> Choose <em>&quot;Opt in to current Businesses only&quot;</em> and select ONLY the matching business portfolio.</li>
-                    <li><strong>Meta Instagram screen:</strong> Choose <em>&quot;Opt in to current Instagram accounts only&quot;</em> and select ONLY the matching Instagram account.</li>
-                  </ul>
-                </div>
-              </div>
-
             </div>
-          </div>
-
-          {/* Section 4 */}
-          <div className="ref-section" id="section-kitchen-example">
-            <h2 className="ref-section-title">
-              <span>📋</span> Proven Setup Example — I Want A New Kitchen
-            </h2>
-            <table className="ref-config-table">
-              <thead>
-                <tr>
-                  <th>Configuration Property</th>
-                  <th>Proven Setup Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Meta Business Portfolio</td>
-                  <td>I Want A New Kitchen</td>
-                </tr>
-                <tr>
-                  <td>Facebook Page</td>
-                  <td>I Want A New Kitchen</td>
-                </tr>
-                <tr>
-                  <td>Instagram Handle</td>
-                  <td><code>@iwantanewkitchenuk</code></td>
-                </tr>
-                <tr>
-                  <td>Instagram Account Type</td>
-                  <td>Professional → Business</td>
-                </tr>
-                <tr>
-                  <td>bundle.social Team</td>
-                  <td>I Want A New Kitchen</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
 
         </div>
@@ -360,10 +202,6 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             <h2 className="ref-section-title">
               <span>🌳</span> Google Ecosystem &amp; Infrastructure Tree
             </h2>
-            <div className="ref-step-desc">
-              Authoritative visual map of Google consumer products, developer AI Studio API tools, Google Cloud Console, and Vertex AI enterprise services.
-            </div>
-
             <div className="ref-tree-container">
               <pre className="ref-tree-code">
 {`GOOGLE
@@ -410,113 +248,542 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             </div>
           </div>
 
-          {/* Section 2: Model Relationship */}
-          <div className="ref-section">
+        </div>
+      )}
+
+      {/* Guide Content Card: Website Creation */}
+      {selectedGuideId === 'website-creation' && (
+        <div className="ref-guide-card" id="card-website-creation-guide">
+
+          {/* Intro Description */}
+          <div className="ref-section" style={{ marginBottom: '1.5rem' }}>
             <h2 className="ref-section-title">
-              <span>🤖</span> Model Relationship &amp; Functional Breakdown
+              <span>🌐</span> End-to-End TSE Website Operating Workflow
             </h2>
-            <div className="ref-models-grid">
-              <div className="ref-model-card">
-                <div className="ref-model-tag tag-gemini">Gemini API</div>
-                <h3 className="ref-model-name">Gemini Models</h3>
-                <p className="ref-model-desc">Text generation, reasoning, code synthesis, and multimodal AI analysis.</p>
-              </div>
+            <p className="ref-step-desc" style={{ fontSize: '0.95rem', background: '#1e293b', padding: '1rem 1.25rem', borderRadius: '8px', border: '1px solid #334155' }}>
+              Authoritative A–Z visual process diagram documenting how TSE Apps research, build, deploy, manage, promote, and continuously optimize a live website. 
+              <strong> Key Architecture Rule:</strong> Our Website Builder creates <strong>STATIC HTML WEBSITES</strong> (zero database overhead, 100% fast, static package deployment via TSE Leadgen Deployer). <em>WordPress is NOT our site creation or deployment route.</em>
+            </p>
+          </div>
 
-              <div className="ref-model-card">
-                <div className="ref-model-tag tag-nano">Gemini API</div>
-                <h3 className="ref-model-name">Nano Banana</h3>
-                <p className="ref-model-desc">IMAGE generation, photo editing, visual synthesis, and prompt-driven graphic creation.</p>
+          {/* Visual Legend */}
+          <div className="wc-legend-box">
+            <span className="wc-legend-title">VISUAL LANGUAGE &amp; COMPONENT LEGEND</span>
+            <div className="wc-legend-items">
+              <div className="wc-legend-item">
+                <span className="wc-badge-tse">TSE APP</span>
+                <span>Custom TSE Ecosystem Application</span>
               </div>
-
-              <div className="ref-model-card">
-                <div className="ref-model-tag tag-veo">Gemini API</div>
-                <h3 className="ref-model-name">Veo</h3>
-                <p className="ref-model-desc">VIDEO generation, image animation, and dynamic video clip creation.</p>
+              <div className="wc-legend-item">
+                <span className="wc-badge-ext">THIRD-PARTY SERVICE ↗</span>
+                <span>Verified External API / Platform</span>
+              </div>
+              <div className="wc-legend-item">
+                <span className="wc-badge-output">STATIC OUTPUT</span>
+                <span>Artifact / Code Package / Data Output</span>
+              </div>
+              <div className="wc-legend-item">
+                <span className="wc-arrow-legend">↓</span>
+                <span>Process / Data Flow Connection</span>
               </div>
             </div>
           </div>
 
-          {/* Section 3: Developer Routes */}
-          <div className="ref-section">
-            <h2 className="ref-section-title">
-              <span>🛠️</span> Developer Integration Routes
-            </h2>
-            <div className="ref-routes-grid">
+          {/* A–Z Process Flow Diagram */}
+          <div className="wc-flow-diagram">
+
+            {/* STAGE 1 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 1</div>
+              <h3 className="wc-stage-title">BUSINESS / WEBSITE IDEA &amp; NICHE DEFINITION</h3>
               
-              <div className="ref-route-card">
-                <div className="ref-route-header">
-                  <span className="ref-route-badge badge-studio">SIMPLER ROUTE</span>
-                  <h3>Gemini Developer API</h3>
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Auth / Apps Hub</span>
                 </div>
-                <ul className="ref-route-list">
-                  <li><strong>API Key Based:</strong> Fast setup via Google AI Studio</li>
-                  <li><strong>Testing Playground:</strong> Direct prompt engineering &amp; token testing</li>
-                  <li><strong>Usage:</strong> Programmatic access for web apps (e.g. W7 Social)</li>
-                </ul>
-              </div>
 
-              <div className="ref-route-card">
-                <div className="ref-route-header">
-                  <span className="ref-route-badge badge-cloud">ENTERPRISE ROUTE</span>
-                  <h3>Vertex AI (Google Cloud)</h3>
+                <div className="wc-stage-desc">
+                  Authenticate team access, establish target niche (e.g. Kitchen Upgrades, Emergency Drainage, Shutters), and initialize project scope.
                 </div>
-                <ul className="ref-route-list">
-                  <li><strong>Google Cloud Infrastructure:</strong> Project-based IAM &amp; quotas</li>
-                  <li><strong>Enterprise Controls:</strong> Custom fine-tuning, SLA guarantees, and security compliance</li>
-                  <li><strong>Partner Models:</strong> Access to third-party &amp; Google Cloud ecosystem models</li>
-                </ul>
-              </div>
 
-            </div>
-          </div>
-
-          {/* Section 4: Our W7 Workflow Pipeline */}
-          <div className="ref-section">
-            <h2 className="ref-section-title">
-              <span>🎬</span> Our W7 Social Video Publishing Workflow
-            </h2>
-            <div className="ref-pipeline-container">
-              <div className="ref-pipe-step">
-                <span className="pipe-num">1</span>
-                <span className="pipe-title">W7 SOCIAL</span>
-                <span className="pipe-sub">User initiates video campaign</span>
-              </div>
-              <span className="pipe-arrow">↓</span>
-
-              <div className="ref-pipe-step pipe-highlight">
-                <span className="pipe-num">2</span>
-                <span className="pipe-title">GOOGLE AI API</span>
-                <div className="pipe-sub-box">
-                  <span><strong>Nano Banana:</strong> Create image</span>
-                  <span><strong>Veo:</strong> Animate image into video</span>
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Target Business Niche Definition &amp; Domain Concept</span>
                 </div>
-              </div>
-              <span className="pipe-arrow">↓</span>
 
-              <div className="ref-pipe-step">
-                <span className="pipe-num">3</span>
-                <span className="pipe-title">CREATOMATE</span>
-                <span className="pipe-sub">Text overlays, branding theme &amp; audio rendering</span>
-              </div>
-              <span className="pipe-arrow">↓</span>
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://workspace.google.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Workspace ↗
+                  </a>
+                </div>
 
-              <div className="ref-pipe-step">
-                <span className="pipe-num">4</span>
-                <span className="pipe-title">BUNDLE.SOCIAL</span>
-                <span className="pipe-sub">Multi-channel dispatch supervisor</span>
-              </div>
-              <span className="pipe-arrow">↓</span>
-
-              <div className="ref-pipe-step pipe-final">
-                <span className="pipe-num">5</span>
-                <span className="pipe-title">SOCIAL NETWORKS</span>
-                <span className="pipe-sub">Published to Facebook Page &amp; Instagram Profile</span>
+                <div className="wc-next-tag">Next → Stage 2: Keyword &amp; Market Research</div>
               </div>
             </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 2 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 2</div>
+              <h3 className="wc-stage-title">KEYWORD &amp; MARKET RESEARCH</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Keyword Research</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Seed keyword expansion, search volume analysis, keyword difficulty scoring, SERP intent clustering, and 4-page content hierarchy planning.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Approved Keyword Cluster &amp; 4-Page Hierarchy Manifest</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://dataforseo.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    DataForSEO ↗
+                  </a>
+                  <a href="https://openai.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    OpenAI (GPT-4) ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 3: Site Structure / Content Planning</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 3 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 3</div>
+              <h3 className="wc-stage-title">SITE STRUCTURE / CONTENT PLANNING</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Keyword Research</span>
+                  <span className="wc-badge-tse">Website Builder (Brief Mapper)</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Map target keywords to page briefs, generate AI headline copy, select Warm Contemporary design system, and curate stock photo assets.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Structured Project Brief Manifest (proj_manifest.json)</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://openai.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    OpenAI (GPT-4) ↗
+                  </a>
+                  <a href="https://unsplash.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Unsplash Stock Photos ↗
+                  </a>
+                  <a href="https://fonts.google.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Fonts ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 4: Static HTML Website Creation</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 4 - STATIC WEBSITE CREATION */}
+            <div className="wc-stage-card wc-stage-highlight">
+              <div className="wc-stage-badge badge-static">STAGE 4 — CORE ARCHITECTURE</div>
+              <h3 className="wc-stage-title">STATIC HTML WEBSITE CREATION</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Website Builder</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Execute Direct Site Generator engine to build a zero-dependency, ultra-fast <strong>STATIC HTML website</strong>. (NO WordPress, NO database overhead, NO heavy plugins).
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output gold-output">STATIC HTML WEBSITE PACKAGE (7 files: index.html, styles.css, sitemap.xml, robots.txt, images)</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://tagmanager.google.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Tag Manager &amp; GA4 ↗
+                  </a>
+                  <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Supabase ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 5: Static Site Deployment</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 5 - STATIC SITE DEPLOYMENT */}
+            <div className="wc-stage-card wc-stage-highlight">
+              <div className="wc-stage-badge badge-static">STAGE 5 — DEPLOYMENT</div>
+              <h3 className="wc-stage-title">STATIC SITE DEPLOYMENT / LIVE WEBSITE</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">TSE Leadgen Deployer</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Extract static HTML package, provision virtual host routing, issue Let's Encrypt SSL certificates, and launch live site under HTTPS.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output gold-output">LIVE HTTPS PRODUCTION WEBSITE (Fast Static Nginx Hosting)</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://nginx.org/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Nginx Web Server ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 6: Site Registration</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 6 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 6</div>
+              <h3 className="wc-stage-title">SITE REGISTRATION &amp; INDEXING NOTIFICATION</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Site Registry</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Register live domain in central database, assign portfolio category, record server IP, and initialize Fatima backlink tracking.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Registered Domain Profile &amp; Fatima Backlink Tracker</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://supabase.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Supabase / PostgreSQL ↗
+                  </a>
+                  <a href="https://www.indexnow.org/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    IndexNow ↗
+                  </a>
+                  <span className="wc-note-tag">(IndexNow is an optional indexing notification protocol used by Site Registry where applicable — NOT part of static site creation)</span>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 7: Auditing / SEO / Page Management</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 7 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 7</div>
+              <h3 className="wc-stage-title">AUDITING / SEO / PAGE MANAGEMENT</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Website Manager (W1 / W3 / W4)</span>
+                  <span className="wc-badge-tse">Page Auditor</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Run synthetic browser audits to test LCP/CLS Core Web Vitals, verify SEO Meta Title/Description tags, check internal link integrity, and audit HTML entities.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Audit Report Scores &amp; Validated SEO Metadata Sync</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://pagespeed.webdev.google/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google PageSpeed Insights ↗
+                  </a>
+                  <a href="https://developer.chrome.com/docs/lighthouse/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Lighthouse ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 8: Rank &amp; Search Performance Monitoring</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 8 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 8</div>
+              <h3 className="wc-stage-title">RANK &amp; SEARCH PERFORMANCE MONITORING</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Website Manager (W6 Rank Tracker)</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Monitor daily Google SERP positions for target keyword phrases, track index coverage status, and log organic search visibility trends.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Daily Keyword Rank Timeline &amp; Search Visibility Index</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://dataforseo.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    DataForSEO ↗
+                  </a>
+                  <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Search Console ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 9: Content / SEO Improvement</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 9 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 9</div>
+              <h3 className="wc-stage-title">CONTENT / SEO IMPROVEMENT</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Website Manager (W3 / W5)</span>
+                  <span className="wc-badge-tse">Hub Content</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Refine metadata based on audit findings, generate new contextual articles/legal/location pages, optimize internal anchor text links, and push updates.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Expanded Location Page Hierarchy &amp; Enhanced Internal Link Graph</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Gemini AI ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 10: Social Content Creation</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 10 - SOCIAL CONTENT CREATION */}
+            <div className="wc-stage-card wc-stage-social">
+              <div className="wc-stage-badge badge-social">STAGE 10 — PROVEN W7 SOCIAL PIPELINE</div>
+              <h3 className="wc-stage-title">SOCIAL CONTENT CREATION</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">W7 Social (Website Manager → W7)</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Generate high-converting social media visual assets using Google AI image &amp; video generation models, then apply custom video template branding.
+                </div>
+
+                {/* Sub-pipeline diagram */}
+                <div className="wc-sub-pipeline">
+                  <div className="sub-pipe-item">
+                    <strong>NANO BANANA</strong>
+                    <span>Image Creation</span>
+                  </div>
+                  <span className="sub-pipe-arrow">→</span>
+                  <div className="sub-pipe-item">
+                    <strong>VEO 3.1 FAST</strong>
+                    <span>Image → Video Animation</span>
+                  </div>
+                  <span className="sub-pipe-arrow">→</span>
+                  <div className="sub-pipe-item">
+                    <strong>CREATOMATE</strong>
+                    <span>Final Creative / Text / Branding</span>
+                  </div>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Branded HD MP4 Video &amp; Social Image Assets</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Gemini &amp; Nano Banana ↗
+                  </a>
+                  <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Veo 3.1 Fast ↗
+                  </a>
+                  <a href="https://creatomate.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Creatomate ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 11: Social Distribution</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 11 - SOCIAL DISTRIBUTION */}
+            <div className="wc-stage-card wc-stage-social">
+              <div className="wc-stage-badge badge-social">STAGE 11 — SOCIAL DISTRIBUTION</div>
+              <h3 className="wc-stage-title">SOCIAL DISTRIBUTION</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">W7 Social (Publishing Engine)</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Compose engaging captions, attach rendered video/image assets, select target Facebook Page &amp; Instagram Business profile, and dispatch post for publication.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Published Social Posts (Confirmed Provider Delivery Status)</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://bundle.social/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    bundle.social ↗
+                  </a>
+                  <a href="https://developers.facebook.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Meta (Facebook &amp; Instagram Graph API) ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 12: Measurement</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 12 */}
+            <div className="wc-stage-card">
+              <div className="wc-stage-badge">STAGE 12</div>
+              <h3 className="wc-stage-title">MEASUREMENT</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Website Manager (W2 Dashboard)</span>
+                  <span className="wc-badge-tse">Lead Generator</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Measure live user traffic, social engagement conversions, inbound referral leads, and organic search impressions to evaluate overall campaign ROI.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Unified Traffic &amp; Conversion Analytics Report</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://analytics.google.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Analytics GA4 ↗
+                  </a>
+                  <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Search Console ↗
+                  </a>
+                </div>
+
+                <div className="wc-next-tag">Next → Stage 13: Ongoing Improvement</div>
+              </div>
+            </div>
+
+            <div className="wc-flow-arrow">↓</div>
+
+            {/* STAGE 13 */}
+            <div className="wc-stage-card wc-stage-loop">
+              <div className="wc-stage-badge badge-loop">STAGE 13 — FEEDBACK LOOP</div>
+              <h3 className="wc-stage-title">ONGOING IMPROVEMENT</h3>
+
+              <div className="wc-stage-body">
+                <div className="wc-component-group">
+                  <span className="wc-label">TSE App Used:</span>
+                  <span className="wc-badge-tse">Website Manager</span>
+                  <span className="wc-badge-tse">Keyword Research</span>
+                  <span className="wc-badge-tse">W7 Social</span>
+                </div>
+
+                <div className="wc-stage-desc">
+                  Feed analytics data, winning keywords, and top-performing social creatives back into Keyword Research and W7 Social to expand secondary location pages, launch new social campaigns, and continuously scale site authority.
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Output Produced:</span>
+                  <span className="wc-badge-output">Expanded Keyword Targets &amp; Continuous Growth Iterations</span>
+                </div>
+
+                <div className="wc-component-group">
+                  <span className="wc-label">Third-Party Connected:</span>
+                  <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    Google Gemini AI ↗
+                  </a>
+                  <a href="https://dataforseo.com/" target="_blank" rel="noopener noreferrer" className="wc-badge-ext">
+                    DataForSEO ↗
+                  </a>
+                </div>
+
+                <div className="wc-loop-tag">🔄 Loops back to Stage 2 (Keyword Research) &amp; Stage 9 (SEO Improvement) for continuous growth</div>
+              </div>
+            </div>
+
           </div>
 
           {/* Security & Confidentiality Footer */}
-          <div className="ref-section" style={{ marginBottom: 0 }}>
+          <div className="ref-section" style={{ marginTop: '2rem', marginBottom: 0 }}>
             <div className="ref-step-desc" style={{ fontSize: '0.8rem', color: '#94a3b8', background: 'rgba(15, 23, 42, 0.6)', padding: '0.75rem 1rem', borderRadius: '6px', border: '1px solid #1e293b' }}>
               🔒 <strong>Security Protocol:</strong> API keys, service account credentials, OAuth tokens, and passwords are not displayed and remain encrypted in server environment storage.
             </div>
