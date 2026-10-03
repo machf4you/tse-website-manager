@@ -37,9 +37,9 @@ export const appIntegrationsData = [
       },
       {
         id: 'wm-google-gemini',
-        name: 'Google Gemini & Veo 2',
+        name: 'Google Gemini & Veo 3.1 Fast',
         officialUrl: 'https://ai.google.dev/',
-        purpose: 'Multimodal AI engine for social caption generation, Veo 2 AI video generation, image analysis, and automated marketing copy.',
+        purpose: 'Multimodal AI engine for social caption generation, Veo 3.1 Fast AI video generation, image analysis, and automated marketing copy.',
         type: 'Generative AI',
         status: 'Active'
       },
@@ -303,7 +303,7 @@ export const appIntegrationsData = [
   },
   {
     appId: 'leadgen-deployer',
-    appName: 'TSE Lodged Deployer',
+    appName: 'TSE Leadgen Deployer',
     appDomain: 'leadgen-deployer.thesearchequation.co.uk',
     appDescription: 'Isolated leadgen website hosting provisioning and SSL deployment supervisor.',
     integrations: [

@@ -17,7 +17,6 @@ const SETTINGS_SECTIONS = [
     items: [
       { id: 'restore-points',            label: 'Restore Points',            icon: 'history' },
       { id: 'deployment-recovery',       label: 'Deployment & Recovery',     icon: 'shield' },
-      { id: 'app-integrations',          label: 'App Integrations',          icon: 'layers' },
       { id: 'users-access',              label: 'Users & Access',            icon: 'users',    adminOnly: true },
       { id: 'url-exclusions',            label: 'URL Exclusions',            icon: 'slash' },
       { id: 'import-rules',              label: 'WordPress Import Rules',    icon: 'download' },
@@ -33,7 +32,8 @@ const SETTINGS_SECTIONS = [
     sectionTitle: 'REFERENCE ARCHIVE',
     sectionIcon: '📚',
     items: [
-      { id: 'ref-fb-ig-connection', label: 'FB + IG Connection', icon: 'book' }
+      { id: 'ref-fb-ig-connection', label: 'FB + IG Connection', icon: 'book' },
+      { id: 'app-integrations',       label: 'App Integrations',    icon: 'layers' }
     ]
   }
 ]
