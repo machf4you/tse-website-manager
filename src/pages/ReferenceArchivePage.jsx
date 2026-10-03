@@ -1268,7 +1268,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
               <div className="sc-flow-card selected-card">
                 <div className="sc-flow-layer-tag">LAYER 2 — IMAGE → VIDEO</div>
                 <div className="sc-flow-title">VEO 3.1 FAST</div>
-                <div className="sc-flow-tech">Google Cloud Vertex AI</div>
+                <div className="sc-flow-tech">Google Gemini Developer API (models/veo-3.1-fast-generate-preview)</div>
                 <div className="sc-flow-sub">High-speed 9:16 vertical AI video synthesis</div>
               </div>
 
@@ -1305,10 +1305,10 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                 <div className="sc-network-pills">
                   <span className="net-pill proven">Facebook Page (PROVEN LIVE 🟢)</span>
                   <span className="net-pill configured">Instagram Business (CONNECTED 🔵)</span>
-                  <span className="net-pill configured">YouTube Shorts (CONFIGURED 🔵)</span>
-                  <span className="net-pill configured">LinkedIn (CONFIGURED 🔵)</span>
-                  <span className="net-pill configured">X / Twitter (CONFIGURED 🔵)</span>
-                  <span className="net-pill planned">TikTok (PLANNED 🟣)</span>
+                  <span className="net-pill unconnected">YouTube Shorts (NOT YET CONNECTED ⚪)</span>
+                  <span className="net-pill unconnected">LinkedIn (NOT YET CONNECTED ⚪)</span>
+                  <span className="net-pill unconnected">X / Twitter (NOT YET CONNECTED ⚪)</span>
+                  <span className="net-pill unconnected">TikTok (NOT YET CONNECTED ⚪)</span>
                 </div>
               </div>
 
@@ -1387,7 +1387,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
             <div className="sc-layer-box">
               <div className="sc-layer-header">
                 <h3>LAYER 2 — IMAGE → VIDEO (AI ANIMATION)</h3>
-                <span className="sc-selected-badge">SELECTED SOLUTION: VEO 3.1 FAST (Google Cloud Vertex AI)</span>
+                <span className="sc-selected-badge">SELECTED SOLUTION: VEO 3.1 FAST (Google Gemini Developer API)</span>
               </div>
               <p className="sc-layer-desc">
                 AI video generation and image animation engine converting static brand images into dynamic vertical 9:16 videos.
@@ -1395,11 +1395,11 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
               <div className="sc-platform-list">
                 <div className="sc-platform-item selected">
                   <div className="pl-top">
-                    <a href="https://cloud.google.com/vertex-ai" target="_blank" rel="noopener noreferrer" className="pl-name">Veo 3.1 Fast (Google Vertex AI) ↗</a>
+                    <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="pl-name">Veo 3.1 Fast (Google Gemini Developer API) ↗</a>
                     <span className="status-badge active">SELECTED &amp; PROVEN LIVE</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Selection Rationale:</strong> Enterprise Google Cloud Vertex AI infrastructure for fast 9:16 video generation from image prompts.
+                    <strong>Selection Rationale:</strong> Google Gemini Developer API endpoint <code>models/veo-3.1-fast-generate-preview:predictLongRunning</code> for fast 9:16 video synthesis from image prompts.
                   </div>
                 </div>
 
@@ -1620,43 +1620,43 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                   </div>
                 </div>
 
-                <div className="sc-platform-item configured">
+                <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" className="pl-name">YouTube Shorts / Channel ↗</a>
-                    <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
+                    <span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN ⚪</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Live Verification Status:</strong> Channel OAuth workspace configured in bundle.social for vertical 9:16 Shorts publishing.
+                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; actual TSE account connection not yet established or proven in production.
                   </div>
                 </div>
 
-                <div className="sc-platform-item configured">
+                <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" className="pl-name">LinkedIn Page ↗</a>
-                    <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
+                    <span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN ⚪</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Live Verification Status:</strong> Organization page API integration configured in bundle.social.
+                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; actual TSE account connection not yet established or proven in production.
                   </div>
                 </div>
 
-                <div className="sc-platform-item configured">
+                <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="pl-name">X / Twitter ↗</a>
-                    <span className="status-badge configured">CONNECTED &amp; CONFIGURED 🔵</span>
+                    <span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN ⚪</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Live Verification Status:</strong> API integration configured in bundle.social.
+                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; actual TSE account connection not yet established or proven in production.
                   </div>
                 </div>
 
-                <div className="sc-platform-item planned">
+                <div className="sc-platform-item rejected">
                   <div className="pl-top">
                     <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" className="pl-name">TikTok ↗</a>
-                    <span className="status-badge status-planned">PLANNED / NOT YET PROVEN 🟣</span>
+                    <span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN ⚪</span>
                   </div>
                   <div className="pl-reason">
-                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; account connection planned.
+                    <strong>Live Verification Status:</strong> Supported in bundle.social platform architecture; actual TSE account connection not yet established or proven in production.
                   </div>
                 </div>
 
@@ -1739,14 +1739,14 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                   {/* Veo 3.1 Fast */}
                   <tr>
                     <td className="provider-cell">
-                      <a href="https://cloud.google.com/vertex-ai" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
-                        Veo 3.1 Fast (Vertex AI) ↗
+                      <a href="https://ai.google.dev/" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        Veo 3.1 Fast ↗
                       </a>
                     </td>
                     <td>Layer 2: Image → Video</td>
                     <td>Vertical 9:16 video generation</td>
                     <td><span className="status-badge active">PROVEN LIVE</span></td>
-                    <td>Selected production video generator (Google Cloud Vertex AI)</td>
+                    <td>Selected production video generator (Google Gemini Developer API models/veo-3.1-fast-generate-preview)</td>
                   </tr>
 
                   {/* Luma Dream Machine */}
@@ -1901,7 +1901,7 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 5: Social Network</td>
                     <td>Target social publishing channel</td>
-                    <td><span className="status-badge configured">CONFIGURED</span></td>
+                    <td><span className="status-badge configured">CONNECTED &amp; CONFIGURED</span></td>
                     <td>Meta Business Portfolio linked; end-to-end live post dispatch pending final test</td>
                   </tr>
 
@@ -1914,8 +1914,34 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 5: Social Network</td>
                     <td>Target vertical video channel</td>
-                    <td><span className="status-badge configured">CONFIGURED</span></td>
-                    <td>Channel OAuth connected in bundle.social workspace</td>
+                    <td><span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN</span></td>
+                    <td>Actual TSE account connection not yet established or proven in production</td>
+                  </tr>
+
+                  {/* LinkedIn */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        LinkedIn Page ↗
+                      </a>
+                    </td>
+                    <td>Layer 5: Social Network</td>
+                    <td>Target social publishing channel</td>
+                    <td><span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN</span></td>
+                    <td>Actual TSE account connection not yet established or proven in production</td>
+                  </tr>
+
+                  {/* X / Twitter */}
+                  <tr>
+                    <td className="provider-cell">
+                      <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="cost-provider-link">
+                        X / Twitter ↗
+                      </a>
+                    </td>
+                    <td>Layer 5: Social Network</td>
+                    <td>Target social publishing channel</td>
+                    <td><span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN</span></td>
+                    <td>Actual TSE account connection not yet established or proven in production</td>
                   </tr>
 
                   {/* TikTok */}
@@ -1927,8 +1953,8 @@ export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection
                     </td>
                     <td>Layer 5: Social Network</td>
                     <td>Target vertical video channel</td>
-                    <td><span className="status-badge status-planned">PLANNED</span></td>
-                    <td>Supported in bundle.social architecture; connection planned for upcoming phase</td>
+                    <td><span className="status-badge status-unconnected">NOT YET CONNECTED / NOT PROVEN</span></td>
+                    <td>Actual TSE account connection not yet established or proven in production</td>
                   </tr>
 
                 </tbody>
