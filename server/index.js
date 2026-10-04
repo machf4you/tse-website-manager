@@ -3,7 +3,39 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications, getW7SocialSettings, saveW7SocialSettings, getSiteBacklinkDocs, saveSiteBacklinkDoc } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications, getW7SocialSettings, saveW7SocialSettings, getSiteBacklinkDocs, saveSiteBacklinkDoc, getSiteBacklinkPlan, updateSiteBacklinkPlanItem, saveSiteBacklinkPlanItem } from './db.js'
+
+// ── W8 Backlink Plan Endpoints ──
+app.get('/api/w8-backlinks/plan', (req, res) => {
+  try {
+    const siteId = req.query.siteId || req.query.site_id || req.query.site
+    if (!siteId) {
+      return res.status(400).json({ success: false, error: 'siteId query parameter is required' })
+    }
+    const items = getSiteBacklinkPlan(siteId)
+    res.json({ success: true, items })
+  } catch (err) {
+    console.error('Error in GET /api/w8-backlinks/plan:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.patch('/api/w8-backlinks/plan/:itemId', (req, res) => {
+  try {
+    const { itemId } = req.params
+    const { siteId, status, comments, domain, url } = req.body || {}
+    if (!siteId || !itemId) {
+      return res.status(400).json({ success: false, error: 'siteId and itemId are required' })
+    }
+    const item = updateSiteBacklinkPlanItem(siteId, itemId, { status, comments, domain, url })
+    res.json({ success: true, item })
+  } catch (err) {
+    console.error(`Error in PATCH /api/w8-backlinks/plan/${req.params.itemId}:`, err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// ── W8 Backlinks Reference Document Endpoints ──
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'

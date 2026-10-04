@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getSiteBacklinksApi, getSiteBacklinkDocsApi } from '../services/websiteManagerApi'
+import { getSiteBacklinksApi, getSiteBacklinkPlanApi, updateSiteBacklinkPlanItemApi } from '../services/websiteManagerApi'
 import './BacklinksPage.css'
 
 const ExternalLinkIcon = () => (
@@ -25,21 +25,22 @@ const Link2Icon = () => (
   </svg>
 )
 
-const FileTextIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="16" y1="13" x2="8" y2="13"/>
-    <line x1="16" y1="17" x2="8" y2="17"/>
-    <polyline points="10 9 9 9 8 9"/>
+const PencilIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
   </svg>
 )
 
-const DownloadIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-    <polyline points="7 10 12 15 17 10"/>
-    <line x1="12" y1="15" x2="12" y2="3"/>
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+)
+
+const XIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 )
 
@@ -51,7 +52,9 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
     topTargetPages: [],
     backlinks: []
   })
-  const [refDocs, setRefDocs] = useState([])
+  const [planItems, setPlanItems] = useState([])
+  const [editingCommentId, setEditingCommentId] = useState(null)
+  const [commentDraft, setCommentDraft] = useState('')
   const [isLoading, setIsLoading] = useState(true)
 
   const cleanDomain = String(site?.url || site?.name || '')
@@ -64,9 +67,9 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
   const fetchBacklinks = async () => {
     setIsLoading(true)
     try {
-      const [res, docsRes] = await Promise.all([
+      const [res, planRes] = await Promise.all([
         getSiteBacklinksApi(site),
-        getSiteBacklinkDocsApi(site)
+        getSiteBacklinkPlanApi(site)
       ])
       if (res) {
         setData({
@@ -77,13 +80,13 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
           backlinks: res.backlinks || []
         })
       }
-      if (docsRes && Array.isArray(docsRes.docs)) {
-        setRefDocs(docsRes.docs)
+      if (planRes && Array.isArray(planRes.items)) {
+        setPlanItems(planRes.items)
       } else {
-        setRefDocs([])
+        setPlanItems([])
       }
     } catch (e) {
-      console.error('Error fetching backlinks for W8:', e)
+      console.error('Error fetching backlinks or plan for W8:', e)
     } finally {
       setIsLoading(false)
     }
@@ -92,6 +95,36 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
   useEffect(() => {
     fetchBacklinks()
   }, [site?.id, site?.url])
+
+  const handleStatusChange = async (itemId, newStatus) => {
+    setPlanItems(prev => prev.map(item => item.id === itemId ? { ...item, status: newStatus } : item))
+    try {
+      await updateSiteBacklinkPlanItemApi(site, itemId, { status: newStatus })
+    } catch (e) {
+      console.error(`Failed to update status for item ${itemId}:`, e)
+    }
+  }
+
+  const handleEditCommentStart = (item) => {
+    setEditingCommentId(item.id)
+    setCommentDraft(item.comments || '')
+  }
+
+  const handleEditCommentSave = async (itemId) => {
+    const updatedDraft = commentDraft
+    setPlanItems(prev => prev.map(item => item.id === itemId ? { ...item, comments: updatedDraft } : item))
+    setEditingCommentId(null)
+    try {
+      await updateSiteBacklinkPlanItemApi(site, itemId, { comments: updatedDraft })
+    } catch (e) {
+      console.error(`Failed to save comment for item ${itemId}:`, e)
+    }
+  }
+
+  const handleEditCommentCancel = () => {
+    setEditingCommentId(null)
+    setCommentDraft('')
+  }
 
   const formatDate = (isoStr) => {
     if (!isoStr) return '-'
@@ -190,48 +223,103 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
         </div>
       </div>
 
-      {/* Section 2: BACKLINK PLAN / REFERENCE */}
-      <div className="bl-ref-section" id="backlink-plan-reference-section">
-        <div className="bl-ref-header">
-          <div className="bl-ref-title-group">
-            <h3 className="bl-ref-title">BACKLINK PLAN / REFERENCE</h3>
-            <span className="bl-ref-subtitle">
-              Website-specific backlink strategy & research documents
-            </span>
-          </div>
+      {/* Section 2: BACKLINK PLAN */}
+      <div className="bl-plan-section" id="backlink-plan-section">
+        <div className="bl-plan-header">
+          <h3 className="bl-plan-title">BACKLINK PLAN</h3>
         </div>
 
-        {refDocs.length > 0 ? (
-          <div className="bl-ref-docs-list">
-            {refDocs.map(doc => (
-              <div key={doc.id} className="bl-ref-doc-card">
-                <div className="bl-ref-doc-icon">
-                  <FileTextIcon />
-                </div>
-                <div className="bl-ref-doc-details">
-                  <span className="bl-ref-doc-name">{doc.filename || doc.title}</span>
-                  <span className="bl-ref-doc-meta">
-                    Master Backlink Strategy Document • Scoped to {site?.name || 'this site'}
-                  </span>
-                </div>
-                <div className="bl-ref-doc-actions">
-                  <a
-                    href={doc.file_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    download={doc.filename}
-                    className="bl-ref-download-btn"
-                  >
-                    <DownloadIcon />
-                    Open / Download
-                  </a>
-                </div>
-              </div>
-            ))}
+        {planItems.length > 0 ? (
+          <div className="bl-plan-table-wrapper">
+            <table className="bl-plan-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '25%' }}>DOMAIN</th>
+                  <th style={{ width: '15%' }}>STATUS</th>
+                  <th style={{ width: '60%' }}>COMMENTS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {planItems.map(item => (
+                  <tr key={item.id}>
+                    <td style={{ width: '25%' }}>
+                      {item.url ? (
+                        <a
+                          href={item.url.startsWith('http') ? item.url : `https://${item.url}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bl-plan-domain-link"
+                          title={item.url}
+                        >
+                          {item.domain} <ExternalLinkIcon />
+                        </a>
+                      ) : (
+                        <span className="bl-plan-domain-text">{item.domain}</span>
+                      )}
+                    </td>
+                    <td style={{ width: '15%' }}>
+                      <div className="bl-plan-status-select-wrap">
+                        <select
+                          value={item.status || 'Free'}
+                          onChange={(e) => handleStatusChange(item.id, e.target.value)}
+                          className={`bl-plan-status-select ${item.status === 'Paid' ? 'status-paid' : 'status-free'}`}
+                        >
+                          <option value="Free">Free</option>
+                          <option value="Paid">Paid</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td style={{ width: '60%' }}>
+                      {editingCommentId === item.id ? (
+                        <div className="bl-plan-comment-edit">
+                          <textarea
+                            value={commentDraft}
+                            onChange={(e) => setCommentDraft(e.target.value)}
+                            className="bl-plan-comment-textarea"
+                            rows={2}
+                            autoFocus
+                          />
+                          <div className="bl-plan-comment-actions">
+                            <button
+                              type="button"
+                              onClick={() => handleEditCommentSave(item.id)}
+                              className="bl-plan-btn-save"
+                              title="Save comment"
+                            >
+                              <CheckIcon /> Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleEditCommentCancel}
+                              className="bl-plan-btn-cancel"
+                              title="Cancel"
+                            >
+                              <XIcon /> Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bl-plan-comment-display">
+                          <span className="bl-plan-comment-text">{item.comments || '—'}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleEditCommentStart(item)}
+                            className="bl-plan-btn-edit"
+                            title="Edit comment"
+                          >
+                            <PencilIcon />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : (
-          <div className="bl-ref-empty">
-            <p>No backlink reference documents added for this website.</p>
+          <div className="bl-plan-empty">
+            <p>No backlink plan opportunities recorded for this website.</p>
           </div>
         )}
       </div>

@@ -853,17 +853,33 @@ export async function getSiteBacklinksApi(site) {
   }
 }
 
-export async function getSiteBacklinkDocsApi(site) {
+export async function getSiteBacklinkPlanApi(site) {
   const siteId = typeof site === 'object' ? (site?.id || site?.domain_id || site?.url) : site
-  if (!siteId) return { docs: [] }
+  if (!siteId) return { items: [] }
   try {
-    const data = await fetchJson(`${API_BASE_URL}/w8-backlinks/docs?siteId=${encodeURIComponent(siteId)}`)
-    return data && data.success ? data : { docs: [] }
+    const data = await fetchJson(`${API_BASE_URL}/w8-backlinks/plan?siteId=${encodeURIComponent(siteId)}`)
+    return data && data.success ? data : { items: [] }
   } catch (e) {
-    console.error('Failed to fetch W8 backlink reference docs:', e)
-    return { docs: [] }
+    console.error('Failed to fetch W8 backlink plan:', e)
+    return { items: [] }
   }
 }
+
+export async function updateSiteBacklinkPlanItemApi(site, itemId, updates = {}) {
+  const siteId = typeof site === 'object' ? (site?.id || site?.domain_id || site?.url) : site
+  if (!siteId || !itemId) return null
+  try {
+    const data = await fetchJson(`${API_BASE_URL}/w8-backlinks/plan/${encodeURIComponent(itemId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ siteId, ...updates })
+    })
+    return data && data.success ? data.item : null
+  } catch (e) {
+    console.error(`Failed to update W8 backlink plan item ${itemId}:`, e)
+    return null
+  }
+}
+
 
 
 

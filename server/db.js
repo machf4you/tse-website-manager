@@ -274,6 +274,18 @@ db.exec(`
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS website_backlink_plan (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    url TEXT,
+    status TEXT NOT NULL CHECK(status IN ('Free', 'Paid')),
+    comments TEXT,
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `)
 
 // Run database migration for page_rankings phrase_type and legacy full-URL page keys
@@ -813,33 +825,183 @@ export function saveSiteBacklinkDoc(siteId, docData) {
   return getSiteBacklinkDocs(normId).find(d => d.id === id)
 }
 
-// Auto-seed Digital Spain backlink reference document if present
-try {
-  const dsDocFilename = 'DigitalSpain_Master_Backlink_Plan.docx'
+// ── W8 Backlink Plan (Editable Table) Helper Functions ──
+export const DEFAULT_DIGITAL_SPAIN_BACKLINK_PLAN = [
+  { id: 'ds-plan-1', domain: 'JaveaTravelGuide.com', url: 'https://www.javeatravelguide.com', status: 'Free', comments: 'Hyper-local Jávea directory/article opportunity. Check current listing/article route and submit if an indexable website link is available.' },
+  { id: 'ds-plan-2', domain: 'SpainEnglish.com', url: 'https://www.spainenglish.com', status: 'Free', comments: 'English-language Spain business exposure & digital-agency category. Confirm current submission route and Spanish-address requirement, then submit.' },
+  { id: 'ds-plan-3', domain: 'SunClubNetwork.com', url: 'https://www.sunclubnetwork.com', status: 'Free', comments: 'Spain business directory with editorial review mentioned. Submit if active and indexable.' },
+  { id: 'ds-plan-4', domain: 'BizPages.org', url: 'https://bizpages.org', status: 'Free', comments: 'General Spain company profile. Create profile if website link is allowed.' },
+  { id: 'ds-plan-5', domain: 'Infobel', url: 'https://www.infobel.com', status: 'Free', comments: 'General citation and NAP support. Claim/add business and verify link.' },
+  { id: 'ds-plan-6', domain: 'Páginas Amarillas', url: 'https://www.paginasamarillas.es', status: 'Free', comments: 'Major Spanish citation source & core business profile. Claim/create profile using exact NAP details matching Google Business Profile.' },
+  { id: 'ds-plan-7', domain: 'Kompass Spain', url: 'https://es.kompass.com', status: 'Free', comments: 'Spanish and international B2B profile. Register/claim if free website link remains available.' },
+  { id: 'ds-plan-8', domain: 'Europages', url: 'https://www.europages.com', status: 'Free', comments: 'European B2B directory relevant to agency services. Create company profile if current free tier includes link.' },
+  { id: 'ds-plan-9', domain: 'eInforma / InfoCIF / Empresite', url: 'https://www.einforma.com', status: 'Free', comments: 'Spanish corporate/company-profile citations. Check whether Digital Spain is eligible and whether URL can be added.' },
+  { id: 'ds-plan-10', domain: 'Cylex España / Hotfrog', url: 'https://www.cylex.es', status: 'Free', comments: 'Low-value individually but useful citation consistency. Add only after higher-value local/agency profiles.' },
+  { id: 'ds-plan-11', domain: 'TechBehemoths', url: 'https://techbehemoths.com', status: 'Free', comments: 'Agency directory with Alicante web-design category noted. Create agency profile.' },
+  { id: 'ds-plan-12', domain: 'DesignRush', url: 'https://www.designrush.com', status: 'Free', comments: 'Agency discovery/profile platform. Take free profile if available; avoid paying solely for link.' },
+  { id: 'ds-plan-13', domain: 'Sortlist', url: 'https://www.sortlist.es', status: 'Free', comments: 'Agency marketplace; paid lead tier is separate. Create free profile; assess paid tier only for leads.' },
+  { id: 'ds-plan-14', domain: 'Angloinfo Costa Blanca / Valencia', url: 'https://www.angloinfo.com/costa-blanca', status: 'Free', comments: 'Expat audience and regional business listings. Confirm current regional listing route.' },
+  { id: 'ds-plan-15', domain: 'AlicanteSocial.com', url: 'https://alicantesocial.com', status: 'Free', comments: 'Expat/tourist audience mentioned in research. Confirm site/activity and submit if useful.' },
+  { id: 'ds-plan-16', domain: 'CostaBlancaRated.com', url: 'https://costablancarated.com', status: 'Free', comments: 'Verified local-business profile opportunity. Check current activity and profile link.' },
+  { id: 'ds-plan-17', domain: 'TheCostaBlancaGuide.com', url: 'https://thecostablancaguide.com', status: 'Free', comments: "English-speaking local guide. Source lists as 'Free/quote unclear'; confirm whether submission is free and indexable." },
+  { id: 'ds-plan-18', domain: 'ValenciaCostaBlanca.com', url: 'https://valenciacostablanca.com', status: 'Free', comments: 'Regional directory. Reportedly closed; monitor only and do not spend time unless registration reopens.' },
+  { id: 'ds-plan-19', domain: 'Clutch.co', url: 'https://clutch.co', status: 'Free', comments: 'Strong agency relevance; useful profile plus client-review potential. Create/complete free profile first; do not pay for sponsored placement solely for backlink.' },
+  { id: 'ds-plan-20', domain: 'Javea.com / Xàbia.com', url: 'https://www.javea.com', status: 'Free', comments: 'Strong hyper-local relevance and local digitalisation angle. Pitch original local findings, awards or client success stories.' },
+  { id: 'ds-plan-21', domain: 'Javea Grapevine', url: 'https://javeagrapevine.com', status: 'Free', comments: 'Community publication with potential byline attribution. Offer a useful article such as website essentials for Jávea SMEs.' },
+  { id: 'ds-plan-22', domain: 'La Marina Plaza', url: 'https://lamarinaplaza.com', status: 'Free', comments: 'Marina Alta news relevance. Pitch original local data; do not assume a link is guaranteed.' },
+  { id: 'ds-plan-23', domain: 'Xàbia al Dia', url: 'https://xabialdia.com', status: 'Paid', comments: 'Hyper-local Spanish/Jávea readership. Has both editorial & paid PR/publirreportaje options; ask about editorial or publirreportaje options and link policy.' },
+  { id: 'ds-plan-24', domain: 'Alicante Plaza', url: 'https://alicanteplaza.es', status: 'Paid', comments: 'Province-wide business/economic audience. Offers paid PR/publirreportaje options; pitch a business/data story rather than a generic agency advert.' },
+  { id: 'ds-plan-25', domain: 'Euro Weekly News', url: 'https://euroweeklynews.com', status: 'Paid', comments: 'Costa Blanca North exposure; primarily brand/referral value. Only consider if audience/lead value justifies cost.' },
+  { id: 'ds-plan-26', domain: 'The Olive Press', url: 'https://www.theolivepress.es', status: 'Paid', comments: 'English-language Spain news with Jávea coverage. Get current sponsored-content terms before committing.' },
+  { id: 'ds-plan-27', domain: 'Costa Blanca News / The Leader', url: 'https://costablancanews.es', status: 'Paid', comments: 'Regional English-language readership. Treat mainly as PR/referral opportunity; verify link attributes.' },
+  { id: 'ds-plan-28', domain: 'CostaBlancaPeople.com', url: 'https://costablancapeople.com', status: 'Paid', comments: 'Local publication/business feature route. Ask whether feature includes permanent indexable link.' },
+  { id: 'ds-plan-29', domain: 'CostaBlanca Magazin / Daily Costa Blanca', url: 'https://www.costablancamagazin.com', status: 'Paid', comments: 'Expat media exposure. Verify active audience, pricing and permanent-link terms first.' },
+  { id: 'ds-plan-30', domain: 'Javea Connect', url: 'https://www.javeaconnect.co.uk', status: 'Paid', comments: 'Jávea Business Hub / local business exposure. Request current package, placement URL, renewal and link details.' },
+  { id: 'ds-plan-31', domain: 'Xàbia Histórica / Port / Arenal associations', url: 'https://xabiahistorica.com', status: 'Paid', comments: 'Very local business relevance and prospecting value. Compare membership benefits and online member profile.' },
+  { id: 'ds-plan-32', domain: 'CBBA.es', url: 'https://cbba.es', status: 'Paid', comments: 'Costa Blanca business association and networking. Check current annual cost and member-page link.' },
+  { id: 'ds-plan-33', domain: 'BNI Marina Alta', url: 'https://bni.es', status: 'Paid', comments: 'Networking plus member profile; commercial value may exceed SEO value. Assess primarily for leads/networking, then backlink.' },
+  { id: 'ds-plan-34', domain: 'British Chamber of Commerce in Spain', url: 'https://www.britishchamberspain.com', status: 'Paid', comments: 'Credible business organisation; member/news opportunities. Check eligibility, annual cost and digital profile/news benefits.' },
+  { id: 'ds-plan-35', domain: 'Cámara Alicante', url: 'https://www.camaralicante.com', status: 'Paid', comments: 'Official provincial business body. Check associate/member directory options and link availability.' },
+  { id: 'ds-plan-36', domain: 'CostaBlancaForum.com', url: 'https://costablancaforum.com', status: 'Paid', comments: 'Expat/local audience. Source documents report both paid and free routes; verify current business-directory package before action.' },
+  { id: 'ds-plan-37', domain: 'Female Focus / FocusOn', url: 'https://femalefocusonline.com', status: 'Paid', comments: 'Directory/live-link opportunity cited with historical pricing. Confirm current rate and billing period.' },
+  { id: 'ds-plan-38', domain: 'CostaBlanca.digital', url: 'https://costablanca.digital', status: 'Paid', comments: 'Reported directory/editorial/town-page opportunity. Source notes pricing/status as uncertain; only consider after checking indexation, traffic and current terms.' },
+  { id: 'ds-plan-39', domain: 'Expat Exchange – Jávea', url: 'https://www.expatexchange.com', status: 'Paid', comments: 'Promoted local-business placements noted. Consider only if referral audience is worthwhile.' },
+  { id: 'ds-plan-40', domain: 'GoJavea.com', url: 'https://gojavea.com', status: 'Paid', comments: 'Old pricing/activity noted for historic paid listing. First verify the site is active and indexed.' },
+  { id: 'ds-plan-41', domain: 'Awwwards / CSS Design Awards', url: 'https://www.awwwards.com', status: 'Paid', comments: 'Design-industry credibility rather than local citation. Use only for genuinely award-worthy client work; not as routine link buying.' },
+  { id: 'ds-plan-42', domain: 'Client websites', url: 'https://digitalspain.es', status: 'Free', comments: 'Natural agency attribution from completed work. Use subtle footer/project credits where agreed with client.' },
+  { id: 'ds-plan-43', domain: 'Civion.es / Valuvillas and suitable owned businesses', url: 'https://civion.es', status: 'Free', comments: 'Locally relevant relationship/credit opportunities. Use only where a genuine relationship or website credit makes sense.' },
+  { id: 'ds-plan-44', domain: 'Local charity/community site', url: 'https://digitalspain.es', status: 'Free', comments: 'Sponsor/partner credit plus community value. Offer useful web work to a suitable local cause rather than exchanging links mechanically.' },
+  { id: 'ds-plan-45', domain: 'Local agencies / complementary suppliers', url: 'https://digitalspain.es', status: 'Free', comments: 'Potential referrals, resource links and joint projects. Approach for genuine collaboration; avoid reciprocal-link schemes.' },
+  { id: 'ds-plan-46', domain: 'GitHub', url: 'https://github.com', status: 'Free', comments: 'Developer/company profile and useful open-source assets. Only publish real reusable code/resources; treat profile link as secondary.' },
+  { id: 'ds-plan-47', domain: 'Kit Digital / Red.es route', url: 'https://www.red.es', status: 'Free', comments: 'One source proposed official digitalisation-program participation. Verify current programme eligibility and whether it actually provides a public backlink before treating it as an opportunity.' },
+  { id: 'ds-plan-48', domain: 'MiaPropertyBoutique.com', url: 'https://miapropertyboutique.com', status: 'Free', comments: 'A property-site business directory was suggested, but relevance to a web agency is indirect. Check active directory, indexation and acceptance criteria first.' },
+  { id: 'ds-plan-49', domain: 'Citrus-Iberia.com', url: 'https://citrus-iberia.com', status: 'Free', comments: 'Services directory mentioned in one source. Free basic / paid upgrade claimed; verify activity and whether the website link requires payment.' },
+  { id: 'ds-plan-50', domain: 'DeniaOnline24 / JaveaOnline24', url: 'https://javeaonline24.com', status: 'Paid', comments: 'Local guide opportunity but naming/status varies between sources. Source indicates paid route; confirm the exact active domain, audience and package.' },
+  { id: 'ds-plan-51', domain: 'SpainMadeSimple.com', url: 'https://spainmadesimple.com', status: 'Paid', comments: 'Web-design/SEO provider listing mentioned. Source indicates paid/unclear route; check current page quality and whether submissions are accepted.' },
+  { id: 'ds-plan-52', domain: 'Competitor web agencies', url: 'https://digitalspain.es', status: 'Free', comments: 'Several local agencies were proposed as possible referral/resource partners. Pursue only genuine partnerships; do not seek artificial link exchanges.' },
+  { id: 'ds-plan-53', domain: 'ThinkSpain', url: 'https://www.thinkspain.com', status: 'Free', comments: 'Association-directory route was suggested, not necessarily a normal commercial listing. Check eligibility before investing time.' },
+  { id: 'ds-plan-54', domain: 'Xabia.org official portal', url: 'https://xabia.org', status: 'Free', comments: 'Official portal may list certain local entities/businesses. Confirm whether a commercial web agency can legitimately be listed.' },
+  { id: 'ds-plan-55', domain: 'Local press research story', url: 'https://digitalspain.es', status: 'Free', comments: 'Potentially the strongest earned-link route because it can generate genuine local coverage. Create original Jávea data, e.g. an audit of 50–100 local business websites and pitch the findings.' }
+]
+
+export function seedDigitalSpainBacklinkPlan() {
   const dsSiteId = 'e6a8d672-8785-4a52-b131-4122d2eeefed'
-  const existingDocs = db.prepare(`SELECT * FROM website_backlink_docs WHERE site_id IN (?, 'digital-spain') AND filename = ?`).all(dsSiteId, dsDocFilename)
-  if (existingDocs.length === 0) {
-    const seedId = 'doc-digital-spain-master-backlink-plan'
+  const countStmt = db.prepare(`SELECT count(*) as count FROM website_backlink_plan WHERE site_id IN (?, 'digital-spain')`)
+  const { count } = countStmt.get(dsSiteId)
+  
+  if (count === 0) {
+    const insertStmt = db.prepare(`
+      INSERT INTO website_backlink_plan (id, site_id, domain, url, status, comments, sort_order, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
     const now = new Date().toISOString()
-    db.prepare(`
-      INSERT INTO website_backlink_docs (id, site_id, title, filename, file_path, file_url, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      seedId,
-      dsSiteId,
-      dsDocFilename,
-      dsDocFilename,
-      `uploads/w8-backlinks/${dsDocFilename}`,
-      `/uploads/w8-backlinks/${dsDocFilename}`,
-      now,
-      now
-    )
-    console.log('[SEED] Seeded Digital Spain master backlink plan reference document.')
+    const insertMany = db.transaction((items) => {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        insertStmt.run(
+          item.id,
+          dsSiteId,
+          item.domain,
+          item.url || '',
+          item.status === 'Paid' ? 'Paid' : 'Free',
+          item.comments || '',
+          i + 1,
+          now,
+          now
+        )
+      }
+    })
+    insertMany(DEFAULT_DIGITAL_SPAIN_BACKLINK_PLAN)
+    console.log(`[SEED] Seeded Digital Spain backlink plan with ${DEFAULT_DIGITAL_SPAIN_BACKLINK_PLAN.length} master opportunities.`)
   }
+}
+
+export function getSiteBacklinkPlan(siteId) {
+  const normId = normalizeSiteIdForDocs(siteId)
+  if (!normId) return []
+
+  // Ensure Digital Spain plan is seeded if needed
+  if (normId === 'e6a8d672-8785-4a52-b131-4122d2eeefed') {
+    seedDigitalSpainBacklinkPlan()
+    const stmt = db.prepare(`
+      SELECT * FROM website_backlink_plan 
+      WHERE site_id IN ('e6a8d672-8785-4a52-b131-4122d2eeefed', '3f69330c-6360-46f7-95a0-e0b58eac0eab', 'digital-spain', 'digitalspain')
+      ORDER BY sort_order ASC, datetime(created_at) ASC
+    `)
+    return stmt.all()
+  } else {
+    const stmt = db.prepare(`
+      SELECT * FROM website_backlink_plan 
+      WHERE site_id = ?
+      ORDER BY sort_order ASC, datetime(created_at) ASC
+    `)
+    return stmt.all(normId)
+  }
+}
+
+export function updateSiteBacklinkPlanItem(siteId, itemId, updates = {}) {
+  const normId = normalizeSiteIdForDocs(siteId)
+  if (!normId || !itemId) throw new Error('siteId and itemId are required')
+
+  const now = new Date().toISOString()
+  const currentItems = getSiteBacklinkPlan(normId)
+  const existing = currentItems.find(i => i.id === itemId)
+  if (!existing) throw new Error(`Backlink plan item ${itemId} not found`)
+
+  const newStatus = updates.status && ['Free', 'Paid'].includes(updates.status) ? updates.status : existing.status
+  const newComments = updates.comments !== undefined ? String(updates.comments) : existing.comments
+  const newDomain = updates.domain !== undefined ? String(updates.domain) : existing.domain
+  const newUrl = updates.url !== undefined ? String(updates.url) : existing.url
+
+  const stmt = db.prepare(`
+    UPDATE website_backlink_plan
+    SET domain = ?,
+        url = ?,
+        status = ?,
+        comments = ?,
+        updated_at = ?
+    WHERE id = ?
+  `)
+  stmt.run(newDomain, newUrl, newStatus, newComments, now, itemId)
+
+  return getSiteBacklinkPlan(normId).find(i => i.id === itemId)
+}
+
+export function saveSiteBacklinkPlanItem(siteId, itemData) {
+  const normId = normalizeSiteIdForDocs(siteId)
+  if (!normId) throw new Error('siteId is required')
+
+  const id = itemData.id || `plan-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+  const domain = itemData.domain || 'New Opportunity'
+  const url = itemData.url || ''
+  const status = itemData.status === 'Paid' ? 'Paid' : 'Free'
+  const comments = itemData.comments || ''
+  const sortOrder = itemData.sort_order || 999
+  const now = new Date().toISOString()
+
+  const stmt = db.prepare(`
+    INSERT INTO website_backlink_plan (id, site_id, domain, url, status, comments, sort_order, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      domain = excluded.domain,
+      url = excluded.url,
+      status = excluded.status,
+      comments = excluded.comments,
+      updated_at = excluded.updated_at
+  `)
+
+  stmt.run(id, normId, domain, url, status, comments, sortOrder, now, now)
+  return getSiteBacklinkPlan(normId).find(i => i.id === id)
+}
+
+// Initial seed execution check
+try {
+  seedDigitalSpainBacklinkPlan()
 } catch (e) {
-  console.error('[SEED ERROR] Failed to seed Digital Spain backlink reference doc:', e)
+  console.error('[SEED ERROR] Failed to seed Digital Spain backlink plan:', e)
 }
 
 export default db
+
 
 
