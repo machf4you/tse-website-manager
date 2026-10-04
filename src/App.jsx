@@ -234,11 +234,25 @@ export function parseRoute(pathname) {
     }
   }
 
+  // Website-specific W8 Backlinks route: /backlinks/:slug or /w8-backlinks/:slug or /w8/:slug
+  const backlinksSlugMatch = path.match(/^\/(?:backlinks|w8-backlinks|w8)\/([^/]+)$/)
+  if (backlinksSlugMatch) {
+    const websiteSlug = backlinksSlugMatch[1]
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w8',
+      websiteSlug,
+      canonicalPath: `/backlinks/${websiteSlug}`
+    }
+  }
+
   if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path === '/w8-backlink-inventory') {
     return {
       currentView: 'website-manager',
       activeNavTab: 'websites',
       wPage: 'w8',
+      websiteSlug: null,
       canonicalPath: '/w8-backlinks'
     }
   }
