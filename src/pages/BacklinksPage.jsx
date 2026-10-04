@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getSiteBacklinksApi } from '../services/websiteManagerApi'
+import { getSiteBacklinksApi, getSiteBacklinkDocsApi } from '../services/websiteManagerApi'
 import './BacklinksPage.css'
 
 const ExternalLinkIcon = () => (
@@ -25,6 +25,24 @@ const Link2Icon = () => (
   </svg>
 )
 
+const FileTextIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <polyline points="10 9 9 9 8 9"/>
+  </svg>
+)
+
+const DownloadIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+)
+
 export default function BacklinksPage({ site, onBack, onNavigateTab }) {
   const [data, setData] = useState({
     total: 0,
@@ -33,6 +51,7 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
     topTargetPages: [],
     backlinks: []
   })
+  const [refDocs, setRefDocs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
 
   const cleanDomain = String(site?.url || site?.name || '')
@@ -45,7 +64,10 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
   const fetchBacklinks = async () => {
     setIsLoading(true)
     try {
-      const res = await getSiteBacklinksApi(site)
+      const [res, docsRes] = await Promise.all([
+        getSiteBacklinksApi(site),
+        getSiteBacklinkDocsApi(site)
+      ])
       if (res) {
         setData({
           total: res.total || 0,
@@ -54,6 +76,11 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
           topTargetPages: res.topTargetPages || [],
           backlinks: res.backlinks || []
         })
+      }
+      if (docsRes && Array.isArray(docsRes.docs)) {
+        setRefDocs(docsRes.docs)
+      } else {
+        setRefDocs([])
       }
     } catch (e) {
       console.error('Error fetching backlinks for W8:', e)
@@ -161,6 +188,52 @@ export default function BacklinksPage({ site, onBack, onNavigateTab }) {
           <span className="bl-metric-val val-awaiting">{data.awaiting}</span>
           <span className="bl-metric-sub">Pending indexing confirmation</span>
         </div>
+      </div>
+
+      {/* Section 2: BACKLINK PLAN / REFERENCE */}
+      <div className="bl-ref-section" id="backlink-plan-reference-section">
+        <div className="bl-ref-header">
+          <div className="bl-ref-title-group">
+            <h3 className="bl-ref-title">BACKLINK PLAN / REFERENCE</h3>
+            <span className="bl-ref-subtitle">
+              Website-specific backlink strategy & research documents
+            </span>
+          </div>
+        </div>
+
+        {refDocs.length > 0 ? (
+          <div className="bl-ref-docs-list">
+            {refDocs.map(doc => (
+              <div key={doc.id} className="bl-ref-doc-card">
+                <div className="bl-ref-doc-icon">
+                  <FileTextIcon />
+                </div>
+                <div className="bl-ref-doc-details">
+                  <span className="bl-ref-doc-name">{doc.filename || doc.title}</span>
+                  <span className="bl-ref-doc-meta">
+                    Master Backlink Strategy Document • Scoped to {site?.name || 'this site'}
+                  </span>
+                </div>
+                <div className="bl-ref-doc-actions">
+                  <a
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    download={doc.filename}
+                    className="bl-ref-download-btn"
+                  >
+                    <DownloadIcon />
+                    Open / Download
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bl-ref-empty">
+            <p>No backlink reference documents added for this website.</p>
+          </div>
+        )}
       </div>
 
       {/* Main Target Pages Bar */}

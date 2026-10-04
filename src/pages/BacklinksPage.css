@@ -454,3 +454,125 @@
   border-radius: 8px;
   font-size: 0.7rem;
 }
+
+/* ── Section 2: BACKLINK PLAN / REFERENCE ── */
+.bl-ref-section {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 22px 26px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.bl-ref-header {
+  margin-bottom: 16px;
+}
+
+.bl-ref-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bl-ref-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.bl-ref-subtitle {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+
+.bl-ref-docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bl-ref-doc-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 8px;
+  padding: 14px 18px;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.bl-ref-doc-card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.bl-ref-doc-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.bl-ref-doc-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.bl-ref-doc-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.bl-ref-doc-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.bl-ref-doc-actions {
+  display: flex;
+  align-items: center;
+}
+
+.bl-ref-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #0284c7;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+}
+
+.bl-ref-download-btn:hover {
+  background: #0369a1;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.45);
+  color: #ffffff;
+}
+
+.bl-ref-empty {
+  padding: 12px 0;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-style: italic;
+}
+

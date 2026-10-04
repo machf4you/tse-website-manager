@@ -853,6 +853,19 @@ export async function getSiteBacklinksApi(site) {
   }
 }
 
+export async function getSiteBacklinkDocsApi(site) {
+  const siteId = typeof site === 'object' ? (site?.id || site?.domain_id || site?.url) : site
+  if (!siteId) return { docs: [] }
+  try {
+    const data = await fetchJson(`${API_BASE_URL}/w8-backlinks/docs?siteId=${encodeURIComponent(siteId)}`)
+    return data && data.success ? data : { docs: [] }
+  } catch (e) {
+    console.error('Failed to fetch W8 backlink reference docs:', e)
+    return { docs: [] }
+  }
+}
+
+
 
 
 

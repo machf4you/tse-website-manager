@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications, getW7SocialSettings, saveW7SocialSettings } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications, getW7SocialSettings, saveW7SocialSettings, getSiteBacklinkDocs, saveSiteBacklinkDoc } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -22,8 +22,12 @@ app.use(express.json({ limit: '50mb' }))
 
 const uploadsDir = path.join(__dirname, 'uploads')
 const w7UploadsDir = path.join(uploadsDir, 'w7-social')
+const w8UploadsDir = path.join(uploadsDir, 'w8-backlinks')
 if (!fs.existsSync(w7UploadsDir)) {
   fs.mkdirSync(w7UploadsDir, { recursive: true })
+}
+if (!fs.existsSync(w8UploadsDir)) {
+  fs.mkdirSync(w8UploadsDir, { recursive: true })
 }
 try {
   const rootUploads = path.resolve(__dirname, '..', 'uploads')
@@ -88,6 +92,35 @@ function resolveGeminiApiKey() {
   }
   return null
 }
+
+// ── W8 Backlinks Reference Document Endpoints ──
+app.get('/api/w8-backlinks/docs', (req, res) => {
+  try {
+    const siteId = req.query.siteId || req.query.site_id || req.query.site
+    if (!siteId) {
+      return res.status(400).json({ success: false, error: 'siteId query parameter is required' })
+    }
+    const docs = getSiteBacklinkDocs(siteId)
+    res.json({ success: true, docs })
+  } catch (err) {
+    console.error('Error in GET /api/w8-backlinks/docs:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/w8-backlinks/docs', (req, res) => {
+  try {
+    const { siteId, title, filename, filePath, fileUrl } = req.body || {}
+    if (!siteId || !filename) {
+      return res.status(400).json({ success: false, error: 'siteId and filename are required' })
+    }
+    const doc = saveSiteBacklinkDoc(siteId, { title, filename, filePath, fileUrl })
+    res.json({ success: true, doc })
+  } catch (err) {
+    console.error('Error in POST /api/w8-backlinks/docs:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
 
 // ── W7 Social Settings Endpoints ──
 app.get('/api/w7-social/settings', (req, res) => {

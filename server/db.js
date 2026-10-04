@@ -263,6 +263,17 @@ db.exec(`
     updated_at TEXT NOT NULL,
     FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS website_backlink_docs (
+    id TEXT PRIMARY KEY,
+    site_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    file_url TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `)
 
 // Run database migration for page_rankings phrase_type and legacy full-URL page keys
@@ -737,6 +748,98 @@ export function getSocialPublications(siteId = null) {
   return []
 }
 
+// ── W8 Backlink Reference Documents Helper Functions ──
+export function normalizeSiteIdForDocs(siteId) {
+  if (!siteId) return null
+  const s = String(siteId).toLowerCase().trim()
+  if (
+    s === 'e6a8d672-8785-4a52-b131-4122d2eeefed' ||
+    s === '3f69330c-6360-46f7-95a0-e0b58eac0eab' ||
+    s === 'digital-spain' ||
+    s === 'digital-services-spain' ||
+    s.includes('digitalspain') ||
+    s.includes('digital spain')
+  ) {
+    return 'e6a8d672-8785-4a52-b131-4122d2eeefed'
+  }
+  return s
+}
+
+export function getSiteBacklinkDocs(siteId) {
+  const normId = normalizeSiteIdForDocs(siteId)
+  if (!normId) return []
+
+  let stmt
+  if (normId === 'e6a8d672-8785-4a52-b131-4122d2eeefed') {
+    stmt = db.prepare(`
+      SELECT * FROM website_backlink_docs 
+      WHERE site_id IN ('e6a8d672-8785-4a52-b131-4122d2eeefed', '3f69330c-6360-46f7-95a0-e0b58eac0eab', 'digital-spain', 'digitalspain')
+      ORDER BY datetime(created_at) DESC
+    `)
+    return stmt.all()
+  } else {
+    stmt = db.prepare(`
+      SELECT * FROM website_backlink_docs 
+      WHERE site_id = ?
+      ORDER BY datetime(created_at) DESC
+    `)
+    return stmt.all(normId)
+  }
+}
+
+export function saveSiteBacklinkDoc(siteId, docData) {
+  const normId = normalizeSiteIdForDocs(siteId)
+  if (!normId) throw new Error('siteId is required')
+
+  const id = docData.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+  const title = docData.title || docData.filename
+  const filename = docData.filename
+  const filePath = docData.filePath || docData.file_path || `uploads/w8-backlinks/${filename}`
+  const fileUrl = docData.fileUrl || docData.file_url || `/uploads/w8-backlinks/${filename}`
+  const now = new Date().toISOString()
+
+  const stmt = db.prepare(`
+    INSERT INTO website_backlink_docs (id, site_id, title, filename, file_path, file_url, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      title = excluded.title,
+      filename = excluded.filename,
+      file_path = excluded.file_path,
+      file_url = excluded.file_url,
+      updated_at = excluded.updated_at
+  `)
+
+  stmt.run(id, normId, title, filename, filePath, fileUrl, now, now)
+  return getSiteBacklinkDocs(normId).find(d => d.id === id)
+}
+
+// Auto-seed Digital Spain backlink reference document if present
+try {
+  const dsDocFilename = 'DigitalSpain_Master_Backlink_Plan.docx'
+  const dsSiteId = 'e6a8d672-8785-4a52-b131-4122d2eeefed'
+  const existingDocs = db.prepare(`SELECT * FROM website_backlink_docs WHERE site_id IN (?, 'digital-spain') AND filename = ?`).all(dsSiteId, dsDocFilename)
+  if (existingDocs.length === 0) {
+    const seedId = 'doc-digital-spain-master-backlink-plan'
+    const now = new Date().toISOString()
+    db.prepare(`
+      INSERT INTO website_backlink_docs (id, site_id, title, filename, file_path, file_url, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      seedId,
+      dsSiteId,
+      dsDocFilename,
+      dsDocFilename,
+      `uploads/w8-backlinks/${dsDocFilename}`,
+      `/uploads/w8-backlinks/${dsDocFilename}`,
+      now,
+      now
+    )
+    console.log('[SEED] Seeded Digital Spain master backlink plan reference document.')
+  }
+} catch (e) {
+  console.error('[SEED ERROR] Failed to seed Digital Spain backlink reference doc:', e)
+}
 
 export default db
+
 
