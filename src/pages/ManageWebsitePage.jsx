@@ -154,7 +154,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     if (path === '/w5-internal-linking' || path === '/w5' || path === '/w4-internal-linking' || path === '/w5-all-internal-links' || path === '/w5-review-links') return 'w5'
     if (path === '/w6-rank-tracker' || path === '/w6' || path === '/rank-tracker') return 'w6'
     if (path === '/w7-social' || path === '/w7' || path === '/social' || path.startsWith('/social/')) return 'w7'
-    if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path === '/w8-backlink-inventory') return 'w8'
+    if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path.startsWith('/backlinks/') || path === '/w8-backlink-inventory') return 'w8'
     return null
   }
 
@@ -190,7 +190,10 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
         const slug = getSiteSlug(site)
         navigate(`/social/${slug}`)
       }
-      else if (tab === 'w8' || tab === 'w8-backlinks' || tab === 'backlinks' || tab === 'w8_backlinks') navigate('/w8-backlinks')
+      else if (tab === 'w8' || tab === 'w8-backlinks' || tab === 'backlinks' || tab === 'w8_backlinks') {
+        const slug = getSiteSlug(site)
+        navigate(`/backlinks/${slug}`)
+      }
     }
   }
 
@@ -199,6 +202,13 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       const slug = getSiteSlug(site)
       const targetPath = `/social/${slug}`
       if (currentPath !== targetPath && (currentPath === '/w7-social' || currentPath === '/w7' || currentPath === '/social')) {
+        if (navigate) navigate(targetPath, true)
+      }
+    }
+    if (activeTab === 'w8' && site) {
+      const slug = getSiteSlug(site)
+      const targetPath = `/backlinks/${slug}`
+      if (currentPath !== targetPath && (currentPath === '/w8-backlinks' || currentPath === '/w8' || currentPath === '/backlinks')) {
         if (navigate) navigate(targetPath, true)
       }
     }
@@ -518,7 +528,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
 
     // Do NOT force redirect to W2 if stored package data exists or if viewing W7 Social
     if (!storedPackageData && !site?.storedPackageData && (!isSynced || exportedPages.length === 0)) {
-      if (activeTab !== 'w2' && activeTab !== 'w7' && activeTab !== 'w7-social' && activeTab !== 'social') {
+      if (activeTab !== 'w2' && activeTab !== 'w7' && activeTab !== 'w7-social' && activeTab !== 'social' && activeTab !== 'w8' && activeTab !== 'w8-backlinks' && activeTab !== 'backlinks') {
         setActiveTab('w2')
       }
     }
