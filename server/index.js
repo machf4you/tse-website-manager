@@ -1978,11 +1978,74 @@ export async function reconcileWebsitesWithRegistry() {
           now,
           siteId: site.id
         })
-        matchedCount++
+    let createdCount = 0
+    const insertShellStmt = db.prepare(`
+      INSERT INTO websites (
+        id, domain_id, name, url, platform, portfolio, status, registry_status, is_audited, last_audit_timestamp, sync_status, last_sync_timestamp, config_data, created_at, updated_at
+      ) VALUES (
+        @id, @domain_id, @name, @url, @platform, @portfolio, @status, @registry_status, 0, NULL, 'Unsynced', NULL, NULL, @now, @now
+      )
+    `)
+
+    for (const d of domains) {
+      if (!d || !d.id) continue
+      const status = (d.status || 'active').toLowerCase()
+      const isEligible = status === 'active' || status === 'development' || status === 'hosting' || status === 'hosted'
+      if (!isEligible) continue
+
+      const masterId = String(d.id)
+      const dCanonical = normalizeDomain(d.canonical_domain || d.primary_url)
+
+      const existingByDomainId = db.prepare(`SELECT id FROM websites WHERE domain_id = ?`).get(masterId)
+      if (existingByDomainId) continue
+
+      let existingByCanonical = null
+      if (dCanonical) {
+        const allSites = db.prepare(`SELECT id, url, name, config_data FROM websites`).all()
+        existingByCanonical = allSites.find(site => {
+          let cfgUrl = null
+          if (site.config_data) {
+            try { cfgUrl = JSON.parse(site.config_data)?.url } catch (e) {}
+          }
+          const siteCanonicals = [normalizeDomain(site.url), normalizeDomain(site.name), normalizeDomain(cfgUrl)].filter(Boolean)
+          return siteCanonicals.includes(dCanonical)
+        })
+      }
+
+      if (existingByCanonical) {
+        db.prepare(`UPDATE websites SET domain_id = ?, registry_status = ?, updated_at = ? WHERE id = ?`).run(masterId, status, now, existingByCanonical.id)
+        continue
+      }
+
+      // Insert lightweight shell for Site Registry domain
+      const siteId = masterId
+      const primaryUrl = d.primary_url || (dCanonical ? `https://${dCanonical}` : '')
+      const siteName = d.display_name || d.canonical_domain || dCanonical
+      const shellStatusJson = JSON.stringify({
+        connection: { label: 'Setup Required', value: 'Setup Required' },
+        registryOrigin: true,
+        registryStatus: status
+      })
+
+      try {
+        insertShellStmt.run({
+          id: siteId,
+          domain_id: masterId,
+          name: siteName,
+          url: primaryUrl,
+          platform: d.platform || 'WordPress',
+          portfolio: d.portfolio || 'TSE',
+          status: shellStatusJson,
+          registry_status: status,
+          now
+        })
+        createdCount++
+      } catch (err) {
+        console.error(`Failed to create website shell for ${siteName}:`, err.message)
       }
     }
 
-    return { success: true, count: matchedCount, totalDomains: domains.length }
+    return { success: true, matchedCount, createdCount, totalDomains: domains.length }
   } catch (err) {
     console.error('[RECONCILE_REGISTRY_ERROR]', err)
     return { success: false, error: err.message }

@@ -90,7 +90,14 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
               }
             }
             if (targetId) {
-              const matched = apiSites.find(s => String(s.id) === String(targetId))
+              const targetNorm = String(targetId).toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '')
+              const matched = apiSites.find(s => {
+                if (String(s.id) === String(targetId)) return true
+                if (s.domain_id && String(s.domain_id) === String(targetId)) return true
+                const sNorm = String(s.url || s.name || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '')
+                if (targetNorm && sNorm && (sNorm === targetNorm || sNorm.includes(targetNorm) || targetNorm.includes(sNorm))) return true
+                return false
+              })
               if (matched) {
                 try {
                   const siteIdStr = String(matched.id)
@@ -102,9 +109,10 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
                 } catch (e) {}
                 return matched
               }
+              if (prevManaged) return prevManaged
             }
-            // If no target site matched, default to first connected site
-            if (apiSites.length > 0) {
+            // If no target site selected at all, default to first connected site
+            if (!targetId && !prevManaged && apiSites.length > 0) {
               const defaultSite = apiSites[0]
               try {
                 const siteIdStr = String(defaultSite.id)
