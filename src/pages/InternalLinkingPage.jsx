@@ -827,6 +827,9 @@ export default function InternalLinkingPage({
     const activeTab = reviewTabs[page.url] || 'in'
     const totalOutOccurrences = (page.groupedOutgoing || []).reduce((acc, grp) => acc + grp.occurrences.length, 0)
 
+    const pageTitle = page.title || page.originalTitle || page.name || 'Selected Page'
+    const pagePath = page.slug || getPathSlugForMatching(page.url) || page.url || '/'
+
     return (
       <div className="il-card-details">
         {/* Stat Cards Row */}
@@ -925,8 +928,13 @@ export default function InternalLinkingPage({
             <div className="il-tab-pane-header">
               <div>
                 <h3 className="il-section-title">
-                  Incoming Internal Body Links ({page.incomingCount} unique source pages, {page.existing.length} total occurrences)
+                  Pages Linking Into This Page ({page.incomingCount} unique source {page.incomingCount === 1 ? 'page' : 'pages'}, {page.existing.length} total {page.existing.length === 1 ? 'occurrence' : 'occurrences'})
                 </h3>
+                <div className="il-links-target-heading">
+                  <span className="il-direction-pill">LINKS INTO:</span>
+                  <span className="il-target-title">{pageTitle}</span>
+                  <span className="il-target-path">({pagePath})</span>
+                </div>
                 <p className="il-pane-subtext">
                   Each unique source page counts as ONE incoming relationship towards headline SEO metrics, regardless of how many times it links.
                 </p>
@@ -940,13 +948,22 @@ export default function InternalLinkingPage({
                 {page.groupedIncoming.map(grp => (
                   <div key={grp.rawUrl || grp.sourceUrl} className="il-audit-card">
                     <div className="il-audit-card-header">
-                      <div className="il-audit-card-title-group">
-                        <span className="il-doc-icon">📄</span>
-                        <div>
-                          <div className="il-audit-card-title">{grp.sourceTitle}</div>
-                          <div className="il-audit-card-url">{grp.sourceUrl}</div>
+                      <div className="il-audit-card-direction-flow">
+                        <div className="il-flow-box il-flow-from">
+                          <span className="il-flow-tag">FROM:</span>
+                          <span className="il-flow-title">{grp.sourceTitle}</span>
+                          <span className="il-flow-path">{grp.sourceUrl}</span>
+                        </div>
+
+                        <div className="il-flow-arrow">➔</div>
+
+                        <div className="il-flow-box il-flow-to">
+                          <span className="il-flow-tag">LINKS TO:</span>
+                          <span className="il-flow-title">{pageTitle}</span>
+                          <span className="il-flow-path">{pagePath}</span>
                         </div>
                       </div>
+
                       <div className="il-audit-card-badges">
                         <span className="il-audit-occ-badge">
                           {grp.occurrences.length} {grp.occurrences.length === 1 ? 'occurrence' : 'occurrences'}
@@ -977,12 +994,16 @@ export default function InternalLinkingPage({
                           <div key={occ.id || oIdx} className="il-audit-occ-item">
                             <div className="il-audit-occ-num">#{oIdx + 1}</div>
                             <div className="il-audit-occ-body">
-                              <div className="il-audit-snippet">
-                                {renderHighlightedText(occ.linkContext, occ.anchorText)}
+                              <div className="il-audit-anchor-row">
+                                <span className="il-anchor-label-tag">ANCHOR TEXT:</span>
+                                <span className="il-anchor-text-val">{occ.anchorText || '—'}</span>
                               </div>
-                              {occ.destinationUrl && (
-                                <div className="il-audit-target-tag">
-                                  Target: <span className="il-audit-target-url">{getPathSlugForMatching(occ.destinationUrl) || occ.destinationUrl}</span>
+                              {occ.linkContext && (
+                                <div className="il-audit-context-row">
+                                  <span className="il-context-label-tag">Context:</span>
+                                  <div className="il-audit-snippet">
+                                    {renderHighlightedText(occ.linkContext, occ.anchorText)}
+                                  </div>
                                 </div>
                               )}
                             </div>
@@ -1003,8 +1024,13 @@ export default function InternalLinkingPage({
             <div className="il-tab-pane-header">
               <div>
                 <h3 className="il-section-title">
-                  Outgoing Internal Body Links ({page.outgoingCount} unique destination pages, {totalOutOccurrences} total occurrences)
+                  Pages Linked From This Page ({page.outgoingCount} unique destination {page.outgoingCount === 1 ? 'page' : 'pages'}, {totalOutOccurrences} total {totalOutOccurrences === 1 ? 'occurrence' : 'occurrences'})
                 </h3>
+                <div className="il-links-target-heading">
+                  <span className="il-direction-pill pill-out">LINKS FROM:</span>
+                  <span className="il-target-title">{pageTitle}</span>
+                  <span className="il-target-path">({pagePath})</span>
+                </div>
                 <p className="il-pane-subtext">
                   Each unique destination page counts as ONE outgoing relationship towards headline SEO metrics. Multiple links from this page to the same destination are grouped under that ONE destination.
                 </p>
@@ -1018,13 +1044,22 @@ export default function InternalLinkingPage({
                 {page.groupedOutgoing.map(grp => (
                   <div key={grp.rawUrl || grp.destinationUrl} className="il-audit-card">
                     <div className="il-audit-card-header">
-                      <div className="il-audit-card-title-group">
-                        <span className="il-doc-icon">🎯</span>
-                        <div>
-                          <div className="il-audit-card-title">{grp.destinationTitle}</div>
-                          <div className="il-audit-card-url">{grp.destinationUrl}</div>
+                      <div className="il-audit-card-direction-flow">
+                        <div className="il-flow-box il-flow-from">
+                          <span className="il-flow-tag">FROM:</span>
+                          <span className="il-flow-title">{pageTitle}</span>
+                          <span className="il-flow-path">{pagePath}</span>
+                        </div>
+
+                        <div className="il-flow-arrow">➔</div>
+
+                        <div className="il-flow-box il-flow-to">
+                          <span className="il-flow-tag">LINKS TO:</span>
+                          <span className="il-flow-title">{grp.destinationTitle}</span>
+                          <span className="il-flow-path">{grp.destinationUrl}</span>
                         </div>
                       </div>
+
                       <div className="il-audit-card-badges">
                         <span className="il-audit-occ-badge">
                           {grp.occurrences.length} {grp.occurrences.length === 1 ? 'occurrence' : 'occurrences'}
@@ -1055,9 +1090,18 @@ export default function InternalLinkingPage({
                           <div key={occ.id || oIdx} className="il-audit-occ-item">
                             <div className="il-audit-occ-num">#{oIdx + 1}</div>
                             <div className="il-audit-occ-body">
-                              <div className="il-audit-snippet">
-                                {renderHighlightedText(occ.linkContext, occ.anchorText)}
+                              <div className="il-audit-anchor-row">
+                                <span className="il-anchor-label-tag">ANCHOR TEXT:</span>
+                                <span className="il-anchor-text-val">{occ.anchorText || '—'}</span>
                               </div>
+                              {occ.linkContext && (
+                                <div className="il-audit-context-row">
+                                  <span className="il-context-label-tag">Context:</span>
+                                  <div className="il-audit-snippet">
+                                    {renderHighlightedText(occ.linkContext, occ.anchorText)}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
