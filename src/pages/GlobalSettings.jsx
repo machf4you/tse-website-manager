@@ -79,6 +79,13 @@ export default function GlobalSettings({ currentUser }) {
   useEffect(() => {
     try {
       localStorage.setItem('tse_global_settings_tab_v1', activeTab)
+      if (typeof window !== 'undefined') {
+        const url = new URL(window.location.href)
+        if (url.searchParams.get('tab') !== activeTab) {
+          url.searchParams.set('tab', activeTab)
+          window.history.replaceState(null, '', url.pathname + url.search)
+        }
+      }
     } catch (e) {
       // ignore
     }
@@ -137,6 +144,7 @@ export default function GlobalSettings({ currentUser }) {
         {activeTab === 'page-auditor-rules'        && <PageAuditorRulesPage />}
         {activeTab.startsWith('ref-')              && (
           <ReferenceArchivePage
+            key={activeTab}
             activeGuideId={activeTab.replace('ref-', '')}
             onSelectGuide={(guideId) => setActiveTab(`ref-${guideId}`)}
           />

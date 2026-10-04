@@ -51,6 +51,8 @@
     ".gitignore",
     ".deployment-validated.json",
     "server/website_manager.db",
+    "src/pages/GlobalSettings.jsx",
+    "src/pages/ReferenceArchivePage.jsx",
     "tse-manifest.json"
   ]
 }

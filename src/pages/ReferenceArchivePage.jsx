@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import './ReferenceArchivePage.css'
 
 export const REFERENCE_GUIDES = [
@@ -47,6 +47,12 @@ export const REFERENCE_GUIDES = [
 export default function ReferenceArchivePage({ activeGuideId = 'fb-ig-connection', onSelectGuide }) {
   const [selectedGuideId, setSelectedGuideId] = useState(activeGuideId)
   const [lightboxImage, setLightboxImage] = useState(null)
+
+  useEffect(() => {
+    if (activeGuideId) {
+      setSelectedGuideId(activeGuideId)
+    }
+  }, [activeGuideId])
 
   const activeGuide = REFERENCE_GUIDES.find(g => g.id === selectedGuideId) || REFERENCE_GUIDES[0]
 
