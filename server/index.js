@@ -87,6 +87,8 @@ function resolveGeminiApiKey() {
     } catch (e) {}
   }
   return null
+}
+
 // ── W7 Social Settings Endpoints ──
 app.get('/api/w7-social/settings', (req, res) => {
   try {
@@ -1906,7 +1908,7 @@ app.post('/api/websites/:id/settings', (req, res) => {
 })
 
 // Reconcile connected SQLite websites against Site Registry
-export async function reconcileWebsitesWithRegistry() {
+async function reconcileWebsitesWithRegistry() {
   try {
     const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://cbdfjdxqhqajzjblysqd.supabase.co'
     const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5'
@@ -1978,6 +1980,10 @@ export async function reconcileWebsitesWithRegistry() {
           now,
           siteId: site.id
         })
+        matchedCount++
+      }
+    }
+
     let createdCount = 0
     const insertShellStmt = db.prepare(`
       INSERT INTO websites (
@@ -5339,7 +5345,7 @@ function getStoredUrlExclusions() {
   return DEFAULT_EXCLUSION_RULES
 }
 
-export function applyGlobalExclusionsToDatabase() {
+function applyGlobalExclusionsToDatabase() {
   try {
     const rules = getStoredUrlExclusions()
     const now = new Date().toISOString()

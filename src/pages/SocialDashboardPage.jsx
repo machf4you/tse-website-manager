@@ -251,11 +251,18 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
     // 5. Fetch connected accounts from bundle.social
     setIsLoadingAccounts(true)
     fetch('/api/w7-social/connected-accounts')
-      .then(res => res.json())
+      .then(async res => {
+        if (!res.ok) {
+          const errText = await res.text().catch(() => '')
+          throw new Error(`Server returned HTTP ${res.status}${errText ? `: ${errText.slice(0, 100)}` : ''}`)
+        }
+        return res.json()
+      })
       .then(data => {
         if (isMounted) {
           setIsLoadingAccounts(false)
           if (data.success) {
+            setAccountsError(null)
             if (Array.isArray(data.teams)) {
               setTeamsList(data.teams)
             }
