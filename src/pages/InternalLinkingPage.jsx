@@ -893,19 +893,6 @@ export default function InternalLinkingPage({
                       </div>
                     </div>
 
-                    <div className="il-audit-anchors-section">
-                      <div className="il-audit-anchors-label">
-                        Distinct Anchor Texts Used ({grp.distinctAnchors.length}):
-                      </div>
-                      <div className="il-audit-anchor-chips">
-                        {grp.distinctAnchors.map((anchor, aIdx) => (
-                          <span key={aIdx} className="il-audit-anchor-chip">
-                            "{anchor}"
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
                     <div className="il-audit-occurrences-section">
                       <div className="il-audit-contexts-label">Occurrences in Editorial Body Content:</div>
                       <div className="il-audit-contexts-list">
@@ -962,19 +949,6 @@ export default function InternalLinkingPage({
                         <span className="il-audit-rel-badge">
                           Counts as 1 outgoing relationship
                         </span>
-                      </div>
-                    </div>
-
-                    <div className="il-audit-anchors-section">
-                      <div className="il-audit-anchors-label">
-                        Distinct Anchor Texts Used ({grp.distinctAnchors.length}):
-                      </div>
-                      <div className="il-audit-anchor-chips">
-                        {grp.distinctAnchors.map((anchor, aIdx) => (
-                          <span key={aIdx} className="il-audit-anchor-chip">
-                            "{anchor}"
-                          </span>
-                        ))}
                       </div>
                     </div>
 
