@@ -826,6 +826,26 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
             <span className="sd-pill-model-badge" style={{ background: 'rgba(236, 72, 153, 0.15)', color: '#ec4899', borderColor: 'rgba(236, 72, 153, 0.3)' }}>● Stage 3: Creatomate (Video Finishing)</span>
           </div>
           <h1 className="sd-title">W7 AI Content Generation — {site?.name || 'Connected Site'}</h1>
+          {(siteId === 'e6a8d672-8785-4a52-b131-4122d2eeefed' || siteId === 'digital-services-spain' || (site?.name || '').toLowerCase().includes('spain') || (site?.url || '').toLowerCase().includes('spain')) && (
+            <div
+              id="banner-digital-spain-live-test"
+              style={{
+                background: '#facc15',
+                color: '#000000',
+                padding: '10px 16px',
+                borderRadius: '6px',
+                fontWeight: 800,
+                fontSize: '0.95rem',
+                letterSpacing: '0.05em',
+                marginTop: '10px',
+                marginBottom: '4px',
+                display: 'inline-block',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)'
+              }}
+            >
+              DIGITAL SPAIN SOCIAL APP &mdash; LIVE TEST
+            </div>
+          )}
           <p className="sd-subtitle">
             Nano Banana &rarr; Veo &rarr; Creatomate End-to-End Social Video Workflow
           </p>
