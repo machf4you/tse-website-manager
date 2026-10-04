@@ -832,71 +832,6 @@ export default function InternalLinkingPage({
 
     return (
       <div className="il-card-details">
-        {/* Stat Cards Row */}
-        <div className="il-stats-grid">
-          <div
-            className={`il-stat-box il-stat-box-clickable ${activeTab === 'in' ? 'active' : ''}`}
-            onClick={() => handleSelectTab(page.url, 'in')}
-            title="View incoming body links"
-          >
-            <span className="il-stat-icon">🔗</span>
-            <div>
-              <span className="il-stat-label">LINKS IN (UNIQUE SOURCES)</span>
-              <div className="il-stat-val">
-                {page.incomingCount} {page.incomingCount === 1 ? 'source' : 'sources'}
-              </div>
-              <div className="il-stat-subtext">
-                {page.existing.length} total body {page.existing.length === 1 ? 'occurrence' : 'occurrences'}
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`il-stat-box il-stat-box-clickable ${activeTab === 'out' ? 'active' : ''}`}
-            onClick={() => handleSelectTab(page.url, 'out')}
-            title="View outgoing body links"
-          >
-            <span className="il-stat-icon">🎯</span>
-            <div>
-              <span className="il-stat-label">LINKS OUT (UNIQUE DESTINATIONS)</span>
-              <div className="il-stat-val">
-                {page.outgoingCount} {page.outgoingCount === 1 ? 'destination' : 'destinations'}
-              </div>
-              <div className="il-stat-subtext">
-                {totalOutOccurrences} total body {totalOutOccurrences === 1 ? 'occurrence' : 'occurrences'}
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`il-stat-box il-stat-box-clickable ${activeTab === 'rec' ? 'active' : ''}`}
-            onClick={() => handleSelectTab(page.url, 'rec')}
-            title="View link recommendations"
-          >
-            <span className="il-stat-icon">✨</span>
-            <div>
-              <span className="il-stat-label">RECOMMENDATIONS</span>
-              <div className="il-stat-val">{page.recommended.length} suggested</div>
-              <div className="il-stat-subtext">Available linking opportunities</div>
-            </div>
-          </div>
-
-          <div className="il-stat-box il-stat-box-status">
-            <span className="il-stat-icon">📈</span>
-            <div>
-              <span className="il-stat-label">STATUS</span>
-              <div className="il-stat-val-status">
-                {page.needsLinks ? 'Needs Links' : 'Optimal Link Density'}
-              </div>
-              <div className="il-stat-subtext">
-                {page.needsLinks
-                  ? `Add ${Math.max(0, 3 - page.incomingCount)} unique source ${3 - page.incomingCount === 1 ? 'page' : 'pages'}`
-                  : 'Target threshold met (≥3 unique source pages)'}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Sub-Tabs Bar inside Drawer */}
         <div className="il-drawer-tabs-bar">
           <button
@@ -925,22 +860,6 @@ export default function InternalLinkingPage({
         {/* Tab 1: LINKS IN Content */}
         {activeTab === 'in' && (
           <div className="il-section-block">
-            <div className="il-tab-pane-header">
-              <div>
-                <h3 className="il-section-title">
-                  Pages Linking Into This Page ({page.incomingCount} unique source {page.incomingCount === 1 ? 'page' : 'pages'}, {page.existing.length} total {page.existing.length === 1 ? 'occurrence' : 'occurrences'})
-                </h3>
-                <div className="il-links-target-heading">
-                  <span className="il-direction-pill">LINKS INTO:</span>
-                  <span className="il-target-title">{pageTitle}</span>
-                  <span className="il-target-path">({pagePath})</span>
-                </div>
-                <p className="il-pane-subtext">
-                  Each unique source page counts as ONE incoming relationship towards headline SEO metrics, regardless of how many times it links.
-                </p>
-              </div>
-            </div>
-
             {page.groupedIncoming.length === 0 ? (
               <div className="il-empty-msg">No contextual incoming links found for this page yet.</div>
             ) : (
@@ -998,14 +917,6 @@ export default function InternalLinkingPage({
                                 <span className="il-anchor-label-tag">ANCHOR TEXT:</span>
                                 <span className="il-anchor-text-val">{occ.anchorText || '—'}</span>
                               </div>
-                              {occ.linkContext && (
-                                <div className="il-audit-context-row">
-                                  <span className="il-context-label-tag">Context:</span>
-                                  <div className="il-audit-snippet">
-                                    {renderHighlightedText(occ.linkContext, occ.anchorText)}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           </div>
                         ))}
@@ -1021,22 +932,6 @@ export default function InternalLinkingPage({
         {/* Tab 2: LINKS OUT Content */}
         {activeTab === 'out' && (
           <div className="il-section-block">
-            <div className="il-tab-pane-header">
-              <div>
-                <h3 className="il-section-title">
-                  Pages Linked From This Page ({page.outgoingCount} unique destination {page.outgoingCount === 1 ? 'page' : 'pages'}, {totalOutOccurrences} total {totalOutOccurrences === 1 ? 'occurrence' : 'occurrences'})
-                </h3>
-                <div className="il-links-target-heading">
-                  <span className="il-direction-pill pill-out">LINKS FROM:</span>
-                  <span className="il-target-title">{pageTitle}</span>
-                  <span className="il-target-path">({pagePath})</span>
-                </div>
-                <p className="il-pane-subtext">
-                  Each unique destination page counts as ONE outgoing relationship towards headline SEO metrics. Multiple links from this page to the same destination are grouped under that ONE destination.
-                </p>
-              </div>
-            </div>
-
             {page.groupedOutgoing.length === 0 ? (
               <div className="il-empty-msg">No contextual outgoing links found from this page.</div>
             ) : (
@@ -1094,14 +989,6 @@ export default function InternalLinkingPage({
                                 <span className="il-anchor-label-tag">ANCHOR TEXT:</span>
                                 <span className="il-anchor-text-val">{occ.anchorText || '—'}</span>
                               </div>
-                              {occ.linkContext && (
-                                <div className="il-audit-context-row">
-                                  <span className="il-context-label-tag">Context:</span>
-                                  <div className="il-audit-snippet">
-                                    {renderHighlightedText(occ.linkContext, occ.anchorText)}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           </div>
                         ))}
