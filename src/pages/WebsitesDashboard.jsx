@@ -13,6 +13,7 @@ import {
 } from '../services/websiteManagerApi'
 import { parseRoute } from '../App'
 import { getSiteSlug, resolveSiteFromSlug } from '../utils/siteSlugHelper'
+import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
 import './WebsitesDashboard.css'
 
 export default function WebsitesDashboard({ currentPath, navigate }) {
