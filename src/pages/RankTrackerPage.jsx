@@ -213,25 +213,46 @@ export default function RankTrackerPage({ site, onBack, onNavigateTab }) {
           ← Back to W3 Page Manager
         </button>
 
-        <button
-          type="button"
-          className="rt-nav-btn-social"
-          id="btn-rt-social"
-          onClick={() => onNavigateTab && onNavigateTab('w7')}
-          style={{
-            background: 'rgba(236, 72, 153, 0.12)',
-            border: '1px solid rgba(236, 72, 153, 0.3)',
-            color: '#f472b6',
-            borderRadius: '6px',
-            padding: '6px 14px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-        >
-          W7 | Social ›
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            className="rt-nav-btn-social"
+            id="btn-rt-social"
+            onClick={() => onNavigateTab && onNavigateTab('w7')}
+            style={{
+              background: 'rgba(236, 72, 153, 0.12)',
+              border: '1px solid rgba(236, 72, 153, 0.3)',
+              color: '#f472b6',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            W7 | Social
+          </button>
+          <button
+            type="button"
+            className="rt-nav-btn-backlinks"
+            id="btn-rt-backlinks"
+            onClick={() => onNavigateTab && onNavigateTab('w8')}
+            style={{
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              color: '#fbbf24',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            W8 | Backlinks
+          </button>
+        </div>
       </div>
 
       {/* Header Card */}

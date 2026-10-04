@@ -718,6 +718,142 @@ export async function resetFirstAuditBatchApi() {
   }
 }
 
+// 9. SITE REGISTRY BACKLINKS API
+export async function getSiteBacklinksApi(site) {
+  const siteId = site?.id
+  const domainId = site?.domain_id || site?.domainId || site?.configData?.domain_id || site?.configData?.domainId || null
+  const siteUrl = site?.url || site?.site_url || site?.configData?.siteUrl || site?.configData?.url || ''
+  const cleanDomain = String(siteUrl || site?.name || '')
+    .toLowerCase()
+    .trim()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/.*$/, '')
+
+  const SUPABASE_URL = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_URL)
+    ? process.env.VITE_SUPABASE_URL
+    : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL)
+        ? import.meta.env.VITE_SUPABASE_URL
+        : 'https://cbdfjdxqhqajzjblysqd.supabase.co')
+
+  const SUPABASE_KEY = (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+    ? process.env.VITE_SUPABASE_PUBLISHABLE_KEY
+    : ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY)
+        ? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        : 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5')
+
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`
+  }
+
+  let items = []
+
+  if (domainId) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/backlink_items?select=*,backlinks(*)&or=(domain_id.eq.${domainId},target_website_id.eq.${domainId})`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) items.push(...data)
+      }
+    } catch (e) {
+      console.warn('[WM_BACKLINKS] Direct Supabase fetch warning:', e)
+    }
+  }
+
+  if (cleanDomain) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/backlink_items?select=*,backlinks(*)&target_url=ilike.*${encodeURIComponent(cleanDomain)}*`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          data.forEach(d => {
+            if (!items.some(existing => existing.id === d.id)) {
+              items.push(d)
+            }
+          })
+        }
+      }
+    } catch (e) {
+      console.warn('[WM_BACKLINKS] Direct Supabase target_url fetch warning:', e)
+    }
+  }
+
+  if (items.length > 0) {
+    const processed = items.map(item => {
+      const parent = item.backlinks || {}
+      const isIndexed = parent.is_indexed === true || (parent.index_status || '').toLowerCase() === 'indexed'
+      const indexStatus = isIndexed ? 'indexed' : (parent.index_status || 'awaiting')
+
+      let sourceDomain = parent.published_root_domain || ''
+      if (!sourceDomain && parent.published_url) {
+        try {
+          const u = new URL(parent.published_url.startsWith('http') ? parent.published_url : `https://${parent.published_url}`)
+          sourceDomain = u.hostname.replace(/^www\./, '')
+        } catch (e) {
+          sourceDomain = parent.published_url
+        }
+      }
+
+      return {
+        id: item.id,
+        sourceDomain: sourceDomain || 'Unknown',
+        sourceUrl: parent.published_url || '',
+        targetUrl: item.target_url || '',
+        anchorText: item.anchor_text || item.target_phrase || '',
+        indexStatus,
+        isIndexed,
+        createdAt: parent.created_at || item.created_at || null
+      }
+    })
+
+    const total = processed.length
+    const indexed = processed.filter(p => p.isIndexed).length
+    const awaiting = total - indexed
+
+    const targetPageCounts = {}
+    processed.forEach(p => {
+      let path = p.targetUrl || '/'
+      if (path.startsWith('http')) {
+        try { path = new URL(path).pathname } catch (e) {}
+      }
+      if (!path.startsWith('/')) path = '/' + path
+      targetPageCounts[path] = (targetPageCounts[path] || 0) + 1
+    })
+
+    const topTargetPages = Object.entries(targetPageCounts)
+      .map(([path, count]) => ({ path, count }))
+      .sort((a, b) => b.count - a.count)
+
+    return {
+      total,
+      indexed,
+      awaiting,
+      topTargetPages,
+      backlinks: processed
+    }
+  }
+
+  // Fallback to backend API endpoint
+  if (siteId) {
+    try {
+      const backendData = await fetchJson(`${API_BASE_URL}/websites/${siteId}/backlinks`)
+      if (backendData && backendData.success) {
+        return backendData
+      }
+    } catch (e) {}
+  }
+
+  return {
+    total: 0,
+    indexed: 0,
+    awaiting: 0,
+    topTargetPages: [],
+    backlinks: []
+  }
+}
+
+
 
 
 

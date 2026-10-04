@@ -4,6 +4,7 @@ import PageAuditResultsPage from './PageAuditResultsPage'
 import InternalLinkingPage from './InternalLinkingPage'
 import RankTrackerPage from './RankTrackerPage'
 import SocialDashboardPage from './SocialDashboardPage'
+import BacklinksPage from './BacklinksPage'
 import GlobalSettings from './GlobalSettings'
 
 const Share2Icon = () => (
@@ -21,7 +22,8 @@ import {
   getWpPackageApi,
   saveWpPackageApi,
   getPageConfigsApi,
-  savePageConfigsApi
+  savePageConfigsApi,
+  getSiteBacklinksApi
 } from '../services/websiteManagerApi'
 import { getSiteConfigsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
@@ -150,6 +152,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     if (path === '/w5-internal-linking' || path === '/w5' || path === '/w4-internal-linking' || path === '/w5-all-internal-links' || path === '/w5-review-links') return 'w5'
     if (path === '/w6-rank-tracker' || path === '/w6' || path === '/rank-tracker') return 'w6'
     if (path === '/w7-social' || path === '/w7' || path === '/social') return 'w7'
+    if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path === '/w8-backlink-inventory') return 'w8'
     return null
   }
 
@@ -182,6 +185,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       else if (tab === 'w5' || tab === 'w4_internal_linking' || tab === 'w4-internal-linking' || tab === 'w5-internal-linking' || tab === 'w5_all_internal_links' || tab === 'w5_review_links') navigate('/w5-internal-linking')
       else if (tab === 'w6' || tab === 'w6-rank-tracker' || tab === 'rank-tracker' || tab === 'rank_tracker') navigate('/w6-rank-tracker')
       else if (tab === 'w7' || tab === 'w7-social' || tab === 'social' || tab === 'w7_social') navigate('/w7-social')
+      else if (tab === 'w8' || tab === 'w8-backlinks' || tab === 'backlinks' || tab === 'w8_backlinks') navigate('/w8-backlinks')
     }
   }
 
@@ -640,11 +644,41 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     }, 500)
   }
 
+  const [backlinksSummary, setBacklinksSummary] = useState({ total: 0, indexed: 0, awaiting: 0, topTargetPages: [] })
+
+  useEffect(() => {
+    let isMounted = true
+    if (site) {
+      getSiteBacklinksApi(site).then(res => {
+        if (isMounted && res) {
+          setBacklinksSummary({
+            total: res.total || 0,
+            indexed: res.indexed || 0,
+            awaiting: res.awaiting || 0,
+            topTargetPages: res.topTargetPages || []
+          })
+        }
+      }).catch(() => {})
+    }
+    return () => { isMounted = false }
+  }, [site?.id, site?.url])
+
+  if (activeTab === 'w8' || activeTab === 'backlinks' || activeTab === 'w8_backlinks' || activeTab === 'w8-backlinks') {
+    return (
+      <BacklinksPage
+        site={site}
+        onBack={() => setActiveTab('w2')}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+      />
+    )
+  }
+
   if (activeTab === 'w7' || activeTab === 'social' || activeTab === 'w7_social' || activeTab === 'w7-social') {
     return (
       <SocialDashboardPage
         site={site}
         onBack={() => setActiveTab('w2')}
+        onNavigateTab={(tab) => setActiveTab(tab)}
       />
     )
   }
@@ -1030,108 +1064,58 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
           <span className="w2-fc-tag">W7 | SOCIAL</span>
         </div>
 
-      </div>
-
-      {/* ── Section Title: WEBSITE INTELLIGENCE ── */}
-      <div className="w2-section-heading">
-        <h2>WEBSITE INTELLIGENCE</h2>
-      </div>
-
-      {/* ── 4 Intelligence Cards Grid ── */}
-      <div className="w2-intel-grid">
-
-        {/* Card 1: Recent Activity */}
-        <div className="w2-intel-card">
-          <div className="w2-ic-header">
-            <span className="ic-title-wrap"><ClockIcon /> Recent Activity</span>
-            <button type="button" className="ic-link">View All</button>
+        {/* Card 5: Backlinks */}
+        <div className="w2-feature-card theme-amber" onClick={() => setActiveTab('w8')} style={{ cursor: 'pointer' }}>
+          <div className="w2-fc-header">
+            <div className="w2-fc-icon-bg">
+              <LinkIcon />
+            </div>
+            <h3 className="w2-fc-title">Backlinks</h3>
           </div>
-          <div className="w2-activity-list">
-            {isSynced ? (
-              <>
-                <div className="act-row">
-                  <span className="act-label">{platformName} sync completed</span>
-                  <span className="act-time">{formatReadableDateTime(lastSyncDate) || lastSyncDate || 'Not Synced Yet'}</span>
-                </div>
-                <div className="act-row">
-                  <span className="act-label">{exportedPages.length} pages discovered</span>
-                  <span className="act-time">{formatReadableDateTime(lastSyncDate) || lastSyncDate || 'Not Synced Yet'}</span>
-                </div>
-              </>
-            ) : (
-              <div className="act-row">
-                <span className="act-label">{platformName} connection established</span>
-                <span className="act-time">Just now</span>
+          <p className="w2-fc-desc">
+            Site Registry live backlinks and index status for this domain.
+          </p>
+          <div className="w2-backlinks-snapshot">
+            <div className="w2-bl-counts">
+              <div className="bl-count-item">
+                <span className="bl-num">{backlinksSummary.total}</span>
+                <span className="bl-lbl">Live</span>
+              </div>
+              <div className="bl-count-item">
+                <span className="bl-num text-green">{backlinksSummary.indexed}</span>
+                <span className="bl-lbl">Indexed</span>
+              </div>
+              <div className="bl-count-item">
+                <span className="bl-num text-amber">{backlinksSummary.awaiting}</span>
+                <span className="bl-lbl">Awaiting</span>
+              </div>
+            </div>
+            {backlinksSummary.topTargetPages.length > 0 && (
+              <div className="w2-bl-pages">
+                <span className="bl-pages-hdr">Main target pages:</span>
+                <ul className="bl-pages-list">
+                  {backlinksSummary.topTargetPages.slice(0, 3).map(p => (
+                    <li key={p.path} className="bl-page-item">
+                      <span className="bl-page-url">{p.path}</span>
+                      <span className="bl-page-cnt">{p.count}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>
-        </div>
-
-        {/* Card 2: Last Audit */}
-        <div className="w2-intel-card">
-          <div className="w2-ic-header">
-            <span className="ic-title-wrap">📄 Last Audit</span>
-            <button type="button" className="ic-link">View Report</button>
-          </div>
-          <div className="w2-audit-body">
-            <div className="audit-gauge">
-              <span className="gauge-score">—</span>
-            </div>
-            <div className="audit-details">
-              <span className="audit-label">Overall Score</span>
-              <span className="audit-rating">Not Audited</span>
-              <span className="audit-sub">
-                {isSynced ? 'Pending site audit' : 'Pending initial synchronisation'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: AI Recommendations */}
-        <div className="w2-intel-card">
-          <div className="w2-ic-header">
-            <span className="ic-title-wrap">⚛ AI Recommendations</span>
-            <button type="button" className="ic-link">View All</button>
-          </div>
-          <div className="w2-ai-body">
-            <div className="ai-content">
-              <span className="ai-count">0 Available</span>
-              <span className="ai-sub">Improve internal linking and technical SEO.</span>
-              <button type="button" className="btn-ai-recs" disabled={!isSynced}>
-                View Recommendations ›
-              </button>
-            </div>
-            <div className="ai-icon-side">
-              <BrainIcon />
-            </div>
-          </div>
-        </div>
-
-        {/* Card 4: Website Status */}
-        <div className="w2-intel-card">
-          <div className="w2-ic-header">
-            <span className="ic-title-wrap">🖥 Website Status</span>
-            <button type="button" className="ic-link">View Details</button>
-          </div>
-          <div className="w2-status-body">
-            <div className="status-content">
-              <span className="status-success-title">
-                {site.topIndicator ? site.topIndicator.charAt(0).toUpperCase() + site.topIndicator.slice(1) : 'Connected'}
-              </span>
-              <span className="status-sub">
-                {isSynced ? `Last sync: ${formatReadableDateTime(lastSyncDate) || lastSyncDate || 'Not Synced Yet'}` : 'Sync: Pending'}
-              </span>
-              <span className="status-sub">
-                {isSynced ? `Pages crawled: ${exportedPages.length}` : 'Pages: Not extracted'}
-              </span>
-              <span className="status-sub">
-                {isSynced ? `Unconfigured pages: ${unconfiguredPagesCount}` : 'Status: Ready to Sync'}
-              </span>
-            </div>
-            <div className="status-icon-side">
-              <CheckCircleIcon />
-            </div>
-          </div>
+          <button
+            type="button"
+            className="w2-fc-btn btn-open-amber"
+            id="btn-open-backlinks"
+            onClick={(e) => {
+              e.stopPropagation()
+              setActiveTab('w8')
+            }}
+          >
+            Open W8 Backlinks ›
+          </button>
+          <span className="w2-fc-tag">W8 | BACKLINKS</span>
         </div>
 
       </div>

@@ -4317,6 +4317,124 @@ app.post('/api/websites/:id/sync-keyword-research', async (req, res) => {
   }
 })
 
+// GET /api/websites/:id/backlinks — Fetch Site Registry backlinks for website
+app.get('/api/websites/:id/backlinks', async (req, res) => {
+  try {
+    const { id } = req.params
+    const siteRow = db.prepare('SELECT * FROM websites WHERE id = ?').get(id)
+    if (!siteRow) {
+      return res.status(404).json({ success: false, error: 'Website not found' })
+    }
+
+    let cfg = {}
+    try { cfg = JSON.parse(siteRow.config_json || '{}') } catch (e) {}
+
+    const domainId = siteRow.domain_id || cfg.domain_id || cfg.domainId || null
+    const siteUrl = siteRow.url || siteRow.site_url || cfg.siteUrl || cfg.url || ''
+    const cleanDomain = String(siteUrl || siteRow.name || '')
+      .toLowerCase()
+      .trim()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/.*$/, '')
+
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://cbdfjdxqhqajzjblysqd.supabase.co'
+    const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Ys5D-QcdSw_gac9YkmKMZg_eLGCfmK5'
+    const headers = {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`
+    }
+
+    let items = []
+
+    if (domainId) {
+      try {
+        const itemRes = await fetch(`${supabaseUrl}/rest/v1/backlink_items?select=*,backlinks(*)&or=(domain_id.eq.${domainId},target_website_id.eq.${domainId})`, { headers })
+        if (itemRes.ok) {
+          const data = await itemRes.json()
+          if (Array.isArray(data)) items.push(...data)
+        }
+      } catch (e) {}
+    }
+
+    if (cleanDomain) {
+      try {
+        const itemRes = await fetch(`${supabaseUrl}/rest/v1/backlink_items?select=*,backlinks(*)&target_url=ilike.*${encodeURIComponent(cleanDomain)}*`, { headers })
+        if (itemRes.ok) {
+          const data = await itemRes.json()
+          if (Array.isArray(data)) {
+            data.forEach(d => {
+              if (!items.some(existing => existing.id === d.id)) {
+                items.push(d)
+              }
+            })
+          }
+        }
+      } catch (e) {}
+    }
+
+    const processed = items.map(item => {
+      const parent = item.backlinks || {}
+      const isIndexed = parent.is_indexed === true || (parent.index_status || '').toLowerCase() === 'indexed'
+      const indexStatus = isIndexed ? 'indexed' : (parent.index_status || 'awaiting')
+
+      let sourceDomain = parent.published_root_domain || ''
+      if (!sourceDomain && parent.published_url) {
+        try {
+          const u = new URL(parent.published_url.startsWith('http') ? parent.published_url : `https://${parent.published_url}`)
+          sourceDomain = u.hostname.replace(/^www\./, '')
+        } catch (e) {
+          sourceDomain = parent.published_url
+        }
+      }
+
+      return {
+        id: item.id,
+        sourceDomain: sourceDomain || 'Unknown',
+        sourceUrl: parent.published_url || '',
+        targetUrl: item.target_url || '',
+        anchorText: item.anchor_text || item.target_phrase || '',
+        indexStatus,
+        isIndexed,
+        createdAt: parent.created_at || item.created_at || null
+      }
+    })
+
+    const total = processed.length
+    const indexed = processed.filter(p => p.isIndexed).length
+    const awaiting = total - indexed
+
+    const targetPageCounts = {}
+    processed.forEach(p => {
+      let path = p.targetUrl || '/'
+      if (path.startsWith('http')) {
+        try { path = new URL(path).pathname } catch (e) {}
+      }
+      if (!path.startsWith('/')) path = '/' + path
+      targetPageCounts[path] = (targetPageCounts[path] || 0) + 1
+    })
+
+    const topTargetPages = Object.entries(targetPageCounts)
+      .map(([path, count]) => ({ path, count }))
+      .sort((a, b) => b.count - a.count)
+
+    res.json({
+      success: true,
+      domainId,
+      domain: cleanDomain,
+      total,
+      indexed,
+      awaiting,
+      topTargetPages,
+      backlinks: processed
+    })
+  } catch (err) {
+    console.error('Error fetching website backlinks:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+
 // Check rank for a single page Target Phrase via DataForSEO Live Advanced SERP API
 async function handleSinglePhraseRankCheck(req, res) {
   try {

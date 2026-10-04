@@ -49,7 +49,7 @@ const getFileFormat = (item) => {
   return 'JPG'
 }
 
-export default function SocialDashboardPage({ site, onBack }) {
+export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
   // Stage 1: Nano Banana Image State
   const [subject, setSubject] = useState('Dormer Loft Conversion')
   const [format, setFormat] = useState('JPG')
@@ -699,8 +699,8 @@ export default function SocialDashboardPage({ site, onBack }) {
 
   return (
     <div className="social-dashboard-page">
-      {/* Top-left Back Link */}
-      <div>
+      {/* Top Navigation */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
         <button
           type="button"
           className="w2-btn-back"
@@ -710,6 +710,47 @@ export default function SocialDashboardPage({ site, onBack }) {
         >
           ← Back to Website Dashboard
         </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            className="rt-nav-btn-rank"
+            id="btn-sd-rank"
+            onClick={() => onNavigateTab && onNavigateTab('w6')}
+            style={{
+              background: 'rgba(59, 130, 246, 0.12)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#60a5fa',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            W6 | Rank Tracker
+          </button>
+          <button
+            type="button"
+            className="rt-nav-btn-backlinks"
+            id="btn-sd-backlinks"
+            onClick={() => onNavigateTab && onNavigateTab('w8')}
+            style={{
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              color: '#fbbf24',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            W8 | Backlinks
+          </button>
+        </div>
       </div>
 
       {/* Header Card */}

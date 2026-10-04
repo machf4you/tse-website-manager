@@ -220,6 +220,16 @@ export function parseRoute(pathname) {
     }
   }
 
+  if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path === '/w8-backlink-inventory') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w8',
+      canonicalPath: '/w8-backlinks'
+    }
+  }
+
+
   // Fallback to W1
   return {
     currentView: 'website-manager',
