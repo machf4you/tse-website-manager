@@ -92,6 +92,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS page_rankings (
     site_id TEXT NOT NULL,
     page_key TEXT NOT NULL,
+    phrase_type TEXT DEFAULT 'primary',
     target_phrase TEXT NOT NULL,
     google_rank INTEGER DEFAULT NULL,
     is_top_100 INTEGER DEFAULT 0,
@@ -104,7 +105,7 @@ db.exec(`
     device TEXT DEFAULT 'mobile',
     last_checked_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
-    PRIMARY KEY(site_id, page_key),
+    PRIMARY KEY(site_id, page_key, phrase_type),
     FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
   );
 
@@ -246,6 +247,84 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 `)
+
+// Run database migration for page_rankings phrase_type and legacy full-URL page keys
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(page_rankings)").all()
+  const hasPhraseType = tableInfo.some(col => col.name === 'phrase_type')
+
+  if (!hasPhraseType) {
+    console.log('[MIGRATION] Migrating page_rankings schema to include phrase_type and updated PRIMARY KEY...')
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS page_rankings_new (
+        site_id TEXT NOT NULL,
+        page_key TEXT NOT NULL,
+        phrase_type TEXT DEFAULT 'primary',
+        target_phrase TEXT NOT NULL,
+        google_rank INTEGER DEFAULT NULL,
+        is_top_100 INTEGER DEFAULT 0,
+        ranking_url TEXT DEFAULT NULL,
+        is_url_match INTEGER DEFAULT 0,
+        search_volume INTEGER DEFAULT NULL,
+        volume_checked_at TEXT DEFAULT NULL,
+        search_engine TEXT DEFAULT 'google.co.uk',
+        location_code INTEGER DEFAULT 2826,
+        device TEXT DEFAULT 'mobile',
+        last_checked_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY(site_id, page_key, phrase_type),
+        FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
+      );
+
+      INSERT INTO page_rankings_new (
+        site_id, page_key, phrase_type, target_phrase, google_rank, is_top_100,
+        ranking_url, is_url_match, search_volume, volume_checked_at, search_engine,
+        location_code, device, last_checked_at, updated_at
+      )
+      SELECT
+        site_id,
+        CASE WHEN page_key LIKE '%_secondary' THEN SUBSTR(page_key, 1, LENGTH(page_key) - 10) ELSE page_key END,
+        CASE WHEN page_key LIKE '%_secondary' THEN 'secondary' ELSE 'primary' END,
+        target_phrase, google_rank, is_top_100, ranking_url, is_url_match,
+        search_volume, volume_checked_at, search_engine, location_code, device,
+        last_checked_at, updated_at
+      FROM page_rankings;
+
+      DROP TABLE page_rankings;
+      ALTER TABLE page_rankings_new RENAME TO page_rankings;
+    `)
+    console.log('[MIGRATION] page_rankings schema migration complete.')
+  }
+
+  // Update existing rank_history page_key values ending in _secondary
+  db.exec(`
+    UPDATE rank_history
+    SET page_key = SUBSTR(page_key, 1, LENGTH(page_key) - 10)
+    WHERE page_key LIKE '%_secondary';
+  `)
+
+  // Migrate legacy full-URL rows in page_configurations (e.g. Digital Spain)
+  const fullUrlRows = db.prepare("SELECT * FROM page_configurations WHERE page_key LIKE 'http://%' OR page_key LIKE 'https://%'").all()
+  for (const row of fullUrlRows) {
+    const siteId = row.site_id
+    const phrase = (row.target_phrase || '').trim()
+    if (phrase) {
+      const homeRow = db.prepare("SELECT * FROM page_configurations WHERE site_id = ? AND page_key = 'home'").get(siteId)
+      if (homeRow) {
+        let parsedHome = {}
+        try { parsedHome = JSON.parse(homeRow.config_json || '{}') } catch(e) {}
+        if (!parsedHome.secondaryTargetPhrase) {
+          parsedHome.secondaryTargetPhrase = phrase
+          db.prepare("UPDATE page_configurations SET config_json = ?, updated_at = ? WHERE site_id = ? AND page_key = 'home'")
+            .run(JSON.stringify(parsedHome), new Date().toISOString(), siteId)
+        }
+      }
+    }
+    db.prepare("DELETE FROM page_configurations WHERE site_id = ? AND page_key = ?").run(siteId, row.page_key)
+  }
+} catch (migErr) {
+  console.error('[MIGRATION EXCEPTION]', migErr.message)
+}
 
 // Safe idempotent migration: ensure domain_id, total_pages, and registry_status columns exist on websites table
 try {

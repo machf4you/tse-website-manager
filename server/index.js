@@ -4089,9 +4089,13 @@ app.get('/api/websites/:id/rankings', (req, res) => {
     const rankingsMap = {}
     rankingRows.forEach(r => {
       if (r.page_key) {
-        rankingsMap[r.page_key] = r
         const cleanK = normalizeDbPageKey(r.page_key).replace(/^\/+/, '').replace(/\/+$/, '')
-        if (cleanK) rankingsMap[cleanK] = r
+        const pType = r.phrase_type || 'primary'
+        rankingsMap[`${cleanK}:${pType}`] = r
+        rankingsMap[`${r.page_key}:${pType}`] = r
+        if (r.target_phrase) {
+          rankingsMap[`phrase:${r.target_phrase.toLowerCase().trim()}`] = r
+        }
       }
     })
 
@@ -4117,7 +4121,7 @@ app.get('/api/websites/:id/rankings', (req, res) => {
 
       const primaryPhrase = (c.target_phrase || parsed.targetPhrase || parsed.target || '').trim()
       if (primaryPhrase) {
-        const rMatch = rankingsMap[cleanKey] || rankingsMap[rawKey] || {}
+        const rMatch = rankingsMap[`${cleanKey}:primary`] || rankingsMap[`phrase:${primaryPhrase.toLowerCase()}`] || rankingsMap[cleanKey] || {}
         const hRows = historyStmt.all(id, cleanKey, primaryPhrase)
         let previousRank = null
         if (hRows && hRows.length > 1) {
@@ -4128,6 +4132,7 @@ app.get('/api/websites/:id/rankings', (req, res) => {
         const record = {
           siteId: id,
           pageKey: cleanKey,
+          phraseType: 'primary',
           targetPhrase: primaryPhrase,
           googleRank: rMatch.google_rank !== undefined ? rMatch.google_rank : null,
           previousRank: previousRank,
@@ -4150,9 +4155,8 @@ app.get('/api/websites/:id/rankings', (req, res) => {
       // Check secondary target phrase configured in W3
       const secPhrase = (parsed.secondaryTargetPhrase || parsed.secondary_target_phrase || parsed.secondaryTarget || '').trim()
       if (secPhrase) {
-        const secKey = `${cleanKey}_secondary`
-        const rMatchSec = rankingsMap[secKey] || {}
-        const hRowsSec = historyStmt.all(id, secKey, secPhrase)
+        const rMatchSec = rankingsMap[`${cleanKey}:secondary`] || rankingsMap[`phrase:${secPhrase.toLowerCase()}`] || rankingsMap[`${cleanKey}_secondary`] || {}
+        const hRowsSec = historyStmt.all(id, cleanKey, secPhrase)
         let previousRankSec = null
         if (hRowsSec && hRowsSec.length > 1) {
           previousRankSec = hRowsSec[1].google_rank
@@ -4161,7 +4165,8 @@ app.get('/api/websites/:id/rankings', (req, res) => {
         const pagePath = c.url || parsed.url || (cleanKey === 'home' ? '/' : `/${cleanKey}`)
         const secRecord = {
           siteId: id,
-          pageKey: secKey,
+          pageKey: cleanKey,
+          phraseType: 'secondary',
           targetPhrase: secPhrase,
           googleRank: rMatchSec.google_rank !== undefined ? rMatchSec.google_rank : null,
           previousRank: previousRankSec,
@@ -4178,7 +4183,7 @@ app.get('/api/websites/:id/rankings', (req, res) => {
           lastCheckedAt: rMatchSec.last_checked_at || rMatchSec.updated_at || c.updated_at,
           updatedAt: c.updated_at
         }
-        result[secKey] = secRecord
+        result[`${cleanKey}:secondary`] = secRecord
       }
     })
 
@@ -4337,9 +4342,11 @@ async function handleSinglePhraseRankCheck(req, res) {
     // 2. Fetch page configuration to determine target phrase & URL
     let targetPhrase = (req.body?.targetPhrase || req.body?.target || '').trim()
     let configuredUrl = (req.body?.url || req.body?.configuredUrl || '').trim()
+    let phraseType = req.body?.phraseType || (rawPageKey.endsWith('_secondary') ? 'secondary' : 'primary')
+    const cleanPageKey = pageKey.replace(/_secondary$/, '')
 
     if (!targetPhrase || !configuredUrl) {
-      const configRow = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ? AND page_key = ?`).get(id, pageKey)
+      const configRow = db.prepare(`SELECT * FROM page_configurations WHERE site_id = ? AND page_key = ?`).get(id, cleanPageKey)
       if (configRow) {
         if (!targetPhrase) targetPhrase = (configRow.target_phrase || '').trim()
         if (!configuredUrl) configuredUrl = (configRow.url || '').trim()
@@ -4347,7 +4354,7 @@ async function handleSinglePhraseRankCheck(req, res) {
     }
 
     if (!configuredUrl) {
-      configuredUrl = pageKey.startsWith('http://') || pageKey.startsWith('https://') || pageKey.startsWith('/') ? pageKey : (site.url || '')
+      configuredUrl = cleanPageKey.startsWith('http://') || cleanPageKey.startsWith('https://') || cleanPageKey.startsWith('/') ? cleanPageKey : (site.url || '')
     }
 
     if (!targetPhrase) {
@@ -4439,11 +4446,11 @@ async function handleSinglePhraseRankCheck(req, res) {
     // 6. Save result to page_rankings table
     const stmt = db.prepare(`
       INSERT INTO page_rankings (
-        site_id, page_key, target_phrase, google_rank, is_top_100, ranking_url, is_url_match, search_engine, location_code, device, last_checked_at, updated_at
+        site_id, page_key, phrase_type, target_phrase, google_rank, is_top_100, ranking_url, is_url_match, search_engine, location_code, device, last_checked_at, updated_at
       ) VALUES (
-        @site_id, @page_key, @target_phrase, @google_rank, @is_top_100, @ranking_url, @is_url_match, 'google.co.uk', 2826, 'mobile', @last_checked_at, @updated_at
+        @site_id, @page_key, @phrase_type, @target_phrase, @google_rank, @is_top_100, @ranking_url, @is_url_match, 'google.co.uk', 2826, 'mobile', @last_checked_at, @updated_at
       )
-      ON CONFLICT(site_id, page_key) DO UPDATE SET
+      ON CONFLICT(site_id, page_key, phrase_type) DO UPDATE SET
         target_phrase = excluded.target_phrase,
         google_rank = excluded.google_rank,
         is_top_100 = excluded.is_top_100,
@@ -4456,7 +4463,8 @@ async function handleSinglePhraseRankCheck(req, res) {
 
     stmt.run({
       site_id: id,
-      page_key: pageKey,
+      page_key: cleanPageKey,
+      phrase_type: phraseType,
       target_phrase: targetPhrase,
       google_rank: googleRank,
       is_top_100: isTop100,
@@ -4474,7 +4482,7 @@ async function handleSinglePhraseRankCheck(req, res) {
         ) VALUES (
           ?, ?, ?, ?, ?, ?, ?, 'google.co.uk', 2826, 'mobile', ?
         )
-      `).run(id, pageKey, targetPhrase, googleRank, isTop100, rankingUrl, isUrlMatch, now)
+      `).run(id, cleanPageKey, targetPhrase, googleRank, isTop100, rankingUrl, isUrlMatch, now)
     } catch (histErr) {
       console.error('Error inserting rank_history snapshot:', histErr)
     }

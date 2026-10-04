@@ -254,7 +254,7 @@ export default function RankTrackerPage({ site, onBack, onNavigateTab }) {
             disabled={isSyncingKR}
           >
             <RefreshIcon className={isSyncingKR ? 'icon-spin' : ''} />
-            {isSyncingKR ? 'Syncing Phrases...' : 'Sync Keyword Research Phrases'}
+            {isSyncingKR ? 'Importing Phrases...' : 'Import Phrases from Keyword Research'}
           </button>
           <button
             type="button"
@@ -322,7 +322,7 @@ export default function RankTrackerPage({ site, onBack, onNavigateTab }) {
               onClick={handleSyncKeywordResearch}
               disabled={isSyncingKR}
             >
-              Sync Approved Target Phrases from Keyword Research
+              Import Phrases from Keyword Research
             </button>
           </div>
         ) : (
@@ -342,7 +342,7 @@ export default function RankTrackerPage({ site, onBack, onNavigateTab }) {
               </thead>
               <tbody>
                 {rankings.map((row, idx) => (
-                  <tr key={row.pageKey || idx}>
+                  <tr key={`${row.pageKey}_${row.phraseType || 'primary'}_${row.targetPhrase || idx}`}>
                     <td>
                       <span className="rt-phrase-tag">
                         <TargetIcon /> {row.targetPhrase}
@@ -367,9 +367,9 @@ export default function RankTrackerPage({ site, onBack, onNavigateTab }) {
                         type="button"
                         className="rt-btn-check-sm"
                         onClick={() => handleCheckRank(row)}
-                        disabled={checkingPageKey === row.pageKey || isCheckingAll}
+                        disabled={checkingPageKey === `${row.pageKey}:${row.phraseType || 'primary'}` || isCheckingAll}
                       >
-                        {checkingPageKey === row.pageKey ? 'Checking...' : 'Check Rank'}
+                        {checkingPageKey === `${row.pageKey}:${row.phraseType || 'primary'}` ? 'Checking...' : 'Check Rank'}
                       </button>
                     </td>
                   </tr>

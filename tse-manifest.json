@@ -53,6 +53,7 @@
     "server/website_manager.db",
     "src/pages/GlobalSettings.jsx",
     "src/pages/ReferenceArchivePage.jsx",
+    "scripts/run_weekly_rank_check.cjs",
     "tse-manifest.json"
   ]
 }
