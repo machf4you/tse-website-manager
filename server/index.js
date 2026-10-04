@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications, getW7SocialSettings, saveW7SocialSettings } from './db.js'
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
 import { generateArticleDocxBuffer } from './docxGenerator.js'
@@ -87,7 +87,32 @@ function resolveGeminiApiKey() {
     } catch (e) {}
   }
   return null
-}
+// ── W7 Social Settings Endpoints ──
+app.get('/api/w7-social/settings', (req, res) => {
+  try {
+    const siteId = req.query.siteId || null
+    if (!siteId) {
+      return res.status(400).json({ success: false, error: 'siteId query parameter is required' })
+    }
+    const settings = getW7SocialSettings(siteId)
+    res.json({ success: true, settings })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/w7-social/settings', (req, res) => {
+  try {
+    const { siteId, ...settingsData } = req.body || {}
+    if (!siteId) {
+      return res.status(400).json({ success: false, error: 'siteId is required' })
+    }
+    const settings = saveW7SocialSettings(siteId, settingsData)
+    res.json({ success: true, settings })
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
 
 // ── W7 Social Image Generation Endpoints ──
 app.get('/api/w7-social/images', (req, res) => {
@@ -910,7 +935,8 @@ app.get('/api/w7-social/connected-accounts', async (req, res) => {
 
 app.get('/api/w7-social/publications', async (req, res) => {
   try {
-    const publications = getSocialPublications()
+    const siteId = req.query.siteId || null
+    const publications = getSocialPublications(siteId)
     const apiKey = resolveBundleSocialApiKey()
 
     if (apiKey && Array.isArray(publications) && publications.length > 0) {
@@ -973,7 +999,7 @@ app.get('/api/w7-social/publications', async (req, res) => {
 
 app.post('/api/w7-social/publish', async (req, res) => {
   try {
-    const { finalVideoId, teamId, accountId, channelId, platform = 'FACEBOOK', caption, accountName } = req.body || {}
+    const { finalVideoId, teamId, accountId, channelId, platform = 'FACEBOOK', caption, accountName, siteId } = req.body || {}
     const cleanCaption = (caption || '').trim()
 
     if (!finalVideoId) return res.status(400).json({ success: false, error: 'Final video ID is required.' })
@@ -1126,6 +1152,7 @@ app.post('/api/w7-social/publish', async (req, res) => {
 
     const pubRecord = {
       id: `pub_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      site_id: siteId ? String(siteId) : (finalVid.site_id ? String(finalVid.site_id) : null),
       final_video_id: String(finalVideoId),
       subject: finalVid.subject,
       platform: targetPlatform,

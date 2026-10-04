@@ -231,6 +231,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS social_publications (
     id TEXT PRIMARY KEY,
+    site_id TEXT DEFAULT NULL,
     final_video_id TEXT,
     subject TEXT,
     platform TEXT NOT NULL,
@@ -245,6 +246,22 @@ db.exec(`
     bundle_upload_id TEXT,
     published_at TEXT NOT NULL,
     created_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS w7_social_settings (
+    site_id TEXT PRIMARY KEY,
+    subject TEXT,
+    prompt TEXT,
+    format TEXT DEFAULT 'JPG',
+    aspect_ratio TEXT DEFAULT '9:16',
+    video_prompt TEXT,
+    headline TEXT,
+    cta TEXT,
+    team_id TEXT,
+    account_key TEXT,
+    publish_caption TEXT,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY(site_id) REFERENCES websites(id) ON DELETE CASCADE
   );
 `)
 
@@ -356,7 +373,7 @@ try {
   console.error('Error ensuring schema columns exist on websites table:', e)
 }
 
-// Safe idempotent migration: ensure error_message and external_post_id columns exist on social_publications table
+// Safe idempotent migration: ensure error_message, external_post_id, and site_id columns exist on social_publications table
 try {
   const pubCols = db.pragma('table_info(social_publications)')
   if (!pubCols.some(col => col.name === 'error_message')) {
@@ -365,6 +382,16 @@ try {
   if (!pubCols.some(col => col.name === 'external_post_id')) {
     db.exec(`ALTER TABLE social_publications ADD COLUMN external_post_id TEXT DEFAULT NULL;`)
   }
+  if (!pubCols.some(col => col.name === 'site_id')) {
+    db.exec(`ALTER TABLE social_publications ADD COLUMN site_id TEXT DEFAULT NULL;`)
+  }
+  // Associate legacy un-scoped W7 records with 'kitchen-test-site' so Kitchen setup is not broken
+  db.exec(`
+    UPDATE social_generated_images SET site_id = 'kitchen-test-site' WHERE site_id IS NULL OR site_id = '';
+    UPDATE social_generated_videos SET site_id = 'kitchen-test-site' WHERE site_id IS NULL OR site_id = '';
+    UPDATE social_generated_final_videos SET site_id = 'kitchen-test-site' WHERE site_id IS NULL OR site_id = '';
+    UPDATE social_publications SET site_id = 'kitchen-test-site' WHERE site_id IS NULL OR site_id = '';
+  `)
 } catch (e) {
   console.error('Error ensuring schema columns exist on social_publications table:', e)
 }
@@ -454,6 +481,46 @@ try {
   console.error('Error ensuring subject/aspect_ratio columns exist on social_generated_videos table:', e)
 }
 
+export function getW7SocialSettings(siteId) {
+  if (!siteId) return null
+  return db.prepare(`SELECT * FROM w7_social_settings WHERE site_id = ?`).get(String(siteId)) || null
+}
+
+export function saveW7SocialSettings(siteId, data) {
+  if (!siteId) return null
+  const stmt = db.prepare(`
+    INSERT INTO w7_social_settings (site_id, subject, prompt, format, aspect_ratio, video_prompt, headline, cta, team_id, account_key, publish_caption, updated_at)
+    VALUES (@site_id, @subject, @prompt, @format, @aspect_ratio, @video_prompt, @headline, @cta, @team_id, @account_key, @publish_caption, @updated_at)
+    ON CONFLICT(site_id) DO UPDATE SET
+      subject = excluded.subject,
+      prompt = excluded.prompt,
+      format = excluded.format,
+      aspect_ratio = excluded.aspect_ratio,
+      video_prompt = excluded.video_prompt,
+      headline = excluded.headline,
+      cta = excluded.cta,
+      team_id = excluded.team_id,
+      account_key = excluded.account_key,
+      publish_caption = excluded.publish_caption,
+      updated_at = excluded.updated_at
+  `)
+  stmt.run({
+    site_id: String(siteId),
+    subject: data.subject !== undefined ? data.subject : null,
+    prompt: data.prompt !== undefined ? data.prompt : null,
+    format: data.format || 'JPG',
+    aspect_ratio: data.aspect_ratio || data.aspectRatio || '9:16',
+    video_prompt: data.video_prompt !== undefined ? data.video_prompt : (data.videoPrompt !== undefined ? data.videoPrompt : null),
+    headline: data.headline !== undefined ? data.headline : null,
+    cta: data.cta !== undefined ? data.cta : null,
+    team_id: data.team_id !== undefined ? data.team_id : (data.teamId !== undefined ? data.teamId : null),
+    account_key: data.account_key !== undefined ? data.account_key : (data.accountKey !== undefined ? data.accountKey : null),
+    publish_caption: data.publish_caption !== undefined ? data.publish_caption : (data.publishCaption !== undefined ? data.publishCaption : null),
+    updated_at: new Date().toISOString()
+  })
+  return getW7SocialSettings(siteId)
+}
+
 export function saveSocialGeneratedImage(imgData) {
   const stmt = db.prepare(`
     INSERT INTO social_generated_images (id, site_id, subject, format, aspect_ratio, prompt, model, file_path, public_url, mime_type, file_size, created_at)
@@ -480,7 +547,7 @@ export function getSocialGeneratedImages(siteId = null) {
   if (siteId) {
     return db.prepare(`SELECT * FROM social_generated_images WHERE site_id = ? ORDER BY datetime(created_at) DESC`).all(String(siteId))
   }
-  return db.prepare(`SELECT * FROM social_generated_images ORDER BY datetime(created_at) DESC LIMIT 50`).all()
+  return []
 }
 
 export function saveSocialGeneratedVideo(videoData) {
@@ -509,7 +576,7 @@ export function getSocialGeneratedVideos(siteId = null) {
   if (siteId) {
     return db.prepare(`SELECT * FROM social_generated_videos WHERE site_id = ? ORDER BY datetime(created_at) DESC`).all(String(siteId))
   }
-  return db.prepare(`SELECT * FROM social_generated_videos ORDER BY datetime(created_at) DESC LIMIT 50`).all()
+  return []
 }
 
 export function saveSocialGeneratedFinalVideo(finalData) {
@@ -539,7 +606,7 @@ export function getSocialGeneratedFinalVideos(siteId = null) {
   if (siteId) {
     return db.prepare(`SELECT * FROM social_generated_final_videos WHERE site_id = ? ORDER BY datetime(created_at) DESC`).all(String(siteId))
   }
-  return db.prepare(`SELECT * FROM social_generated_final_videos ORDER BY datetime(created_at) DESC LIMIT 50`).all()
+  return []
 }
 
 export function deleteSocialGeneratedImage(id) {
@@ -625,11 +692,12 @@ export function updateSocialGeneratedFinalVideoSubject(id, subject) {
 
 export function saveSocialPublication(pubData) {
   const stmt = db.prepare(`
-    INSERT INTO social_publications (id, final_video_id, subject, platform, account_name, account_id, team_id, caption, status, error_message, external_post_id, bundle_post_id, bundle_upload_id, published_at, created_at)
-    VALUES (@id, @final_video_id, @subject, @platform, @account_name, @account_id, @team_id, @caption, @status, @error_message, @external_post_id, @bundle_post_id, @bundle_upload_id, @published_at, @created_at)
+    INSERT INTO social_publications (id, site_id, final_video_id, subject, platform, account_name, account_id, team_id, caption, status, error_message, external_post_id, bundle_post_id, bundle_upload_id, published_at, created_at)
+    VALUES (@id, @site_id, @final_video_id, @subject, @platform, @account_name, @account_id, @team_id, @caption, @status, @error_message, @external_post_id, @bundle_post_id, @bundle_upload_id, @published_at, @created_at)
   `)
   stmt.run({
     id: String(pubData.id),
+    site_id: pubData.site_id ? String(pubData.site_id) : null,
     final_video_id: pubData.final_video_id ? String(pubData.final_video_id) : null,
     subject: pubData.subject ? String(pubData.subject).trim() : null,
     platform: String(pubData.platform || 'FACEBOOK').toUpperCase(),
@@ -662,9 +730,13 @@ export function updateSocialPublicationStatus(idOrBundlePostId, status, errorMes
   return result.changes > 0
 }
 
-export function getSocialPublications() {
-  return db.prepare(`SELECT * FROM social_publications ORDER BY datetime(created_at) DESC LIMIT 50`).all()
+export function getSocialPublications(siteId = null) {
+  if (siteId) {
+    return db.prepare(`SELECT * FROM social_publications WHERE site_id = ? ORDER BY datetime(created_at) DESC LIMIT 50`).all(String(siteId))
+  }
+  return []
 }
+
 
 export default db
 

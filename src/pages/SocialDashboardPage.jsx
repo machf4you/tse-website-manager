@@ -51,17 +51,17 @@ const getFileFormat = (item) => {
 
 export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
   // Stage 1: Nano Banana Image State
-  const [subject, setSubject] = useState('Dormer Loft Conversion')
+  const [subject, setSubject] = useState('')
   const [format, setFormat] = useState('JPG')
   const [aspectRatio, setAspectRatio] = useState('9:16')
-  const [prompt, setPrompt] = useState('A sleek modern armchair in a sunlit architectural room with minimalist decor, high resolution 3d render')
+  const [prompt, setPrompt] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState(null)
   const [generatedImage, setGeneratedImage] = useState(null)
   const [historyImages, setHistoryImages] = useState([])
 
   // Stage 2: Veo Video State
-  const [videoPrompt, setVideoPrompt] = useState('Slow smooth camera pan right with gentle ambient lighting shift')
+  const [videoPrompt, setVideoPrompt] = useState('')
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false)
   const [videoError, setVideoError] = useState(null)
   const [generatedVideo, setGeneratedVideo] = useState(null)
@@ -69,8 +69,8 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
   const [isSourcePromptExpanded, setIsSourcePromptExpanded] = useState(false)
 
   // Stage 3: Creatomate Video Finishing State
-  const [headline, setHeadline] = useState('Transform Your Home with a Loft Extension')
-  const [cta, setCta] = useState('Get Your Free Quote Today!')
+  const [headline, setHeadline] = useState('')
+  const [cta, setCta] = useState('')
   const [isGeneratingFinalVideo, setIsGeneratingFinalVideo] = useState(false)
   const [finalVideoError, setFinalVideoError] = useState(null)
   const [generatedFinalVideo, setGeneratedFinalVideo] = useState(null)
@@ -84,7 +84,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
   const [accountsError, setAccountsError] = useState(null)
   const [selectedAccountKey, setSelectedAccountKey] = useState('')
-  const [publishCaption, setPublishCaption] = useState('Discover our latest custom project! Contact us today for details.')
+  const [publishCaption, setPublishCaption] = useState('')
   const [isApproved, setIsApproved] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishError, setPublishError] = useState(null)
@@ -101,20 +101,89 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
 
   const siteId = site?.id || null
 
-  // Fetch server-preserved images, videos, final videos, and connected accounts on mount
+  const saveSettingsToServer = (overrides = {}) => {
+    if (!siteId) return
+    const payload = {
+      siteId,
+      subject,
+      prompt,
+      format,
+      aspect_ratio: aspectRatio,
+      video_prompt: videoPrompt,
+      headline,
+      cta,
+      team_id: selectedTeamId,
+      account_key: selectedAccountKey,
+      publish_caption: publishCaption,
+      ...overrides
+    }
+    fetch('/api/w7-social/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(err => console.error('Failed to persist W7 Social settings:', err))
+  }
+
+  // Fetch server-preserved images, videos, final videos, settings, and connected accounts on mount
   useEffect(() => {
     let isMounted = true
 
-    const imagesUrl = siteId ? `/api/w7-social/images?siteId=${encodeURIComponent(siteId)}` : '/api/w7-social/images'
-    const videosUrl = siteId ? `/api/w7-social/videos?siteId=${encodeURIComponent(siteId)}` : '/api/w7-social/videos'
-    const finalVideosUrl = siteId ? `/api/w7-social/final-videos?siteId=${encodeURIComponent(siteId)}` : '/api/w7-social/final-videos'
+    // Reset local React state to blank first whenever siteId changes
+    setSubject('')
+    setFormat('JPG')
+    setAspectRatio('9:16')
+    setPrompt('')
+    setGeneratedImage(null)
+    setHistoryImages([])
 
-    fetch(imagesUrl)
+    setVideoPrompt('')
+    setGeneratedVideo(null)
+    setHistoryVideos([])
+
+    setHeadline('')
+    setCta('')
+    setGeneratedFinalVideo(null)
+    setHistoryFinalVideos([])
+
+    setTeamsList([])
+    setSelectedTeamId('')
+    setConnectedAccounts([])
+    setSelectedAccountKey('')
+    setPublishCaption('')
+    setIsApproved(false)
+    setPublishError(null)
+    setPublishSuccess(null)
+    setPublicationsHistory([])
+
+    if (!siteId) return
+
+    // 1. Load saved W7 settings for this website
+    fetch(`/api/w7-social/settings?siteId=${encodeURIComponent(siteId)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (isMounted && data.success && data.settings) {
+          const s = data.settings
+          if (s.subject !== null && s.subject !== undefined) setSubject(s.subject)
+          if (s.prompt !== null && s.prompt !== undefined) setPrompt(s.prompt)
+          if (s.format) setFormat(s.format)
+          if (s.aspect_ratio) setAspectRatio(s.aspect_ratio)
+          if (s.video_prompt !== null && s.video_prompt !== undefined) setVideoPrompt(s.video_prompt)
+          if (s.headline !== null && s.headline !== undefined) setHeadline(s.headline)
+          if (s.cta !== null && s.cta !== undefined) setCta(s.cta)
+          if (s.team_id !== null && s.team_id !== undefined) setSelectedTeamId(s.team_id)
+          if (s.account_key !== null && s.account_key !== undefined) setSelectedAccountKey(s.account_key)
+          if (s.publish_caption !== null && s.publish_caption !== undefined) setPublishCaption(s.publish_caption)
+        }
+      })
+      .catch(err => console.error('Failed to load W7 Social settings:', err))
+
+    // 2. Load images history for this website
+    fetch(`/api/w7-social/images?siteId=${encodeURIComponent(siteId)}`)
       .then(res => res.json())
       .then(data => {
         if (isMounted && data.success && Array.isArray(data.images)) {
           setHistoryImages(data.images)
-          if (data.images.length > 0 && !generatedImage) {
+          if (data.images.length > 0) {
             const first = data.images[0]
             setGeneratedImage({
               id: first.id,
@@ -132,12 +201,13 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
       })
       .catch(err => console.error('Failed to load W7 Social images history:', err))
 
-    fetch(videosUrl)
+    // 3. Load videos history for this website
+    fetch(`/api/w7-social/videos?siteId=${encodeURIComponent(siteId)}`)
       .then(res => res.json())
       .then(data => {
         if (isMounted && data.success && Array.isArray(data.videos)) {
           setHistoryVideos(data.videos)
-          if (data.videos.length > 0 && !generatedVideo) {
+          if (data.videos.length > 0) {
             const firstVid = data.videos[0]
             setGeneratedVideo({
               id: firstVid.id,
@@ -154,12 +224,13 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
       })
       .catch(err => console.error('Failed to load W7 Social videos history:', err))
 
-    fetch(finalVideosUrl)
+    // 4. Load final videos history for this website
+    fetch(`/api/w7-social/final-videos?siteId=${encodeURIComponent(siteId)}`)
       .then(res => res.json())
       .then(data => {
         if (isMounted && data.success && Array.isArray(data.videos)) {
           setHistoryFinalVideos(data.videos)
-          if (data.videos.length > 0 && !generatedFinalVideo) {
+          if (data.videos.length > 0) {
             const firstFinalVid = data.videos[0]
             setGeneratedFinalVideo({
               id: firstFinalVid.id,
@@ -177,7 +248,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
       })
       .catch(err => console.error('Failed to load W7 Social final videos history:', err))
 
-    // Fetch connected accounts from bundle.social
+    // 5. Fetch connected accounts from bundle.social
     setIsLoadingAccounts(true)
     fetch('/api/w7-social/connected-accounts')
       .then(res => res.json())
@@ -187,15 +258,6 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
           if (data.success) {
             if (Array.isArray(data.teams)) {
               setTeamsList(data.teams)
-              if (data.teams.length > 0) {
-                // Auto-select I Want A New Kitchen if present, or first team
-                const kitchenTeam = data.teams.find(t => t.name.toLowerCase().includes('kitchen')) || data.teams[0]
-                setSelectedTeamId(kitchenTeam.id)
-                if (kitchenTeam.accounts && kitchenTeam.accounts.length > 0) {
-                  const firstAcc = kitchenTeam.accounts[0]
-                  setSelectedAccountKey(`${firstAcc.teamId}_${firstAcc.accountId}_${firstAcc.channelId || ''}`)
-                }
-              }
             }
             if (Array.isArray(data.accounts)) {
               setConnectedAccounts(data.accounts)
@@ -212,8 +274,8 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
         }
       })
 
-    // Fetch publications history
-    fetch('/api/w7-social/publications')
+    // 6. Fetch publication history for this website
+    fetch(`/api/w7-social/publications?siteId=${encodeURIComponent(siteId)}`)
       .then(res => res.json())
       .then(data => {
         if (isMounted && data.success && Array.isArray(data.publications)) {
@@ -666,7 +728,8 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
           channelId: targetAccount.channelId,
           platform: targetAccount.platform || 'FACEBOOK',
           accountName: targetAccount.accountName || targetAccount.displayName,
-          caption: publishCaption.trim()
+          caption: publishCaption.trim(),
+          siteId: siteId
         })
       })
 
@@ -796,6 +859,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
                 placeholder="e.g. Dormer Loft Conversion"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
+                onBlur={(e) => saveSettingsToServer({ subject: e.target.value })}
                 disabled={isGenerating}
               />
             </div>
@@ -808,7 +872,10 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
                 id="select-image-format"
                 className="sd-select"
                 value={format}
-                onChange={(e) => setFormat(e.target.value)}
+                onChange={(e) => {
+                  setFormat(e.target.value)
+                  saveSettingsToServer({ format: e.target.value })
+                }}
                 disabled={isGenerating}
               >
                 <option value="JPG">JPG</option>
@@ -824,7 +891,10 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
                 id="select-image-aspect-ratio"
                 className="sd-select"
                 value={aspectRatio}
-                onChange={(e) => setAspectRatio(e.target.value)}
+                onChange={(e) => {
+                  setAspectRatio(e.target.value)
+                  saveSettingsToServer({ aspect_ratio: e.target.value })
+                }}
                 disabled={isGenerating}
               >
                 <option value="9:16">9:16 &mdash; Portrait</option>
@@ -842,6 +912,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
               placeholder="Describe the image you want Nano Banana to generate..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              onBlur={(e) => saveSettingsToServer({ prompt: e.target.value })}
               rows={6}
               disabled={isGenerating}
             />
@@ -1111,6 +1182,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
               placeholder="Describe motion or camera angle for Veo (e.g., Slow smooth camera pan right)..."
               value={videoPrompt}
               onChange={(e) => setVideoPrompt(e.target.value)}
+              onBlur={(e) => saveSettingsToServer({ video_prompt: e.target.value })}
               rows={4}
               disabled={isGeneratingVideo}
             />
@@ -1380,6 +1452,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
               placeholder="e.g. Transform Your Home with a Loft Extension"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
+              onBlur={(e) => saveSettingsToServer({ headline: e.target.value })}
               disabled={isGeneratingFinalVideo}
             />
           </div>
@@ -1396,6 +1469,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
               placeholder="e.g. Get Your Free Quote Today!"
               value={cta}
               onChange={(e) => setCta(e.target.value)}
+              onBlur={(e) => saveSettingsToServer({ cta: e.target.value })}
               disabled={isGeneratingFinalVideo}
             />
             <span className="sd-field-hint">
@@ -1674,12 +1748,13 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
                   const newTeamId = e.target.value
                   setSelectedTeamId(newTeamId)
                   const filtered = newTeamId ? connectedAccounts.filter(a => a.teamId === newTeamId) : connectedAccounts
+                  let nextAccKey = ''
                   if (filtered.length > 0) {
                     const firstAcc = filtered[0]
-                    setSelectedAccountKey(`${firstAcc.teamId}_${firstAcc.accountId}_${firstAcc.channelId || ''}`)
-                  } else {
-                    setSelectedAccountKey('')
+                    nextAccKey = `${firstAcc.teamId}_${firstAcc.accountId}_${firstAcc.channelId || ''}`
                   }
+                  setSelectedAccountKey(nextAccKey)
+                  saveSettingsToServer({ team_id: newTeamId, account_key: nextAccKey })
                 }}
                 disabled={isPublishing}
               >
@@ -1711,7 +1786,11 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
                 id="select-connected-account"
                 className="sd-select"
                 value={selectedAccountKey}
-                onChange={(e) => setSelectedAccountKey(e.target.value)}
+                onChange={(e) => {
+                  const newAccKey = e.target.value
+                  setSelectedAccountKey(newAccKey)
+                  saveSettingsToServer({ account_key: newAccKey })
+                }}
                 disabled={isPublishing}
               >
                 <option value="">-- Select Connected Social Account --</option>
@@ -1742,6 +1821,7 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
               placeholder="Enter short social caption for the post..."
               value={publishCaption}
               onChange={(e) => setPublishCaption(e.target.value)}
+              onBlur={(e) => saveSettingsToServer({ publish_caption: e.target.value })}
               disabled={isPublishing}
             />
           </div>
