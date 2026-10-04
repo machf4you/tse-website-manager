@@ -848,14 +848,6 @@ export default function InternalLinkingPage({
                           <span className="il-flow-title">{grp.sourceTitle}</span>
                           <span className="il-flow-path">{grp.sourceUrl}</span>
                         </div>
-
-                        <div className="il-flow-arrow">➔</div>
-
-                        <div className="il-flow-box il-flow-to">
-                          <span className="il-flow-tag">LINKS TO:</span>
-                          <span className="il-flow-title">{pageTitle}</span>
-                          <span className="il-flow-path">{pagePath}</span>
-                        </div>
                       </div>
 
                       <div className="il-audit-card-badges">
