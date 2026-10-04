@@ -7,6 +7,8 @@ import SocialDashboardPage from './SocialDashboardPage'
 import BacklinksPage from './BacklinksPage'
 import GlobalSettings from './GlobalSettings'
 
+import { getSiteSlug } from '../utils/siteSlugHelper'
+
 const Share2Icon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
     <circle cx="18" cy="5" r="3"/>
@@ -151,7 +153,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     if (path === '/w4-audit-results' || path === '/w4' || path === '/w4-page-audit' || path === '/w3-audit-results') return 'w4'
     if (path === '/w5-internal-linking' || path === '/w5' || path === '/w4-internal-linking' || path === '/w5-all-internal-links' || path === '/w5-review-links') return 'w5'
     if (path === '/w6-rank-tracker' || path === '/w6' || path === '/rank-tracker') return 'w6'
-    if (path === '/w7-social' || path === '/w7' || path === '/social') return 'w7'
+    if (path === '/w7-social' || path === '/w7' || path === '/social' || path.startsWith('/social/')) return 'w7'
     if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path === '/w8-backlink-inventory') return 'w8'
     return null
   }
@@ -184,10 +186,23 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       else if (tab === 'w4' || tab === 'w3_audit_results' || tab === 'w4-audit-results') navigate('/w4-audit-results')
       else if (tab === 'w5' || tab === 'w4_internal_linking' || tab === 'w4-internal-linking' || tab === 'w5-internal-linking' || tab === 'w5_all_internal_links' || tab === 'w5_review_links') navigate('/w5-internal-linking')
       else if (tab === 'w6' || tab === 'w6-rank-tracker' || tab === 'rank-tracker' || tab === 'rank_tracker') navigate('/w6-rank-tracker')
-      else if (tab === 'w7' || tab === 'w7-social' || tab === 'social' || tab === 'w7_social') navigate('/w7-social')
+      else if (tab === 'w7' || tab === 'w7-social' || tab === 'social' || tab === 'w7_social') {
+        const slug = getSiteSlug(site)
+        navigate(`/social/${slug}`)
+      }
       else if (tab === 'w8' || tab === 'w8-backlinks' || tab === 'backlinks' || tab === 'w8_backlinks') navigate('/w8-backlinks')
     }
   }
+
+  useEffect(() => {
+    if (activeTab === 'w7' && site) {
+      const slug = getSiteSlug(site)
+      const targetPath = `/social/${slug}`
+      if (currentPath !== targetPath && (currentPath === '/w7-social' || currentPath === '/w7' || currentPath === '/social')) {
+        if (navigate) navigate(targetPath, true)
+      }
+    }
+  }, [activeTab, site, currentPath, navigate])
 
   useEffect(() => {
     try {

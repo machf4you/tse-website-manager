@@ -11,7 +11,8 @@ import {
   getActiveRegistryDomainsApi,
   getAllRegistryDomainsApi
 } from '../services/websiteManagerApi'
-import { useWebsiteManagerRealtime } from '../services/supabaseRealtime'
+import { parseRoute } from '../App'
+import { getSiteSlug, resolveSiteFromSlug } from '../utils/siteSlugHelper'
 import './WebsitesDashboard.css'
 
 export default function WebsitesDashboard({ currentPath, navigate }) {
@@ -76,8 +77,24 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
         if (isMounted && Array.isArray(apiSites) && apiSites.length > 0) {
           setSites(apiSites)
 
-          // 2. Authoritative Server State Hydration: Update active managedSite from fresh server record
+          // 2. Authoritative Server State Hydration: Update active managedSite from fresh server record or URL slug
           setManagedSiteState(prevManaged => {
+            const routeInfo = parseRoute(currentPath || (typeof window !== 'undefined' ? window.location.pathname : ''))
+            if (routeInfo.websiteSlug) {
+              const matchedFromSlug = resolveSiteFromSlug(routeInfo.websiteSlug, apiSites)
+              if (matchedFromSlug) {
+                try {
+                  const siteIdStr = String(matchedFromSlug.id)
+                  localStorage.setItem('tse_managed_site_object_v1', JSON.stringify(matchedFromSlug))
+                  localStorage.setItem('tse_managed_site', JSON.stringify(matchedFromSlug))
+                  localStorage.setItem('tse_managed_site_id_v1', siteIdStr)
+                  localStorage.setItem('tse_managed_site_id', siteIdStr)
+                  localStorage.setItem('tse_selected_site_id', siteIdStr)
+                } catch (e) {}
+                return matchedFromSlug
+              }
+            }
+
             const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
                             localStorage.getItem('tse_managed_site_id') ||
                             localStorage.getItem('tse_selected_site_id') ||
@@ -142,6 +159,16 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
 
   const [managedSite, setManagedSiteState] = useState(() => {
     try {
+      const routeInfo = parseRoute(currentPath || (typeof window !== 'undefined' ? window.location.pathname : ''))
+      const sitesRaw = localStorage.getItem('tse_website_dashboard_sites')
+      if (routeInfo.websiteSlug && sitesRaw) {
+        try {
+          const list = JSON.parse(sitesRaw)
+          const matchedFromSlug = resolveSiteFromSlug(routeInfo.websiteSlug, list)
+          if (matchedFromSlug) return matchedFromSlug
+        } catch (e) {}
+      }
+
       const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
                       localStorage.getItem('tse_managed_site_id') ||
                       localStorage.getItem('tse_selected_site_id')
@@ -156,7 +183,6 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
             }
           } catch (e) {}
         }
-        const sitesRaw = localStorage.getItem('tse_website_dashboard_sites')
         if (sitesRaw) {
           try {
             const list = JSON.parse(sitesRaw)
@@ -176,9 +202,21 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     return null
   })
 
-  // Ensure managedSite is hydrated if user lands directly on a W2/W3/W4/W5/W6 route
+  // Ensure managedSite is hydrated if user lands directly on a sub-route or URL slug
   useEffect(() => {
-    if (!managedSite && sites.length > 0 && ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks'].includes(currentPath)) {
+    const routeInfo = parseRoute(currentPath)
+
+    if (routeInfo.websiteSlug && sites.length > 0) {
+      const matchedFromSlug = resolveSiteFromSlug(routeInfo.websiteSlug, sites)
+      if (matchedFromSlug && String(managedSite?.id) !== String(matchedFromSlug.id)) {
+        setManagedSite(matchedFromSlug)
+      }
+    } else if (currentPath === '/w7-social' && managedSite) {
+      const slug = getSiteSlug(managedSite)
+      if (slug && navigate) {
+        navigate(`/social/${slug}`, true)
+      }
+    } else if (!managedSite && sites.length > 0 && ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks'].includes(currentPath)) {
       const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
                       localStorage.getItem('tse_managed_site_id') ||
                       localStorage.getItem('tse_selected_site_id')
@@ -386,7 +424,7 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
   })
 
-  const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks'].includes(currentPath)
+  const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks'].includes(currentPath) || currentPath.startsWith('/social/')
   const isW1 = currentPath === '/w1-connected-sites' || (!managedSite && !isSubPage)
 
   if (managedSite && !isW1) {

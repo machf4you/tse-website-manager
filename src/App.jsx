@@ -211,11 +211,25 @@ export function parseRoute(pathname) {
     }
   }
 
+  // Website-specific W7 Social route: /social/:slug or /w7-social/:slug or /w7/:slug
+  const socialSlugMatch = path.match(/^\/(?:social|w7-social|w7)\/([^/]+)$/)
+  if (socialSlugMatch) {
+    const websiteSlug = socialSlugMatch[1]
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w7',
+      websiteSlug,
+      canonicalPath: `/social/${websiteSlug}`
+    }
+  }
+
   if (path === '/w7-social' || path === '/w7' || path === '/social') {
     return {
       currentView: 'website-manager',
       activeNavTab: 'websites',
       wPage: 'w7',
+      websiteSlug: null,
       canonicalPath: '/w7-social'
     }
   }
@@ -357,7 +371,7 @@ function App() {
             aria-current={activeNavTab === 'websites' ? 'page' : undefined}
             id="nav-tab-websites"
             onClick={() => {
-              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social'].includes(currentPath)) {
+              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks'].includes(currentPath) || currentPath.startsWith('/social/')) {
                 navigate(currentPath)
               } else {
                 navigate('/w1-connected-sites')
