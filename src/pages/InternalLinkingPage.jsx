@@ -832,31 +832,6 @@ export default function InternalLinkingPage({
 
     return (
       <div className="il-card-details">
-        {/* Sub-Tabs Bar inside Drawer */}
-        <div className="il-drawer-tabs-bar">
-          <button
-            type="button"
-            className={`il-drawer-tab ${activeTab === 'in' ? 'active' : ''}`}
-            onClick={() => handleSelectTab(page.url, 'in')}
-          >
-            🔗 LINKS IN ({page.incomingCount} unique sources / {page.existing.length} occ)
-          </button>
-          <button
-            type="button"
-            className={`il-drawer-tab ${activeTab === 'out' ? 'active' : ''}`}
-            onClick={() => handleSelectTab(page.url, 'out')}
-          >
-            🎯 LINKS OUT ({page.outgoingCount} unique destinations / {totalOutOccurrences} occ)
-          </button>
-          <button
-            type="button"
-            className={`il-drawer-tab ${activeTab === 'rec' ? 'active' : ''}`}
-            onClick={() => handleSelectTab(page.url, 'rec')}
-          >
-            ✨ RECOMMENDED LINKS ({page.recommended.length})
-          </button>
-        </div>
-
         {/* Tab 1: LINKS IN Content */}
         {activeTab === 'in' && (
           <div className="il-section-block">
@@ -1059,8 +1034,6 @@ export default function InternalLinkingPage({
               <th className="th-priority">PRIORITY</th>
               <th className="th-page">PAGE</th>
               <th className="th-target">TARGET</th>
-              <th className="th-rank">UK RANK</th>
-              <th className="th-volume">VOLUME</th>
               <th className="th-links-in">LINKS IN</th>
               <th className="th-links-out">LINKS OUT</th>
               <th className="th-status">STATUS</th>
@@ -1093,12 +1066,6 @@ export default function InternalLinkingPage({
                     ) : (
                       <span className="il-target-empty">—</span>
                     )}
-                  </td>
-                  <td className="col-rank-val">
-                    {renderRankCell(page)}
-                  </td>
-                  <td className="col-volume-val">
-                    {renderVolumeCell(page)}
                   </td>
                   <td className="col-links-count">
                     <button
@@ -1149,7 +1116,7 @@ export default function InternalLinkingPage({
               return [
                 row,
                 <tr key={`${page.url || idx}-expansion`} className="il-review-expansion-row">
-                  <td colSpan={9}>
+                  <td colSpan={7}>
                     {renderPageReviewDetail(page)}
                   </td>
                 </tr>
