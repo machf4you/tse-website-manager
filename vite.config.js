@@ -65,6 +65,9 @@ function generateVersionPlugin() {
           'utf-8'
         )
       }
+    },
+    transformIndexHtml(html) {
+      return html.replace(/(src|href)=["'](\/assets\/[^"']+)["']/g, `$1="$2?v=${buildTime}"`)
     }
   }
 }

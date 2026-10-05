@@ -329,6 +329,24 @@ function App() {
   const [currentView, setCurrentViewState] = useState(initialRoute.currentView)
   const [activeNavTab, setActiveNavTabState] = useState(initialRoute.activeNavTab)
 
+  useEffect(() => {
+    fetch(`/version.json?t=${Date.now()}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(ver => {
+        if (ver && ver.buildHash) {
+          const stored = localStorage.getItem('tse_wm_active_build_hash')
+          if (stored && stored !== ver.buildHash) {
+            console.log('[Version] New build detected:', ver.buildHash, 'reloading cache...')
+            localStorage.setItem('tse_wm_active_build_hash', ver.buildHash)
+            window.location.reload(true)
+          } else if (!stored) {
+            localStorage.setItem('tse_wm_active_build_hash', ver.buildHash)
+          }
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const navigate = (path, replace = false) => {
     const parsed = parseRoute(path)
     if (typeof window !== 'undefined') {
