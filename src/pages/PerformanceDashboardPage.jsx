@@ -382,6 +382,24 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
         </div>
       </div>
 
+      {(slug === 'digital-spain' || slug === 'digitalspain' || site?.url?.includes('digitalspain') || String(site?.id) === 'e6a8d672-8785-4a52-b131-4122d2eeefed') && (
+        <div style={{
+          width: '100%',
+          backgroundColor: '#facc15',
+          color: '#000000',
+          padding: '12px 16px',
+          fontWeight: '700',
+          textAlign: 'center',
+          fontSize: '1rem',
+          borderRadius: '6px',
+          marginBottom: '16px',
+          letterSpacing: '0.02em',
+          boxShadow: '0 2px 8px rgba(250, 204, 21, 0.3)'
+        }}>
+          TEST — DIGITAL SPAIN NEW BUILD IS LIVE
+        </div>
+      )}
+
       {/* ── Header Title Row ── */}
       <div className="perf-header">
         <div className="perf-header-meta">
