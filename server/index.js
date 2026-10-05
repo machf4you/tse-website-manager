@@ -87,7 +87,8 @@ app.get('/api/w9-gbp', (req, res) => {
 
 app.post('/api/w9-gbp', (req, res) => {
   try {
-    const { siteId, ...gbpData } = req.body || {}
+    const siteId = req.body?.siteId || req.body?.site_id || req.body?.site
+    const gbpData = req.body || {}
     if (!siteId) {
       return res.status(400).json({ success: false, error: 'siteId is required' })
     }
@@ -2600,6 +2601,186 @@ app.post('/api/websites/:id/package', (req, res) => {
   }
 })
 
+// Core Lightweight Server-Side Technical Verification Routine (XML Sitemap, GTM, GA)
+async function performTechnicalSetupChecks(id) {
+  const site = getWebsiteByIdFromDb(id)
+  if (!site) throw new Error(`Website not found for ID or slug: ${id}`)
+
+  const siteId = site.id
+  let targetUrl = (site.url || '').trim().replace(/\/+$/, '')
+  if (!targetUrl) throw new Error('Website URL is required for technical checks.')
+  if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+    targetUrl = `https://${targetUrl}`
+  }
+
+  console.log(`[TechnicalCheck] Performing technical setup checks for ${siteId} (${targetUrl})...`)
+
+  const now = new Date().toISOString()
+
+  // 1. XML Sitemap Verification
+  const sitemapCandidateUrls = [
+    `${targetUrl}/sitemap.xml`,
+    `${targetUrl.replace('www.', '')}/sitemap.xml`,
+    `${targetUrl}/sitemap_index.xml`,
+    `${targetUrl}/wp-sitemap.xml`
+  ]
+
+  let sitemapResult = {
+    status: 'Missing',
+    url: null,
+    lastChecked: now
+  }
+
+  for (const smUrl of sitemapCandidateUrls) {
+    try {
+      const resp = await fetch(smUrl, {
+        method: 'GET',
+        headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Technical Verification)' },
+        signal: AbortSignal.timeout(10000),
+        redirect: 'follow'
+      })
+      if (resp.ok) {
+        const contentType = resp.headers.get('content-type') || ''
+        const txt = await resp.text()
+        const lowerTxt = txt ? txt.toLowerCase() : ''
+        if (txt && (lowerTxt.includes('<sitemapindex') || lowerTxt.includes('<urlset') || (lowerTxt.includes('<loc>') && contentType.includes('xml')))) {
+          sitemapResult = {
+            status: 'Present',
+            url: smUrl,
+            lastChecked: now
+          }
+          console.log(`[TechnicalCheck] XML Sitemap PRESENT at ${smUrl}`)
+          break
+        }
+      }
+    } catch (err) {
+      console.warn(`[TechnicalCheck] Sitemap check failed for ${smUrl}:`, err.message)
+    }
+  }
+
+  // 2. Homepage Tracking (GTM & Google Analytics) Verification
+  let gtmResult = {
+    status: 'Not Detected',
+    containerId: null,
+    lastChecked: now
+  }
+
+  let gaResult = {
+    status: 'Not Detected',
+    measurementId: null,
+    type: null,
+    lastChecked: now
+  }
+
+  try {
+    const hpResp = await fetch(`${targetUrl}/`, {
+      method: 'GET',
+      headers: { 'User-Agent': 'TSE-Website-Manager/2.52 (Technical Verification)' },
+      signal: AbortSignal.timeout(10000),
+      redirect: 'follow'
+    })
+
+    if (hpResp.ok) {
+      const html = await hpResp.text()
+
+      // GTM Detection: GTM-XXXXXXX
+      const gtmMatch = html.match(/googletagmanager\.com\/(?:gtm\.js\?id=|ns\.html\?id=)(GTM-[A-Z0-9]+)/i) ||
+                       html.match(/\b(GTM-[A-Z0-9]{5,10})\b/i)
+      if (gtmMatch && gtmMatch[1]) {
+        gtmResult = {
+          status: 'Installed',
+          containerId: gtmMatch[1].toUpperCase(),
+          lastChecked: now
+        }
+        console.log(`[TechnicalCheck] GTM INSTALLED: ${gtmResult.containerId}`)
+      }
+
+      // GA Detection: G-XXXXXXXXXX or UA-XXXXXXXX-X
+      const ga4Match = html.match(/googletagmanager\.com\/gtag\/js\?id=(G-[A-Z0-9]+)/i) ||
+                       html.match(/gtag\(['"]config['"]\s*,\s*['"](G-[A-Z0-9]+)['"]/i) ||
+                       html.match(/\b(G-[A-Z0-9]{8,12})\b/i)
+
+      const uaMatch = html.match(/gtag\(['"]config['"]\s*,\s*['"](UA-\d+-\d+)['"]/i) ||
+                      html.match(/\b(UA-\d+-\d+)\b/i)
+
+      if (ga4Match && ga4Match[1]) {
+        gaResult = {
+          status: 'Installed',
+          measurementId: ga4Match[1].toUpperCase(),
+          type: 'GA4',
+          lastChecked: now
+        }
+        console.log(`[TechnicalCheck] GA4 INSTALLED: ${gaResult.measurementId}`)
+      } else if (uaMatch && uaMatch[1]) {
+        gaResult = {
+          status: 'Installed',
+          measurementId: uaMatch[1].toUpperCase(),
+          type: 'UA',
+          lastChecked: now
+        }
+        console.log(`[TechnicalCheck] Universal Analytics INSTALLED: ${gaResult.measurementId}`)
+      }
+    }
+  } catch (err) {
+    console.warn(`[TechnicalCheck] Homepage HTML fetch failed for ${targetUrl}:`, err.message)
+  }
+
+  // Update website config_data in SQLite DB
+  const existingRow = db.prepare('SELECT config_data FROM websites WHERE id = ?').get(siteId)
+  let existingConfig = {}
+  if (existingRow && existingRow.config_data) {
+    try { existingConfig = JSON.parse(existingRow.config_data) } catch (_e) {}
+  }
+
+  const updatedConfig = {
+    ...existingConfig,
+    technicalChecks: {
+      sitemap: sitemapResult,
+      gtm: gtmResult,
+      ga: gaResult,
+      lastChecked: now
+    }
+  }
+
+  db.prepare('UPDATE websites SET config_data = ?, updated_at = ? WHERE id = ?')
+    .run(JSON.stringify(updatedConfig), now, siteId)
+
+  return updatedConfig.technicalChecks
+}
+
+// POST /api/websites/:id/check-technical-setup — Run sitemap & GTM/GA checks
+app.post('/api/websites/:id/check-technical-setup', async (req, res) => {
+  try {
+    const { id } = req.params
+    const checks = await performTechnicalSetupChecks(id)
+    res.json({ success: true, technicalChecks: checks })
+  } catch (e) {
+    console.error('Error running technical setup checks:', e.message)
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
+// GET /api/websites/:id/technical-setup — Fetch stored technical checks
+app.get('/api/websites/:id/technical-setup', async (req, res) => {
+  try {
+    const { id } = req.params
+    const site = getWebsiteByIdFromDb(id)
+    if (!site) return res.status(404).json({ success: false, error: 'Site not found' })
+
+    let configObj = {}
+    try { if (site.config_data) configObj = JSON.parse(site.config_data) } catch (_e) {}
+
+    let checks = configObj.technicalChecks
+    if (!checks) {
+      checks = await performTechnicalSetupChecks(id)
+    }
+
+    res.json({ success: true, technicalChecks: checks })
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message })
+  }
+})
+
 // Core Static HTML Discovery & Sync Routine
 async function performStaticSync(id, customUrl = null) {
   const site = getWebsiteByIdFromDb(id)
@@ -3554,6 +3735,9 @@ app.post('/api/websites/:id/wordpress-sync', async (req, res) => {
       SET url = ?, sync_status = 'Synced', total_pages = CASE WHEN ? > 0 THEN ? ELSE total_pages END, last_sync_timestamp = ?, updated_at = ?
       WHERE id = ?
     `).run(cleanSiteUrl, totalPagesCount, totalPagesCount, now, now, String(id))
+
+    // Automatically refresh lightweight technical setup checks on site sync
+    performTechnicalSetupChecks(String(id)).catch(err => console.warn('[WP Sync] Auto technical check failed:', err.message))
 
     res.json({
       success: true,

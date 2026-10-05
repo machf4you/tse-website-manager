@@ -939,6 +939,49 @@ export async function updateSiteGbpApi(site, updates = {}) {
   }
 }
 
+export async function checkWebsiteTechnicalSetupApi(site) {
+  let siteId = typeof site === 'object' ? (site?.id || site?.domain_id || site?.url || site?.name || site?.canonical_domain) : site
+
+  if (site && typeof site === 'object') {
+    const siteStr = JSON.stringify(site).toLowerCase()
+    if (siteStr.includes('digitalspain') || siteStr.includes('digital spain') || siteStr.includes('3f69330c-6360-46f7-95a0-e0b58eac0eab') || siteStr.includes('e6a8d672-8785-4a52-b131-4122d2eeefed')) {
+      siteId = 'e6a8d672-8785-4a52-b131-4122d2eeefed'
+    }
+  }
+
+  if (!siteId) return null
+  try {
+    const data = await fetchJson(`${API_BASE_URL}/websites/${encodeURIComponent(siteId)}/check-technical-setup`, {
+      method: 'POST'
+    })
+    return data && data.success ? data.technicalChecks : null
+  } catch (e) {
+    console.error('Failed to run technical setup checks:', e)
+    return null
+  }
+}
+
+export async function getWebsiteTechnicalSetupApi(site) {
+  let siteId = typeof site === 'object' ? (site?.id || site?.domain_id || site?.url || site?.name || site?.canonical_domain) : site
+
+  if (site && typeof site === 'object') {
+    const siteStr = JSON.stringify(site).toLowerCase()
+    if (siteStr.includes('digitalspain') || siteStr.includes('digital spain') || siteStr.includes('3f69330c-6360-46f7-95a0-e0b58eac0eab') || siteStr.includes('e6a8d672-8785-4a52-b131-4122d2eeefed')) {
+      siteId = 'e6a8d672-8785-4a52-b131-4122d2eeefed'
+    }
+  }
+
+  if (!siteId) return null
+  try {
+    const data = await fetchJson(`${API_BASE_URL}/websites/${encodeURIComponent(siteId)}/technical-setup`)
+    return data && data.success ? data.technicalChecks : null
+  } catch (e) {
+    console.error('Failed to fetch technical setup checks:', e)
+    return null
+  }
+}
+
+
 
 
 

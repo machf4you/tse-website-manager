@@ -482,7 +482,20 @@ export function getAllWebsitesFromDb() {
 }
 
 export function getWebsiteByIdFromDb(id) {
-  return getWebsiteByIdStmt.get(String(id))
+  if (!id) return undefined
+  const strId = String(id)
+  let row = getWebsiteByIdStmt.get(strId)
+  if (!row) {
+    const normId = normalizeSiteIdForDocs(strId)
+    if (normId && normId !== strId) {
+      row = getWebsiteByIdStmt.get(normId)
+    }
+  }
+  if (!row) {
+    const s = strId.toLowerCase().trim()
+    row = db.prepare(`SELECT * FROM websites WHERE LOWER(id) = ? OR LOWER(url) LIKE ? OR LOWER(name) LIKE ? LIMIT 1`).get(s, `%${s}%`, `%${s}%`)
+  }
+  return row
 }
 
 export function getWebsiteByDomainIdFromDb(domainId) {

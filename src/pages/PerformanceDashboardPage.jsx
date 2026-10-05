@@ -8,7 +8,9 @@ import {
   getPageRankingsApi,
   getSiteBacklinksApi,
   getSiteBacklinkPlanApi,
-  getSiteGbpApi
+  getSiteGbpApi,
+  checkWebsiteTechnicalSetupApi,
+  getWebsiteTechnicalSetupApi
 } from '../services/websiteManagerApi'
 import { extractPagesFromPackage } from '../utils/packageExtractor'
 import './PerformanceDashboardPage.css'
@@ -83,6 +85,8 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
   const [backlinksData, setBacklinksData] = useState({ total: 0, indexed: 0, awaiting: 0, planCount: 0, freeCount: 0, paidCount: 0, topPages: [] })
   const [gbpData, setGbpData] = useState({ status: 'Not Created', verification_status: 'Not Verified', business_name: '', primary_category: '', phone: '', website: '' })
   const [techData, setTechData] = useState({ auditedCount: 0, titlePassed: 0, titleAttention: 0, descPassed: 0, descAttention: 0, h1Passed: 0, h1Attention: 0, canonicalVerified: 0 })
+  const [localTechChecks, setLocalTechChecks] = useState(() => site?.configData?.technicalChecks || site?.technicalChecks || null)
+  const [isRefreshingChecks, setIsRefreshingChecks] = useState(false)
 
   const slug = getSiteSlug(site)
 
@@ -268,6 +272,17 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
           }
         } catch (e) {}
 
+        // 7. Fetch W10 Technical Setup Checks if not present
+        try {
+          const existingChecks = site?.configData?.technicalChecks || site?.technicalChecks
+          if (existingChecks) {
+            if (isMounted) setLocalTechChecks(existingChecks)
+          } else {
+            const techChecksRes = await getWebsiteTechnicalSetupApi(site)
+            if (isMounted && techChecksRes) setLocalTechChecks(techChecksRes)
+          }
+        } catch (e) {}
+
       } catch (err) {
         console.error('Error hydrating performance dashboard data:', err)
       } finally {
@@ -279,8 +294,38 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
     return () => { isMounted = false }
   }, [site])
 
-  // Derive genuine "Needs Attention" items strictly from existing data
+  const handleRefreshTechChecks = async () => {
+    if (!site?.id || isRefreshingChecks) return
+    setIsRefreshingChecks(true)
+    try {
+      const res = await checkWebsiteTechnicalSetupApi(site)
+      if (res) setLocalTechChecks(res)
+    } catch (e) {
+      console.error('Failed to refresh technical setup checks:', e)
+    } finally {
+      setIsRefreshingChecks(false)
+    }
+  }
+
+  // Derive genuine "Needs Attention" items strictly from existing & proven data
   const attentionItems = []
+
+  const sitemapInfo = localTechChecks?.sitemap || {}
+  const gtmInfo = localTechChecks?.gtm || {}
+  const gaInfo = localTechChecks?.ga || {}
+
+  if (sitemapInfo.status === 'Missing') {
+    attentionItems.push({ type: 'warning', text: 'XML Sitemap missing — no sitemap.xml or sitemap_index.xml detected', tab: 'w3' })
+  }
+
+  if (gtmInfo.status === 'Not Detected') {
+    attentionItems.push({ type: 'info', text: 'Google Tag Manager container not detected on homepage', tab: 'w3' })
+  }
+
+  if (gaInfo.status === 'Not Detected') {
+    attentionItems.push({ type: 'info', text: 'Google Analytics tracking code not detected on homepage', tab: 'w3' })
+  }
+
   if (gbpData.status === 'Not Created') {
     attentionItems.push({ type: 'warning', text: 'Google Business Profile is not created yet (W9)', tab: 'w9' })
   } else if (gbpData.verification_status === 'Not Verified') {
@@ -398,20 +443,70 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
             <div className="icon-badge bg-emerald"><CheckCircleIcon /></div>
             <div>
               <h3 className="card-title">Technical Summary & Onsite Setup</h3>
-              <span className="card-sub">Technical status derived from site inventory & page audits</span>
+              <span className="card-sub">Technical status derived from site inventory & verified HTTP checks</span>
             </div>
           </div>
+          <button 
+            type="button" 
+            className="card-action-btn btn-emerald" 
+            onClick={handleRefreshTechChecks}
+            disabled={isRefreshingChecks}
+            style={{ fontSize: '0.8rem', padding: '4px 10px' }}
+          >
+            {isRefreshingChecks ? 'Checking Site...' : 'Re-check Technical Setup'}
+          </button>
         </div>
 
         <div className="tech-summary-grid">
+          {/* XML Sitemap */}
           <div className="tech-item">
-            <span className="tech-icon text-emerald">✓</span>
+            <span className={`tech-icon ${sitemapInfo.status === 'Present' ? 'text-emerald' : (sitemapInfo.status === 'Missing' ? 'text-amber' : 'text-slate')}`}>
+              {sitemapInfo.status === 'Present' ? '✓' : (sitemapInfo.status === 'Missing' ? '⚠' : '○')}
+            </span>
             <div className="tech-info">
-              <span className="tech-label">XML Sitemap / Inventory</span>
-              <span className="tech-status">{pagesData.total > 0 ? `Found (${pagesData.total} Pages Discovered)` : 'Not Synchronised'}</span>
+              <span className="tech-label">XML Sitemap</span>
+              <span className="tech-status">
+                {sitemapInfo.status === 'Present' ? (
+                  <>
+                    Present
+                    {sitemapInfo.url && (
+                      <a href={sitemapInfo.url} target="_blank" rel="noreferrer" style={{ marginLeft: '6px', fontSize: '0.75rem', opacity: 0.8, color: '#38bdf8' }}>
+                        ({sitemapInfo.url.replace(/^https?:\/\/[^/]+/i, '')})
+                      </a>
+                    )}
+                  </>
+                ) : (sitemapInfo.status === 'Missing' ? 'Missing' : 'Not Checked')}
+              </span>
             </div>
           </div>
 
+          {/* Google Tag Manager */}
+          <div className="tech-item">
+            <span className={`tech-icon ${gtmInfo.status === 'Installed' ? 'text-emerald' : (gtmInfo.status === 'Not Detected' ? 'text-amber' : 'text-slate')}`}>
+              {gtmInfo.status === 'Installed' ? '✓' : (gtmInfo.status === 'Not Detected' ? '⚠' : '○')}
+            </span>
+            <div className="tech-info">
+              <span className="tech-label">Google Tag Manager</span>
+              <span className="tech-status">
+                {gtmInfo.status === 'Installed' ? `Installed — ${gtmInfo.containerId}` : (gtmInfo.status === 'Not Detected' ? 'Not Detected' : 'Not Checked')}
+              </span>
+            </div>
+          </div>
+
+          {/* Google Analytics */}
+          <div className="tech-item">
+            <span className={`tech-icon ${gaInfo.status === 'Installed' ? 'text-emerald' : (gaInfo.status === 'Not Detected' ? 'text-amber' : 'text-slate')}`}>
+              {gaInfo.status === 'Installed' ? '✓' : (gaInfo.status === 'Not Detected' ? '⚠' : '○')}
+            </span>
+            <div className="tech-info">
+              <span className="tech-label">Google Analytics</span>
+              <span className="tech-status">
+                {gaInfo.status === 'Installed' ? `Installed — ${gaInfo.measurementId}` : (gaInfo.status === 'Not Detected' ? 'Not Detected' : 'Not Checked')}
+              </span>
+            </div>
+          </div>
+
+          {/* Platform Connection */}
           <div className="tech-item">
             <span className="tech-icon text-emerald">✓</span>
             <div className="tech-info">
@@ -420,6 +515,7 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
             </div>
           </div>
 
+          {/* Target Keyword Setup */}
           <div className="tech-item">
             <span className={`tech-icon ${pagesData.unconfigured > 0 ? 'text-amber' : 'text-emerald'}`}>
               {pagesData.unconfigured > 0 ? '⚠' : '✓'}
