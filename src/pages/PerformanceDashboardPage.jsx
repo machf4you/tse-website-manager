@@ -272,16 +272,19 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
           }
         } catch (e) {}
 
-        // 7. Fetch W10 Technical Setup Checks if not present
+        // 7. Always fetch fresh W10 Technical Setup Checks from server
         try {
-          const existingChecks = site?.configData?.technicalChecks || site?.technicalChecks
-          if (existingChecks) {
-            if (isMounted) setLocalTechChecks(existingChecks)
-          } else {
-            const techChecksRes = await getWebsiteTechnicalSetupApi(site)
-            if (isMounted && techChecksRes) setLocalTechChecks(techChecksRes)
+          const techChecksRes = await getWebsiteTechnicalSetupApi(site)
+          if (isMounted && techChecksRes) {
+            setLocalTechChecks(techChecksRes)
+          } else if (isMounted && (site?.configData?.technicalChecks || site?.technicalChecks)) {
+            setLocalTechChecks(site.configData?.technicalChecks || site.technicalChecks)
           }
-        } catch (e) {}
+        } catch (e) {
+          if (isMounted && (site?.configData?.technicalChecks || site?.technicalChecks)) {
+            setLocalTechChecks(site.configData?.technicalChecks || site.technicalChecks)
+          }
+        }
 
       } catch (err) {
         console.error('Error hydrating performance dashboard data:', err)
