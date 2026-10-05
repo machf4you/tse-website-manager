@@ -257,6 +257,29 @@ export function parseRoute(pathname) {
     }
   }
 
+  // Website-specific W9 Google Business Profile route: /google-business/:slug or /w9-gbp/:slug or /w9/:slug
+  const gbpSlugMatch = path.match(/^\/(?:google-business|w9-gbp|w9)\/([^/]+)$/)
+  if (gbpSlugMatch) {
+    const websiteSlug = gbpSlugMatch[1]
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w9',
+      websiteSlug,
+      canonicalPath: `/google-business/${websiteSlug}`
+    }
+  }
+
+  if (path === '/w9-gbp' || path === '/w9' || path === '/google-business') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'w9',
+      websiteSlug: null,
+      canonicalPath: '/w9-gbp'
+    }
+  }
+
 
   // Fallback to W1
   return {
@@ -385,7 +408,7 @@ function App() {
             aria-current={activeNavTab === 'websites' ? 'page' : undefined}
             id="nav-tab-websites"
             onClick={() => {
-              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/')) {
+              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks', '/w9-gbp'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/') || currentPath.startsWith('/google-business/')) {
                 navigate(currentPath)
               } else {
                 navigate('/w1-connected-sites')

@@ -896,6 +896,49 @@ export async function updateSiteBacklinkPlanItemApi(site, itemId, updates = {}) 
   }
 }
 
+export async function getSiteGbpApi(site) {
+  let siteId = typeof site === 'object' ? (site?.id || site?.domain_id || site?.url || site?.name || site?.canonical_domain) : site
+  
+  if (site && typeof site === 'object') {
+    const siteStr = JSON.stringify(site).toLowerCase()
+    if (siteStr.includes('digitalspain') || siteStr.includes('digital spain') || siteStr.includes('3f69330c-6360-46f7-95a0-e0b58eac0eab') || siteStr.includes('e6a8d672-8785-4a52-b131-4122d2eeefed')) {
+      siteId = 'e6a8d672-8785-4a52-b131-4122d2eeefed'
+    }
+  }
+
+  if (!siteId) return null
+  try {
+    const data = await fetchJson(`${API_BASE_URL}/w9-gbp?siteId=${encodeURIComponent(siteId)}`)
+    return data && data.success ? data.gbp : null
+  } catch (e) {
+    console.error('Failed to fetch W9 GBP data:', e)
+    return null
+  }
+}
+
+export async function updateSiteGbpApi(site, updates = {}) {
+  let siteId = typeof site === 'object' ? (site?.id || site?.domain_id || site?.url || site?.name || site?.canonical_domain) : site
+  
+  if (site && typeof site === 'object') {
+    const siteStr = JSON.stringify(site).toLowerCase()
+    if (siteStr.includes('digitalspain') || siteStr.includes('digital spain') || siteStr.includes('3f69330c-6360-46f7-95a0-e0b58eac0eab') || siteStr.includes('e6a8d672-8785-4a52-b131-4122d2eeefed')) {
+      siteId = 'e6a8d672-8785-4a52-b131-4122d2eeefed'
+    }
+  }
+
+  if (!siteId) return null
+  try {
+    const data = await fetchJson(`${API_BASE_URL}/w9-gbp`, {
+      method: 'POST',
+      body: JSON.stringify({ siteId, ...updates })
+    })
+    return data && data.success ? data.gbp : null
+  } catch (e) {
+    console.error('Failed to update W9 GBP data:', e)
+    return null
+  }
+}
+
 
 
 

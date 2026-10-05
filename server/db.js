@@ -286,6 +286,20 @@ db.exec(`
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS website_gbp (
+    site_id TEXT PRIMARY KEY,
+    status TEXT DEFAULT 'Not Created',
+    business_name TEXT DEFAULT '',
+    profile_url TEXT DEFAULT '',
+    primary_category TEXT DEFAULT '',
+    website TEXT DEFAULT '',
+    phone TEXT DEFAULT '',
+    address_service_area TEXT DEFAULT '',
+    verification_status TEXT DEFAULT 'Not Verified',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `)
 
 // Run database migration for page_rankings phrase_type and legacy full-URL page keys
@@ -992,6 +1006,109 @@ export function saveSiteBacklinkPlanItem(siteId, itemData) {
 
   stmt.run(id, normId, domain, url, status, comments, sortOrder, now, now)
   return getSiteBacklinkPlan(normId).find(i => i.id === id)
+}
+
+export function getSiteGbp(siteId) {
+  const normId = normalizeSiteIdForDocs(siteId)
+  if (!normId) return {
+    site_id: '',
+    status: 'Not Created',
+    business_name: '',
+    profile_url: '',
+    primary_category: '',
+    website: '',
+    phone: '',
+    address_service_area: '',
+    verification_status: 'Not Verified'
+  }
+
+  let stmt
+  if (normId === 'e6a8d672-8785-4a52-b131-4122d2eeefed') {
+    stmt = db.prepare(`
+      SELECT * FROM website_gbp 
+      WHERE site_id IN ('e6a8d672-8785-4a52-b131-4122d2eeefed', '3f69330c-6360-46f7-95a0-e0b58eac0eab', 'digital-spain', 'digitalspain')
+      LIMIT 1
+    `)
+  } else {
+    stmt = db.prepare(`SELECT * FROM website_gbp WHERE site_id = ? LIMIT 1`)
+  }
+
+  const row = normId === 'e6a8d672-8785-4a52-b131-4122d2eeefed' ? stmt.get() : stmt.get(normId)
+  if (row) {
+    return {
+      site_id: row.site_id,
+      status: row.status || 'Not Created',
+      business_name: row.business_name || '',
+      profile_url: row.profile_url || '',
+      primary_category: row.primary_category || '',
+      website: row.website || '',
+      phone: row.phone || '',
+      address_service_area: row.address_service_area || '',
+      verification_status: row.verification_status || 'Not Verified'
+    }
+  }
+
+  return {
+    site_id: normId,
+    status: 'Not Created',
+    business_name: '',
+    profile_url: '',
+    primary_category: '',
+    website: '',
+    phone: '',
+    address_service_area: '',
+    verification_status: 'Not Verified'
+  }
+}
+
+export function saveSiteGbp(siteId, updates = {}) {
+  const normId = normalizeSiteIdForDocs(siteId)
+  if (!normId) throw new Error('siteId is required')
+
+  const existing = getSiteGbp(normId)
+  const now = new Date().toISOString()
+
+  const status = updates.status !== undefined ? String(updates.status) : (existing.status || 'Not Created')
+  const businessName = updates.business_name !== undefined ? String(updates.business_name) : (updates.businessName !== undefined ? String(updates.businessName) : (existing.business_name || ''))
+  const profileUrl = updates.profile_url !== undefined ? String(updates.profile_url) : (updates.profileUrl !== undefined ? String(updates.profileUrl) : (existing.profile_url || ''))
+  const primaryCategory = updates.primary_category !== undefined ? String(updates.primary_category) : (updates.primaryCategory !== undefined ? String(updates.primaryCategory) : (existing.primary_category || ''))
+  const website = updates.website !== undefined ? String(updates.website) : (existing.website || '')
+  const phone = updates.phone !== undefined ? String(updates.phone) : (existing.phone || '')
+  const addressServiceArea = updates.address_service_area !== undefined ? String(updates.address_service_area) : (updates.addressServiceArea !== undefined ? String(updates.addressServiceArea) : (existing.address_service_area || ''))
+  const verificationStatus = updates.verification_status !== undefined ? String(updates.verification_status) : (updates.verificationStatus !== undefined ? String(updates.verificationStatus) : (existing.verification_status || 'Not Verified'))
+
+  const stmt = db.prepare(`
+    INSERT INTO website_gbp (
+      site_id, status, business_name, profile_url, primary_category,
+      website, phone, address_service_area, verification_status, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(site_id) DO UPDATE SET
+      status = excluded.status,
+      business_name = excluded.business_name,
+      profile_url = excluded.profile_url,
+      primary_category = excluded.primary_category,
+      website = excluded.website,
+      phone = excluded.phone,
+      address_service_area = excluded.address_service_area,
+      verification_status = excluded.verification_status,
+      updated_at = excluded.updated_at
+  `)
+
+  stmt.run(
+    normId,
+    status,
+    businessName,
+    profileUrl,
+    primaryCategory,
+    website,
+    phone,
+    addressServiceArea,
+    verificationStatus,
+    existing.created_at || now,
+    now
+  )
+
+  return getSiteGbp(normId)
 }
 
 // Initial seed execution check

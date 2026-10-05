@@ -5,6 +5,7 @@ import InternalLinkingPage from './InternalLinkingPage'
 import RankTrackerPage from './RankTrackerPage'
 import SocialDashboardPage from './SocialDashboardPage'
 import BacklinksPage from './BacklinksPage'
+import GbpPage from './GbpPage'
 import GlobalSettings from './GlobalSettings'
 
 import { getSiteSlug } from '../utils/siteSlugHelper'
@@ -18,6 +19,13 @@ const Share2Icon = () => (
     <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
   </svg>
 )
+
+const MapPinIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+)
 import { extractPagesFromPackage, extractPostsFromPackage } from '../utils/packageExtractor'
 import { fetchTseWordPressExportPackage, fetchMagentoExportPackage, fetchStaticHtmlExportPackage } from '../services/exporterApi'
 import {
@@ -25,7 +33,8 @@ import {
   saveWpPackageApi,
   getPageConfigsApi,
   savePageConfigsApi,
-  getSiteBacklinksApi
+  getSiteBacklinksApi,
+  getSiteGbpApi
 } from '../services/websiteManagerApi'
 import { getSiteConfigsStorageKey, getSitePackageStorageKey } from '../utils/siteKeyHelper'
 import { generatePageSeoFingerprint } from '../utils/seoFingerprint'
@@ -155,6 +164,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     if (path === '/w6-rank-tracker' || path === '/w6' || path === '/rank-tracker') return 'w6'
     if (path === '/w7-social' || path === '/w7' || path === '/social' || path.startsWith('/social/')) return 'w7'
     if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path.startsWith('/backlinks/') || path === '/w8-backlink-inventory') return 'w8'
+    if (path === '/w9-gbp' || path === '/w9' || path === '/google-business' || path.startsWith('/google-business/')) return 'w9'
     return null
   }
 
@@ -194,6 +204,10 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
         const slug = getSiteSlug(site)
         navigate(`/backlinks/${slug}`)
       }
+      else if (tab === 'w9' || tab === 'w9-gbp' || tab === 'google-business' || tab === 'w9_gbp') {
+        const slug = getSiteSlug(site)
+        navigate(`/google-business/${slug}`)
+      }
     }
   }
 
@@ -209,6 +223,13 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       const slug = getSiteSlug(site)
       const targetPath = `/backlinks/${slug}`
       if (currentPath !== targetPath && (currentPath === '/w8-backlinks' || currentPath === '/w8' || currentPath === '/backlinks')) {
+        if (navigate) navigate(targetPath, true)
+      }
+    }
+    if (activeTab === 'w9' && site) {
+      const slug = getSiteSlug(site)
+      const targetPath = `/google-business/${slug}`
+      if (currentPath !== targetPath && (currentPath === '/w9-gbp' || currentPath === '/w9' || currentPath === '/google-business')) {
         if (navigate) navigate(targetPath, true)
       }
     }
@@ -526,9 +547,9 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
   useEffect(() => {
     if (!isPackageHydrated) return
 
-    // Do NOT force redirect to W2 if stored package data exists or if viewing W7 Social
+    // Do NOT force redirect to W2 if stored package data exists or if viewing W7 Social / W8 Backlinks / W9 GBP
     if (!storedPackageData && !site?.storedPackageData && (!isSynced || exportedPages.length === 0)) {
-      if (activeTab !== 'w2' && activeTab !== 'w7' && activeTab !== 'w7-social' && activeTab !== 'social' && activeTab !== 'w8' && activeTab !== 'w8-backlinks' && activeTab !== 'backlinks') {
+      if (activeTab !== 'w2' && activeTab !== 'w7' && activeTab !== 'w7-social' && activeTab !== 'social' && activeTab !== 'w8' && activeTab !== 'w8-backlinks' && activeTab !== 'backlinks' && activeTab !== 'w9' && activeTab !== 'w9-gbp' && activeTab !== 'google-business') {
         setActiveTab('w2')
       }
     }
@@ -687,6 +708,30 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     }
     return () => { isMounted = false }
   }, [site?.id, site?.url])
+
+  const [gbpSummary, setGbpSummary] = useState({ status: 'Not Created', verification_status: 'Not Verified', business_name: '', category: '' })
+
+  useEffect(() => {
+    let isMounted = true
+    if (site) {
+      getSiteGbpApi(site).then(res => {
+        if (isMounted && res) {
+          setGbpSummary(res)
+        }
+      }).catch(() => {})
+    }
+    return () => { isMounted = false }
+  }, [site?.id, site?.url])
+
+  if (activeTab === 'w9' || activeTab === 'google-business' || activeTab === 'w9_gbp' || activeTab === 'w9-gbp') {
+    return (
+      <GbpPage
+        site={site}
+        onBack={() => setActiveTab('w2')}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+      />
+    )
+  }
 
   if (activeTab === 'w8' || activeTab === 'backlinks' || activeTab === 'w8_backlinks' || activeTab === 'w8-backlinks') {
     return (
@@ -1141,6 +1186,47 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
             Open W8 Backlinks ›
           </button>
           <span className="w2-fc-tag">W8 | BACKLINKS</span>
+        </div>
+
+        {/* Card 6: Google Business Profile */}
+        <div className="w2-feature-card theme-red" onClick={() => setActiveTab('w9')} style={{ cursor: 'pointer' }}>
+          <div className="w2-fc-header">
+            <div className="w2-fc-icon-bg" style={{ color: '#ef4444' }}>
+              <MapPinIcon />
+            </div>
+            <h3 className="w2-fc-title">Google Business Profile</h3>
+          </div>
+          <p className="w2-fc-desc">
+            Permanent record of Google Business Profile associated with this website.
+          </p>
+          <div className="w2-backlinks-snapshot">
+            <div className="w2-bl-counts">
+              <div className="bl-count-item">
+                <span className="bl-num" style={{ fontSize: '1rem', color: gbpSummary?.status === 'Created' ? '#10b981' : '#94a3b8' }}>
+                  {gbpSummary?.status || 'Not Created'}
+                </span>
+                <span className="bl-lbl">Status</span>
+              </div>
+              <div className="bl-count-item">
+                <span className="bl-num" style={{ fontSize: '1rem', color: gbpSummary?.verification_status === 'Verified' ? '#10b981' : '#94a3b8' }}>
+                  {gbpSummary?.verification_status || 'Not Verified'}
+                </span>
+                <span className="bl-lbl">Verification</span>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="w2-fc-btn btn-open-red"
+            id="btn-open-gbp"
+            onClick={(e) => {
+              e.stopPropagation()
+              setActiveTab('w9')
+            }}
+          >
+            Open W9 Google Business Profile ›
+          </button>
+          <span className="w2-fc-tag">W9 | GOOGLE BUSINESS PROFILE</span>
         </div>
 
       </div>

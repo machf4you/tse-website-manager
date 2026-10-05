@@ -3,7 +3,7 @@ import cors from 'cors'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications, getW7SocialSettings, saveW7SocialSettings, getSiteBacklinkDocs, saveSiteBacklinkDoc, getSiteBacklinkPlan, updateSiteBacklinkPlanItem, saveSiteBacklinkPlanItem } from './db.js'
+import db, { getAllWebsitesFromDb, getWebsiteByIdFromDb, saveSocialGeneratedImage, getSocialGeneratedImages, deleteSocialGeneratedImage, saveSocialGeneratedVideo, getSocialGeneratedVideos, deleteSocialGeneratedVideo, saveSocialGeneratedFinalVideo, getSocialGeneratedFinalVideos, deleteSocialGeneratedFinalVideo, updateSocialGeneratedImageSubject, updateSocialGeneratedVideoSubject, updateSocialGeneratedFinalVideoSubject, saveSocialPublication, updateSocialPublicationStatus, getSocialPublications, getW7SocialSettings, saveW7SocialSettings, getSiteBacklinkDocs, saveSiteBacklinkDoc, getSiteBacklinkPlan, updateSiteBacklinkPlanItem, saveSiteBacklinkPlanItem, getSiteGbp, saveSiteGbp } from './db.js'
 
 import { DEFAULT_EXCLUSION_RULES, normalizeUrlForExclusionCheck, testExclusionRule } from '../src/utils/urlExclusions.js'
 import { suggestArticleOpportunity, suggestArticleOpportunityForSite, generateOnsiteArticle, parseArticleOutput, resolveAiApiKey } from './aiOnsiteArticleGenerator.js'
@@ -66,6 +66,35 @@ app.patch('/api/w8-backlinks/plan/:itemId', (req, res) => {
     res.json({ success: true, item })
   } catch (err) {
     console.error(`Error in PATCH /api/w8-backlinks/plan/${req.params.itemId}:`, err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+// ── W9 Google Business Profile Endpoints ──
+app.get('/api/w9-gbp', (req, res) => {
+  try {
+    const siteId = req.query.siteId || req.query.site_id || req.query.site
+    if (!siteId) {
+      return res.status(400).json({ success: false, error: 'siteId query parameter is required' })
+    }
+    const gbp = getSiteGbp(siteId)
+    res.json({ success: true, gbp })
+  } catch (err) {
+    console.error('Error in GET /api/w9-gbp:', err)
+    res.status(500).json({ success: false, error: err.message })
+  }
+})
+
+app.post('/api/w9-gbp', (req, res) => {
+  try {
+    const { siteId, ...gbpData } = req.body || {}
+    if (!siteId) {
+      return res.status(400).json({ success: false, error: 'siteId is required' })
+    }
+    const gbp = saveSiteGbp(siteId, gbpData)
+    res.json({ success: true, gbp })
+  } catch (err) {
+    console.error('Error in POST /api/w9-gbp:', err)
     res.status(500).json({ success: false, error: err.message })
   }
 })

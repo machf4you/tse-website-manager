@@ -820,6 +820,25 @@ export default function SocialDashboardPage({ site, onBack, onNavigateTab }) {
           >
             W8 | Backlinks
           </button>
+          <button
+            type="button"
+            className="rt-nav-btn-gbp"
+            id="btn-sd-gbp"
+            onClick={() => onNavigateTab && onNavigateTab('w9')}
+            style={{
+              background: 'rgba(56, 189, 248, 0.12)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              color: '#38bdf8',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            W9 | Google Business Profile
+          </button>
         </div>
       </div>
 
