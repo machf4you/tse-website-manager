@@ -1214,7 +1214,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
         {/* Card 6: Google Business Profile */}
         <div className="w2-feature-card theme-red" onClick={() => setActiveTab('w9')} style={{ cursor: 'pointer' }}>
           <div className="w2-fc-header">
-            <div className="w2-fc-icon-bg" style={{ color: '#ef4444' }}>
+            <div className="w2-fc-icon-bg">
               <MapPinIcon />
             </div>
             <h3 className="w2-fc-title">Google Business Profile</h3>
@@ -1222,19 +1222,13 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
           <p className="w2-fc-desc">
             Permanent record of Google Business Profile associated with this website.
           </p>
-          <div className="w2-backlinks-snapshot">
-            <div className="w2-bl-counts">
-              <div className="bl-count-item">
-                <span className="bl-num" style={{ fontSize: '1rem', color: gbpSummary?.status === 'Created' ? '#10b981' : '#94a3b8' }}>
+          <div className="w2-backlinks-snapshot" style={{ marginBottom: 'auto' }}>
+            <div className="w2-bl-counts" style={{ justifyContent: 'center' }}>
+              <div className="bl-count-item" style={{ alignItems: 'center' }}>
+                <span className="bl-num" style={{ fontSize: '1.1rem', color: gbpSummary?.status === 'Created' ? '#10b981' : '#94a3b8' }}>
                   {gbpSummary?.status || 'Not Created'}
                 </span>
-                <span className="bl-lbl">Status</span>
-              </div>
-              <div className="bl-count-item">
-                <span className="bl-num" style={{ fontSize: '1rem', color: gbpSummary?.verification_status === 'Verified' ? '#10b981' : '#94a3b8' }}>
-                  {gbpSummary?.verification_status || 'Not Verified'}
-                </span>
-                <span className="bl-lbl">Verification</span>
+                <span className="bl-lbl">STATUS</span>
               </div>
             </div>
           </div>
@@ -1255,7 +1249,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
         {/* Card 7: Performance Data */}
         <div className="w2-feature-card theme-blue" onClick={() => setActiveTab('performance')} style={{ cursor: 'pointer' }}>
           <div className="w2-fc-header">
-            <div className="w2-fc-icon-bg" style={{ color: '#38bdf8' }}>
+            <div className="w2-fc-icon-bg">
               <ActivityIcon />
             </div>
             <h3 className="w2-fc-title">Performance Data</h3>
@@ -1263,6 +1257,11 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
           <p className="w2-fc-desc">
             Overall Website Performance. Rankings, search performance, links, social and business profile at a glance.
           </p>
+          <ul className="w2-fc-checklist">
+            <li><span className="chk-icon">✓</span> Rankings & keyword positions</li>
+            <li><span className="chk-icon">✓</span> Technical summary & metadata</li>
+            <li><span className="chk-icon">✓</span> Links, social & GBP at a glance</li>
+          </ul>
           <button
             type="button"
             className="w2-fc-btn btn-open-blue"

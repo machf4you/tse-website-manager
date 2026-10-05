@@ -82,6 +82,7 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
   const [linksData, setLinksData] = useState({ totalRecs: 0, orphanPages: 0, recsList: [] })
   const [backlinksData, setBacklinksData] = useState({ total: 0, indexed: 0, awaiting: 0, planCount: 0, freeCount: 0, paidCount: 0, topPages: [] })
   const [gbpData, setGbpData] = useState({ status: 'Not Created', verification_status: 'Not Verified', business_name: '', primary_category: '', phone: '', website: '' })
+  const [techData, setTechData] = useState({ auditedCount: 0, titlePassed: 0, titleAttention: 0, descPassed: 0, descAttention: 0, h1Passed: 0, h1Attention: 0, canonicalVerified: 0 })
 
   const slug = getSiteSlug(site)
 
@@ -137,7 +138,55 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
           })
         }
 
-        // 2. Fetch W6 Rankings Data
+        // 2. Fetch Page Audits for Technical Summary
+        try {
+          const auditsRes = await getPageAuditsApi(site.id)
+          if (isMounted && auditsRes && typeof auditsRes === 'object') {
+            let auditedCount = 0
+            let titlePassed = 0
+            let titleAttention = 0
+            let descPassed = 0
+            let descAttention = 0
+            let h1Passed = 0
+            let h1Attention = 0
+            let canonicalVerified = 0
+
+            Object.values(auditsRes).forEach(rec => {
+              if (rec && rec.isAudited && rec.auditResult) {
+                auditedCount++
+                const snap = rec.auditResult.page_snapshot || rec.auditResult.snapshot || {}
+                const title = (snap.title || '').trim()
+                const desc = (snap.meta_description || snap.description || '').trim()
+                const h1Arr = Array.isArray(snap.h1) ? snap.h1 : (snap.h1 ? [snap.h1] : [])
+                const canonical = (snap.canonical || '').trim()
+
+                if (title && title.length >= 25) titlePassed++
+                else titleAttention++
+
+                if (desc && desc.length >= 50) descPassed++
+                else descAttention++
+
+                if (h1Arr.length > 0 && h1Arr[0]) h1Passed++
+                else h1Attention++
+
+                if (canonical) canonicalVerified++
+              }
+            })
+
+            setTechData({
+              auditedCount,
+              titlePassed,
+              titleAttention,
+              descPassed,
+              descAttention,
+              h1Passed,
+              h1Attention,
+              canonicalVerified
+            })
+          }
+        } catch (e) {}
+
+        // 3. Fetch W6 Rankings Data
         try {
           const rankingsRes = await getPageRankingsApi(site.id)
           if (isMounted && rankingsRes) {
@@ -163,7 +212,7 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
           }
         } catch (e) {}
 
-        // 3. Fetch W5 Internal Link Recs
+        // 4. Fetch W5 Internal Link Recs
         try {
           const recsRes = await getInternalLinkRecommendationsApi(site.id)
           if (isMounted && recsRes) {
@@ -180,7 +229,7 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
           }
         } catch (e) {}
 
-        // 4. Fetch W8 Backlinks & Plan
+        // 5. Fetch W8 Backlinks & Plan
         try {
           const [blRes, planRes] = await Promise.allSettled([
             getSiteBacklinksApi(site),
@@ -211,7 +260,7 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
           }
         } catch (e) {}
 
-        // 5. Fetch W9 GBP Data
+        // 6. Fetch W9 GBP Data
         try {
           const gbpRes = await getSiteGbpApi(site)
           if (isMounted && gbpRes) {
@@ -240,6 +289,18 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
 
   if (pagesData.unconfigured > 0) {
     attentionItems.push({ type: 'info', text: `${pagesData.unconfigured} pages require keyword & target phrase configuration (W3)`, tab: 'w3' })
+  }
+
+  if (techData.titleAttention > 0) {
+    attentionItems.push({ type: 'warning', text: `${techData.titleAttention} audited page(s) have Meta Title optimization issues (W4)`, tab: 'w3' })
+  }
+
+  if (techData.descAttention > 0) {
+    attentionItems.push({ type: 'warning', text: `${techData.descAttention} audited page(s) have Meta Description optimization issues (W4)`, tab: 'w3' })
+  }
+
+  if (techData.h1Attention > 0) {
+    attentionItems.push({ type: 'warning', text: `${techData.h1Attention} audited page(s) missing or weak H1 header (W4)`, tab: 'w3' })
   }
 
   if (backlinksData.awaiting > 0) {
@@ -328,6 +389,101 @@ export default function PerformanceDashboardPage({ site, onBack, onNavigateTab }
             <span>All core website metrics & configurations are up to date!</span>
           </div>
         )}
+      </div>
+
+      {/* ── SECTION 1.5: Technical Summary & Onsite Health Block ── */}
+      <div className="perf-tech-summary-card">
+        <div className="card-header">
+          <div className="card-header-title">
+            <div className="icon-badge bg-emerald"><CheckCircleIcon /></div>
+            <div>
+              <h3 className="card-title">Technical Summary & Onsite Setup</h3>
+              <span className="card-sub">Technical status derived from site inventory & page audits</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="tech-summary-grid">
+          <div className="tech-item">
+            <span className="tech-icon text-emerald">✓</span>
+            <div className="tech-info">
+              <span className="tech-label">XML Sitemap / Inventory</span>
+              <span className="tech-status">{pagesData.total > 0 ? `Found (${pagesData.total} Pages Discovered)` : 'Not Synchronised'}</span>
+            </div>
+          </div>
+
+          <div className="tech-item">
+            <span className="tech-icon text-emerald">✓</span>
+            <div className="tech-info">
+              <span className="tech-label">Platform Connection</span>
+              <span className="tech-status">{site.platform ? site.platform.toUpperCase() : 'WORDPRESS'} API Active</span>
+            </div>
+          </div>
+
+          <div className="tech-item">
+            <span className={`tech-icon ${pagesData.unconfigured > 0 ? 'text-amber' : 'text-emerald'}`}>
+              {pagesData.unconfigured > 0 ? '⚠' : '✓'}
+            </span>
+            <div className="tech-info">
+              <span className="tech-label">Target Keyword Setup</span>
+              <span className="tech-status">{pagesData.configured} Configured / {pagesData.unconfigured} Unconfigured</span>
+            </div>
+          </div>
+
+          {techData.auditedCount > 0 && (
+            <>
+              <div className="tech-item">
+                <span className={`tech-icon ${techData.titleAttention > 0 ? 'text-amber' : 'text-emerald'}`}>
+                  {techData.titleAttention > 0 ? '⚠' : '✓'}
+                </span>
+                <div className="tech-info">
+                  <span className="tech-label">Meta Titles Optimization</span>
+                  <span className="tech-status">{techData.titlePassed} Passed / {techData.titleAttention} Need Attention</span>
+                </div>
+              </div>
+
+              <div className="tech-item">
+                <span className={`tech-icon ${techData.descAttention > 0 ? 'text-amber' : 'text-emerald'}`}>
+                  {techData.descAttention > 0 ? '⚠' : '✓'}
+                </span>
+                <div className="tech-info">
+                  <span className="tech-label">Meta Descriptions Optimization</span>
+                  <span className="tech-status">{techData.descPassed} Passed / {techData.descAttention} Need Attention</span>
+                </div>
+              </div>
+
+              <div className="tech-item">
+                <span className={`tech-icon ${techData.h1Attention > 0 ? 'text-amber' : 'text-emerald'}`}>
+                  {techData.h1Attention > 0 ? '⚠' : '✓'}
+                </span>
+                <div className="tech-info">
+                  <span className="tech-label">H1 / Headers Optimization</span>
+                  <span className="tech-status">{techData.h1Passed} Passed / {techData.h1Attention} Need Attention</span>
+                </div>
+              </div>
+
+              {techData.canonicalVerified > 0 && (
+                <div className="tech-item">
+                  <span className="tech-icon text-emerald">✓</span>
+                  <div className="tech-info">
+                    <span className="tech-label">Canonical Tags</span>
+                    <span className="tech-status">{techData.canonicalVerified} Pages Verified</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="tech-item">
+            <span className={`tech-icon ${gbpData.status === 'Created' ? 'text-emerald' : 'text-amber'}`}>
+              {gbpData.status === 'Created' ? '✓' : '⚠'}
+            </span>
+            <div className="tech-info">
+              <span className="tech-label">Google Business Profile Record</span>
+              <span className="tech-status">{gbpData.status} ({gbpData.verification_status})</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── SECTION 2: Varied Grid Layout ── */}
