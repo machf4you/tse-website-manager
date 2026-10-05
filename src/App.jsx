@@ -280,6 +280,29 @@ export function parseRoute(pathname) {
     }
   }
 
+  // Website-specific Performance Dashboard route: /performance/:slug or /w10-performance/:slug
+  const perfSlugMatch = path.match(/^\/(?:performance|w10-performance|w10)\/([^/]+)$/)
+  if (perfSlugMatch) {
+    const websiteSlug = perfSlugMatch[1]
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'performance',
+      websiteSlug,
+      canonicalPath: `/performance/${websiteSlug}`
+    }
+  }
+
+  if (path === '/performance' || path === '/w10-performance' || path === '/w10') {
+    return {
+      currentView: 'website-manager',
+      activeNavTab: 'websites',
+      wPage: 'performance',
+      websiteSlug: null,
+      canonicalPath: '/performance'
+    }
+  }
+
 
   // Fallback to W1
   return {
@@ -408,7 +431,7 @@ function App() {
             aria-current={activeNavTab === 'websites' ? 'page' : undefined}
             id="nav-tab-websites"
             onClick={() => {
-              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks', '/w9-gbp'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/') || currentPath.startsWith('/google-business/')) {
+              if (['/w1-connected-sites', '/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks', '/w9-gbp', '/performance'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/') || currentPath.startsWith('/google-business/') || currentPath.startsWith('/performance/')) {
                 navigate(currentPath)
               } else {
                 navigate('/w1-connected-sites')

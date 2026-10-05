@@ -227,7 +227,12 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
       if (slug && navigate) {
         navigate(`/google-business/${slug}`, true)
       }
-    } else if (!managedSite && sites.length > 0 && (['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks', '/w9-gbp', '/w9', '/google-business'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/') || currentPath.startsWith('/google-business/'))) {
+    } else if ((currentPath === '/performance' || currentPath === '/w10-performance' || currentPath === '/w10') && managedSite) {
+      const slug = getSiteSlug(managedSite)
+      if (slug && navigate) {
+        navigate(`/performance/${slug}`, true)
+      }
+    } else if (!managedSite && sites.length > 0 && (['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks', '/w9-gbp', '/w9', '/google-business', '/performance'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/') || currentPath.startsWith('/google-business/') || currentPath.startsWith('/performance/'))) {
       const savedId = localStorage.getItem('tse_managed_site_id_v1') ||
                       localStorage.getItem('tse_managed_site_id') ||
                       localStorage.getItem('tse_selected_site_id')
@@ -435,7 +440,7 @@ export default function WebsitesDashboard({ currentPath, navigate }) {
     return nameA.localeCompare(nameB, undefined, { sensitivity: 'base', numeric: true })
   })
 
-  const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks', '/w9-gbp', '/w9', '/google-business'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/') || currentPath.startsWith('/google-business/')
+  const isSubPage = ['/w2-website-dashboard', '/w3-page-management', '/w4-audit-results', '/w5-internal-linking', '/w6-rank-tracker', '/w7-social', '/w8-backlinks', '/w9-gbp', '/w9', '/google-business', '/performance'].includes(currentPath) || currentPath.startsWith('/social/') || currentPath.startsWith('/backlinks/') || currentPath.startsWith('/google-business/') || currentPath.startsWith('/performance/')
   const isW1 = currentPath === '/w1-connected-sites' || (!managedSite && !isSubPage)
 
   if (managedSite && !isW1) {

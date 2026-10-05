@@ -6,6 +6,7 @@ import RankTrackerPage from './RankTrackerPage'
 import SocialDashboardPage from './SocialDashboardPage'
 import BacklinksPage from './BacklinksPage'
 import GbpPage from './GbpPage'
+import PerformanceDashboardPage from './PerformanceDashboardPage'
 import GlobalSettings from './GlobalSettings'
 
 import { getSiteSlug } from '../utils/siteSlugHelper'
@@ -165,6 +166,7 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     if (path === '/w7-social' || path === '/w7' || path === '/social' || path.startsWith('/social/')) return 'w7'
     if (path === '/w8-backlinks' || path === '/w8' || path === '/backlinks' || path.startsWith('/backlinks/') || path === '/w8-backlink-inventory') return 'w8'
     if (path === '/w9-gbp' || path === '/w9' || path === '/google-business' || path.startsWith('/google-business/')) return 'w9'
+    if (path === '/performance' || path === '/w10-performance' || path === '/w10' || path.startsWith('/performance/')) return 'performance'
     return null
   }
 
@@ -208,6 +210,10 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
         const slug = getSiteSlug(site)
         navigate(`/google-business/${slug}`)
       }
+      else if (tab === 'performance' || tab === 'w10-performance' || tab === 'w10') {
+        const slug = getSiteSlug(site)
+        navigate(`/performance/${slug}`)
+      }
     }
   }
 
@@ -230,6 +236,13 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
       const slug = getSiteSlug(site)
       const targetPath = `/google-business/${slug}`
       if (currentPath !== targetPath && (currentPath === '/w9-gbp' || currentPath === '/w9' || currentPath === '/google-business')) {
+        if (navigate) navigate(targetPath, true)
+      }
+    }
+    if (activeTab === 'performance' && site) {
+      const slug = getSiteSlug(site)
+      const targetPath = `/performance/${slug}`
+      if (currentPath !== targetPath && (currentPath === '/performance' || currentPath === '/w10-performance')) {
         if (navigate) navigate(targetPath, true)
       }
     }
@@ -547,9 +560,9 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
   useEffect(() => {
     if (!isPackageHydrated) return
 
-    // Do NOT force redirect to W2 if stored package data exists or if viewing W7 Social / W8 Backlinks / W9 GBP
+    // Do NOT force redirect to W2 if stored package data exists or if viewing W7 Social / W8 Backlinks / W9 GBP / W10 Performance
     if (!storedPackageData && !site?.storedPackageData && (!isSynced || exportedPages.length === 0)) {
-      if (activeTab !== 'w2' && activeTab !== 'w7' && activeTab !== 'w7-social' && activeTab !== 'social' && activeTab !== 'w8' && activeTab !== 'w8-backlinks' && activeTab !== 'backlinks' && activeTab !== 'w9' && activeTab !== 'w9-gbp' && activeTab !== 'google-business') {
+      if (activeTab !== 'w2' && activeTab !== 'w7' && activeTab !== 'w7-social' && activeTab !== 'social' && activeTab !== 'w8' && activeTab !== 'w8-backlinks' && activeTab !== 'backlinks' && activeTab !== 'w9' && activeTab !== 'w9-gbp' && activeTab !== 'google-business' && activeTab !== 'performance' && activeTab !== 'w10-performance') {
         setActiveTab('w2')
       }
     }
@@ -722,6 +735,16 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
     }
     return () => { isMounted = false }
   }, [site?.id, site?.url])
+
+  if (activeTab === 'performance' || activeTab === 'w10-performance' || activeTab === 'w10') {
+    return (
+      <PerformanceDashboardPage
+        site={site}
+        onBack={() => setActiveTab('w2')}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+      />
+    )
+  }
 
   if (activeTab === 'w9' || activeTab === 'google-business' || activeTab === 'w9_gbp' || activeTab === 'w9-gbp') {
     return (
@@ -1227,6 +1250,31 @@ export default function ManageWebsitePage({ site: rawSite, currentPath, navigate
             Open W9 Google Business Profile ›
           </button>
           <span className="w2-fc-tag">W9 | GOOGLE BUSINESS PROFILE</span>
+        </div>
+
+        {/* Card 7: Performance Data */}
+        <div className="w2-feature-card theme-blue" onClick={() => setActiveTab('performance')} style={{ cursor: 'pointer' }}>
+          <div className="w2-fc-header">
+            <div className="w2-fc-icon-bg" style={{ color: '#38bdf8' }}>
+              <ActivityIcon />
+            </div>
+            <h3 className="w2-fc-title">Performance Data</h3>
+          </div>
+          <p className="w2-fc-desc">
+            Overall Website Performance. Rankings, search performance, links, social and business profile at a glance.
+          </p>
+          <button
+            type="button"
+            className="w2-fc-btn btn-open-blue"
+            id="btn-open-performance"
+            onClick={(e) => {
+              e.stopPropagation()
+              setActiveTab('performance')
+            }}
+          >
+            VIEW PERFORMANCE →
+          </button>
+          <span className="w2-fc-tag">W10 | PERFORMANCE DASHBOARD</span>
         </div>
 
       </div>
